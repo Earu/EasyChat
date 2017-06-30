@@ -9,3 +9,5 @@ hook.Add("OnPlayerChat","EasyChatModuleRPTAGS",function(ply,txt)
         return true
     end
 end)
+
+return "RP Commands"
