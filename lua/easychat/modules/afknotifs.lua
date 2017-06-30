@@ -2,13 +2,13 @@ local netstring = "EASY_CHAT_AFK"
 
 if SERVER then
     util.AddNetworkString(netstring)
-    
+
     local GetAFKTime = function(ply)
-        if ply:IsAFK() and ply.afk_at_time then 
+        if ply:IsAFK() and ply.afk_at_time then
             return RealTime() - ply.afk_at_time
         else
             return 0
-        end  
+        end
     end
 
     hook.Add("OnPlayerAFK","EasyChat",function(ent,afk)
@@ -28,9 +28,11 @@ if CLIENT then
         local afk  = net.ReadBool()
         local time = net.ReadFloat()
         if afk then
-            chat.AddText(Color(255,20,20),"⮞ ",Color(255,255,255),ply:GetName().." is now ",Color(255,20,20),"away")
+            chat.AddText(Color(209,62,57),"⮞ ",Color(200,200,200),ply:GetName().." is now ",Color(209,62,57),"away")
         else
-            chat.AddText(Color(20,255,20),"⮞ ",Color(255,255,255),ply:GetName().." is now ",Color(20,255,20),"back",Color(220,220,220)," (away for "..string.NiceTime(time)..")")
+            chat.AddText(Color(92,184,92),"⮞ ",Color(200,200,200),ply:GetName().." is now ",Color(92,184,92),"back",Color(175,175,175)," (away for "..string.NiceTime(time)..")")
         end
     end)
 end
+
+return "AFK Notifications"
