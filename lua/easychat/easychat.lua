@@ -317,8 +317,6 @@ if CLIENT then
 				for _,arg in pairs(args) do
 					if type(arg) == "table" then
 						EasyChat.InsertColorChange(arg.r,arg.g,arg.b,arg.a or 255)
-					elseif type(arg) == "number" then
-						EasyChat.AppendText(tostring(arg))
 					elseif type(arg) == "string" then
 						local isurl = EasyChat.IsURL(arg)
 						if isurl then
@@ -553,8 +551,7 @@ if CLIENT then
 				if GetConVar("easychat_hud_follow"):GetBool() then
 					x,y,w,h = richt:GetBounds()
 				else
-					x,y = chat.GetChatBoxPos()
-					w,h = chat.GetChatBoxSize()
+					x,y,w,h = 25,25,cw,ch*1.3
 				end
 				self:SetPos(x,y)
 				self:SetSize(w,h)
@@ -582,8 +579,7 @@ if CLIENT then
 				if GetConVar("easychat_hud_follow") and GetConVar("easychat_hud_follow"):GetBool() then
 					x,y,w,h = richt:GetBounds()
 				else
-					x,y = chat.GetChatBoxPos()
-					w,h = chat.GetChatBoxSize()
+					x,y,w,h = 25,25,cw,ch*1.3
 				end
 				self:SetPos(x,y)
 				self:SetSize(w,h)
