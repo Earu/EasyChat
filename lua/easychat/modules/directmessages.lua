@@ -7,7 +7,7 @@ if CLIENT then
 	local tentry = panel:Add("DTextEntry")
 
 	EasyChat.AddTab("PMs",panel)
-	
+
 	plys:Dock(LEFT)
 	plys:DockMargin(5,5,15,5)
 	add:Dock(LEFT)
@@ -57,7 +57,7 @@ if CLIENT then
 		end
 
 		if code == KEY_TAB then
-			local a = hook.Run("OnChatTab", self:GetText())	
+			local a = hook.Run("OnChatTab", self:GetText())
 			self:SetText(a)
 			timer.Simple(0, function() self:RequestFocus() self:SetCaretPos(#self:GetText()) end)
 			return true
@@ -89,35 +89,35 @@ if CLIENT then
 	local AppendPM = function(ply,msg)
 		local PM = GetPM(ply)
 		local isurl,_ = EasyChat.IsURL(msg)
-		
+
 		PM.RichText:InsertColorChange(team.GetColor(ply:Team()))
 		PM.RichText:AppendText(ply:GetName())
 		PM.RichText:InsertColorChange(255,255,255,255)
 		PM.RichText:AppendText(":")
-		
+
 		if isurl then -- CANCER V2
 			local poses = EasyChat.GetURLPoses(msg)
 			for k,pos in pairs(poses) do
 				local lspos,lepos = pos.Start,pos.End
 				PM.RichText:AppendText(string.sub(msg,k == 1 and 1 or pos[k - 1].End + 1,lspos - 1))
-				
+
 				local insert = string.sub(msg,lspos,lepos)
 				local url,_ = string.gsub(insert,"^%s:","")
 				local _,www = EasyChat.IsURL(insert)
 				PM.RichText:InsertClickableTextStart(www and "http://"..url or url)
 				PM.RichText:AppendText(insert)
 				PM.RichText:InsertClickableTextEnd()
-				
+
 				PM.RichText:AppendText(string.sub(msg,lepos + 1,pos[k + 1] and pos[k + 1].Start - 1 or nil))
 			end
-		
+
 		else
 			PM.RichText:AppendText(msg)
 		end
 
 		PM.RichText:AppendText("\n")
 
-		--if EasyChat.TabControl:GetActiveTab() == 
+		--if EasyChat.TabControl:GetActiveTab() ==
 	end
 
 end
@@ -125,3 +125,5 @@ end
 if SERVER then
 
 end
+
+return "Private Messages"

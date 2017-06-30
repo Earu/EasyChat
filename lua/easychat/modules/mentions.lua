@@ -49,3 +49,5 @@ if SERVER then
         hook.Add("DiscordRelayMessage","EasyChatModuleMention",networkdiscordmention)
     end
 end
+
+return "Mentions"
