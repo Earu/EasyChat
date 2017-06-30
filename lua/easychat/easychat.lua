@@ -244,7 +244,7 @@ if CLIENT then
 		end
 		for k,v in pairs(EasyChat.Tabs) do
 			if v.NotificationCount and v.NotificationCount > 0 then
-				chat.AddText("EC",Color(175,175,175)," ⮞ ",Color(244, 167, 66),v.NotificationCount,Color(255,255,255)," new notifications from "..k)
+				chat.AddText("EC",Color(175,175,175)," ⮞ ",Color(244, 167, 66),tostring(v.NotificationCount),Color(255,255,255)," new notifications from "..k)
 				v.NotificationCount = 0
 			end
 		end
