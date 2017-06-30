@@ -1,46 +1,33 @@
+if _G.EasyChat then
+	EasyChat.Destroy()
+end
+
 local EasyChat = _G.EasyChat or {}
+_G.EasyChat = EasyChat
 
 local netprintmsg      = "EASY_CHAT_PRINT_MSG"
 local netbroadcastmsgs = "EASY_CHAT_BROADCAST_MSG"
 local netreceivemsg    = "EASY_CHAT_RECEIVE_MSG"
-local tag = "EasyChat"
+local netlocalmsg      = "EASY_CHAT_LOCAL_MSG"
+local netlocalsend     = "EASY_CHAT_LOCAL_SEND"
+local tag              = "EasyChat"
 
-EasyChat.LoadModules = function()
-	local path = "easychat/modules/"
+EasyChat.Modules = {} --this is to prevent errors if loader gets removed
+EasyChat.LoadModules = function() end
 
-	for _,file_name in pairs((file.Find(path.."*.lua","LUA"))) do
-		AddCSLuaFile(path..file_name)
-		include(path..file_name)
-		print("[EasyChatModule]: shared "..file_name.." loaded!")
-	end
-
-	if SERVER then
-		for _,file_name in pairs((file.Find(path.."server/*.lua","LUA"))) do
-			include(path.."server/"..file_name)
-			print("[EasyChatModule]: server "..file_name.." loaded!")
-		end
-
-		for _,file_name in pairs((file.Find(path.."client/*.lua","LUA"))) do
-			AddCSLuaFile(path.."client/"..file_name)
-		end
-	end
-
-	if CLIENT then
-		for _,file_name in pairs((file.Find(path.."client/*.lua","LUA"))) do
-			include(path.."client/"..file_name)
-			print("[EasyChatModule]: client "..file_name.." loaded!")
-		end
-	end
-
-end
+AddCSLuaFile("easychat/autoloader.lua")
+local Loader = CompileFile("easychat/autoloader.lua")
+pcall(Loader)
 
 if SERVER then
 
 	util.AddNetworkString(netprintmsg)
 	util.AddNetworkString(netreceivemsg)
 	util.AddNetworkString(netbroadcastmsgs)
+	util.AddNetworkString(netlocalmsg)
+	util.AddNetworkString(netlocalsend)
 
-	net.Receive(netreceivemsg,function(_,ply)
+	net.Receive(netreceivemsg,function(len,ply)
 		local str = net.ReadString()
 		local msg = gamemode.Call("PlayerSay", ply, str, false)
 		if string.Trim(msg) == "" then return end
@@ -49,6 +36,22 @@ if SERVER then
 		net.WriteString(msg)
 		net.WriteBool(IsValid(ply) and (not ply:Alive()) or false)
 		net.Broadcast()
+	end)
+
+	net.Receive(netlocalmsg,function(len,ply)
+		local msg = net.ReadString()
+		if string.Trim(msg) == "" then return end
+		net.Start(netlocalsend)
+		net.WriteEntity(ply)
+		net.WriteString(msg)
+		net.WriteBool(IsValid(ply) and (not ply:Alive()) or false)
+		local receivers = {}
+		for k,v in pairs(player.GetAll()) do
+			if IsValid(v) and v:GetPos():Distance(ply:GetPos()) <= ply:GetInfoNum("easychat_local_msg_distance",150) then
+				table.insert(receivers,v)
+			end
+		end
+		net.Send(receivers)
 	end)
 
 	EasyChat.Init = function()
@@ -87,45 +90,41 @@ if CLIENT then
 	CreateConVar("easychat_hud_follow","0",FCVAR_ARCHIVE,"Set the chat hud to follow the chatbox")
 	CreateConVar("easychat_global_on_open","1",FCVAR_ARCHIVE,"Set the chat to always open global chat tab on open")
 	CreateConVar("easychat_font","Roboto",FCVAR_ARCHIVE,"Set the font to use for the chat")
+	CreateConVar("easychat_font_size","17",FCVAR_ARCHIVE,"Set the font size for chatbox")
+	CreateConVar("easychat_hud_font_size","19",FCVAR_ARCHIVE,"Set the font size for chathud")
 	CreateConVar("easychat_timestamps","0",FCVAR_ARCHIVE,"Display timestamp in front of messages or not")
 	CreateConVar("easychat_teams","0",FCVAR_ARCHIVE,"Display team in front of messages or not")
 	CreateConVar("easychat_teams_colored","0",FCVAR_ARCHIVE,"Display team with its relative color")
 	CreateConVar("easychat_players_colored","1",FCVAR_ARCHIVE,"Display player with its relative team color")
+	CreateConVar("easychat_enable","1",FCVAR_ARCHIVE,"Use easychat or not")
+	CreateConVar("easychat_use_dermaskin","0",FCVAR_ARCHIVE,"Use dermaskin look or not")
+	CreateConVar("easychat_local_msg_distance","300",FCVAR_ARCHIVE,"Set the maximum distance for users to receive local messages")
+	CreateConVar("easychat_no_modules","0",FCVAR_ARCHIVE,"Should easychat load modules or not")
 
-	cvars.AddChangeCallback("easychat_font",function(name,old,new)
-		surface.CreateFont("EasyChatFont",{
-			font      = new,
-			extended  = true,
-			size      = 16,
-			weight    = 500,
-			shadow    = true,
-			additive  = true,
-		})
+	EasyChat.UseDermaSkin = GetConVar("easychat_use_dermaskin"):GetBool()
 
-		surface.CreateFont("EasyChatHUDFont",{
-			font      = new,
-			extended  = true,
-			size      = 18,
-			weight    = 500,
-		})
+	cvars.AddChangeCallback("easychat_enable",function(name,old,new)
+		if GetConVar("easychat_enable"):GetBool() then
+			EasyChat.Init()
+		else
+			EasyChat.Destroy()
+		end
+	end)
 
-		surface.CreateFont("EasyChatHUDShadow",{
-			font      = new,
-			extended  = true,
-			size      = 18,-- + (linux_offset * 3),
-			weight    = 500,
-			--outline = true,
-			blursize  = 2,
-		})
+	cvars.AddChangeCallback("easychat_use_dermaskin",function(name,old,new)
+		EasyChat.UseDermaSkin = GetConVar("easychat_use_dermaskin"):GetBool()
+		LocalPlayer():ConCommand("easychat_reload")
 	end)
 
 	local linux_offset = system.IsLinux() and 1 or 0
 	local font = GetConVar("easychat_font"):GetString()
+	local font_size = GetConVar("easychat_font_size"):GetInt()
+	local font_hud_size = GetConVar("easychat_hud_font_size"):GetInt()
 
 	surface.CreateFont("EasyChatFont",{
 		font      = font,
 		extended  = true,
-		size      = 16,
+		size      = font_size,
 		weight    = 500,
 		shadow    = true,
 		additive  = true,
@@ -134,18 +133,71 @@ if CLIENT then
 	surface.CreateFont("EasyChatHUDFont",{
 		font      = font,
 		extended  = true,
-		size      = 18,
+		size      = font_hud_size,
 		weight    = 500,
 	})
 
 	surface.CreateFont("EasyChatHUDShadow",{
 		font      = font,
 		extended  = true,
-		size      = 18,-- + (linux_offset * 3),
+		size      = font_hud_size,-- + (linux_offset * 3),
 		weight    = 500,
-		--outline = true,
 		blursize  = 2,
 	})
+
+	cvars.AddChangeCallback("easychat_font",function(name,old,new)
+		surface.CreateFont("EasyChatFont",{
+			font      = new,
+			extended  = true,
+			size      = font_size,
+			weight    = 500,
+			shadow    = true,
+			additive  = true,
+		})
+
+		surface.CreateFont("EasyChatHUDFont",{
+			font      = new,
+			extended  = true,
+			size      = font_hud_size,
+			weight    = 500,
+		})
+
+		surface.CreateFont("EasyChatHUDShadow",{
+			font      = new,
+			extended  = true,
+			size      = font_hud_size,-- + (linux_offset * 3),
+			weight    = 500,
+			blursize  = 2,
+		})
+	end)
+
+	cvars.AddChangeCallback("easychat_font_size",function(name,old,new)
+		surface.CreateFont("EasyChatFont",{
+			font      = font,
+			extended  = true,
+			size      = tonumber(new),
+			weight    = 500,
+			shadow    = true,
+			additive  = true,
+		})
+	end)
+
+	cvars.AddChangeCallback("easychat_hud_font_size",function(name,old,new)
+		surface.CreateFont("EasyChatHUDFont",{
+			font      = font,
+			extended  = true,
+			size      = tonumber(new),
+			weight    = 500,
+		})
+
+		surface.CreateFont("EasyChatHUDShadow",{
+			font      = font,
+			extended  = true,
+			size      = tonumber(new),-- + (linux_offset * 3),
+			weight    = 500,
+			blursize  = 2,
+		})
+	end)
 
 	local coljson = file.Read("easychat/colors.txt","DATA")
 	if coljson then
@@ -155,13 +207,22 @@ if CLIENT then
 		EasyChat.TabOutlineColor    = Color(cols.taboutline.r,cols.taboutline.g,cols.taboutline.b,cols.taboutline.a)
 		EasyChat.TabColor           = Color(cols.tab.r,cols.tab.g,cols.tab.b,cols.tab.a)
 	else
-		EasyChat.OutlayColor		= Color(65,65,65,150)
-		EasyChat.OutlayOutlineColor = Color(145,145,145,255)
-		EasyChat.TabOutlineColor    = Color(175,175,175,255)
-		EasyChat.TabColor           = Color(39,40,34,255)
+		EasyChat.OutlayColor        = Color(49,49,49,208)
+		EasyChat.OutlayOutlineColor = Color(0,0,0,255)
+		EasyChat.TabOutlineColor    = Color(0,0,0,255)
+		EasyChat.TabColor     		= Color(39,40,34,255)
 	end
 
-	EasyChat.TextColor = Color(255,255,255,255) --stays like that til someone can make it happen
+	EasyChat.TextColor = Color(255,255,255,255)
+	EasyChat.ModeCount = 0
+	EasyChat.Mode = 0
+	EasyChat.Modes = {}
+	EasyChat.Tabs = {}
+
+	EasyChat.AddMode = function(name,callback)
+		table.insert(EasyChat.Modes,{Name = name,Callback = callback})
+		EasyChat.ModeCount = #EasyChat.Modes
+	end
 
 	EasyChat.IsOpened = function()
 		return EasyChat.ChatBox and EasyChat.ChatBox:IsVisible()
@@ -171,17 +232,22 @@ if CLIENT then
 		"https?://[^%s%\"]+",
 		"ftp://[^%s%\"]+",
 		"steam://[^%s%\"]+",
-		"www%.[^%s%\"]+", -- must always be last
 	}
 
 	EasyChat.Open = function()
 		EasyChat.ChatBox:Show()
 		EasyChat.ChatBox:MakePopup()
-		EasyChat.TextEntry:RequestFocus()
+		EasyChat.Mode = 0
 		if GetConVar("easychat_global_on_open"):GetBool() then
 			EasyChat.TabControl:SetActiveTab(EasyChat.TabControl.Items[1].Tab)
+			EasyChat.TextEntry:RequestFocus()
 		end
-		gamemode.Call( "StartChat" )
+		for k,v in pairs(EasyChat.Tabs) do
+			if v.NotificationCount and v.NotificationCount > 0 then
+				chat.AddText("EC",Color(175,175,175)," ⮞ ",Color(244, 167, 66),v.NotificationCount,Color(255,255,255)," new notifications from "..k)
+				v.NotificationCount = 0
+			end
+		end
 	end
 
 	EasyChat.Close = function()
@@ -194,6 +260,7 @@ if CLIENT then
 			gamemode.Call( "FinishChat" )
 			EasyChat.SavePosSize()
 			EasyChat.ChatBox:Hide()
+			chat.Close()
 		end
 	end
 
@@ -201,14 +268,12 @@ if CLIENT then
 		for index,pattern in ipairs(EasyChat.LinkPatterns) do
 			if string.match(str,pattern) then
 				if index == #EasyChat.LinkPatterns then
-					return true, true
-				else
-					return true, false
+					return true
 				end
 			end
 		end
 
-		return false,false
+		return false
 	end
 
 	EasyChat.GetURLPoses = function(str,added,poses)
@@ -232,6 +297,16 @@ if CLIENT then
 	EasyChat.Init = function()
 		hook.Remove("Initialize", tag)
 
+		EasyChat.AddMode("Local",function(text)
+			net.Start(netlocalmsg)
+			net.WriteString(text)
+			net.SendToServer()
+		end)
+
+		EasyChat.AddMode("Console",function(text)
+			LocalPlayer():ConCommand(text)
+		end)
+
 		do
 			-- overrides
 			EasyChat.old_chat_AddText = EasyChat.old_chat_AddText or chat.AddText
@@ -243,15 +318,14 @@ if CLIENT then
 					if type(arg) == "table" then
 						EasyChat.InsertColorChange(arg.r,arg.g,arg.b,arg.a or 255)
 					elseif type(arg) == "string" then
-						local isurl,_ = EasyChat.IsURL(arg)
+						local isurl = EasyChat.IsURL(arg)
 						if isurl then
 							local poses = EasyChat.GetURLPoses(arg)
 							for k,pos in pairs(poses) do
 								EasyChat.AppendText(string.sub(arg,k == 1 and 1 or (poses[k-1].End + 1),(pos.Start - 1)))
 
 								local url = string.gsub(string.sub(arg,pos.Start,pos.End),"^%s:","")
-								local _,www = EasyChat.IsURL(url)
-								EasyChat.RichText:InsertClickableTextStart(www and "http://"..url or url)
+								EasyChat.RichText:InsertClickableTextStart(url)
 								EasyChat.AppendText(url)
 								EasyChat.RichText:InsertClickableTextEnd()
 
@@ -261,19 +335,11 @@ if CLIENT then
 							EasyChat.AppendText(arg)
 						end
 					elseif arg:IsPlayer() then
-						if GetConVar("easychat_timestamps"):GetBool() then
-							EasyChat.AppendText("["..os.date("%H:%M:%S").."]")
-						end
-						if GetConVar("easychat_teams"):GetBool() then
-							if GetConVar("easychat_teams_colored"):GetBool() then
-								local tcol = team.GetColor(arg:Team())
-								EasyChat.InsertColorChange(tcol.r,tcol.g,tcol.b,tcol.a)
-							end
-							EasyChat.AppendText("["..team.GetName(arg:Team()).."]")
-						end
-						local col = GetConVar("easychat_players_colored"):GetBool() and team.GetColor(arg:Team()) or Color(255,255,255,255)
-						EasyChat.InsertColorChange(col.r,col.g,col.b,col.a)
+						local col = GetConVar("easychat_players_colored"):GetBool() and team.GetColor(arg:Team()) or Color(255,255,255)
+						EasyChat.InsertColorChange(col.r,col.g,col.b,255)
 						EasyChat.AppendText(arg:GetName())
+					else
+						EasyChat.AppendText(tostring(arg))
 					end
 				end
 				EasyChat.AppendText("\n")
@@ -339,30 +405,10 @@ if CLIENT then
 			frame:SetDeleteOnClose(false)
 			frame:SetTitle("")
 
-			frame.Paint = function(self,wide,tall)
-				surface.SetDrawColor(EasyChat.OutlayColor)
-				surface.DrawRect(0, 0, wide, tall)
-				surface.SetDrawColor(EasyChat.OutlayOutlineColor)
-				surface.DrawOutlinedRect(0, 0, wide, tall)
-			end
-
 			frame.btnClose:SetZPos(10)
 
 			frame.btnClose.DoClick = function()
 				EasyChat.Close()
-			end
-
-			frame.btnClose.Paint = function(self,w,h)
-				local wide, tall = w, 18
-				surface.SetDrawColor(246,40,40)
-				surface.DrawRect(0,5,wide,tall)
-				surface.SetDrawColor(200,20,20)
-				surface.DrawOutlinedRect(0,5,wide,tall)
-				surface.SetTextColor(200,20,20)
-				surface.SetFont("DermaDefaultBold")
-				local x,y = surface.GetTextSize("X")
-				surface.SetTextPos(wide/2-x/2,tall/2-y/2+5)
-				surface.DrawText("X")
 			end
 
 			frame.btnMaxim:Hide()
@@ -372,10 +418,6 @@ if CLIENT then
 			local tabs = frame:Add("DPropertySheet")
 			tabs:SetSize(cw-16,ch-20)
 			tabs:SetPos(8,13)
-			tabs.Paint = function(self,w,h)
-				surface.SetDrawColor(0,0,0,0)
-				surface.DrawRect(0, 0, w, h)
-			end
 
 			tabs.old_performlayout = tabs.PerformLayout
 			tabs.PerformLayout = function(self)
@@ -394,59 +436,110 @@ if CLIENT then
 			scroller:SetSize(0,20)
 			scroller.m_iOverlap = -2
 
-			------ Global chat ----
-			local maintab = vgui.Create("DPanel")
-			local main = tabs:AddSheet("Global", maintab)
-			main.Tab:SetFont("EasyChatFont")
-			main.Tab:SetFont("EasyChatFont")
-			main.Tab.Paint = function(self,w,h)
-				local wide,tall = w, h
-				if self == EasyChat.TabControl:GetActiveTab() then
-					surface.SetDrawColor(EasyChat.OutlayColor)
-				else
-					surface.SetDrawColor(EasyChat.TabColor)
+			EasyChat.AddTab = function(name,panel)
+				local tab = tabs:AddSheet(name,panel)
+				tab.Tab:SetFont("EasyChatFont")
+				EasyChat.Tabs[name] = tab
+				panel:Dock(FILL)
+				if not EasyChat.UseDermaSkin then
+					panel.Paint = function(self,w,h)
+						surface.SetDrawColor(EasyChat.TabColor)
+						surface.DrawRect(0, 0, w,h)
+						surface.SetDrawColor(EasyChat.TabOutlineColor)
+						surface.DrawOutlinedRect(0, 0, w,h)
+					end
+					tab.Tab.Paint = function(self,w,h)
+						local wide,tall = w, h
+						if self == tabs:GetActiveTab() then
+							self.Flashed = false
+							surface.SetDrawColor(EasyChat.OutlayColor)
+						else
+							if self.Flashed then
+								surface.SetDrawColor( math.abs(math.sin(CurTime()*3)*244),math.abs(math.sin(CurTime()*3)*167), math.abs(math.sin(CurTime()*3)*66),255)
+							else
+								surface.SetDrawColor(EasyChat.TabColor)
+							end
+						end
+						surface.DrawRect(0,0, wide, tall)
+						surface.SetDrawColor(EasyChat.TabOutlineColor)
+						surface.DrawLine(0,0,wide,0)
+						surface.DrawLine(0,0,0,tall)
+						surface.DrawLine(wide-1,0,wide-1,tall)
+					end
 				end
-				surface.DrawRect(0,0, wide, tall)
-				surface.SetDrawColor(EasyChat.TabOutlineColor)
-				surface.DrawLine(0,0,wide,0)
-				surface.DrawLine(0,0,0,tall)
-				surface.DrawLine(wide-1,0,wide-1,tall)
-			end
-			maintab:Dock(FILL)
-			maintab.Paint = function(self,w,h)
-				surface.SetDrawColor(EasyChat.TabColor)
-				surface.DrawRect(0, 0, w,h)
-				surface.SetDrawColor(EasyChat.TabOutlineColor)
-				surface.DrawOutlinedRect(0, 0, w,h)
 			end
 
+			EasyChat.SetFocusForOn = function(name,panel)
+				if EasyChat.Tabs[name] then
+					EasyChat.Tabs[name].Tab.FocusOn = panel
+				end
+			end
+
+			EasyChat.FlashTab = function(name)
+				if EasyChat.Tabs[name] then
+					EasyChat.Tabs[name].Tab.Flashed = true
+					EasyChat.Tabs[name].NotificationCount = EasyChat.Tabs[name].NotificationCount and EasyChat.Tabs[name].NotificationCount + 1 or 1
+				end
+			end
+
+			------ Global chat ----
+			local maintab = vgui.Create("DPanel")
+			EasyChat.AddTab("Global",maintab)
+
 			local richt = maintab:Add("RichText")
-			richt:Dock(FILL)
-			richt:SetContentAlignment(2)
+			richt.Think = function(self)
+				local x,y,w,h = maintab:GetBounds()
+				richt:SetSize(w,h-20)
+			end
 			richt.PerformLayout = function(self)
 				self:SetFontInternal("EasyChatFont")
-				self:SetFGColor(EasyChat.TextColor)
+				self:SetFGColor(EasyChat.UseDermaSkin and EasyChat.TextColor or Color(0,0,0,255))
+			end
+
+			local dbutton = maintab:Add("DButton")
+			dbutton:SetTextColor(EasyChat.TextColor)
+			dbutton:SetText("Say")
+			dbutton:SetSize(65,20)
+			dbutton:SetZPos(10)
+			dbutton.Think = function(self)
+				local x,y,w,h = maintab:GetBounds()
+				self:SetPos(0,h-self:GetTall())
+				if EasyChat.Mode == 0 then
+					self:SetText("Say")
+				else
+					self:SetText(EasyChat.Modes[EasyChat.Mode].Name)
+				end
+			end
+			dbutton.DoClick = function()
+				local modeplus = EasyChat.Mode + 1
+				EasyChat.Mode = modeplus > EasyChat.ModeCount and 0 or modeplus
 			end
 
 			local tentry = maintab:Add("DTextEntry")
-			tentry:Dock(BOTTOM)
+			tentry.Think = function(self)
+				local x,y,w,h = maintab:GetBounds()
+				self:SetSize(w-dbutton:GetWide(),20)
+				self:SetPos(dbutton:GetWide(),h-20)
+			end
 			tentry:SetHistoryEnabled(true)
 			tentry.HistoryPos = 0
 			tentry:SetUpdateOnType(true)
+			tentry:SetZPos(10)
+
+			EasyChat.SetFocusForOn("Global",tentry)
 
 			----- Chat HUD -----
 			local cshadow = vgui.Create("RichText")
 			cshadow:SetVerticalScrollbarEnabled(false)
-			cshadow:SetContentAlignment(2)
 			cshadow:SetSelectable(false)
-			cshadow:ParentToHUD() -- do not touch this
-			cshadow:SetPaintedManually(true)
-			cshadow:InsertColorChange(25,50,100,255)
 			cshadow.PerformLayout = function(self)
 				self:SetFontInternal("EasyChatHUDShadow")
 				self:SetFGColor(50,50,50)
-				self:InsertFade( 8, 2 )
+				self:InsertFade( 16, 2 )
 			end
+			cshadow:ParentToHUD() -- do not touch this
+			cshadow:SetPaintedManually(true)
+			cshadow:InsertColorChange(25,50,100,255)
 
 			cshadow.Paint = function(self,w,h)
 				surface.SetDrawColor(0,0,0,0)
@@ -456,9 +549,10 @@ if CLIENT then
 			cshadow.Think = function(self)
 				local x,y,w,h
 				if GetConVar("easychat_hud_follow"):GetBool() then
-					x,y,w,h = frame:GetBounds()
+					x,y,w,h = richt:GetBounds()
 				else
-					x,y,w,h = 25,25,cw,ch
+					x,y = chat.GetChatBoxPos()
+					w,h = chat.GetChatBoxSize()
 				end
 				self:SetPos(x,y)
 				self:SetSize(w,h)
@@ -466,15 +560,14 @@ if CLIENT then
 
 			local chud = vgui.Create("RichText")
 			chud:SetVerticalScrollbarEnabled(false)
-			chud:SetContentAlignment(2)
 			chud:SetSelectable(false)
-			chud:ParentToHUD() -- let this be
-			chud:SetPaintedManually(true)
 			chud.PerformLayout = function(self)
 				self:SetFontInternal("EasyChatHUDFont")
 				self:SetFGColor(EasyChat.TextColor)
-				self:InsertFade( 8, 2 )
+				self:InsertFade( 16, 2 )
 			end
+			chud:ParentToHUD() -- let this be
+			chud:SetPaintedManually(true)
 
 			chud.Paint = function(self,w,h)
 				for i = 1, 10 do
@@ -485,12 +578,47 @@ if CLIENT then
 			chud.Think = function(self)
 				local x,y,w,h
 				if GetConVar("easychat_hud_follow") and GetConVar("easychat_hud_follow"):GetBool() then
-					x,y,w,h = frame:GetBounds()
+					x,y,w,h = richt:GetBounds()
 				else
-					x,y,w,h = 25,25,cw,ch
+					x,y = chat.GetChatBoxPos()
+					w,h = chat.GetChatBoxSize()
 				end
 				self:SetPos(x,y)
 				self:SetSize(w,h)
+			end
+
+			if not EasyChat.UseDermaSkin then
+				frame.Paint = function(self,wide,tall)
+					surface.SetDrawColor(EasyChat.OutlayColor)
+					surface.DrawRect(0, 0, wide, tall)
+					surface.SetDrawColor(EasyChat.OutlayOutlineColor)
+					surface.DrawOutlinedRect(0, 0, wide, tall)
+				end
+
+				frame.btnClose.Paint = function(self,w,h)
+					local wide, tall = w, 20
+					surface.SetDrawColor(246,40,40)
+					surface.DrawRect(0,5,wide,tall)
+					surface.SetDrawColor(200,20,20)
+					surface.DrawOutlinedRect(0,5,wide,tall)
+					surface.SetTextColor(200,20,20)
+					surface.SetFont("DermaDefaultBold")
+					local x,y = surface.GetTextSize("X")
+					surface.SetTextPos(wide/2-x/2,tall/2-y/2+5)
+					surface.DrawText("X")
+				end
+
+				tabs.Paint = function(self,w,h)
+					surface.SetDrawColor(0,0,0,0)
+					surface.DrawRect(0, 0, w, h)
+				end
+
+				dbutton.Paint = function(self,w,h)
+					surface.SetDrawColor(EasyChat.OutlayColor)
+					surface.DrawRect(0,0,w,h)
+					surface.SetDrawColor(EasyChat.TabOutlineColor)
+					surface.DrawOutlinedRect(0,0,w,h)
+				end
 			end
 
 			-- Only the neccesary elements --
@@ -505,31 +633,6 @@ if CLIENT then
 			EasyChat.Close()
 		end
 
-		EasyChat.AddTab = function(name,panel)
-			local tab = EasyChat.TabControl:AddSheet(name,panel)
-			tab.Tab:SetFont("EasyChatFont")
-			tab.Tab.Paint = function(self,w,h)
-				local wide,tall = w, h
-				if self == EasyChat.TabControl:GetActiveTab() then
-					surface.SetDrawColor(EasyChat.OutlayColor)
-				else
-					surface.SetDrawColor(EasyChat.TabColor)
-				end
-				surface.DrawRect(0,0, wide, tall)
-				surface.SetDrawColor(EasyChat.TabOutlineColor)
-				surface.DrawLine(0,0,wide,0)
-				surface.DrawLine(0,0,0,tall)
-				surface.DrawLine(wide-1,0,wide-1,tall)
-			end
-			panel:Dock(FILL)
-			panel.Paint = function(self,w,h)
-				surface.SetDrawColor(EasyChat.TabColor)
-				surface.DrawRect(0, 0, w,h)
-				surface.SetDrawColor(EasyChat.TabOutlineColor)
-				surface.DrawOutlinedRect(0, 0, w,h)
-			end
-		end
-
 		EasyChat.InsertColorChange = function(r,g,b,a)
 			EasyChat.RichText:InsertColorChange(r,g,b,a)
 			EasyChat.ChatHUD:InsertColorChange(r,g,b,a)
@@ -541,15 +644,20 @@ if CLIENT then
 			EasyChat.HUDShadow:AppendText(text)
 		end
 
+		local last_key = KEY_ENTER
 		EasyChat.TextEntry.OnKeyCodeTyped = function( self, code )
 			if code == KEY_ESCAPE then
 				EasyChat.Close()
-				gui.HideGameUI()
-			elseif code == KEY_ENTER then
-				if string.Trim( self:GetText() ) ~= "" then
-					net.Start(netreceivemsg)
-					net.WriteString(string.sub(self:GetText(),1,3000))
-					net.SendToServer()
+			elseif code == KEY_ENTER or code == KEY_PAD_ENTER then
+				if string.Trim( self:GetText() ) ~= "" and string.Trim( self:GetText() ) ~= "╚​" then
+					if EasyChat.Mode == 0 then
+						net.Start(netreceivemsg)
+						net.WriteString(string.sub(self:GetText(),1,3000))
+						net.SendToServer()
+					else
+						local mode = EasyChat.Modes[EasyChat.Mode]
+						mode.Callback(self:GetText())
+					end
 				end
 
 				self:AddHistory(self:GetText())
@@ -565,10 +673,34 @@ if CLIENT then
 				self:UpdateFromHistory()
 			end
 
+			if last_key == KEY_LCONTROL then --shortcut zone
+				local pos = self:GetCaretPos()
+				local first = string.sub(self:GetText(),1,pos+1)
+				local last = string.sub(self:GetText(),pos+1,string.len(self:GetText()))
+
+				if code == KEY_BACKSPACE then
+					local args = string.Explode(" ",first)
+					self:SetText(table.concat(args," ",1,#args-1)..last)
+					self:SetCaretPos(pos-string.len(args[#args]))
+				end
+				if code == KEY_DELETE then
+					local args = string.Explode(" ",last)
+					self:SetText(first..table.concat(args," ",2,#args))
+					self:SetCaretPos(pos)
+				end
+			end
+
+			last_key = code
+
 			if code == KEY_TAB then
-				local a = gamemode.Call("OnChatTab", self:GetText())
-				self:SetText(a)
-				timer.Simple(0, function() self:RequestFocus() self:SetCaretPos(#self:GetText()) end)
+				if self:GetText() ~= "" then
+					local a = gamemode.Call("OnChatTab", self:GetText())
+					self:SetText(a)
+					timer.Simple(0, function() self:RequestFocus() self:SetCaretPos(#self:GetText()) end)
+				else
+					local modeplus = EasyChat.Mode + 1
+					EasyChat.Mode = modeplus > EasyChat.ModeCount and 0 or modeplus
+				end
 				return true
 			end
 
@@ -588,45 +720,36 @@ if CLIENT then
 			EasyChat.ChatHUD:PaintManual()
 		end)
 
-		hook.Add( "PlayerBindPress", tag, function( ply, bind, pressed )
-			if bind == "messagemode" then
-				EasyChat.Open()
-			elseif bind == "messagemode2" then
-				EasyChat.Open()
-			else
-				return
-			end
-
-			return true
-		end)
-
 		hook.Add( "HUDShouldDraw", tag, function( name ) -- hudchat is still yet to make
 			if name == "CHudChat" then
 				return false
 			end
 		end)
 
-		hook.Add( "ChatText", tag, function( index, name, text, type )
-			if type == "none" then
-				EasyChat.InsertColorChange(244,66,66,255)
-				EasyChat.AppendText( "Info" )
-				EasyChat.InsertColorChange(175,175,175,255)
-				EasyChat.AppendText( " ⮞⮞ " )
-				EasyChat.InsertColorChange(255,255,255,255)
-				EasyChat.AppendText( text.."\n" )
-			end
+		hook.Add( "StartChat",tag,function(team)
+			EasyChat.Open()
+			return true
 		end)
 
-		EasyChat.LoadModules()
+		if not GetConVar("easychat_no_modules"):GetBool() then
+			EasyChat.LoadModules()
+		end
 
 		do
+
 			local ResetColors = function()
-				EasyChat.OutlayColor        = Color(65,65,65,240)
-				EasyChat.OutlayOutlineColor = Color(130,130,130,255)
-				EasyChat.TabOutlineColor    = Color(175,175,175,255)
+				EasyChat.OutlayColor        = Color(49,49,49,208)
+				EasyChat.OutlayOutlineColor = Color(0,0,0,255)
+				EasyChat.TabOutlineColor    = Color(0,0,0,255)
 				EasyChat.TabColor     		= Color(39,40,34,255)
-				EasyChat.TextColor          = Color(255,255,255,255)
-				file.Delete("easychat/colors.txt")
+				local tab = {
+					outlay = EasyChat.OutlayColor,
+					outlayoutline = EasyChat.OutlayOutlineColor,
+					tab = EasyChat.TabColor,
+					taboutline = EasyChat.TabOutlineColor,
+				}
+				local json = util.TableToJSON(tab,true)
+				file.Write("easychat/colors.txt",json)
 			end
 
 			local panel = vgui.Create("DScrollPanel")
@@ -663,24 +786,12 @@ if CLIENT then
 			apply:SetText("Apply Color")
 			apply:SetTextColor(EasyChat.TextColor)
 			apply:SetSize(100,25)
-			apply.Paint = function(self,w,h)
-				surface.SetDrawColor(EasyChat.OutlayColor)
-				surface.DrawRect(0,0,w,h)
-				surface.SetDrawColor(EasyChat.TabOutlineColor)
-				surface.DrawOutlinedRect(0,0,w,h)
-			end
 
 			local resetc = panel:Add("DButton")
 			resetc:SetPos(15,150)
 			resetc:SetText("Reset Colors")
 			resetc:SetTextColor(EasyChat.TextColor)
 			resetc:SetSize(100,25)
-			resetc.Paint = function(self,w,h)
-				surface.SetDrawColor(EasyChat.OutlayColor)
-				surface.DrawRect(0,0,w,h)
-				surface.SetDrawColor(EasyChat.TabOutlineColor)
-				surface.DrawOutlinedRect(0,0,w,h)
-			end
 
 			apply.DoClick = function()
 				for k,v in pairs(checkboxes) do
@@ -708,6 +819,16 @@ if CLIENT then
 
 			resetc.DoClick = ResetColors
 
+			if EasyChat.UseDermaSkin then
+				olcol:SetVisible(false)
+				ololcol:SetVisible(false)
+				tabcol:SetVisible(false)
+				tabolcol:SetVisible(false)
+				mixer:SetVisible(false)
+				apply:SetVisible(false)
+				resetc:SetVisible(false)
+			end
+
 			local fontentry = panel:Add("DTextEntry")
 			fontentry:SetPos(15,190)
 			fontentry:SetSize(100,25)
@@ -718,29 +839,57 @@ if CLIENT then
 			fontapply:SetSize(100,25)
 			fontapply:SetText("Apply Font")
 			fontapply:SetTextColor(EasyChat.TextColor)
-			fontapply.Paint = function(self,w,h)
-				surface.SetDrawColor(EasyChat.OutlayColor)
-				surface.DrawRect(0,0,w,h)
-				surface.SetDrawColor(EasyChat.TabOutlineColor)
-				surface.DrawOutlinedRect(0,0,w,h)
-			end
+
 			fontapply.DoClick = function()
 				LocalPlayer():ConCommand("easychat_font "..fontentry:GetValue())
 			end
 
+			local lfontsize = panel:Add("DLabel")
+			lfontsize:SetPos(15,260)
+			lfontsize:SetSize(100,10)
+			lfontsize:SetText("Font size")
+
+			local fontsize = panel:Add("DNumberWang")
+			fontsize:SetPos(15,270)
+			fontsize:SetSize(100,25)
+			fontsize:SetMin(0)
+			fontsize:SetMax(40)
+			fontsize:SetValue(font_size)
+			fontsize.OnValueChanged = function(self,val)
+				LocalPlayer():ConCommand("easychat_font_size "..val)
+			end
+			cvars.AddChangeCallback("easychat_font_size",function(name,old,new)
+				fontsize:SetValue(GetConVar("easychat_font_size"):GetInt())
+			end)
+
+			local lhfontsize = panel:Add("DLabel")
+			lhfontsize:SetPos(15,300)
+			lhfontsize:SetSize(100,10)
+			lhfontsize:SetText("HUD font size")
+
+			local hfontsize = panel:Add("DNumberWang")
+			hfontsize:SetPos(15,310)
+			hfontsize:SetSize(100,25)
+			hfontsize:SetMin(0)
+			hfontsize:SetMax(40)
+			hfontsize:SetValue(font_hud_size)
+			hfontsize.OnValueChanged = function(self,val)
+				LocalPlayer():ConCommand("easychat_hud_font_size "..val)
+			end
+			cvars.AddChangeCallback("easychat_hud_font_size",function(name,old,new)
+				hfontsize:SetValue(GetConVar("easychat_hud_font_size"):GetInt())
+			end)
+
 			local fontreset = panel:Add("DButton")
-			fontreset:SetPos(15,260)
+			fontreset:SetPos(15,345)
 			fontreset:SetSize(100,25)
 			fontreset:SetText("Reset Font")
 			fontreset:SetTextColor(EasyChat.TextColor)
-			fontreset.Paint = function(self,w,h)
-				surface.SetDrawColor(EasyChat.OutlayColor)
-				surface.DrawRect(0,0,w,h)
-				surface.SetDrawColor(EasyChat.TabOutlineColor)
-				surface.DrawOutlinedRect(0,0,w,h)
-			end
+
 			fontreset.DoClick = function()
 				LocalPlayer():ConCommand("easychat_font Roboto")
+				LocalPlayer():ConCommand("easychat_font_size 17")
+				LocalPlayer():ConCommand("easychat_hud_font_size 19")
 			end
 
 			local chud = panel:Add("DCheckBoxLabel")
@@ -814,12 +963,6 @@ if CLIENT then
 			reseto:SetText("Reset Options")
 			reseto:SetTextColor(EasyChat.TextColor)
 			reseto:SetSize(100,25)
-			reseto.Paint = function(self,w,h)
-				surface.SetDrawColor(EasyChat.OutlayColor)
-				surface.DrawRect(0,0,w,h)
-				surface.SetDrawColor(EasyChat.TabOutlineColor)
-				surface.DrawOutlinedRect(0,0,w,h)
-			end
 
 			reseto.DoClick = function()
 				LocalPlayer():ConCommand("easychat_timestamps 0")
@@ -835,12 +978,6 @@ if CLIENT then
 			reset:SetText("Reset Everything")
 			reset:SetTextColor(EasyChat.TextColor)
 			reset:SetSize(100,25)
-			reset.Paint = function(self,w,h)
-				surface.SetDrawColor(EasyChat.OutlayColor)
-				surface.DrawRect(0,0,w,h)
-				surface.SetDrawColor(EasyChat.TabOutlineColor)
-				surface.DrawOutlinedRect(0,0,w,h)
-			end
 
 			reset.DoClick = function()
 				LocalPlayer():ConCommand("easychat_timestamps 0")
@@ -849,26 +986,73 @@ if CLIENT then
 				LocalPlayer():ConCommand("easychat_global_on_open 1")
 				LocalPlayer():ConCommand("easychat_players_colored 1")
 				LocalPlayer():ConCommand("easychat_hud_follow 1")
+				LocalPlayer():ConCommand("easychat_font Roboto")
+				LocalPlayer():ConCommand("easychat_font_size 17")
+				LocalPlayer():ConCommand("easychat_hud_font_size 19")
 				ResetColors()
 			end
+
+			-- yes im doing that here cuz im lazy --
+			concommand.Add("easychat_reset_settings",reset.DoClick)
+			----------------------------------------
 
 			local reload = panel:Add("DButton")
 			reload:SetPos(170,235)
 			reload:SetText("Restart")
 			reload:SetTextColor(EasyChat.TextColor)
 			reload:SetSize(100,25)
-			reload.Paint = function(self,w,h)
-				surface.SetDrawColor(EasyChat.OutlayColor)
-				surface.DrawRect(0,0,w,h)
-				surface.SetDrawColor(EasyChat.TabOutlineColor)
-				surface.DrawOutlinedRect(0,0,w,h)
-			end
 
 			reload.DoClick = function()
 				LocalPlayer():ConCommand("easychat_reload")
 			end
 
+			local useds = panel:Add("DButton")
+			useds:SetPos(170,270)
+			useds:SetText(EasyChat.UseDermaSkin and "Use custom skin" or "Use dermaskin")
+			useds:SetTextColor(EasyChat.TextColor)
+			useds:SetSize(100,25)
+
+			useds.DoClick = function()
+				LocalPlayer():ConCommand("easychat_use_dermaskin "..(EasyChat.UseDermaSkin and 0 or 1))
+			end
+
+			if not EasyChat.UseDermaSkin then
+
+				local paint = function(self,w,h)
+					surface.SetDrawColor(EasyChat.OutlayColor)
+					surface.DrawRect(0,0,w,h)
+					surface.SetDrawColor(EasyChat.TabOutlineColor)
+					surface.DrawOutlinedRect(0,0,w,h)
+				end
+
+				useds.Paint     = paint
+				apply.Paint     = paint
+				resetc.Paint    = paint
+				fontapply.Paint = paint
+				fontreset.Paint = paint
+				reseto.Paint    = paint
+				reset.Paint     = paint
+				reload.Paint    = paint
+
+			end
+
 		end
+
+		EasyChat.AddTags = function()
+			if GetConVar("easychat_timestamps"):GetBool() then
+				EasyChat.AppendText(os.date("%H:%M:%S").."-")
+			end
+			if GetConVar("easychat_teams"):GetBool() then
+				if GetConVar("easychat_teams_colored"):GetBool() then
+					local tcol = team.GetColor(ply:Team())
+					EasyChat.InsertColorChange(tcol.r,tcol.g,tcol.b,tcol.a)
+				end
+				EasyChat.AppendText("["..team.GetName(ply:Team()).."]")
+			end
+		end
+
+
+		hook.Run("EasyChatOnInit")
 
 	end
 
@@ -881,48 +1065,103 @@ if CLIENT then
 		local ply  = net.ReadEntity()
 		local msg  = net.ReadString()
 		local dead = net.ReadBool()
-
-		gamemode.Call("OnPlayerChat", ply, msg, false,dead)
+		EasyChat.AddTags()
+		gamemode.Call("OnPlayerChat", ply, msg,false,dead)
 	end)
 
-	hook.Add("Initialize", tag, EasyChat.Init)
+	net.Receive(netlocalsend,function()
+		local ply  = net.ReadEntity()
+		local msg  = net.ReadString()
+		local dead = net.ReadBool()
+		EasyChat.AddTags()
+		EasyChat.InsertColorChange(255,255,255,255)
+		EasyChat.AppendText("(Local) ")
+		gamemode.Call("OnPlayerChat", ply, msg,false,dead)
+	end)
 
-	EasyChat.CloseWithESC = function()
-		if (gui.IsGameUIVisible()) and (IsValid(EasyChat.ChatBox) and EasyChat.ChatBox:IsVisible()) then
+	hook.Add("Initialize",tag,function()
+		if GetConVar("easychat_enable"):GetBool() then
+			EasyChat.Init()
+		end
+	end)
+
+	hook.Add( "ChatText", tag, function( index, name, text, type )
+		if type == "none" then
+			EasyChat.AppendText( text.."\n" )
+		end
+	end)
+
+	EasyChat.IsChatKeyPressed = function()
+		local letters = {
+			KEY_A,KEY_B,KEY_C,KEY_D,KEY_E,
+			KEY_F,KEY_G,KEY_H,KEY_I,KEY_J,
+			KEY_K,KEY_L,KEY_M,KEY_N,KEY_O,
+			KEY_P,KEY_Q,KEY_R,KEY_S,KEY_T,
+			KEY_U,KEY_V,KEY_W,KEY_X,KEY_Y,
+			KEY_Z,KEY_ENTER,KEY_TAB,
+		}
+		for _,key in pairs(letters) do
+			if input.IsKeyDown(key) then
+				local k = input.GetKeyName(key)
+				return true,((k ~= "TAB" and k ~= "ENTER") and k or "")
+			end
+		end
+		return false
+	end
+
+	EasyChat.KeyChecker = function()
+		if EasyChat.IsOpened() then
 			if input.IsKeyDown(KEY_ESCAPE) then
 				EasyChat.TextEntry:SetText("")
-				gui.HideGameUI()
 				EasyChat.Close()
+			end
+			local tab = EasyChat.TabControl:GetActiveTab()
+			if tab.FocusOn and not tab.FocusOn:HasFocus() then
+				local pressed,key = EasyChat.IsChatKeyPressed()
+				if pressed then
+					tab.FocusOn:RequestFocus()
+					tab.FocusOn:SetText(key)
+					tab.FocusOn:SetCaretPos(#tab.FocusOn:GetText())
+				end
 			end
 		end
 	end
 
-	hook.Add("PreRender", tag, EasyChat.CloseWithESC)
+	hook.Add("PreRender", tag, EasyChat.KeyChecker)
 
 end
 
 EasyChat.Destroy = function()
 	if CLIENT then
 		hook.Remove("HUDPaint",tag)
-		hook.Remove("PlayerBindPress",tag)
+		hook.Remove("StartChat",tag)
 		hook.Remove("HUDShouldDraw",tag)
 		hook.Remove("ChatText", tag)
+		--hook.Remove("PreRender", tag)
 
 		if EasyChat.old_chat_AddText then
 			chat.AddText = EasyChat.old_chat_AddText
 			FindMetaTable("Player").PrintMessage = EasyChat.old_Player_PrintMessage
 		end
 
+		EasyChat.ModeCount = 0
+		EasyChat.Mode = 0
+		EasyChat.Modes = {}
+
 		if EasyChat.IsOpened() then
-			EasyChat.ChatBox:Close()
+			EasyChat.ChatBox:Remove()
 		end
+
 		EasyChat.ChatHUD:Remove()
+		EasyChat.HUDShadow:Remove()
+
 	end
 
 	if SERVER then
 		_G.PrintMessage = EasyChat.old_PrintMessage
 		FindMetaTable("Player").PrintMessage = EasyChat.old_Player_PrintMessage
 	end
+	hook.Run("EasyChatOnDestroy")
 end
 
 concommand.Add("easychat_reload",function()
@@ -934,12 +1173,6 @@ concommand.Add("easychat_reload",function()
 		end
 	end
 end)
-
-if _G.EasyChat then
-	EasyChat.Destroy()
-end
-
-_G.EasyChat = EasyChat
 
 if me then
 	EasyChat.Init()
