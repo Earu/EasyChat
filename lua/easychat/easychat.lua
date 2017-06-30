@@ -317,6 +317,8 @@ if CLIENT then
 				for _,arg in pairs(args) do
 					if type(arg) == "table" then
 						EasyChat.InsertColorChange(arg.r,arg.g,arg.b,arg.a or 255)
+					elseif type(arg) == "number" then
+						EasyChat.AppendText(tostring(arg))
 					elseif type(arg) == "string" then
 						local isurl = EasyChat.IsURL(arg)
 						if isurl then
