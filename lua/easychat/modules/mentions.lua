@@ -1,18 +1,28 @@
 if CLIENT then
-
-    EasyChat.GetMention = function(ply,txt)
-        local txt = string.lower(txt)
-        local lname = string.lower(LocalPlayer():GetName())
-        if string.match(txt,string.PatternSafe(lname)) and IsValid(ply) and ply ~= LocalPlayer() then --Mentions
-            chat.AddText(team.GetColor(ply:Team()),ply:GetName(),Color(244, 167, 66),": "..txt)
+    
+    local Mention = function(arg,txt)
+        if not LocalPlayer().Nick then return end
+        local str = string.lower(txt)
+        local lname = string.lower(string.gsub(LocalPlayer():Nick(),"<.->",""))
+        if not string.match(str,"^[%!|%.|%/]") and string.match(str,string.PatternSafe(lname)) then
             if not system.HasFocus() then
                 system.FlashWindow()
             end
-            return true
+            if type(arg) == "string" then
+                if string.TrimLeft(arg) == "" or string.lower(arg) == lname then return end
+                chat.AddText(Color(114,137,218),"[Discord] "..arg,Color(255,255,255),": "..txt)
+                return false --hide discord message
+            else
+                if not IsValid(arg) then return end
+                if lname == string.lower(string.gsub(arg:Nick(),"<.->","")) then return end
+                chat.AddText(arg,Color(255,255,255),": ",Color(244, 167, 66),txt)
+                return true -- hide chat message
+            end
         end
     end
-
-    hook.Add("OnPlayerChat","EasyChatModuleMention",EasyChat.GetMention)
+    
+    hook.Add("OnPlayerChat","EasyChatModuleMention",Mention)
+    hook.Add("OnDiscordMessage","EasyChatModuleMention",Mention)
 
 end
 
