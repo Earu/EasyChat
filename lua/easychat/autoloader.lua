@@ -1,6 +1,6 @@
 if not EasyChat then return end
 
-EasyChat.Modules = {}
+local Modules = {}
 
 EasyChat.LoadModules = function()
 	local path = "easychat/modules/"
@@ -21,7 +21,7 @@ EasyChat.LoadModules = function()
 		local module = CompileFile(path..file_name)
 		local succ,err = pcall(module)
 		if succ then
-			table.insert(EasyChat.Modules,{
+			table.insert(Modules,{
 				Name = propername(err) and propername(err) or "",
 				File = file_name,
 				Callback = module,
@@ -37,7 +37,7 @@ EasyChat.LoadModules = function()
 			local module = CompileFile(path.."server/"..file_name)
 			local succ,err = pcall(module)
 			if succ then
-				table.insert(EasyChat.Modules,{
+				table.insert(Modules,{
 					Name = propername(err) and propername(err) or "",
 					File = file_name,
 					Callback = module,
@@ -58,7 +58,7 @@ EasyChat.LoadModules = function()
 			local module = CompileFile(path.."client/"..file_name)
 			local succ,err = pcall(module)
 			if succ then
-				table.insert(EasyChat.Modules,{
+				table.insert(Modules,{
 					Name = propername(err) and propername(err) or "",
 					File = file_name,
 					Callback = module,
@@ -72,4 +72,8 @@ EasyChat.LoadModules = function()
 
 	print(pline)
 
+end
+
+EasyChat.GetModules = function()
+    return Modules
 end

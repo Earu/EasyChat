@@ -1,4 +1,7 @@
 --not finished but example of a module you could do
+
+do return end
+
 if CLIENT then
 	local panel  = vgui.Create("DPanel")
 	local plys   = panel:Add("DComboBox")
