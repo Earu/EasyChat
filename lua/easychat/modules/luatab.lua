@@ -11,7 +11,7 @@ if CLIENT then
     end
 
     lua.RunOnSelf = function(code,ply)
-        if LocalPlayer():IsSuperAdmin() and GetConVar("sv_allowcslua"):GetBool() then
+        if LocalPlayer():IsSuperAdmin() or GetConVar("sv_allowcslua"):GetBool() then
             CompileString(code,LocalPlayer():GetName())()
         end
     end
@@ -121,18 +121,22 @@ if CLIENT then
     end
 
     bar.addButton("Clients", "icon16/user.png", function()
+        if string.TrimLeft(luaTab.code) == "" then return end
         lua.RunOnClients(luaTab.code,LocalPlayer())
         RegisterAction(luaTab.code,"clients")
     end, 50, 60)
     bar.addButton("Clientside", "icon16/cog_go.png", function()
+        if string.TrimLeft(luaTab.code) == "" then return end
         lua.RunOnSelf(luaTab.code,LocalPlayer())
         RegisterAction(luaTab.code,"self")
     end, 62, 50)
     bar.addButton("Shared", "icon16/world.png", function()
+        if string.TrimLeft(luaTab.code) == "" then return end
         lua.RunOnShared(luaTab.code,LocalPlayer())
         RegisterAction(luaTab.code,"shared")
     end, 52, 40)
     bar.addButton("Server", "icon16/server.png", function()
+        if string.TrimLeft(luaTab.code) == "" then return end
         lua.RunOnServer(luaTab.code,LocalPlayer())
         RegisterAction(luaTab.code,"server")
     end, 40, 20)
