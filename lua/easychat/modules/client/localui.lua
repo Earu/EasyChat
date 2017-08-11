@@ -1,5 +1,5 @@
-if EasyChat.LocalMessagePanel then
-    EasyChat.LocalMessagePanel:Remove()
+if EasyChat.GUI.LocalPanel then
+    EasyChat.GUI.LocalPanel:Remove()
 end
 
 local panel = vgui.Create("DFrame")
@@ -9,7 +9,8 @@ panel.btnMaxim:Hide()
 panel.btnMinim:Hide()
 
 panel.Think = function(self)
-    local x,y,w,h = EasyChat.ChatBox:GetBounds()
+    if not IsValid(EasyChat.GUI.ChatBox) then return end
+    local x,y,w,h = EasyChat.GUI.ChatBox:GetBounds()
     self:SetPos(x + w,y)
 end
 
@@ -37,13 +38,13 @@ panel.Paint = function(self,w,h)
                 surface.SetTextColor(col.r,col.g,col.g,255)
                 local x,y = surface.GetTextSize(v:GetName())
                 self:SetTall((25 * index) + y + 10)
-                surface.DrawText(v:GetName())
+                surface.DrawText(string.gsub(v:Nick(),"<.->",""))
                 index = index + 1
             end
         end
     end
 end
 
-EasyChat.LocalMessagePanel = panel
+EasyChat.GUI.LocalPanel = panel
 
 return "Local Message UI"
