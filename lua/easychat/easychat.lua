@@ -11,14 +11,7 @@ local netlocalmsg      = "EASY_CHAT_LOCAL_MSG"
 local netlocalsend     = "EASY_CHAT_LOCAL_SEND"
 local tag              = "EasyChat"
 
-AddCSLuaFile("easychat/chathud.lua") -- yo dont forget that
-
------ this is neccesary in case loader file gets removed ----
-EasyChat.LoadModules = function() end
-AddCSLuaFile("easychat/autoloader.lua")
-local Loader = CompileFile("easychat/autoloader.lua")
-pcall(Loader)
--------------------------------------------------------------
+include("easychat/autoloader.lua")
 
 if SERVER then
 
@@ -63,7 +56,7 @@ end
 
 if CLIENT then
 
-	include("easychat/chathud.lua")
+	include("easychat/client/chathud.lua")
 
 	local ec_global_on_open = CreateConVar("easychat_global_on_open","1",FCVAR_ARCHIVE,"Set the chat to always open global chat tab on open")
 	local ec_font 			= CreateConVar("easychat_font","HL2MPTypeDeath",FCVAR_ARCHIVE,"Set the font to use for the chat")
@@ -243,7 +236,9 @@ if CLIENT then
 		end)
 
 		do
-			EasyChat.ChatHUD.Init()
+            if EasyChat.ChatHUD then
+			    EasyChat.ChatHUD.Init()
+            end
 
 			EasyChat.old_chat_AddText = EasyChat.old_chat_AddText or chat.AddText
 			EasyChat.old_chat_GetChatBoxPos = EasyChat.old_chat_GetChatBoxPos or chat.GetChatBoxPos
@@ -285,7 +280,7 @@ if CLIENT then
 				EasyChat.InsertColorChange(255,255,255,255)
 				EasyChat.AppendText("\n")
 				local ok = hook.Run("ChatHudAddText","")
-				if ok ~= false then
+				if ok ~= false and EasyChat.ChatHUD then
 					EasyChat.ChatHUD.AddText("\n\n")
 				end
 				EasyChat.old_chat_AddText(...)
@@ -312,92 +307,15 @@ if CLIENT then
 		end
 
 		do
-			------ Main frame -----
-			local frame = vgui.Create("DFrame")
+			include("easychat/client/chatbox_panel.lua")
+
+			local frame = vgui.Create("ECChatBox")
 			local cx,cy,cw,ch = LoadPosSize()
 			frame:SetSize(cw,ch)
 			frame:SetPos(cx,cy)
-			frame:ShowCloseButton(true)
-			frame:SetDraggable(true)
-			frame:SetSizable(true)
-			frame:SetDeleteOnClose(false)
-			frame:SetTitle("")
-
-			frame.btnClose:Hide()
-			frame.btnMaxim:Hide()
-			frame.btnMinim:Hide()
-
-			local closebtn = frame:Add("DButton")
-			closebtn:SetSize(45,18)
-			closebtn:SetZPos(10)
-			if not EasyChat.UseDermaSkin then
-				closebtn:SetTextColor(Color(200,20,20))
-			end
-			closebtn:SetFont("DermaDefaultBold")
-			closebtn:SetText("X")
-			closebtn.DoClick = function()
-				EasyChat.Close()
-			end
-			closebtn.Think = function(self)
-				local x,y,w,h = frame:GetBounds()
-				self:SetPos(w-self:GetWide()-6,-2)
-			end
-
-			local maximbtn = frame:Add("DButton")
-			maximbtn:SetSize(35,23)
-			maximbtn:SetZPos(10)
-			if not EasyChat.UseDermaSkin then
-				maximbtn:SetTextColor(Color(125,125,125))
-			end
-			maximbtn:SetFont("DermaLarge")
-			maximbtn:SetText("▭")
-			maximbtn.IsFullScreen = false
-			maximbtn.DoClick = function(self)
-				if not self.IsFullScreen then
-					local a,b,c,d = frame:GetBounds()
-					self.Before = {
-						x = a,
-						y = b,
-						w = c,
-						h = d,
-					}
-					frame:SetSize(ScrW(),ScrH())
-					frame:SetPos(0,0)
-					self.IsFullScreen = true
-				else
-					frame:SetPos(self.Before.x,self.Before.y)
-					frame:SetSize(self.Before.w,self.Before.h)
-					self.IsFullScreen = false
-				end
-			end
-			maximbtn.Think = function(self)
-				local x,y,w,h = frame:GetBounds()
-				self:SetPos(w-self:GetWide()-50,-7)
-			end
-
-			------ To make dms and stuff later ------
-			local tabs = frame:Add("DPropertySheet")
-			tabs:SetPos(6,6)
-
-			tabs.old_performlayout = tabs.PerformLayout
-			tabs.PerformLayout = function(self)
-				self.old_performlayout(self)
-				self.tabScroller:SetTall(20)
-			end
-
-			tabs.Think = function(self)
-				local x,y,w,h = frame:GetBounds()
-				tabs:SetSize(w-13,h-11)
-			end
-
-			local scroller = tabs.tabScroller
-			scroller:SetParent(tabs)
-			scroller:Dock(TOP)
-			scroller:SetSize(0,20)
-			scroller.m_iOverlap = -2
 
 			EasyChat.AddTab = function(name,panel)
-				local tab = tabs:AddSheet(name,panel)
+				local tab = frame.Tabs:AddSheet(name,panel)
 				tab.Tab:SetFont("EasyChatFont")
 				tab.Tab:SetTextColor(Color(255,255,255))
 				EasyChat.Tabs[name] = tab
@@ -410,8 +328,7 @@ if CLIENT then
 						surface.DrawOutlinedRect(0, 0, w,h)
 					end
 					tab.Tab.Paint = function(self,w,h)
-						local wide,tall = w, h
-						if self == tabs:GetActiveTab() then
+						if self == frame.Tabs:GetActiveTab() then
 							self.Flashed = false
 							tab.NotificationCount = 0
 							surface.SetDrawColor(EasyChat.OutlayColor)
@@ -422,11 +339,11 @@ if CLIENT then
 								surface.SetDrawColor(EasyChat.TabColor)
 							end
 						end
-						surface.DrawRect(0,0, wide, tall)
+						surface.DrawRect(0,0,w,h)
 						surface.SetDrawColor(EasyChat.TabOutlineColor)
-						surface.DrawLine(0,0,wide,0)
-						surface.DrawLine(0,0,0,tall)
-						surface.DrawLine(wide-1,0,wide-1,tall)
+						surface.DrawLine(0,0,w,0)
+						surface.DrawLine(0,0,0,h)
+						surface.DrawLine(w-1,0,w-1,h)
 					end
 				end
 			end
@@ -444,95 +361,18 @@ if CLIENT then
 				end
 			end
 
-			------ Global chat ----
-			local maintab = vgui.Create("DPanel")
+			include("easychat/client/chat_tab.lua")
+
+			local maintab = vgui.Create("ECChatTab")
 			EasyChat.AddTab("Global",maintab)
-
-			local richt = maintab:Add("RichText")
-			richt:SetVerticalScrollbarEnabled(true)
-			richt.Think = function(self)
-				local x,y,w,h = frame:GetBounds()
-				self:SetSize(w-15,h-50)
-			end
-			richt.PerformLayout = function(self)
-				self:SetFontInternal("EasyChatFont")
-				self:SetFGColor(EasyChat.UseDermaSkin and EasyChat.TextColor or Color(0,0,0,255))
-			end
-
-			local dbutton = maintab:Add("DButton")
-			dbutton:SetTextColor(EasyChat.TextColor)
-			dbutton:SetText("Say")
-			dbutton:SetSize(65,20)
-			dbutton:SetZPos(10)
-			dbutton.Think = function(self)
-				local x,y,w,h = maintab:GetBounds()
-				self:SetPos(0,h-self:GetTall())
-				if EasyChat.Mode == 0 then
-					self:SetText("Say")
-				else
-					self:SetText(EasyChat.Modes[EasyChat.Mode].Name)
-				end
-			end
-			dbutton.DoClick = function()
-				local modeplus = EasyChat.Mode + 1
-				EasyChat.Mode = modeplus > EasyChat.ModeCount and 0 or modeplus
-			end
-
-			local tentry = maintab:Add("DTextEntry")
-			tentry.Think = function(self)
-				local x,y,w,h = maintab:GetBounds()
-				self:SetSize(w-dbutton:GetWide(),20)
-				self:SetPos(dbutton:GetWide(),h-20)
-			end
-			tentry:SetHistoryEnabled(true)
-			tentry.HistoryPos = 0
-			tentry:SetUpdateOnType(true)
-			tentry:SetZPos(10)
-
-			EasyChat.SetFocusForOn("Global",tentry)
-
-			if not EasyChat.UseDermaSkin then
-				frame.Paint = function(self,w,h)
-					surface.SetDrawColor(EasyChat.OutlayColor)
-					surface.DrawRect(0,0,w,h)
-					surface.SetDrawColor(EasyChat.OutlayOutlineColor)
-					surface.DrawOutlinedRect(0,0,w,h)
-				end
-
-				closebtn.Paint = function(self,w,h)
-					draw.RoundedBoxEx(3,0,0,w,h,EasyChat.OutlayOutlineColor,false,true,false,true)
-					draw.RoundedBoxEx(3,1,1,w-2,h-2,Color(246,40,40),false,true,false,true)
-					surface.SetDrawColor(EasyChat.OutlayOutlineColor)
-					surface.DrawLine(0,2,w,2)
-				end
-
-				maximbtn.Paint = function(self,w,h)
-					draw.RoundedBoxEx(3,0,0,w,h,EasyChat.OutlayOutlineColor,true,false,true,false)
-					draw.RoundedBoxEx(3,1,1,w-2,h-2,Color(225,225,225),true,false,true,false)
-					surface.SetDrawColor(EasyChat.OutlayOutlineColor)
-					surface.DrawLine(0,7,w,7)
-				end
-
-
-				tabs.Paint = function(self,w,h)
-					surface.SetDrawColor(0,0,0,0)
-					surface.DrawRect(0, 0, w, h)
-				end
-
-				dbutton.Paint = function(self,w,h)
-					surface.SetDrawColor(EasyChat.OutlayColor)
-					surface.DrawRect(0,0,w,h)
-					surface.SetDrawColor(EasyChat.TabOutlineColor)
-					surface.DrawOutlinedRect(0,0,w,h)
-				end
-			end
+			EasyChat.SetFocusForOn("Global",maintab.TextEntry)
 
 			-- Only the neccesary elements --
 			EasyChat.GUI = {
-				ChatBox = frame,
-				TextEntry = tentry,
-				RichText = richt,
-				TabControl = tabs,
+				ChatBox 	= frame,
+				TextEntry 	= maintab.TextEntry,
+				RichText 	= maintab.RichText,
+				TabControl 	= frame.Tabs,
 			}
 
 			EasyChat.Close()
@@ -665,9 +505,17 @@ if CLIENT then
 			gamemode.Call("ChatTextChanged",text)
 		end
 
+		include("easychat/client/browser_panel.lua")
+
+		EasyChat.OpenURL = function(url)
+			local browser = vgui.Create("ECBrowser")
+			browser:MakePopup()
+			browser:OpenURL(url or "www.google.com")
+		end
+
 		EasyChat.GUI.RichText.ActionSignal = function(self,name,value)
 			if name == "TextClicked" then
-				gui.OpenURL(value)
+				EasyChat.OpenURL(value)
 			end
 		end
 
@@ -1011,7 +859,7 @@ if CLIENT then
 		end)
 
 		hook.Add("Think",tag,function()
-			if not IsValid(EasyChat.GUI.ChatBox) or not IsValid(EasyChat.ChatHUD.Frame) then return end
+			if not IsValid(EasyChat.GUI.ChatBox) or not EasyChat.ChatHUD or (EasyChat.ChatHUD and not IsValid(EasyChat.ChatHUD.Frame)) then return end
 			if not ec_hud_follow:GetBool() then
 					EasyChat.ChatHUD.Frame:SetVisible(true)
 					EasyChat.ChatHUD.Frame:SetPos(25,ScrH() - 370)
@@ -1087,12 +935,12 @@ EasyChat.Destroy = function()
 		EasyChat.Mode = 0
 		EasyChat.Modes = {}
 
-		if IsValid(EasyChat.GUI.ChatBox) then
+		if EasyChat.GUI and IsValid(EasyChat.GUI.ChatBox) then
 			EasyChat.GUI.ChatBox:Remove()
 		end
 
-		if IsValid(EasyChat.ChatHUD) then
-			EasyChat.ChatHUD:Remove()
+		if EasyChat.ChatHUD and IsValid(EasyChat.ChatHUD.Frame) then
+			EasyChat.ChatHUD.Frame:Remove()
 		end
 
 	end

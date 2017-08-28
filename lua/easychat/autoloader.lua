@@ -1,5 +1,3 @@
-if not EasyChat then return end
-
 local Modules = {}
 
 EasyChat.LoadModules = function()
