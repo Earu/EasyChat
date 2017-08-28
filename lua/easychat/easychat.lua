@@ -56,8 +56,6 @@ end
 
 if CLIENT then
 
-	include("easychat/client/chathud.lua")
-
 	local ec_global_on_open = CreateConVar("easychat_global_on_open","1",FCVAR_ARCHIVE,"Set the chat to always open global chat tab on open")
 	local ec_font 			= CreateConVar("easychat_font","HL2MPTypeDeath",FCVAR_ARCHIVE,"Set the font to use for the chat")
 	local ec_font_size 		= CreateConVar("easychat_font_size","17",FCVAR_ARCHIVE,"Set the font size for chatbox")
@@ -86,8 +84,8 @@ if CLIENT then
 		LocalPlayer():ConCommand("easychat_reload")
 	end)
 
-	local font = ec_font:GetString()
-	local font_size = ec_font_size:GetInt()
+	EasyChat.FontName = ec_font:GetString()
+	EasyChat.FontSize = ec_font_size:GetInt()
 
 	local UpdateChatBoxFont = function(fontname,size)
 		surface.CreateFont("EasyChatFont",{
@@ -98,14 +96,14 @@ if CLIENT then
 		})
 	end
 
-	UpdateChatBoxFont(font,font_size)
+	UpdateChatBoxFont(EasyChat.FontName,EasyChat.FontSize)
 
 	cvars.AddChangeCallback("easychat_font",function(name,old,new)
-		UpdateChatBoxFont(new,font_size)
+		UpdateChatBoxFont(new,EasyChat.FontSize)
 	end)
 
 	cvars.AddChangeCallback("easychat_font_size",function(name,old,new)
-		UpdateChatBoxFont(font,tonumber(new))
+		UpdateChatBoxFont(EasyChat.FontName,tonumber(new))
 	end)
 
 	local coljson = file.Read("easychat/colors.txt","DATA")
@@ -127,6 +125,13 @@ if CLIENT then
 	EasyChat.Mode = 0
 	EasyChat.Modes = {}
 	EasyChat.Tabs = {}
+
+	--after easychat var declarations [necessary]
+	include("easychat/client/chathud.lua")
+	include("easychat/client/chatbox_panel.lua")
+	include("easychat/client/browser_panel.lua")
+	include("easychat/client/chat_tab.lua")
+	include("easychat/client/settings_tab.lua")
 
 	EasyChat.AddMode = function(name,callback)
 		table.insert(EasyChat.Modes,{Name = name,Callback = callback})
@@ -222,6 +227,12 @@ if CLIENT then
 		return false
 	end
 
+	EasyChat.OpenURL = function(url)
+		local browser = vgui.Create("ECBrowser")
+		browser:MakePopup()
+		browser:OpenURL(url or "www.google.com")
+	end
+
 	EasyChat.Init = function()
 		hook.Remove("Initialize", tag)
 
@@ -307,8 +318,6 @@ if CLIENT then
 		end
 
 		do
-			include("easychat/client/chatbox_panel.lua")
-
 			local frame = vgui.Create("ECChatBox")
 			local cx,cy,cw,ch = LoadPosSize()
 			frame:SetSize(cw,ch)
@@ -360,8 +369,6 @@ if CLIENT then
 					EasyChat.Tabs[name].NotificationCount = EasyChat.Tabs[name].NotificationCount and EasyChat.Tabs[name].NotificationCount + 1 or 1
 				end
 			end
-
-			include("easychat/client/chat_tab.lua")
 
 			local maintab = vgui.Create("ECChatTab")
 			EasyChat.AddTab("Global",maintab)
@@ -505,14 +512,6 @@ if CLIENT then
 			gamemode.Call("ChatTextChanged",text)
 		end
 
-		include("easychat/client/browser_panel.lua")
-
-		EasyChat.OpenURL = function(url)
-			local browser = vgui.Create("ECBrowser")
-			browser:MakePopup()
-			browser:OpenURL(url or "www.google.com")
-		end
-
 		EasyChat.GUI.RichText.ActionSignal = function(self,name,value)
 			if name == "TextClicked" then
 				EasyChat.OpenURL(value)
@@ -528,287 +527,8 @@ if CLIENT then
 			EasyChat.LoadModules()
 		end
 
-		do
-
-			local ResetColors = function()
-				EasyChat.OutlayColor        = Color(62,62,62,173)
-				EasyChat.OutlayOutlineColor = Color(104,104,104,103)
-				EasyChat.TabOutlineColor    = Color(74,72,72,255)
-				EasyChat.TabColor     		= Color(43,43,43,255)
-				local tab = {
-					outlay = EasyChat.OutlayColor,
-					outlayoutline = EasyChat.OutlayOutlineColor,
-					tab = EasyChat.TabColor,
-					taboutline = EasyChat.TabOutlineColor,
-				}
-				local json = util.TableToJSON(tab,true)
-				file.Write("easychat/colors.txt",json)
-			end
-
-			local panel = vgui.Create("DScrollPanel")
-			EasyChat.AddTab("Settings",panel)
-
-			local checkboxes = {}
-
-			local olcol = panel:Add("DCheckBoxLabel")
-			olcol:SetText("Outlay Color")
-			olcol:SetPos(15,15)
-			table.insert(checkboxes,olcol)
-
-			local ololcol = panel:Add("DCheckBoxLabel")
-			ololcol:SetText("Outlay Outline Color")
-			ololcol:SetPos(15,40)
-			table.insert(checkboxes,ololcol)
-
-			local tabcol = panel:Add("DCheckBoxLabel")
-			tabcol:SetText("Tab Color")
-			tabcol:SetPos(15,65)
-			table.insert(checkboxes,tabcol)
-
-			local tabolcol = panel:Add("DCheckBoxLabel")
-			tabolcol:SetText("Tab Outline Color")
-			tabolcol:SetPos(15,90)
-			table.insert(checkboxes,tabolcol)
-
-			local mixer = panel:Add("DColorMixer")
-			mixer:Dock(RIGHT)
-			mixer:DockMargin(0,15,15,0)
-
-			local apply = panel:Add("DButton")
-			apply:SetPos(15,115)
-			apply:SetText("Apply Color")
-			apply:SetTextColor(EasyChat.TextColor)
-			apply:SetSize(100,25)
-
-			local resetc = panel:Add("DButton")
-			resetc:SetPos(15,150)
-			resetc:SetText("Reset Colors")
-			resetc:SetTextColor(EasyChat.TextColor)
-			resetc:SetSize(100,25)
-
-			apply.DoClick = function()
-				for k,v in pairs(checkboxes) do
-					if v:GetChecked() then
-						if v:GetText() == "Outlay Color" then
-							EasyChat.OutlayColor = mixer:GetColor()
-						elseif v:GetText() == "Outlay Outline Color" then
-							EasyChat.OutlayOutlineColor = mixer:GetColor()
-						elseif v:GetText() == "Tab Color" then
-							EasyChat.TabColor = mixer:GetColor()
-						elseif v:GetText() == "Tab Outline Color" then
-							EasyChat.TabOutlineColor = mixer:GetColor()
-						end
-					end
-				end
-				local tab = {
-					outlay = EasyChat.OutlayColor,
-					outlayoutline = EasyChat.OutlayOutlineColor,
-					tab = EasyChat.TabColor,
-					taboutline = EasyChat.TabOutlineColor,
-				}
-				local json = util.TableToJSON(tab,true)
-				file.Write("easychat/colors.txt",json)
-			end
-
-			resetc.DoClick = ResetColors
-
-			if EasyChat.UseDermaSkin then
-				olcol:SetVisible(false)
-				ololcol:SetVisible(false)
-				tabcol:SetVisible(false)
-				tabolcol:SetVisible(false)
-				mixer:SetVisible(false)
-				apply:SetVisible(false)
-				resetc:SetVisible(false)
-			end
-
-			local fontentry = panel:Add("DTextEntry")
-			fontentry:SetPos(15,190)
-			fontentry:SetSize(100,25)
-			fontentry:SetText("font name here")
-
-			local fontapply = panel:Add("DButton")
-			fontapply:SetPos(15,225)
-			fontapply:SetSize(100,25)
-			fontapply:SetText("Apply Font")
-			fontapply:SetTextColor(EasyChat.TextColor)
-
-			fontapply.DoClick = function()
-				LocalPlayer():ConCommand("easychat_font "..fontentry:GetValue())
-			end
-
-			local lfontsize = panel:Add("DLabel")
-			lfontsize:SetPos(15,260)
-			lfontsize:SetSize(100,10)
-			lfontsize:SetText("Font size")
-
-			local fontsize = panel:Add("DNumberWang")
-			fontsize:SetPos(15,270)
-			fontsize:SetSize(100,25)
-			fontsize:SetMin(0)
-			fontsize:SetMax(40)
-			fontsize:SetValue(font_size)
-			fontsize.OnValueChanged = function(self,val)
-				LocalPlayer():ConCommand("easychat_font_size "..val)
-			end
-			cvars.AddChangeCallback("easychat_font_size",function(name,old,new)
-				fontsize:SetValue(tonumber(new))
-			end)
-
-			local fontreset = panel:Add("DButton")
-			fontreset:SetPos(15,345)
-			fontreset:SetSize(100,25)
-			fontreset:SetText("Reset Font")
-			fontreset:SetTextColor(EasyChat.TextColor)
-
-			fontreset.DoClick = function()
-				LocalPlayer():ConCommand("easychat_font Roboto")
-				LocalPlayer():ConCommand("easychat_font_size 17")
-			end
-
-			local hfollow = panel:Add("DCheckBoxLabel")
-			hfollow:SetText("HUD follows chatbox")
-			hfollow:SetPos(170,15)
-			hfollow:SetChecked(ec_hud_follow:GetBool())
-			hfollow.OnChange = function(self,val)
-				LocalPlayer():ConCommand("easychat_hud_follow "..(val and 1 or 0))
-			end
-			cvars.AddChangeCallback("easychat_hud_follow",function(name,old,new)
-				hfollow:SetChecked(old == "0")
-			end)
-
-			local tstamps = panel:Add("DCheckBoxLabel")
-			tstamps:SetText("Display timestamps")
-			tstamps:SetPos(170,40)
-			tstamps:SetChecked(ec_timestamps:GetBool())
-			tstamps.OnChange = function(self,val)
-				LocalPlayer():ConCommand("easychat_timestamps "..(val and 1 or 0))
-			end
-			cvars.AddChangeCallback("easychat_timestamps",function(name,old,new)
-				tstamps:SetChecked(old == "0")
-			end)
-
-			local teams = panel:Add("DCheckBoxLabel")
-			teams:SetText("Display team tags")
-			teams:SetPos(170,65)
-			teams:SetChecked(ec_teams:GetBool())
-			teams.OnChange = function(self,val)
-				LocalPlayer():ConCommand("easychat_teams "..(val and 1 or 0))
-			end
-			cvars.AddChangeCallback("easychat_teams",function(name,old,new)
-				teams:SetChecked(old == "0")
-			end)
-
-			local teamsc = panel:Add("DCheckBoxLabel")
-			teamsc:SetText("Color team tags")
-			teamsc:SetPos(170,90)
-			teamsc:SetChecked(ec_teams_color:GetBool())
-			teamsc.OnChange = function(self,val)
-				LocalPlayer():ConCommand("easychat_teams_colored "..(val and 1 or 0))
-			end
-			cvars.AddChangeCallback("easychat_teams_colored",function(name,old,new)
-				teamsc:SetChecked(old == "0")
-			end)
-
-			local plc = panel:Add("DCheckBoxLabel")
-			plc:SetText("Color players")
-			plc:SetPos(170,115)
-			plc:SetChecked(ec_player_color:GetBool())
-			plc.OnChange = function(self,val)
-				LocalPlayer():ConCommand("easychat_players_colored "..(val and 1 or 0))
-			end
-			cvars.AddChangeCallback("easychat_players_colored",function(name,old,new)
-				plc:SetChecked(old == "0")
-			end)
-
-			local global = panel:Add("DCheckBoxLabel")
-			global:SetText("Global tab on open")
-			global:SetPos(170,140)
-			global:SetChecked(ec_global_on_open:GetBool())
-			global.OnChange = function(self,val)
-				LocalPlayer():ConCommand("easychat_global_on_open "..(val and 1 or 0))
-			end
-			cvars.AddChangeCallback("easychat_global_on_open",function(name,old,new)
-				global:SetChecked(old == "0")
-			end)
-
-			local reseto = panel:Add("DButton")
-			reseto:SetPos(170,165)
-			reseto:SetText("Reset Options")
-			reseto:SetTextColor(EasyChat.TextColor)
-			reseto:SetSize(100,25)
-
-			reseto.DoClick = function()
-				LocalPlayer():ConCommand("easychat_timestamps 0")
-				LocalPlayer():ConCommand("easychat_teams 0")
-				LocalPlayer():ConCommand("easychat_teams_colored 0")
-				LocalPlayer():ConCommand("easychat_global_on_open 1")
-				LocalPlayer():ConCommand("easychat_players_colored 1")
-			end
-
-			local reset = panel:Add("DButton")
-			reset:SetPos(170,200)
-			reset:SetText("Reset Everything")
-			reset:SetTextColor(EasyChat.TextColor)
-			reset:SetSize(100,25)
-
-			reset.DoClick = function()
-				LocalPlayer():ConCommand("easychat_timestamps 0")
-				LocalPlayer():ConCommand("easychat_teams 0")
-				LocalPlayer():ConCommand("easychat_teams_colored 0")
-				LocalPlayer():ConCommand("easychat_global_on_open 1")
-				LocalPlayer():ConCommand("easychat_players_colored 1")
-				LocalPlayer():ConCommand("easychat_font HL2MPTypeDeath")
-				LocalPlayer():ConCommand("easychat_font_size 17")
-
-				ResetColors()
-			end
-
-			-- yes im doing that here cuz im lazy --
-			concommand.Add("easychat_reset_settings",reset.DoClick)
-			----------------------------------------
-
-			local reload = panel:Add("DButton")
-			reload:SetPos(170,235)
-			reload:SetText("Restart")
-			reload:SetTextColor(EasyChat.TextColor)
-			reload:SetSize(100,25)
-
-			reload.DoClick = function()
-				LocalPlayer():ConCommand("easychat_reload")
-			end
-
-			local useds = panel:Add("DButton")
-			useds:SetPos(170,270)
-			useds:SetText(EasyChat.UseDermaSkin and "Use custom skin" or "Use dermaskin")
-			useds:SetTextColor(EasyChat.TextColor)
-			useds:SetSize(100,25)
-
-			useds.DoClick = function()
-				LocalPlayer():ConCommand("easychat_use_dermaskin "..(EasyChat.UseDermaSkin and 0 or 1))
-			end
-
-			if not EasyChat.UseDermaSkin then
-
-				local paint = function(self,w,h)
-					surface.SetDrawColor(EasyChat.OutlayColor)
-					surface.DrawRect(0,0,w,h)
-					surface.SetDrawColor(EasyChat.TabOutlineColor)
-					surface.DrawOutlinedRect(0,0,w,h)
-				end
-
-				useds.Paint     = paint
-				apply.Paint     = paint
-				resetc.Paint    = paint
-				fontapply.Paint = paint
-				fontreset.Paint = paint
-				reseto.Paint    = paint
-				reset.Paint     = paint
-				reload.Paint    = paint
-
-			end
-
-		end
+		local settings = vgui.Create("ECSettingsTab")
+		EasyChat.AddTab("Settings",settings)
 
 		hook.Add("ChatText",tag, function(index,name,text,type)
 			if type == "none" then
