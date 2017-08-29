@@ -83,20 +83,11 @@ local settings_tab = {
         self.TxtFontName:SetSize(100,25)
         self.TxtFontName:SetText("font name here")
 
-        self.BtnApplyFont:SetPos(15,225)
-        self.BtnApplyFont:SetSize(100,25)
-        self.BtnApplyFont:SetText("Apply Font")
-        self.BtnApplyFont:SetTextColor(EasyChat.TextColor)
-
-        self.BtnApplyFont.DoClick = function()
-            RunConsoleCommand("easychat_font",self.TxtFontName:GetValue())
-        end
-
-        self.LblFontSize:SetPos(15,260)
+        self.LblFontSize:SetPos(15,220)
         self.LblFontSize:SetSize(100,10)
         self.LblFontSize:SetText("Font size")
 
-        self.NbrWFontSize:SetPos(15,270)
+        self.NbrWFontSize:SetPos(15,230)
         self.NbrWFontSize:SetSize(100,25)
         self.NbrWFontSize:SetMin(0)
         self.NbrWFontSize:SetMax(40)
@@ -108,7 +99,16 @@ local settings_tab = {
             self.NbrWFontSize:SetValue(tonumber(new))
         end)
 
-        self.BtnFontReset:SetPos(15,315)
+        self.BtnApplyFont:SetPos(15,275) --270
+        self.BtnApplyFont:SetSize(100,25)
+        self.BtnApplyFont:SetText("Apply Font")
+        self.BtnApplyFont:SetTextColor(EasyChat.TextColor)
+
+        self.BtnApplyFont.DoClick = function()
+            RunConsoleCommand("easychat_font",self.TxtFontName:GetValue())
+        end
+
+        self.BtnFontReset:SetPos(15,310)
         self.BtnFontReset:SetSize(100,25)
         self.BtnFontReset:SetText("Reset Font")
         self.BtnFontReset:SetTextColor(EasyChat.TextColor)
