@@ -29,6 +29,7 @@ if SERVER then
 		net.WriteString(msg)
 		net.WriteBool(IsValid(ply) and (not ply:Alive()) or false)
 		net.Broadcast()
+		print((string.gsub(ply:Nick(),"<.->",""))..": "..msg) --shows in server console
 	end)
 
 	net.Receive(netlocalmsg,function(len,ply)
