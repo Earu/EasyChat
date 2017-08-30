@@ -5,6 +5,8 @@ end
 local EasyChat = _G.EasyChat or {}
 _G.EasyChat = EasyChat
 
+local print = _G._print or _G.print
+
 local netbroadcastmsgs = "EASY_CHAT_BROADCAST_MSG"
 local netreceivemsg    = "EASY_CHAT_RECEIVE_MSG"
 local netlocalmsg      = "EASY_CHAT_LOCAL_MSG"
