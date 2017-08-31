@@ -306,10 +306,6 @@ if CLIENT then
 				end
 				EasyChat.InsertColorChange(255,255,255,255)
 				EasyChat.AppendText("\n")
-				local ok = hook.Run("ChatHudAddText","")
-				if ok ~= false and EasyChat.ChatHUD then
-					EasyChat.ChatHUD.AddText("\n\n")
-				end
 				EasyChat.old_chat_AddText(...)
 			end
 
