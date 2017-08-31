@@ -99,7 +99,7 @@ local settings_tab = {
             self.NbrWFontSize:SetValue(tonumber(new))
         end)
 
-        self.BtnApplyFont:SetPos(15,275) --270
+        self.BtnApplyFont:SetPos(15,270) --270
         self.BtnApplyFont:SetSize(100,25)
         self.BtnApplyFont:SetText("Apply Font")
         self.BtnApplyFont:SetTextColor(EasyChat.TextColor)
@@ -108,7 +108,7 @@ local settings_tab = {
             RunConsoleCommand("easychat_font",self.TxtFontName:GetValue())
         end
 
-        self.BtnFontReset:SetPos(15,305)
+        self.BtnFontReset:SetPos(15,300)
         self.BtnFontReset:SetSize(100,25)
         self.BtnFontReset:SetText("Reset Font")
         self.BtnFontReset:SetTextColor(EasyChat.TextColor)
