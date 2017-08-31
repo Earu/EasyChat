@@ -5,16 +5,16 @@ end
 local ChatHUD = EasyChat.ChatHUD or {}
 EasyChat.ChatHUD = ChatHUD
 
-ChatHUD.Arguments = {}
+ChatHUD.Arguments       = {}
 ChatHUD.DefaultFontSize = 17
-ChatHUD.DefaultFont = "DermaDefault"
-ChatHUD.CurrentSize = ChatHUD.DefaultFontSize
-ChatHUD.CurrentFont = ChatHUD.DefaultFont
-ChatHUD.CurrentColor = Color(255,255,255)
-ChatHUD.CurrentWidth = 527
-ChatHUD.MaxHistory = 100
-ChatHUD.FadeTime = 16
-ChatHUD.FadingTime = 2
+ChatHUD.DefaultFont     = "DermaDefault"
+ChatHUD.CurrentSize     = ChatHUD.DefaultFontSize
+ChatHUD.CurrentFont     = ChatHUD.DefaultFont
+ChatHUD.CurrentColor    = Color(255,255,255)
+ChatHUD.CurrentWidth    = 550
+ChatHUD.MaxHistory      = 100
+ChatHUD.TimeToFade      = 16  -- seconds
+ChatHUD.FadeTime        = 300 -- frames
 ChatHUD.Tags = {}
 
 surface.CreateFont("ChatHUDFont",{
@@ -192,24 +192,31 @@ end
 --[[
     DRAWING DECLARATIONS
 ]]--
-ChatHUD.Fade = function(arg,col) --fading doesnt work
+ChatHUD.Fade = function(arg,col)
     local col = col or ChatHUD.CurrentColor
     local bgcol = Color(25,50,100,255)
-    arg.fade = arg.fade or (RealTime() + ChatHUD.FadeTime)
-    if arg.fade and arg.fade <= RealTime() then
-        arg.fading = arg.fading and arg.fading or (RealTime() + ChatHUD.FadingTime)
-        local a = Lerp(RealTime()/arg.fading,col.a,0)
-        local bga = Lerp(RealTime()/arg.fading,bgcol.a,0)
-        col = Color(col.r,col.g,col.b,a)
-        bgcol = Color(bgcol.r,bgcol.g,bgcol.b,bga)
+
+    arg.TimeToFade = arg.TimeToFade or (RealTime() + ChatHUD.TimeToFade)
+
+    if arg.TimeToFade and arg.TimeToFade <= RealTime() then
+        local t = ChatHUD.FadeTime
+
+        arg.__a = arg.__a and math.Clamp(arg.__a - (1/t),0,t) or col.a/t
+        arg.__bga = arg.__bga and math.Clamp(arg.__bga - (1/t),0,t) or bgcol.a/t
+
+        col = Color(col.r,col.g,col.b,arg.__a)
+        bgcol = Color(bgcol.r,bgcol.g,bgcol.b,arg.__bga)
+
     end
+
     return col,bgcol
+
 end
 
 ChatHUD.DrawText = function(txt,x,y,bgcol,col)
     surface.SetTextColor(bgcol)
     surface.SetFont("ChatHUDShadowFont")
-    for i = 1,7 do
+    for i = 1,10 do
         surface.SetTextPos(x,y)
         surface.DrawText(txt)
     end
@@ -267,8 +274,8 @@ end
 
 ChatHUD.Init = function()
     ChatHUD.Frame = vgui.Create("DPanel")
-    ChatHUD.Frame:SetPos(25,ScrH() - 370)
-    ChatHUD.Frame:SetSize(527,315)
+    ChatHUD.Frame:SetPos(25,ScrH() - 400)
+    ChatHUD.Frame:SetSize(550,320)
     ChatHUD.Frame.Paint = ChatHUD.Draw
 end
 
