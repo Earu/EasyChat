@@ -115,7 +115,7 @@ HashString = function(str,max_width)
 
 			local final_str = string.Trim(string.sub(str,str_start,str_end))
 			table.insert(lines,final_str)
-			Start = End + 1
+			str_start = str_end + 1
 		end
 	end
 
