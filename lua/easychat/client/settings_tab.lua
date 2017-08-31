@@ -108,7 +108,7 @@ local settings_tab = {
             RunConsoleCommand("easychat_font",self.TxtFontName:GetValue())
         end
 
-        self.BtnFontReset:SetPos(15,315)
+        self.BtnFontReset:SetPos(15,310)
         self.BtnFontReset:SetSize(100,25)
         self.BtnFontReset:SetText("Reset Font")
         self.BtnFontReset:SetTextColor(EasyChat.TextColor)
