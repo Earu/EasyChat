@@ -247,7 +247,7 @@ if CLIENT then
 
 		EasyChat.AddMode("Team",function(text)
 			net.Start(netreceivemsg)
-			net.WriteString(string.sub(self:GetText(),1,3000))
+			net.WriteString(text)
 			net.WriteBool(true)
 			net.SendToServer()
 		end)
