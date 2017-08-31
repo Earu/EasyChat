@@ -632,7 +632,9 @@ if CLIENT then
 		local dead = net.ReadBool()
 		local isteam = net.ReadBool()
 		AddTags(ply)
-		EasyChat.AppendText("(Team)")
+		if isteam then
+			EasyChat.AppendText("(Team)")
+		end
 		gamemode.Call("OnPlayerChat",ply,msg,false,dead)
 	end)
 
