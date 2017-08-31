@@ -204,7 +204,7 @@ if CLIENT then
 			end
 			return tab.x,tab.y,tab.w,tab.h
 		else
-			return 25,ScrH()-370,527,315
+			return 25,ScrH()-370,550,320
 		end
 	end
 
