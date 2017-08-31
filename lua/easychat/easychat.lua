@@ -24,14 +24,20 @@ if SERVER then
 
 	net.Receive(netreceivemsg,function(len,ply)
 		local str = net.ReadString()
-		local msg = gamemode.Call("PlayerSay", ply, str, false)
+		local isteam = net.ReadBool()
+		local msg = gamemode.Call("PlayerSay",ply,str,isteam)
 		if type(msg) ~= "string" or string.Trim(msg) == "" then return end
 		net.Start(netbroadcastmsgs)
 		net.WriteEntity(ply)
 		net.WriteString(msg)
 		net.WriteBool(IsValid(ply) and (not ply:Alive()) or false)
-		net.Broadcast()
-		print((string.gsub(ply:Nick(),"<.->",""))..": "..msg) --shows in server console
+		net.WriteBool(isteam)
+		if isteam then
+			net.Send(team.GetPlayers(ply:Team()))
+		else
+			net.Broadcast()
+			print((string.gsub(ply:Nick(),"<.->",""))..": "..msg) --shows in server console
+		end
 	end)
 
 	net.Receive(netlocalmsg,function(len,ply)
@@ -147,10 +153,10 @@ if CLIENT then
 
 	EasyChat.NextNotify = 0
 
-	EasyChat.Open = function()
+	EasyChat.Open = function(isteam)
 		EasyChat.GUI.ChatBox:Show()
 		EasyChat.GUI.ChatBox:MakePopup()
-		EasyChat.Mode = 0
+		EasyChat.Mode = isteam and 1 or 0
 		if ec_global_on_open:GetBool() then
 			EasyChat.GUI.TabControl:SetActiveTab(EasyChat.GUI.TabControl.Items[1].Tab)
 			EasyChat.GUI.TextEntry:RequestFocus()
@@ -238,6 +244,13 @@ if CLIENT then
 
 	EasyChat.Init = function()
 		hook.Remove("Initialize", tag)
+
+		EasyChat.AddMode("Team",function(text)
+			net.Start(netreceivemsg)
+			net.WriteString(string.sub(self:GetText(),1,3000))
+			net.WriteBool(true)
+			net.SendToServer()
+		end)
 
 		EasyChat.AddMode("Local",function(text)
 			net.Start(netlocalmsg)
@@ -487,6 +500,7 @@ if CLIENT then
 					if EasyChat.Mode == 0 then
 						net.Start(netreceivemsg)
 						net.WriteString(string.sub(self:GetText(),1,3000))
+						net.WriteBool(false)
 						net.SendToServer()
 					else
 						local mode = EasyChat.Modes[EasyChat.Mode]
@@ -521,8 +535,8 @@ if CLIENT then
 			end
 		end
 
-		hook.Add("StartChat",tag,function(team)
-			EasyChat.Open()
+		hook.Add("StartChat",tag,function(isteam)
+			EasyChat.Open(isteam)
 			return true
 		end)
 
@@ -616,7 +630,9 @@ if CLIENT then
 		local ply  = net.ReadEntity()
 		local msg  = net.ReadString()
 		local dead = net.ReadBool()
+		local isteam = net.ReadBool()
 		AddTags(ply)
+		EasyChat.AppendText("(Team)")
 		gamemode.Call("OnPlayerChat",ply,msg,false,dead)
 	end)
 
