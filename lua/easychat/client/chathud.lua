@@ -102,7 +102,7 @@ HashString = function(str,max_width)
 				I = i
 
 				if (n ~= " " and n ~= "," and n ~= "." and n ~= "\n") then
-					End = End - 1
+					str_end = str_end - 1
 					n = string.sub(str,str_end,str_end)
 				else
 					break
@@ -119,7 +119,7 @@ HashString = function(str,max_width)
 		end
 	end
 
-	table.insert(tbl,string.sub(str,str_start,str_end))
+	table.insert(lines,string.sub(str,str_start,str_end))
 
     return table.concat(lines,"\n")
 end
