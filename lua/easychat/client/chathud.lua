@@ -85,70 +85,42 @@ ParseStoreArgs = function(str)
     StoreArg(parts[#parts],"string")
 end
 
-HashString = function(str, max_width)
-    local max_width = max_width - 5
-    local tbl = string.ToTable(str)
-    local lines = {}
-    local chars = {}
-    local i = 1
-    local width = 0
-    local width_before_last_space = 0
-    local width_of_trailing_space = 0
-    local last_space_index = -1
-    local prev_char
-    while i <= #tbl do
-        local c = tbl[i]
-        surface.SetFont("ChatHUDFont")
-        local char_width,_ = surface.GetTextSize(c)
-        local new_width = width + char_width
-        if c == "\n" then
-            table.insert(lines, table.concat(chars))
-            chars = {}
-            width = 0
-            width_before_last_space = 0
-            width_of_trailing_space = 0
-            prev_char = nil
-            last_space_index = -1
-            i = i + 1
-        elseif char ~= " " and width > max_width then
-            if #chars == 0 then
-                i = i + 1
-            elseif last_space_index ~= -1 then
-                for i = #chars, 1, -1 do
-                    if chars[i] == " " then
-                        break
-                    end
-                    table.remove(chars, i)
-                end
-                width = width_before_last_space
-                i = last_space_index
-                i = i + 1
-            end
-            table.insert(lines, table.concat(chars))
-            chars = {}
-            prev_char = nil
-            width = char_width
-            width_before_last_space = 0
-            width_of_trailing_space = 0
-            last_space_index = -1
-        else
-            if prev_char ~= " " and c == " " then
-                width_before_last_space = width
-            end
-            width = new_width
-            prev_char = c
-            table.insert(chars, c)
-            if c == " " then
-                last_space_index = i
-            elseif c ~= "\n" then
-                width_of_trailing_space = 0
-            end
-            i = i + 1
-        end
-    end
-    if #chars ~= 0 then
-        table.insert(lines, table.concat(chars))
-    end
+HashString = function(str,max_width)
+	local lines = {}
+    local str_len = string.len(str)
+    local str_start = 1
+    local str_end = 1
+
+	while (str_end < str_len) do
+		str_end = str_end + 1
+
+		if (surface.GetTextSize(string.sub(str,str_start,str_end)) > max_width) then
+			local n = string.sub(str,str_end,str_end)
+			local I = 0
+
+			for i = 1, 15 do
+				I = i
+
+				if (n ~= " " and n ~= "," and n ~= "." and n ~= "\n") then
+					End = End - 1
+					n = string.sub(str,str_end,str_end)
+				else
+					break
+				end
+			end
+
+			if (I == 15) then
+				str_end = str_end + 14
+			end
+
+			local final_str = string.Trim(string.sub(str,str_start,str_end))
+			table.insert(lines,final_str)
+			Start = End + 1
+		end
+	end
+
+	table.insert(tbl,string.sub(str,str_start,str_end))
+
     return table.concat(lines,"\n")
 end
 
