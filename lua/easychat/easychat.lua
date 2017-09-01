@@ -521,6 +521,52 @@ if CLIENT then
 			end
 		end
 
+		GAMEMODE.OnPlayerChat = function(self,ply,msg,isteam,isdead,islocal) -- this is for the best
+			local tab = {}
+
+			if ec_enable:GetBool() then
+				if ec_timestamps:GetBool() then
+					table.insert(tab,os.date("%H:%M:%S").." - ")
+				end
+				if IsValid(ply) and ec_teams:GetBool() then
+					if ec_teams_color:GetBool() then
+						local tcol = team.GetColor(ply:Team())
+						table.insert(tab,tcol)
+					end
+					table.insert(tab,"["..team.GetName(ply:Team()).."] - ")
+				end
+			end
+
+			if isdead then
+				table.insert(tab,Color(240,80,80))
+				table.insert(tab,"*DEAD* " )
+			end
+
+			if islocal then
+				table.insert(tab,Color(120,210,255))
+				table.insert(tab,"(Local) ")
+			end
+
+			if isteam then
+				table.insert(tab,Color(120,120,240))
+				table.insert(tab,"(Team) ")
+			end
+
+			if IsValid(ply)  then
+				table.insert(tab,ply)
+			else
+				table.insert(tab,Color(150,150,150))
+				table.insert(tab,"Unknown")
+			end
+
+			table.insert(tab,Color(255,255,255))
+			table.insert(tab,": "..msg)
+
+			chat.AddText(unpack(tab))
+
+			return true
+		end
+
 		EasyChat.GUI.TextEntry.OnValueChange = function(self,text)
 			gamemode.Call("ChatTextChanged",text)
 		end
@@ -608,39 +654,21 @@ if CLIENT then
 
 	end
 
-	local AddTags = function(ply)
-		if not ec_enable:GetBool() then return end
-		if ec_timestamps:GetBool() then
-			EasyChat.AppendText(os.date("%H:%M:%S").." - ")
-		end
-		if ec_teams:GetBool() then
-			if ec_teams_color:GetBool() then
-				local tcol = team.GetColor(ply:Team())
-				EasyChat.InsertColorChange(tcol.r,tcol.g,tcol.b,tcol.a)
-			end
-			EasyChat.AppendText("["..team.GetName(ply:Team()).."] - ")
-		end
-	end
-
 	net.Receive(netbroadcastmsgs,function()
 		local ply  = net.ReadEntity()
 		local msg  = net.ReadString()
 		local dead = net.ReadBool()
 		local isteam = net.ReadBool()
-		AddTags(ply)
-		if isteam then
-			EasyChat.AppendText("(Team)")
-		end
-		gamemode.Call("OnPlayerChat",ply,msg,false,dead)
+
+		gamemode.Call("OnPlayerChat",ply,msg,isteam,dead,false)
 	end)
 
 	net.Receive(netlocalsend,function()
 		local ply  = net.ReadEntity()
 		local msg  = net.ReadString()
 		local dead = net.ReadBool()
-		AddTags(ply)
-		EasyChat.AppendText("(Local)")
-		gamemode.Call("OnPlayerChat",ply,msg,false,dead)
+
+		gamemode.Call("OnPlayerChat",ply,msg,false,dead,true)
 	end)
 
 	hook.Add("Initialize",tag,function()
