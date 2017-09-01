@@ -272,6 +272,7 @@ if CLIENT then
 			EasyChat.old_chat_GetChatBoxSize = EasyChat.old_chat_GetChatBoxSize or chat.GetChatBoxSize
 
 			chat.AddText = function(...)
+				EasyChat.AppendText("\n")
 				local args = { ... }
 				for _,arg in pairs(args) do
 					if type(arg) == "table" then
@@ -304,8 +305,6 @@ if CLIENT then
 						EasyChat.AppendText(str)
 					end
 				end
-				EasyChat.InsertColorChange(255,255,255,255)
-				EasyChat.AppendText("\n")
 				EasyChat.old_chat_AddText(...)
 			end
 
