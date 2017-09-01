@@ -554,8 +554,8 @@ if CLIENT then
 			if IsValid(ply)  then
 				table.insert(tab,ply)
 			else
-				table.insert(tab,Color(150,150,150))
-				table.insert(tab,"Unknown")
+				table.insert(tab,Color(110,247,177))
+				table.insert(tab,"???") -- console or weird stuff
 			end
 
 			table.insert(tab,Color(255,255,255))
