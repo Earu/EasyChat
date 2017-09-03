@@ -6,14 +6,29 @@ local EasyChat = _G.EasyChat or {}
 _G.EasyChat = EasyChat
 
 local print = _G._print or _G.print
+local PLY	= FindMetaTable("Player")
 
 local netbroadcastmsgs = "EASY_CHAT_BROADCAST_MSG"
 local netreceivemsg    = "EASY_CHAT_RECEIVE_MSG"
 local netlocalmsg      = "EASY_CHAT_LOCAL_MSG"
 local netlocalsend     = "EASY_CHAT_LOCAL_SEND"
+local netsettyping	   = "EASY_CHAT_START_CHAT"
 local tag              = "EasyChat"
 
 include("easychat/autoloader.lua")
+
+PLY.ECIsEnabled = function(self)
+	return self:GetInfoNum("easychat_enable",0) == 1
+end
+
+PLY.old_IsTyping = PLY.old_IsTyping or PLY.IsTyping
+PLY.IsTyping = function(self)
+	if self:ECIsEnabled() then
+		return self:GetNWBool("ec_is_typing",false)
+	else
+		return self:old_IsTyping()
+	end
+end
 
 if SERVER then
 
@@ -21,6 +36,7 @@ if SERVER then
 	util.AddNetworkString(netbroadcastmsgs)
 	util.AddNetworkString(netlocalmsg)
 	util.AddNetworkString(netlocalsend)
+	util.AddNetworkString(netsettyping)
 
 	net.Receive(netreceivemsg,function(len,ply)
 		local str = net.ReadString()
@@ -56,6 +72,11 @@ if SERVER then
 		net.Send(receivers)
 	end)
 
+	net.Receive(netsettyping,function(len,ply)
+		local bool = net.ReadBool()
+		ply:SetNWBool("ec_is_typing",bool)
+	end)
+
 	EasyChat.Init = function()
 		EasyChat.LoadModules()
 	end
@@ -85,6 +106,9 @@ if CLIENT then
 			EasyChat.Init()
 		else
 			EasyChat.Destroy()
+			net.Start(netsettyping)	-- this is useful if a user disable easychat with console mode
+			net.WriteBool(true)
+			net.SendToServer()
 		end
 	end)
 
@@ -169,6 +193,9 @@ if CLIENT then
 				end
 			end
 		end
+		net.Start(netsettyping)
+		net.WriteBool(true)
+		net.SendToServer()
 	end
 
 	local SavePosSize = function()
@@ -219,6 +246,9 @@ if CLIENT then
 			SavePosSize()
 			EasyChat.GUI.ChatBox:Hide()
 			chat.Close()
+			net.Start(netsettyping)
+			net.WriteBool(false)
+			net.SendToServer()
 		end
 	end
 
