@@ -93,7 +93,7 @@ if CLIENT then
 	local ec_teams 			= CreateConVar("easychat_teams","0",FCVAR_ARCHIVE,"Display team in front of messages or not")
 	local ec_teams_color 	= CreateConVar("easychat_teams_colored","0",FCVAR_ARCHIVE,"Display team with its relative color")
 	local ec_player_color 	= CreateConVar("easychat_players_colored","1",FCVAR_ARCHIVE,"Display player with its relative team color")
-	local ec_enable 		= CreateConVar("easychat_enable","1",FCVAR_ARCHIVE,"Use easychat or not")
+	local ec_enable 		= CreateConVar("easychat_enable","1",{FCVAR_ARCHIVE,FCVAR_USERINFO},"Use easychat or not")
 	local ec_dermaskin 		= CreateConVar("easychat_use_dermaskin","0",FCVAR_ARCHIVE,"Use dermaskin look or not")
 	local ec_local_msg_dist = CreateConVar("easychat_local_msg_distance","300",FCVAR_ARCHIVE,"Set the maximum distance for users to receive local messages")
 	local ec_no_modules 	= CreateConVar("easychat_no_modules","0",FCVAR_ARCHIVE,"Should easychat load modules or not")
