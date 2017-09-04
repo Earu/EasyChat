@@ -15,7 +15,7 @@ ChatHUD.CurrentSize     = ChatHUD.DefaultFontSize
 ChatHUD.CurrentFont     = ChatHUD.DefaultFont
 ChatHUD.CurrentColor    = Color(255,255,255)
 ChatHUD.CurrentWidth    = 550
-ChatHUD.MaxArguments    = 60
+ChatHUD.MaxArguments    = 140
 ChatHUD.TimeToFade      = 16
 ChatHUD.FadeTime        = 2
 ChatHUD.Tags            = {}
@@ -63,10 +63,26 @@ local StoreArg = function(arg,type)
         for k,v in ipairs(ChatHUD.Arguments) do
             if v.Type == "STOP" then
                 idtostop = k
-                break
+                local nxt = ChatHUD.Arguments[k+1]
+                if not nxt or not nxt.Faded then
+                    break
+                end
             end
         end
-        print(idtostop)
+        for i=1,idtostop do
+            table.remove(ChatHUD.Arguments,1)
+        end
+    end
+    if ChatHUD.Arguments[1].Faded then
+        for k,v in ipairs(ChatHUD.Arguments) do
+            if v.Type == "STOP" then
+                idtostop = k
+                local nxt = ChatHUD.Arguments[k+1]
+                if not nxt or not nxt.Faded then
+                    break
+                end
+            end
+        end
         for i=1,idtostop do
             table.remove(ChatHUD.Arguments,1)
         end
