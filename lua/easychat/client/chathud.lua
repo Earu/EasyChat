@@ -15,7 +15,7 @@ ChatHUD.CurrentSize     = ChatHUD.DefaultFontSize
 ChatHUD.CurrentFont     = ChatHUD.DefaultFont
 ChatHUD.CurrentColor    = Color(255,255,255)
 ChatHUD.CurrentWidth    = 550
-ChatHUD.MaxArguments    = 50
+ChatHUD.MaxArguments    = 60
 ChatHUD.TimeToFade      = 16
 ChatHUD.FadeTime        = 2
 ChatHUD.Tags            = {}
@@ -58,16 +58,17 @@ UpdateFont(ChatHUD.DefaultFont,ChatHUD.DefaultFontSize)
 
 local StoreArg = function(arg,type)
     table.insert(ChatHUD.Arguments,{ Arg = arg, Type = type, ID = #ChatHUD.Arguments})
-    if #ChatHUD.Arguments <= ChatHUD.MaxArguments then
+    if #ChatHUD.Arguments >= ChatHUD.MaxArguments then
         local idtostop = 0
-        for k,v in pairs(ChatHUD.Arguments) do
-            if v.Arg == "STOP" then
+        for k,v in ipairs(ChatHUD.Arguments) do
+            if v.Type == "STOP" then
                 idtostop = k
                 break
             end
         end
+        print(idtostop)
         for i=1,idtostop do
-            table.remove(ChatHUD.Arguments,i)
+            table.remove(ChatHUD.Arguments,1)
         end
     end
 end
@@ -206,12 +207,6 @@ ChatHUD.Fade = function(arg,col)
     local bgcol = ChatHUD.ShadowColor
     local alfv  = 0
 
-    if arg.Faded then
-        col = Color (col.r, col.g, col.b,0)
-        bgcol = Color (bgcol.r, bgcol.g, bgcol.b,0)
-        return col,bgcol
-    end
-
     arg.FadeStartTime = arg.FadeStartTime or RealTime() + ChatHUD.TimeToFade
     alfv              = 1 - ((RealTime() - arg.FadeStartTime) / ChatHUD.FadeTime)
     alfv              = math.Clamp(alfv,0,1)
@@ -219,6 +214,12 @@ ChatHUD.Fade = function(arg,col)
 
     col = Color (col.r, col.g, col.b, col.a * alfv)
     bgcol = Color (bgcol.r, bgcol.g, bgcol.b, bgcol.a * alfv)
+
+    if arg.Faded then
+        col = Color (col.r, col.g, col.b,0)
+        bgcol = Color (bgcol.r, bgcol.g, bgcol.b,0)
+        return col,bgcol
+    end
 
     return col,bgcol
 end
