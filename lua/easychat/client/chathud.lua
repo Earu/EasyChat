@@ -289,7 +289,11 @@ ChatHUD.GetCurrentOffSet = function()
             line = line..v.Arg
         end
     end
-    return #string.Explode("\n",line) * ChatHUD.BiggestFontSize
+    local count = 1
+    for _,v in string.gmatch(line,"\n") do
+        count = count + 1
+    end
+    return #count * ChatHUD.BiggestFontSize
 end
 
 
@@ -328,7 +332,7 @@ end
 
 ChatHUD.Init = function()
     ChatHUD.Frame = vgui.Create("DPanel")
-    ChatHUD.Frame:SetPos(25,ScrH() - 150)
+    ChatHUD.Frame:SetPos(25,ScrH() - 300)
     ChatHUD.Frame:SetSize(550,320)
     ChatHUD.Frame.Paint = ChatHUD.Draw
 end
