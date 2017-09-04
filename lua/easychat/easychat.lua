@@ -293,9 +293,7 @@ if CLIENT then
 		end)
 
 		do
-            if EasyChat.ChatHUD then
-			    EasyChat.ChatHUD.Init()
-            end
+			EasyChat.ChatHUD.Init()
 
 			EasyChat.old_chat_AddText = EasyChat.old_chat_AddText or chat.AddText
 			EasyChat.old_chat_GetChatBoxPos = EasyChat.old_chat_GetChatBoxPos or chat.GetChatBoxPos
@@ -303,6 +301,7 @@ if CLIENT then
 
 			chat.AddText = function(...)
 				EasyChat.AppendText("\n")
+				EasyChat.ChatHUD.AddTagStop()
 				local args = { ... }
 				for _,arg in pairs(args) do
 					if type(arg) == "table" then
