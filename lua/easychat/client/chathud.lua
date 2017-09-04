@@ -293,7 +293,7 @@ ChatHUD.GetCurrentOffSet = function()
     for _,v in string.gmatch(line,"\n") do
         count = count + 1
     end
-    return #count * ChatHUD.BiggestFontSize
+    return count * ChatHUD.BiggestFontSize
 end
 
 
