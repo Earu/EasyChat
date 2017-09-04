@@ -549,7 +549,7 @@ if CLIENT then
 			end
 		end
 
-		GAMEMODE.OnPlayerChat = function(self,ply,msg,isteam,isdead,islocal) -- this is for the best
+		EasyChat.OnPlayerChat = function(self,ply,msg,isteam,isdead,islocal) -- this is for the best
 			local tab = {}
 
 			if ec_enable:GetBool() then
@@ -702,6 +702,7 @@ if CLIENT then
 	hook.Add("Initialize",tag,function()
 		if ec_enable:GetBool() then
 			EasyChat.Init()
+			GAMEMODE.OnPlayerChat = EasyChat.OnPlayerChat -- this is necessary otherwise no distinction of local messages
 		end
 	end)
 
