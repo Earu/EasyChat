@@ -113,7 +113,7 @@ if CLIENT then
             self:AddExecButton("Self","icon16/cog_go.png", function()
                 lua.RunOnSelf(self.Code,LocalPlayer())
                 self:RegisterAction(self.Code,"self")
-            end,52,50)
+            end,40,50)
 
             self:AddExecButton("Shared","icon16/world.png", function()
                 lua.RunOnShared(self.Code,LocalPlayer())
@@ -158,7 +158,7 @@ if CLIENT then
         end,
         RegisterAction = function(self,script,type)
             self.LastAction = {
-                Script = string.Explode(" ",script)[1].."...",
+                Script = (string.gsub(string.Explode(" ",script)[1],"\n","")).."...",
                 Type = type,
                 Time = os.date("%H:%M:%S"),
             }
