@@ -56,36 +56,26 @@ end
 
 UpdateFont(ChatHUD.DefaultFont,ChatHUD.DefaultFontSize)
 
-local StoreArg = function(arg,type)
-    table.insert(ChatHUD.Arguments,{ Arg = arg, Type = type, ID = #ChatHUD.Arguments})
-    if #ChatHUD.Arguments >= ChatHUD.MaxArguments then
-        local idtostop = 0
-        for k,v in ipairs(ChatHUD.Arguments) do
-            if v.Type == "STOP" then
-                idtostop = k
-                local nxt = ChatHUD.Arguments[k+1]
-                if not nxt or not nxt.Faded then
-                    break
-                end
+local ClearArgs = function()
+    local amount = 0
+    for k,v in ipairs(ChatHUD.Arguments) do
+        if v.Type == "STOP" then
+            amount = k
+            local nxt = ChatHUD.Arguments[k+1]
+            if not nxt or not nxt.Faded then
+                break
             end
-        end
-        for i=1,idtostop do
-            table.remove(ChatHUD.Arguments,1)
         end
     end
-    if ChatHUD.Arguments[1].Faded then
-        for k,v in ipairs(ChatHUD.Arguments) do
-            if v.Type == "STOP" then
-                idtostop = k
-                local nxt = ChatHUD.Arguments[k+1]
-                if not nxt or not nxt.Faded then
-                    break
-                end
-            end
-        end
-        for i=1,idtostop do
-            table.remove(ChatHUD.Arguments,1)
-        end
+    for i=1,amount do
+        table.remove(ChatHUD.Arguments,1)
+    end
+end
+
+local StoreArg = function(arg,type)
+    table.insert(ChatHUD.Arguments,{ Arg = arg, Type = type, ID = #ChatHUD.Arguments})
+    if ChatHUD.Arguments[1].Faded or #ChatHUD.Arguments >= ChatHUD.MaxArguments then
+        ClearArgs()
     end
 end
 
