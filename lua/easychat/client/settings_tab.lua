@@ -4,6 +4,22 @@ local ec_teams 			= GetConVar("easychat_teams")
 local ec_teams_color 	= GetConVar("easychat_teams_colored")
 local ec_player_color 	= GetConVar("easychat_players_colored")
 local ec_hud_follow 	= GetConVar("easychat_hud_follow")
+local ec_font 			= GetConVar("easychat_font")
+local ec_font_size 		= GetConVar("easychat_font_size")
+
+local UpdateSettingsFont = function(name,size)
+    size = size - 3
+    surface.CreateFont("ECSettingsFont",{
+        font      = fontname,
+        extended  = true,
+        size      = size,
+        weight    = 500,
+        shadow	  = false,
+        additive  = false,
+    })
+end
+
+UpdateSettingsFont(EasyChat.Font,EasyChat.FontSize)
 
 local settings_tab = {
     Checkboxes = {},
@@ -35,18 +51,22 @@ local settings_tab = {
         self.BtnUseDermaSkin        = self:Add("DButton")
 
         self.TBoxOutlayColor:SetText("Outlay Color")
+        self.TBoxOutlayColor:SetFont("ECSettingsFont")
         self.TBoxOutlayColor:SetPos(15,15)
         table.insert(self.Checkboxes,self.TBoxOutlayColor)
 
         self.TBoxOutlayOutlineColor:SetText("Outlay Outline Color")
+        self.TBoxOutlayOutlineColor:SetFont("ECSettingsFont")
         self.TBoxOutlayOutlineColor:SetPos(15,40)
         table.insert(self.Checkboxes,self.TBoxOutlayOutlineColor)
 
         self.TBoxTabColor:SetText("Tab Color")
+        self.TBoxTabColor:SetFont("ECSettingsFont")
         self.TBoxTabColor:SetPos(15,65)
         table.insert(self.Checkboxes,self.TBoxTabColor)
 
         self.TBoxTabOutlineColor:SetText("Tab Outline Color")
+        self.TBoxTabOutlineColor:SetFont("ECSettingsFont")
         self.TBoxTabOutlineColor:SetPos(15,90)
         table.insert(self.Checkboxes,self.TBoxTabOutlineColor)
 
@@ -55,7 +75,7 @@ local settings_tab = {
 
         self.BtnApplyColors:SetPos(15,115)
         self.BtnApplyColors:SetText("Apply Color")
-        self.BtnApplyColors:SetTextColor(EasyChat.TextColor)
+        self.BtnApplyColors:SetFont("ECSettingsFont")
         self.BtnApplyColors:SetSize(100,25)
         self.BtnApplyColors.DoClick = function(self)
             frame:SaveColors()
@@ -63,7 +83,7 @@ local settings_tab = {
 
         self.BtnResetColors:SetPos(15,150)
         self.BtnResetColors:SetText("Reset Colors")
-        self.BtnResetColors:SetTextColor(EasyChat.TextColor)
+        self.BtnResetColors:SetFont("ECSettingsFont")
         self.BtnResetColors:SetSize(100,25)
         self.BtnResetColors.DoClick = function(self)
             frame:ResetColors()
@@ -86,37 +106,38 @@ local settings_tab = {
         self.LblFontSize:SetPos(15,220)
         self.LblFontSize:SetSize(100,10)
         self.LblFontSize:SetText("Font size")
+        self.LblFontSize:SetFont("ECSettingsFont")
 
         self.NbrWFontSize:SetPos(15,230)
         self.NbrWFontSize:SetSize(100,25)
         self.NbrWFontSize:SetMin(0)
         self.NbrWFontSize:SetMax(40)
         self.NbrWFontSize:SetValue(EasyChat.FontSize)
-        self.NbrWFontSize.OnValueChanged = function(self,val)
-            RunConsoleCommand("easychat_font_size",val)
-        end
         cvars.AddChangeCallback("easychat_font_size",function(name,old,new)
             self.NbrWFontSize:SetValue(tonumber(new))
+            UpdateSettingsFont(EasyChat.Font,tonumber(new))
         end)
 
         self.BtnApplyFont:SetPos(15,270) --270
         self.BtnApplyFont:SetSize(100,25)
         self.BtnApplyFont:SetText("Apply Font")
-        self.BtnApplyFont:SetTextColor(EasyChat.TextColor)
-
+        self.BtnApplyFont:SetFont("ECSettingsFont")
         self.BtnApplyFont.DoClick = function()
             RunConsoleCommand("easychat_font",self.TxtFontName:GetValue())
+            RunConsoleCommand("easychat_font_size",self.NbrWFontSize:GetValue())
+            UpdateSettingsFont(self.TxtFontName:GetValue(),tonumber(self.NbrWFontSize:GetValue()))
         end
 
         self.BtnFontReset:SetPos(15,305)
         self.BtnFontReset:SetSize(100,25)
         self.BtnFontReset:SetText("Reset Font")
-        self.BtnFontReset:SetTextColor(EasyChat.TextColor)
+        self.BtnFontReset:SetFont("ECSettingsFont")
         self.BtnFontReset.DoClick = function(self)
             frame:ResetFont()
         end
 
         self.TBoxHUDFollow:SetText("HUD follows chatbox")
+        self.TBoxHUDFollow:SetFont("ECSettingsFont")
         self.TBoxHUDFollow:SetPos(170,15)
         self.TBoxHUDFollow:SetChecked(ec_hud_follow:GetBool())
         self.TBoxHUDFollow.OnChange = function(self,val)
@@ -127,6 +148,7 @@ local settings_tab = {
         end)
 
         self.TBoxTimeStamps:SetText("Display timestamps")
+        self.TBoxTimeStamps:SetFont("ECSettingsFont")
         self.TBoxTimeStamps:SetPos(170,40)
         self.TBoxTimeStamps:SetChecked(ec_timestamps:GetBool())
         self.TBoxTimeStamps.OnChange = function(self,val)
@@ -137,6 +159,7 @@ local settings_tab = {
         end)
 
         self.TBoxDisplayTeam:SetText("Display team tags")
+        self.TBoxDisplayTeam:SetFont("ECSettingsFont")
         self.TBoxDisplayTeam:SetPos(170,65)
         self.TBoxDisplayTeam:SetChecked(ec_teams:GetBool())
         self.TBoxDisplayTeam.OnChange = function(self,val)
@@ -147,6 +170,7 @@ local settings_tab = {
         end)
 
         self.TBoxColorTeamTags:SetText("Color team tags")
+        self.TBoxColorTeamTags:SetFont("ECSettingsFont")
         self.TBoxColorTeamTags:SetPos(170,90)
         self.TBoxColorTeamTags:SetChecked(ec_teams_color:GetBool())
         self.TBoxColorTeamTags.OnChange = function(self,val)
@@ -157,6 +181,7 @@ local settings_tab = {
         end)
 
         self.TBoxColorPlayerNames:SetText("Color players")
+        self.TBoxColorPlayerNames:SetFont("ECSettingsFont")
         self.TBoxColorPlayerNames:SetPos(170,115)
         self.TBoxColorPlayerNames:SetChecked(ec_player_color:GetBool())
         self.TBoxColorPlayerNames.OnChange = function(self,val)
@@ -167,6 +192,7 @@ local settings_tab = {
         end)
 
         self.TBoxGlobalTabOnOpen:SetText("Global tab on open")
+        self.TBoxGlobalTabOnOpen:SetFont("ECSettingsFont")
         self.TBoxGlobalTabOnOpen:SetPos(170,140)
         self.TBoxGlobalTabOnOpen:SetChecked(ec_global_on_open:GetBool())
         self.TBoxGlobalTabOnOpen.OnChange = function(self,val)
@@ -178,7 +204,7 @@ local settings_tab = {
 
         self.BtnResetOptions:SetPos(170,165)
         self.BtnResetOptions:SetText("Reset Options")
-        self.BtnResetOptions:SetTextColor(EasyChat.TextColor)
+        self.BtnResetOptions:SetFont("ECSettingsFont")
         self.BtnResetOptions:SetSize(100,25)
         self.BtnResetOptions.DoClick = function(self)
             frame:ResetOptions()
@@ -186,7 +212,7 @@ local settings_tab = {
 
         self.BtnResetAll:SetPos(170,200)
         self.BtnResetAll:SetText("Reset Everything")
-        self.BtnResetAll:SetTextColor(EasyChat.TextColor)
+        self.BtnResetAll:SetFont("ECSettingsFont")
         self.BtnResetAll:SetSize(100,25)
         self.BtnResetAll.DoClick = function(self)
             frame:ResetAll()
@@ -195,8 +221,8 @@ local settings_tab = {
         concommand.Add("easychat_reset_settings",self.ResetAll)
 
         self.BtnReloadChat:SetPos(170,235)
-        self.BtnReloadChat:SetText("Restart")
-        self.BtnReloadChat:SetTextColor(EasyChat.TextColor)
+        self.BtnReloadChat:SetText("Reload Chatbox")
+        self.BtnReloadChat:SetFont("ECSettingsFont")
         self.BtnReloadChat:SetSize(100,25)
         self.BtnReloadChat.DoClick = function(self)
             frame:ReloadChat()
@@ -204,7 +230,7 @@ local settings_tab = {
 
         self.BtnUseDermaSkin:SetPos(170,270)
         self.BtnUseDermaSkin:SetText(EasyChat.UseDermaSkin and "Use custom skin" or "Use dermaskin")
-        self.BtnUseDermaSkin:SetTextColor(EasyChat.TextColor)
+        self.BtnUseDermaSkin:SetFont("ECSettingsFont")
         self.BtnUseDermaSkin:SetSize(100,25)
 
         self.BtnUseDermaSkin.DoClick = function()
@@ -212,6 +238,15 @@ local settings_tab = {
         end
 
         if not EasyChat.UseDermaSkin then
+
+            self.BtnApplyColors:SetTextColor(EasyChat.TextColor)
+            self.BtnResetColors:SetTextColor(EasyChat.TextColor)
+            self.BtnApplyFont:SetTextColor(EasyChat.TextColor)
+            self.BtnFontReset:SetTextColor(EasyChat.TextColor)
+            self.BtnResetOptions:SetTextColor(EasyChat.TextColor)
+            self.BtnResetAll:SetTextColor(EasyChat.TextColor)
+            self.BtnReloadChat:SetTextColor(EasyChat.TextColor)
+            self.BtnUseDermaSkin:SetTextColor(EasyChat.TextColor)
 
             local ECButtonPaint = function(self,w,h)
                 surface.SetDrawColor(EasyChat.OutlayColor)
@@ -236,8 +271,8 @@ local settings_tab = {
     ResetColors = function(self)
         EasyChat.OutlayColor        = Color(62,62,62,173)
         EasyChat.OutlayOutlineColor = Color(104,104,104,103)
-        EasyChat.TabOutlineColor    = Color(74,72,72,255)
-        EasyChat.TabColor     		= Color(43,43,43,255)
+        EasyChat.TabOutlineColor    = Color(5,5,5,123)
+        EasyChat.TabColor     		= Color(36,36,36,255)
         local tab = {
             outlay		  = EasyChat.OutlayColor,
             outlayoutline = EasyChat.OutlayOutlineColor,
@@ -273,8 +308,8 @@ local settings_tab = {
     end,
 
     ResetFont = function(self)
-        RunConsoleCommand("easychat_font","HL2MPTypeDeath")
-        RunConsoleCommand("easychat_font_size","17")
+        RunConsoleCommand("easychat_font",(system.IsWindows() and "Verdana" or "Tahoma"))
+        RunConsoleCommand("easychat_font_size","15")
     end,
 
     ResetOptions = function(self)
