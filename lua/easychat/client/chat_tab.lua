@@ -2,7 +2,7 @@ local maintab = {
     Init = function(self)
         local frame = self
 
-        self.RichText = self:Add("RichText")
+        self.RichText  = self:Add("RichText")
         self.BtnSwitch = self:Add("DButton")
         self.TextEntry = self:Add("DTextEntry")
 
@@ -16,8 +16,8 @@ local maintab = {
             self:SetFGColor(EasyChat.UseDermaSkin and EasyChat.TextColor or Color(0,0,0,255))
         end
 
-        self.BtnSwitch:SetTextColor(EasyChat.TextColor)
         self.BtnSwitch:SetText("Say")
+        self.BtnSwitch:SetFont("EasyChatFont")
         self.BtnSwitch:SetSize(65,20)
         self.BtnSwitch:SetZPos(10)
         self.BtnSwitch.Think = function(self)
@@ -45,8 +45,9 @@ local maintab = {
         self.TextEntry:SetZPos(10)
 
         if not EasyChat.UseDermaSkin then
+            self.BtnSwitch:SetTextColor(EasyChat.TextColor)
             self.BtnSwitch.Paint = function(self,w,h)
-                surface.SetDrawColor(EasyChat.OutlayColor)
+                surface.SetDrawColor(EasyChat.TabColor)
                 surface.DrawRect(0,0,w,h)
                 surface.SetDrawColor(EasyChat.TabOutlineColor)
                 surface.DrawOutlinedRect(0,0,w,h)
