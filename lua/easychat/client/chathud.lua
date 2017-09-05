@@ -306,6 +306,7 @@ ChatHUD.Draw = function(self,w,h)
     local x,y = 1, (- ChatHUD.GetCurrentOffSet())
     local matrixcount = 0
     for _,arg in ipairs(ChatHUD.Arguments) do
+        ChatHUD.Fade(arg)
         if arg.Type == "color" then
             ChatHUD.CurrentColor = arg.Arg
         elseif arg.Type == "string" then
