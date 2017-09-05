@@ -87,7 +87,7 @@ end
 if CLIENT then
 
 	local ec_global_on_open = CreateConVar("easychat_global_on_open","1",FCVAR_ARCHIVE,"Set the chat to always open global chat tab on open")
-	local ec_font 			= CreateConVar("easychat_font","HL2MPTypeDeath",FCVAR_ARCHIVE,"Set the font to use for the chat")
+	local ec_font 			= CreateConVar("easychat_font",(system.IsWindows() and "Verdana" or "Tahoma"),FCVAR_ARCHIVE,"Set the font to use for the chat")
 	local ec_font_size 		= CreateConVar("easychat_font_size","17",FCVAR_ARCHIVE,"Set the font size for chatbox")
 	local ec_timestamps		= CreateConVar("easychat_timestamps","0",FCVAR_ARCHIVE,"Display timestamp in front of messages or not")
 	local ec_teams 			= CreateConVar("easychat_teams","0",FCVAR_ARCHIVE,"Display team in front of messages or not")
