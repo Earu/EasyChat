@@ -96,7 +96,7 @@ if CLIENT then
 
 	local ec_global_on_open = CreateConVar("easychat_global_on_open","1",FCVAR_ARCHIVE,"Set the chat to always open global chat tab on open")
 	local ec_font 			= CreateConVar("easychat_font",(system.IsWindows() and "Verdana" or "Tahoma"),FCVAR_ARCHIVE,"Set the font to use for the chat")
-	local ec_font_size 		= CreateConVar("easychat_font_size","17",FCVAR_ARCHIVE,"Set the font size for chatbox")
+	local ec_font_size 		= CreateConVar("easychat_font_size","15",FCVAR_ARCHIVE,"Set the font size for chatbox")
 	local ec_timestamps		= CreateConVar("easychat_timestamps","0",FCVAR_ARCHIVE,"Display timestamp in front of messages or not")
 	local ec_teams 			= CreateConVar("easychat_teams","0",FCVAR_ARCHIVE,"Display team in front of messages or not")
 	local ec_teams_color 	= CreateConVar("easychat_teams_colored","0",FCVAR_ARCHIVE,"Display team with its relative color")
@@ -129,11 +129,15 @@ if CLIENT then
 	EasyChat.FontSize = ec_font_size:GetInt()
 
 	local UpdateChatBoxFont = function(fontname,size)
+		EasyChat.FontName = fontname
+		EasyChat.FontSize = size
 		surface.CreateFont("EasyChatFont",{
 			font      = fontname,
 			extended  = true,
 			size      = size,
 			weight    = 500,
+			shadow	  = false,
+			additive  = false,
 		})
 	end
 
@@ -155,10 +159,10 @@ if CLIENT then
 		EasyChat.TabOutlineColor    = Color(cols.taboutline.r,cols.taboutline.g,cols.taboutline.b,cols.taboutline.a)
 		EasyChat.TabColor           = Color(cols.tab.r,cols.tab.g,cols.tab.b,cols.tab.a)
 	else
-		EasyChat.OutlayColor        = Color(62,62,62,173)
-		EasyChat.OutlayOutlineColor = Color(104,104,104,103)
-		EasyChat.TabOutlineColor    = Color(74,72,72,255)
-		EasyChat.TabColor     		= Color(43,43,43,255)
+        EasyChat.OutlayColor        = Color(62,62,62,173)
+        EasyChat.OutlayOutlineColor = Color(104,104,104,103)
+        EasyChat.TabOutlineColor    = Color(5,5,5,123)
+        EasyChat.TabColor     		= Color(36,36,36,255)
 	end
 
 	EasyChat.TextColor = Color(255,255,255,255)
@@ -400,7 +404,11 @@ if CLIENT then
 							end
 						end
 						surface.DrawRect(0,0,w,h)
-						surface.SetDrawColor(EasyChat.TabOutlineColor)
+						if self == frame.Tabs:GetActiveTab() then
+							surface.SetDrawColor(EasyChat.TabOutlineColor)
+						else
+							surface.SetDrawColor(EasyChat.OutlayOutlineColor)
+						end
 						surface.DrawLine(0,0,w,0)
 						surface.DrawLine(0,0,0,h)
 						surface.DrawLine(w-1,0,w-1,h)
@@ -457,7 +465,7 @@ if CLIENT then
 			for tag,values in string.gmatch(str,pattern) do
 				EasyChat.AppendText(parts[index])
 				index = index + 1
-				if tag == "color" then -- maybe more tags to support but heh
+				if tag == "color" then
 					local r,g,b
 					string.gsub(values,"(%d+),(%d+),(%d+)",function(sr,sg,sb)
 						r = tonumber(sr)
