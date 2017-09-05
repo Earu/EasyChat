@@ -10,7 +10,7 @@ EasyChat.ChatHUD = ChatHUD
 ChatHUD.Arguments       = {}
 ChatHUD.ShadowColor     = Color(25,50,100,255)
 ChatHUD.DefaultFontSize = 17
-ChatHUD.DefaultFont     = "DermaDefault"
+ChatHUD.DefaultFont     = system.IsWindows() and "Verdana" or "Tahoma"
 ChatHUD.CurrentSize     = ChatHUD.DefaultFontSize
 ChatHUD.CurrentFont     = ChatHUD.DefaultFont
 ChatHUD.CurrentColor    = Color(255,255,255)
@@ -19,17 +19,10 @@ ChatHUD.MaxArguments    = 140
 ChatHUD.TimeToFade      = 16
 ChatHUD.FadeTime        = 2
 ChatHUD.Tags            = {}
-ChatHUD.BiggestFontSize = 0
 
 local Fonts = {}
 local UpdateFont = function(fontname,size)
-    ChatHUD.CurrentFont = fontname
-    ChatHUD.CurrentSize = size
-
     if not Fonts[fontname..size] then
-        if size > ChatHUD.BiggestFontSize then
-            ChatHUD.BiggestFontSize = size
-        end
         Fonts[fontname..size] = true
         surface.CreateFont("ECCHUD_"..fontname.."_"..size,{
             font      = fontname,
@@ -45,6 +38,8 @@ local UpdateFont = function(fontname,size)
             blursize  = 2,
         })
     end
+    ChatHUD.CurrentFont = fontname
+    ChatHUD.CurrentSize = size
 end
 
 local GetFontNames = function(fontname,size)
@@ -67,7 +62,7 @@ local ClearArgs = function()
             end
         end
     end
-    for i=1,amount do
+    for _=1,amount do
         table.remove(ChatHUD.Arguments,1)
     end
 end
@@ -145,17 +140,15 @@ HashString = function(str,maxwidth)
     return table.concat(lines,"\n")
 end
 
-local inaddtext = false
-
 ChatHUD.AppendText = function(str)
-	if not inaddtext and hook.Run("ChatHudAddText",str) == false then return end
+	if hook.Run("ChatHudAddText",str) == false then return end
     local hashed_string = HashString(str,ChatHUD.CurrentWidth)
 	ParseStoreArgs(hashed_string)
 end
 
 ChatHUD.InsertColorChange = function(r,g,b,a)
 	local color = Color(r,g,b,a)
-	if not inaddtext and hook.Run("ChatHudAddText",color) == false then return end
+	if hook.Run("ChatHudAddText",color) == false then return end
 	StoreArg(color,"color")
 end
 
@@ -166,7 +159,7 @@ ChatHUD.InsertFontChange = function(font, size)
 end
 
 ChatHUD.AppendPlayer = function(ply)
-	if not inaddtext and hook.Run("ChatHudAddText",ply) == false then return end
+	if hook.Run("ChatHudAddText",ply) == false then return end
 	local nick = ply:Nick()
 	local color = team.GetColor(ply:Team())
 
@@ -181,28 +174,6 @@ end
 
 ChatHUD.AddTagStop = function(matrixcount)
    StoreArg("STOP","STOP")
-end
-
-ChatHUD.AddText = function(...)
-	inaddtext = true
-	if hook.Run("ChatHudAddText",...) == false then return end
-    local args = {...}
-
-    for _,v in pairs(args) do
-        if type(v) == "table" then
-            ChatHUD.InsertColorChange(v.r,v.g,v.b,v.a or 255)
-        elseif type(v) == "string" then
-            ChatHUD.AppendText(v)
-        elseif v:IsPlayer() then
-            ChatHUD.AppendPlayer(v)
-        else
-            ChatHUD.AppendText(tostring(v))
-        end
-    end
-
-    ChatHUD.AddTagStop()
-	inaddtext = false
-
 end
 
 --[[
@@ -236,7 +207,7 @@ ChatHUD.DrawText = function(txt,x,y,bgcol,col)
     surface.SetTextColor(bgcol)
     surface.SetFont(bgfont)
 
-    for i = 1,10 do
+    for _ = 1,10 do
         surface.SetTextPos(x,y)
         surface.DrawText(txt)
     end
@@ -255,22 +226,17 @@ ChatHUD.DrawStringArg = function(arg,x,y)
     local w = 0
     local col,bgcol = ChatHUD.Fade(arg)
     local y = y
-
     if not col then return x,y end
 
     for num,line in pairs(lines) do
-
         if num > 1 then
             x = 1
             y = y + ChatHUD.CurrentSize
         end
-
         w,_ = ChatHUD.DrawText(line,x,y,bgcol,col)
-
     end
 
     return x + w,y
-
 end
 
 ChatHUD.DrawPlayerArg = function(arg,x,y)
@@ -284,16 +250,16 @@ end
 
 ChatHUD.GetCurrentOffSet = function()
     local line = ""
-    for k,v in ipairs(ChatHUD.Arguments) do
+    for _,v in ipairs(ChatHUD.Arguments) do
         if v.Type == "string" then
             line = line..v.Arg
         end
     end
     local count = 1
-    for _,v in string.gmatch(line,"\n") do
+    for _,_ in string.gmatch(line,"\n") do
         count = count + 1
     end
-    return count * ChatHUD.BiggestFontSize
+    return count * ChatHUD.DefaultFontSize
 end
 
 
