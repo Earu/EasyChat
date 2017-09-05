@@ -75,10 +75,18 @@ if SERVER then
 	net.Receive(netsettyping,function(len,ply)
 		local bool = net.ReadBool()
 		ply:SetNWBool("ec_is_typing",bool)
+		if bool then
+			hook.Run("ECOpened",ply)
+		else
+			hook.Run("ECClosed",ply)
+		end
 	end)
 
 	EasyChat.Init = function()
+		hook.Run("ECPreLoadModules")
 		EasyChat.LoadModules()
+		hook.Run("ECPostLoadModules")
+		hook.Run("ECInitialized")
 	end
 
 	hook.Add("Initialize", tag, EasyChat.Init)
@@ -193,6 +201,7 @@ if CLIENT then
 				end
 			end
 		end
+		hook.Run("ECOpened")
 		net.Start(netsettyping)
 		net.WriteBool(true)
 		net.SendToServer()
@@ -246,6 +255,7 @@ if CLIENT then
 			SavePosSize()
 			EasyChat.GUI.ChatBox:Hide()
 			chat.Close()
+			hook.Run("ECClosed")
 			net.Start(netsettyping)
 			net.WriteBool(false)
 			net.SendToServer()
@@ -267,13 +277,14 @@ if CLIENT then
 	end
 
 	EasyChat.OpenURL = function(url)
+		local ok = hook.Run("ECOpenURL",url)
+		if ok == false then return end
 		local browser = vgui.Create("ECBrowser")
 		browser:MakePopup()
 		browser:OpenURL(url or "www.google.com")
 	end
 
 	EasyChat.Init = function()
-		hook.Remove("Initialize", tag)
 
 		EasyChat.AddMode("Team",function(text)
 			net.Start(netreceivemsg)
@@ -549,52 +560,6 @@ if CLIENT then
 			end
 		end
 
-		EasyChat.OnPlayerChat = function(self,ply,msg,isteam,isdead,islocal) -- this is for the best
-			local tab = {}
-
-			if ec_enable:GetBool() then
-				if ec_timestamps:GetBool() then
-					table.insert(tab,os.date("%H:%M:%S").." - ")
-				end
-				if IsValid(ply) and ec_teams:GetBool() then
-					if ec_teams_color:GetBool() then
-						local tcol = team.GetColor(ply:Team())
-						table.insert(tab,tcol)
-					end
-					table.insert(tab,"["..team.GetName(ply:Team()).."] - ")
-				end
-			end
-
-			if isdead then
-				table.insert(tab,Color(240,80,80))
-				table.insert(tab,"*DEAD* " )
-			end
-
-			if islocal then
-				table.insert(tab,Color(120,210,255))
-				table.insert(tab,"(Local) ")
-			end
-
-			if isteam then
-				table.insert(tab,Color(120,120,240))
-				table.insert(tab,"(Team) ")
-			end
-
-			if IsValid(ply)  then
-				table.insert(tab,ply)
-			else
-				table.insert(tab,Color(110,247,177))
-				table.insert(tab,"???") -- console or weird stuff
-			end
-
-			table.insert(tab,Color(255,255,255))
-			table.insert(tab,": "..msg)
-
-			chat.AddText(unpack(tab))
-
-			return true
-		end
-
 		EasyChat.GUI.TextEntry.OnValueChange = function(self,text)
 			gamemode.Call("ChatTextChanged",text)
 		end
@@ -611,7 +576,9 @@ if CLIENT then
 		end)
 
 		if not ec_no_modules:GetBool() then
+			hook.Run("ECPreLoadModules")
 			EasyChat.LoadModules()
+			hook.Run("ECPostLoadModules")
 		end
 
 		local settings = vgui.Create("ECSettingsTab")
@@ -678,7 +645,7 @@ if CLIENT then
 			end
 		end)
 
-		hook.Run("EasyChatOnInit")
+		hook.Run("ECInitialized")
 
 	end
 
@@ -702,7 +669,52 @@ if CLIENT then
 	hook.Add("Initialize",tag,function()
 		if ec_enable:GetBool() then
 			EasyChat.Init()
-			GAMEMODE.OnPlayerChat = EasyChat.OnPlayerChat -- this is necessary otherwise no distinction of local messages
+		end
+
+		GAMEMODE.OnPlayerChat = function(self,ply,msg,isteam,isdead,islocal) -- this is for the best
+			local tab = {}
+
+			if ec_enable:GetBool() then
+				if ec_timestamps:GetBool() then
+					table.insert(tab,os.date("%H:%M:%S").." - ")
+				end
+				if IsValid(ply) and ec_teams:GetBool() then
+					if ec_teams_color:GetBool() then
+						local tcol = team.GetColor(ply:Team())
+						table.insert(tab,tcol)
+					end
+					table.insert(tab,"["..team.GetName(ply:Team()).."] - ")
+				end
+			end
+
+			if isdead then
+				table.insert(tab,Color(240,80,80))
+				table.insert(tab,"*DEAD* " )
+			end
+
+			if islocal then
+				table.insert(tab,Color(120,210,255))
+				table.insert(tab,"(Local) ")
+			end
+
+			if isteam then
+				table.insert(tab,Color(120,120,240))
+				table.insert(tab,"(Team) ")
+			end
+
+			if IsValid(ply)  then
+				table.insert(tab,ply)
+			else
+				table.insert(tab,Color(110,247,177))
+				table.insert(tab,"???") -- console or weird stuff
+			end
+
+			table.insert(tab,Color(255,255,255))
+			table.insert(tab,": "..msg)
+
+			chat.AddText(unpack(tab))
+
+			return true
 		end
 	end)
 
@@ -739,7 +751,7 @@ EasyChat.Destroy = function()
 
 	end
 
-	hook.Run("EasyChatOnDestroy")
+	hook.Run("ECDestroyed")
 
 end
 
