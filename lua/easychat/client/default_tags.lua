@@ -15,10 +15,8 @@ ChatHUD.AddTag("font",function(font)
 end)
 
 ChatHUD.AddTag("size",function(size)
-    local size = size and tonumber(size) or 1
+    if not size then return end
+    local size = math.Clamp(tonumber(size) * ChatHUD.DefaultFontSize,0.2,5)
 
-    size = math.Clamp(size,-5,5)
-    local mat = Matrix()
-    mat:Scale(Vector(1,1,1)*size)
-    ChatHUD.PushMatrix(mat)
+    ChatHUD.InsertFontChange(ChatHUD.CurrentFont,size)
 end)
