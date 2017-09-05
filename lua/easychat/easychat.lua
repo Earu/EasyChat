@@ -295,9 +295,9 @@ if CLIENT then
 		do
 			EasyChat.ChatHUD.Init()
 
-			EasyChat.old_chat_AddText = EasyChat.old_chat_AddText or chat.AddText
-			EasyChat.old_chat_GetChatBoxPos = EasyChat.old_chat_GetChatBoxPos or chat.GetChatBoxPos
-			EasyChat.old_chat_GetChatBoxSize = EasyChat.old_chat_GetChatBoxSize or chat.GetChatBoxSize
+			chat.old_chat_AddText 		 = chat.old_chat_AddText 		or chat.AddText
+			chat.old_chat_GetChatBoxPos  = chat.old_chat_GetChatBoxPos  or chat.GetChatBoxPos
+			chat.old_chat_GetChatBoxSize = chat.old_chat_GetChatBoxSize or chat.GetChatBoxSize
 
 			chat.AddText = function(...)
 				EasyChat.AppendText("\n")
@@ -334,7 +334,7 @@ if CLIENT then
 						EasyChat.AppendText(str)
 					end
 				end
-				EasyChat.old_chat_AddText(...)
+				chat.old_chat_AddText(...)
 			end
 
 			chat.GetChatBoxPos = function()
@@ -342,7 +342,7 @@ if CLIENT then
 					local x,y,_,_ = EasyChat.GUI.ChatBox:GetBounds()
 					return x,y
 				else
-					return EasyChat.old_chat_GetChatBoxPos()
+					return chat.old_chat_GetChatBoxPos()
 				end
 			end
 
@@ -351,7 +351,7 @@ if CLIENT then
 					local _,_,w,h = EasyChat.GUI.ChatBox:GetBounds()
 					return w,h
 				else
-					return EasyChat.old_chat_GetChatBoxSize()
+					return chat.old_chat_GetChatBoxSize()
 				end
 			end
 
