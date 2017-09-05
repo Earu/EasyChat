@@ -201,7 +201,7 @@ if CLIENT then
 				end
 			end
 		end
-		hook.Run("ECOpened")
+		hook.Run("ECOpened",LocalPlayer())
 		net.Start(netsettyping)
 		net.WriteBool(true)
 		net.SendToServer()
@@ -255,7 +255,7 @@ if CLIENT then
 			SavePosSize()
 			EasyChat.GUI.ChatBox:Hide()
 			chat.Close()
-			hook.Run("ECClosed")
+			hook.Run("ECClosed",LocalPlayer())
 			net.Start(netsettyping)
 			net.WriteBool(false)
 			net.SendToServer()
