@@ -391,12 +391,12 @@ if CLIENT then
 						if self == frame.Tabs:GetActiveTab() then
 							self.Flashed = false
 							tab.NotificationCount = 0
-							surface.SetDrawColor(EasyChat.OutlayColor)
+							surface.SetDrawColor(EasyChat.TabColor)
 						else
 							if self.Flashed then
 								surface.SetDrawColor( math.abs(math.sin(CurTime()*3)*244),math.abs(math.sin(CurTime()*3)*167), math.abs(math.sin(CurTime()*3)*66),255)
 							else
-								surface.SetDrawColor(EasyChat.TabColor)
+								surface.SetDrawColor(EasyChat.OutlayColor)
 							end
 						end
 						surface.DrawRect(0,0,w,h)
