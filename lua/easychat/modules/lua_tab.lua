@@ -192,8 +192,8 @@ if CLIENT then
 
     if GetConVar("easychat_luatab"):GetBool() then
         local luatab = vgui.Create("ECLuaTab")
-        EasyChat.AddTab("LuaTab",luatab)
-        EasyChat.SetFocusForOn("LuaTab",luatab.HTMLIDE)
+        EasyChat.AddTab("Lua",luatab)
+        EasyChat.SetFocusForOn("Lua",luatab.HTMLIDE)
     end
 
 end
