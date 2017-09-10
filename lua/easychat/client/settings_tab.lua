@@ -49,6 +49,7 @@ local settings_tab = {
         self.BtnResetAll            = self:Add("DButton")
         self.BtnReloadChat          = self:Add("DButton")
         self.BtnUseDermaSkin        = self:Add("DButton")
+        self.BtnDisableEC           = self:Add("DButton")
 
         self.TBoxOutlayColor:SetText("Outlay Color")
         self.TBoxOutlayColor:SetFont("ECSettingsFont")
@@ -232,9 +233,16 @@ local settings_tab = {
         self.BtnUseDermaSkin:SetText(EasyChat.UseDermaSkin and "Use custom skin" or "Use dermaskin")
         self.BtnUseDermaSkin:SetFont("ECSettingsFont")
         self.BtnUseDermaSkin:SetSize(100,25)
-
         self.BtnUseDermaSkin.DoClick = function()
             RunConsoleCommand("easychat_use_dermaskin",(EasyChat.UseDermaSkin and "0" or "1"))
+        end
+
+        self.BtnDisableEC:SetPos(170,0)
+        self.BtnDisableEC:SetText("Disable EC")
+        self.BtnDisableEC:SetFont("ECSettingsFont")
+        self.BtnDisableEC:SetSize(100,25)
+        self.BtnDisableEC.DoClick = function()
+            RunConsoleCommand("easychat_enable","0")
         end
 
         if not EasyChat.UseDermaSkin then
@@ -247,6 +255,7 @@ local settings_tab = {
             self.BtnResetAll:SetTextColor(EasyChat.TextColor)
             self.BtnReloadChat:SetTextColor(EasyChat.TextColor)
             self.BtnUseDermaSkin:SetTextColor(EasyChat.TextColor)
+            self.BtnDisableEC:SetTextColor(EasyChat.TextColor)
 
             local ECButtonPaint = function(self,w,h)
                 surface.SetDrawColor(EasyChat.OutlayColor)
@@ -263,7 +272,7 @@ local settings_tab = {
             self.BtnResetOptions.Paint = ECButtonPaint
             self.BtnResetAll.Paint     = ECButtonPaint
             self.BtnReloadChat.Paint   = ECButtonPaint
-
+            self.BtnDisableEC.Paint    = ECButtonPaint
         end
 
     end,
