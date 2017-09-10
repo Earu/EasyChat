@@ -15,6 +15,7 @@ ChatHUD.CurrentSize     = ChatHUD.DefaultFontSize
 ChatHUD.CurrentFont     = ChatHUD.DefaultFont
 ChatHUD.CurrentColor    = Color(255,255,255)
 ChatHUD.CurrentWidth    = 550
+ChatHUD.CurrentOffSet   = 0
 ChatHUD.MaxArguments    = 140
 ChatHUD.TimeToFade      = 16
 ChatHUD.FadeTime        = 2
@@ -67,11 +68,26 @@ local ClearArgs = function()
     end
 end
 
+local GetOffset = function()
+    local line = ""
+    for _,v in ipairs(ChatHUD.Arguments) do
+        if v.Type == "string" then
+            line = line..v.Arg
+        end
+    end
+    local count = 1
+    for _,_ in string.gmatch(line,"\n") do
+        count = count + 1
+    end
+    return count * ChatHUD.DefaultFontSize
+end
+
 local StoreArg = function(arg,type)
     table.insert(ChatHUD.Arguments,{ Arg = arg, Type = type, ID = #ChatHUD.Arguments})
     if ChatHUD.Arguments[1].Faded or #ChatHUD.Arguments >= ChatHUD.MaxArguments then
         ClearArgs()
     end
+    ChatHUD.CurrentOffSet = GetOffset()
 end
 
 ChatHUD.AddTag = function(name,callback)
@@ -84,7 +100,7 @@ include("easychat/client/default_tags.lua")
 --[[
     STORING ARGS DECLARATIONS
 ]]--
-ParseStoreArgs = function(str)
+local ParseStoreArgs = function(str)
     local pattern = "<(.-)=(.-)>"
     local parts = string.Explode(pattern,str,true)
     local index = 1
@@ -101,7 +117,7 @@ ParseStoreArgs = function(str)
     StoreArg(parts[#parts],"string")
 end
 
-HashString = function(str,maxwidth)
+local HashString = function(str,maxwidth)
 	local lines    = {}
     local strlen   = string.len(str)
     local strstart = 1
@@ -179,7 +195,7 @@ end
 --[[
     DRAWING DECLARATIONS
 ]]--
-ChatHUD.Fade = function(arg,col)
+local Fade = function(arg,col)
     local col   = col or ChatHUD.CurrentColor
     local bgcol = ChatHUD.ShadowColor
     local alfv  = 0
@@ -201,7 +217,7 @@ ChatHUD.Fade = function(arg,col)
     return col,bgcol
 end
 
-ChatHUD.DrawText = function(txt,x,y,bgcol,col)
+local DrawString = function(txt,x,y,bgcol,col)
     local font,bgfont = GetFontNames(ChatHUD.CurrentFont,ChatHUD.CurrentSize)
 
     surface.SetTextColor(bgcol)
@@ -221,10 +237,10 @@ ChatHUD.DrawText = function(txt,x,y,bgcol,col)
 
 end
 
-ChatHUD.DrawStringArg = function(arg,x,y)
+local DrawText = function(arg,x,y)
     local lines = string.Explode("\n",arg.Arg)
     local w = 0
-    local col,bgcol = ChatHUD.Fade(arg)
+    local col,bgcol = Fade(arg)
     local y = y
     if not col then return x,y end
 
@@ -233,50 +249,37 @@ ChatHUD.DrawStringArg = function(arg,x,y)
             x = 1
             y = y + ChatHUD.CurrentSize
         end
-        w,_ = ChatHUD.DrawText(line,x,y,bgcol,col)
+        w,_ = DrawString(line,x,y,bgcol,col)
     end
 
     return x + w,y
 end
 
-ChatHUD.DrawPlayerArg = function(arg,x,y)
-    local col,bgcol = ChatHUD.Fade(arg)
+local DrawPlayer = function(arg,x,y)
+    local col,bgcol = Fade(arg)
     if not col then return x,y end
 
-    local w,_ = ChatHUD.DrawText(arg.Arg.Nick,x,y,bgcol,col)
+    local w,_ = DrawString(arg.Arg.Nick,x,y,bgcol,col)
 
     return x + w,y
 end
 
-ChatHUD.GetCurrentOffSet = function()
-    local line = ""
-    for _,v in ipairs(ChatHUD.Arguments) do
-        if v.Type == "string" then
-            line = line..v.Arg
-        end
-    end
-    local count = 1
-    for _,_ in string.gmatch(line,"\n") do
-        count = count + 1
-    end
-    return count * ChatHUD.DefaultFontSize
-end
 
 
-ChatHUD.Draw = function(self,w,h)
-    if hook.Run("ChatHudDraw", self, w, h) == false then return end
+local Draw = function(self,w,h)
+    if hook.Run("ChatHudDraw",self,w,h) == false then return end
     ChatHUD.CurrentWidth = w
 
     surface.DisableClipping(true)
-
-    local x,y = 1, (- ChatHUD.GetCurrentOffSet())
+    
+    local x,y = 1, -ChatHUD.CurrentOffSet
     local matrixcount = 0
     for _,arg in ipairs(ChatHUD.Arguments) do
-        ChatHUD.Fade(arg)
+        Fade(arg)
         if arg.Type == "color" then
             ChatHUD.CurrentColor = arg.Arg
         elseif arg.Type == "string" then
-            x,y = ChatHUD.DrawStringArg(arg,x,y)
+            x,y = DrawText(arg,x,y)
         elseif arg.Type == "font" then
             UpdateFont(arg.Arg.Name,arg.Arg.Size)
         elseif arg.Type == "image" then
@@ -299,9 +302,9 @@ end
 
 ChatHUD.Init = function()
     ChatHUD.Frame = vgui.Create("DPanel")
-    ChatHUD.Frame:SetPos(25,ScrH() - 300)
+    ChatHUD.Frame:SetPos(25,ScrH() - 150)
     ChatHUD.Frame:SetSize(550,320)
-    ChatHUD.Frame.Paint = ChatHUD.Draw
+    ChatHUD.Frame.Paint = Draw
 end
 
 if me then
