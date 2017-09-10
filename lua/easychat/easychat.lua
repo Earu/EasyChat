@@ -648,7 +648,7 @@ if CLIENT then
 			if not IsValid(EasyChat.GUI.ChatBox) or not EasyChat.ChatHUD or (EasyChat.ChatHUD and not IsValid(EasyChat.ChatHUD.Frame)) then return end
 			if not ec_hud_follow:GetBool() then
 					EasyChat.ChatHUD.Frame:SetVisible(true)
-					EasyChat.ChatHUD.Frame:SetPos(25,ScrH() - 15)0
+					EasyChat.ChatHUD.Frame:SetPos(25,ScrH() - 150)
 					EasyChat.ChatHUD.Frame:SetSize(550,320)
 			else
 				local x,y,w,h = EasyChat.GUI.ChatBox:GetBounds()
