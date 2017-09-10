@@ -5,8 +5,10 @@ end
 local EasyChat = _G.EasyChat or {}
 _G.EasyChat = EasyChat
 
-local print = _G._print or _G.print
-local PLY	= FindMetaTable("Player")
+local string = _G.string
+local net	 = _G.net
+local print  = _G._print or _G.print
+local PLY	 = FindMetaTable("Player")
 
 local netbroadcastmsgs = "EASY_CHAT_BROADCAST_MSG"
 local netreceivemsg    = "EASY_CHAT_RECEIVE_MSG"
@@ -94,6 +96,8 @@ end
 
 if CLIENT then
 
+	local surface = _G.surface
+
 	local ec_global_on_open = CreateConVar("easychat_global_on_open","1",FCVAR_ARCHIVE,"Set the chat to always open global chat tab on open")
 	local ec_font 			= CreateConVar("easychat_font",(system.IsWindows() and "Verdana" or "Tahoma"),FCVAR_ARCHIVE,"Set the font to use for the chat")
 	local ec_font_size 		= CreateConVar("easychat_font_size","15",FCVAR_ARCHIVE,"Set the font size for chatbox")
@@ -102,7 +106,7 @@ if CLIENT then
 	local ec_teams_color 	= CreateConVar("easychat_teams_colored","0",FCVAR_ARCHIVE,"Display team with its relative color")
 	local ec_player_color 	= CreateConVar("easychat_players_colored","1",FCVAR_ARCHIVE,"Display player with its relative team color")
 	local ec_enable 		= CreateConVar("easychat_enable","1",{FCVAR_ARCHIVE,FCVAR_USERINFO},"Use easychat or not")
-	local ec_dermaskin 		= CreateConVar("easychat_use_dermaskin","0",FCVAR_ARCHIVE,"Use dermaskin look or not")
+	local ec_dermaskin 		= CreateConVar("easychat_use_dermaskin","0",{FCVAR_ARCHIVE,FCVAR_USERINFO},"Use dermaskin look or not")
 	local ec_local_msg_dist = CreateConVar("easychat_local_msg_distance","300",FCVAR_ARCHIVE,"Set the maximum distance for users to receive local messages")
 	local ec_no_modules 	= CreateConVar("easychat_no_modules","0",FCVAR_ARCHIVE,"Should easychat load modules or not")
 	local ec_hud_follow 	= CreateConVar("easychat_hud_follow","0",FCVAR_ARCHIVE,"Set the chat hud to follow the chatbox")
@@ -244,7 +248,7 @@ if CLIENT then
 			end
 			return tab.x,tab.y,tab.w,tab.h
 		else
-			return 25,(ScrH() - 300),550,320
+			return 25,(ScrH() - 150),550,320
 		end
 	end
 
@@ -310,9 +314,9 @@ if CLIENT then
 		do
 			EasyChat.ChatHUD.Init()
 
-			chat.old_chat_AddText 		 = chat.old_chat_AddText 		or chat.AddText
-			chat.old_chat_GetChatBoxPos  = chat.old_chat_GetChatBoxPos  or chat.GetChatBoxPos
-			chat.old_chat_GetChatBoxSize = chat.old_chat_GetChatBoxSize or chat.GetChatBoxSize
+			chat.old_AddText 		= chat.old_AddText 		or chat.AddText
+			chat.old_GetChatBoxPos  = chat.old_GetChatBoxPos  or chat.GetChatBoxPos
+			chat.old_GetChatBoxSize = chat.old_GetChatBoxSize or chat.GetChatBoxSize
 
 			chat.AddText = function(...)
 				EasyChat.AppendText("\n")
@@ -349,7 +353,7 @@ if CLIENT then
 						EasyChat.AppendText(str)
 					end
 				end
-				chat.old_chat_AddText(...)
+				chat.old_AddText(...)
 			end
 
 			chat.GetChatBoxPos = function()
@@ -357,7 +361,7 @@ if CLIENT then
 					local x,y,_,_ = EasyChat.GUI.ChatBox:GetBounds()
 					return x,y
 				else
-					return chat.old_chat_GetChatBoxPos()
+					return chat.old_GetChatBoxPos()
 				end
 			end
 
@@ -366,7 +370,7 @@ if CLIENT then
 					local _,_,w,h = EasyChat.GUI.ChatBox:GetBounds()
 					return w,h
 				else
-					return chat.old_chat_GetChatBoxSize()
+					return chat.old_GetChatBoxSize()
 				end
 			end
 
@@ -644,7 +648,7 @@ if CLIENT then
 			if not IsValid(EasyChat.GUI.ChatBox) or not EasyChat.ChatHUD or (EasyChat.ChatHUD and not IsValid(EasyChat.ChatHUD.Frame)) then return end
 			if not ec_hud_follow:GetBool() then
 					EasyChat.ChatHUD.Frame:SetVisible(true)
-					EasyChat.ChatHUD.Frame:SetPos(25,ScrH() - 300)
+					EasyChat.ChatHUD.Frame:SetPos(25,ScrH() - 15)0
 					EasyChat.ChatHUD.Frame:SetSize(550,320)
 			else
 				local x,y,w,h = EasyChat.GUI.ChatBox:GetBounds()
@@ -731,18 +735,16 @@ end
 EasyChat.Destroy = function()
 
 	if CLIENT then
-		hook.Remove("HUDPaint",tag)
 		hook.Remove("StartChat",tag)
-		hook.Remove("HUDShouldDraw",tag)
 		hook.Remove("ChatText",tag)
 		hook.Remove("PreRender",tag)
 		hook.Remove("Think",tag)
 		hook.Remove("HUDShouldDraw",tag)
 
-		if EasyChat.old_chat_AddText then
-			chat.AddText = EasyChat.old_chat_AddText
-			chat.GetChatBoxPos = EasyChat.old_chat_GetChatBoxPos
-			chat.GetChatBoxSize = EasyChat.old_chat_GetChatBoxSize
+		if chat.old_AddText then
+			chat.AddText 		= chat.old_AddText
+			chat.GetChatBoxPos  = chat.old_GetChatBoxPos
+			chat.GetChatBoxSize = chat.old_GetChatBoxSize
 		end
 
 		EasyChat.ModeCount = 0
