@@ -237,7 +237,7 @@ local settings_tab = {
             RunConsoleCommand("easychat_use_dermaskin",(EasyChat.UseDermaSkin and "0" or "1"))
         end
 
-        self.BtnDisableEC:SetPos(170,0)
+        self.BtnDisableEC:SetPos(170,305)
         self.BtnDisableEC:SetText("Disable EC")
         self.BtnDisableEC:SetFont("ECSettingsFont")
         self.BtnDisableEC:SetSize(100,25)
