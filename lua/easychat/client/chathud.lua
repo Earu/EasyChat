@@ -200,20 +200,16 @@ local Fade = function(arg,col)
     local bgcol = ChatHUD.ShadowColor
     local alfv  = 0
 
+    col.InitAlpha = col.InitAlpha or col.a
+    bgcol.InitAlpha = bgcol.InitAlpha or bgcol.a
+
     arg.FadeStartTime = arg.FadeStartTime or RealTime() + ChatHUD.TimeToFade
     alfv              = 1 - ((RealTime() - arg.FadeStartTime) / ChatHUD.FadeTime)
     alfv              = math.Clamp(alfv,0,1)
     arg.Faded         = alfv <= 0
 
-    col = Color (col.r, col.g, col.b, col.a * alfv)
-    bgcol = Color (bgcol.r, bgcol.g, bgcol.b, bgcol.a * alfv)
-
-    if arg.Faded then
-        col = Color (col.r, col.g, col.b,0)
-        bgcol = Color (bgcol.r, bgcol.g, bgcol.b,0)
-        return col,bgcol
-    end
-
+    col.a = col.InitAlpha * alfv
+    bgcol.a = bgcol.InitAlpha * alfv
     return col,bgcol
 end
 
