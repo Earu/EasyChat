@@ -23,9 +23,7 @@ local chatbox = {
         end
         self.BtnClose:SetFont("DermaDefaultBold")
         self.BtnClose:SetText("X")
-        self.BtnClose.DoClick = function()
-            EasyChat.Close()
-        end
+
         self.BtnClose.Think = function(self)
             local x,y,w,h = frame:GetBounds()
             self:SetPos(w-self:GetWide()-6,-2)
