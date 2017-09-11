@@ -381,6 +381,9 @@ if CLIENT then
 			local cx,cy,cw,ch = LoadPosSize()
 			frame:SetSize(cw,ch)
 			frame:SetPos(cx,cy)
+			frame.BtnClose.DoClick = function()
+				ECClose()
+			end
 
 			EasyChat.AddTab = function(name,panel)
 				local tab = frame.Tabs:AddSheet(name,panel)
