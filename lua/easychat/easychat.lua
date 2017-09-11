@@ -158,10 +158,10 @@ if CLIENT then
 	local coljson = file.Read("easychat/colors.txt","DATA")
 	if coljson then
 		local cols = util.JSONToTable(coljson)
-		EasyChat.OutlayColor        = Color(cols.outlay.r,cols.outlay.g,cols.outlay.b,cols.outlay.a)
-		EasyChat.OutlayOutlineColor = Color(cols.outlayoutline.r,cols.outlayoutline.g,cols.outlayoutline.b,cols.outlayoutline.a)
-		EasyChat.TabOutlineColor    = Color(cols.taboutline.r,cols.taboutline.g,cols.taboutline.b,cols.taboutline.a)
-		EasyChat.TabColor           = Color(cols.tab.r,cols.tab.g,cols.tab.b,cols.tab.a)
+		EasyChat.OutlayColor        = cols.outlay
+		EasyChat.OutlayOutlineColor = cols.outlayoutline
+		EasyChat.TabOutlineColor    = cols.taboutline
+		EasyChat.TabColor           = cols.tab
 	else
         EasyChat.OutlayColor        = Color(62,62,62,173)
         EasyChat.OutlayOutlineColor = Color(104,104,104,103)
@@ -171,9 +171,9 @@ if CLIENT then
 
 	EasyChat.TextColor = Color(255,255,255,255)
 	EasyChat.ModeCount = 0
-	EasyChat.Mode = 0
-	EasyChat.Modes = {}
-	EasyChat.Tabs = {}
+	EasyChat.Mode 	   = 0
+	EasyChat.Modes 	   = {}
+	EasyChat.Tabs 	   = {}
 
 	--after easychat var declarations [necessary]
 	include("easychat/client/chathud.lua")
@@ -191,9 +191,9 @@ if CLIENT then
 		return EasyChat.GUI and IsValid(EasyChat.GUI.ChatBox) and EasyChat.GUI.ChatBox:IsVisible()
 	end
 
-	EasyChat.NextNotify = 0
+	ECNextNotif = 0
 
-	EasyChat.Open = function(isteam)
+	local ECOpen = function(isteam)
 		EasyChat.GUI.ChatBox:Show()
 		EasyChat.GUI.ChatBox:MakePopup()
 		EasyChat.Mode = isteam and 1 or 0
@@ -201,8 +201,8 @@ if CLIENT then
 			EasyChat.GUI.TabControl:SetActiveTab(EasyChat.GUI.TabControl.Items[1].Tab)
 			EasyChat.GUI.TextEntry:RequestFocus()
 		end
-		if EasyChat.NextNotify <= CurTime() then
-			EasyChat.NextNotify = CurTime() + 40
+		if ECNextNotif <= CurTime() then
+			ECNextNotif = CurTime() + 40
 			for k,v in pairs(EasyChat.Tabs) do
 				if v.NotificationCount and v.NotificationCount > 0 then
 					chat.AddText("EC",Color(175,175,175)," ⮞ ",Color(255, 127, 127),v.NotificationCount,Color(255,255,255)," new notifications from "..k)
@@ -252,7 +252,7 @@ if CLIENT then
 		end
 	end
 
-	EasyChat.Close = function()
+	local ECClose = function()
 		if EasyChat.IsOpened() then
 			EasyChat.GUI.ChatBox:SetMouseInputEnabled( false )
 			EasyChat.GUI.ChatBox:SetKeyboardInputEnabled( false )
@@ -445,7 +445,7 @@ if CLIENT then
 				TabControl 	= frame.Tabs,
 			}
 
-			EasyChat.Close()
+			ECClose()
 		end
 
 		EasyChat.InsertColorChange = function(r,g,b,a)
@@ -540,7 +540,7 @@ if CLIENT then
 			EasyChat.UseRegisteredShortcuts(self,last_key,code)
 
 			if code == KEY_ESCAPE then
-				EasyChat.Close()
+				ECClose()
 			elseif code == KEY_ENTER or code == KEY_PAD_ENTER then
 				self:SetText(string.Replace(self:GetText(),"╚​",""))
 				if string.Trim(self:GetText()) ~= "" then
@@ -554,7 +554,7 @@ if CLIENT then
 						mode.Callback(self:GetText())
 					end
 				end
-				EasyChat.Close()
+				ECClose()
 			end
 
 			last_key = code
@@ -583,7 +583,7 @@ if CLIENT then
 		end
 
 		hook.Add("StartChat",tag,function(isteam)
-			EasyChat.Open(isteam)
+			ECOpen(isteam)
 			return true
 		end)
 
@@ -630,7 +630,7 @@ if CLIENT then
 			if EasyChat.IsOpened() then
 				if input.IsKeyDown(KEY_ESCAPE) then
 					EasyChat.GUI.TextEntry:SetText("")
-					EasyChat.Close()
+					ECClose()
 				end
 				local tab = EasyChat.GUI.TabControl:GetActiveTab()
 				if tab.FocusOn and not tab.FocusOn:HasFocus() then
