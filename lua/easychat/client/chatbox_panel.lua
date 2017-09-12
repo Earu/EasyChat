@@ -1,4 +1,4 @@
-local chatbox = {
+local CHATBOX = {
     Init = function(self)
         local frame = self
         self:ShowCloseButton(true)
@@ -109,4 +109,4 @@ local chatbox = {
     end,
 }
 
-vgui.Register("ECChatBox",chatbox,"DFrame")
+vgui.Register("ECChatBox",CHATBOX,"DFrame")
