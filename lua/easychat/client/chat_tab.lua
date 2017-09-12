@@ -1,4 +1,4 @@
-local maintab = {
+local MAIN_TAB = {
     Init = function(self)
         local frame = self
 
@@ -56,4 +56,4 @@ local maintab = {
     end,
 }
 
-vgui.Register("ECChatTab",maintab,"DPanel")
+vgui.Register("ECChatTab",MAIN_TAB,"DPanel")
