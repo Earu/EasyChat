@@ -10,12 +10,12 @@ local net	 = _G.net
 local print  = _G._print or _G.print
 local PLY	 = FindMetaTable("Player")
 
-local netbroadcastmsgs = "EASY_CHAT_BROADCAST_MSG"
-local netreceivemsg    = "EASY_CHAT_RECEIVE_MSG"
-local netlocalmsg      = "EASY_CHAT_LOCAL_MSG"
-local netlocalsend     = "EASY_CHAT_LOCAL_SEND"
-local netsettyping	   = "EASY_CHAT_START_CHAT"
-local tag              = "EasyChat"
+local NET_BROADCAST_MSG 	  = "EASY_CHAT_BROADCAST_MSG"
+local NET_SEND_MSG    		  = "EASY_CHAT_RECEIVE_MSG"
+local NET_SEND_LOCAL_MSG      = "EASY_CHAT_LOCAL_MSG"
+local NET_BROADCAST_LOCAL_MSG = "EASY_CHAT_LOCAL_SEND"
+local NET_SET_TYPING	      = "EASY_CHAT_START_CHAT"
+local TAG              		  = "EasyChat"
 
 include("easychat/autoloader.lua")
 
@@ -34,18 +34,18 @@ end
 
 if SERVER then
 
-	util.AddNetworkString(netreceivemsg)
-	util.AddNetworkString(netbroadcastmsgs)
-	util.AddNetworkString(netlocalmsg)
-	util.AddNetworkString(netlocalsend)
-	util.AddNetworkString(netsettyping)
+	util.AddNetworkString(NET_SEND_MSG)
+	util.AddNetworkString(NET_BROADCAST_MSG)
+	util.AddNetworkString(NET_SEND_LOCAL_MSG)
+	util.AddNetworkString(NET_BROADCAST_LOCAL_MSG)
+	util.AddNetworkString(NET_SET_TYPING)
 
-	net.Receive(netreceivemsg,function(len,ply)
+	net.Receive(NET_SEND_MSG,function(len,ply)
 		local str = net.ReadString()
 		local isteam = net.ReadBool()
 		local msg = gamemode.Call("PlayerSay",ply,str,isteam)
 		if type(msg) ~= "string" or string.Trim(msg) == "" then return end
-		net.Start(netbroadcastmsgs)
+		net.Start(NET_BROADCAST_MSG)
 		net.WriteEntity(ply)
 		net.WriteString(msg)
 		net.WriteBool(IsValid(ply) and (not ply:Alive()) or false)
@@ -58,10 +58,10 @@ if SERVER then
 		end
 	end)
 
-	net.Receive(netlocalmsg,function(len,ply)
+	net.Receive(NET_SEND_LOCAL_MSG,function(len,ply)
 		local msg = net.ReadString()
 		if type(msg) ~= "string" or string.Trim(msg) == "" then return end
-		net.Start(netlocalsend)
+		net.Start(NET_BROADCAST_LOCAL_MSG)
 		net.WriteEntity(ply)
 		net.WriteString(msg)
 		net.WriteBool(IsValid(ply) and (not ply:Alive()) or false)
@@ -74,7 +74,7 @@ if SERVER then
 		net.Send(receivers)
 	end)
 
-	net.Receive(netsettyping,function(len,ply)
+	net.Receive(NET_SET_TYPING,function(len,ply)
 		local bool = net.ReadBool()
 		ply:SetNWBool("ec_is_typing",bool)
 		if bool then
@@ -91,7 +91,7 @@ if SERVER then
 		hook.Run("ECInitialized")
 	end
 
-	hook.Add("Initialize", tag, EasyChat.Init)
+	hook.Add("Initialize", TAG, EasyChat.Init)
 end
 
 if CLIENT then
@@ -120,7 +120,7 @@ if CLIENT then
 			EasyChat.Init()
 		else
 			EasyChat.Destroy()
-			net.Start(netsettyping)	-- this is useful if a user disable easychat with console mode
+			net.Start(NET_SET_TYPING)	-- this is useful if a user disable easychat with console mode
 			net.WriteBool(true)
 			net.SendToServer()
 		end
@@ -211,7 +211,7 @@ if CLIENT then
 			end
 		end
 		hook.Run("ECOpened",LocalPlayer())
-		net.Start(netsettyping)
+		net.Start(NET_SET_TYPING)
 		net.WriteBool(true)
 		net.SendToServer()
 	end
@@ -265,7 +265,7 @@ if CLIENT then
 			EasyChat.GUI.ChatBox:Hide()
 			chat.Close()
 			hook.Run("ECClosed",LocalPlayer())
-			net.Start(netsettyping)
+			net.Start(NET_SET_TYPING)
 			net.WriteBool(false)
 			net.SendToServer()
 		end
@@ -296,14 +296,14 @@ if CLIENT then
 	EasyChat.Init = function()
 
 		EasyChat.AddMode("Team",function(text)
-			net.Start(netreceivemsg)
+			net.Start(NET_SEND_MSG)
 			net.WriteString(string.sub(text,1,MAX_CHARS))
 			net.WriteBool(true)
 			net.SendToServer()
 		end)
 
 		EasyChat.AddMode("Local",function(text)
-			net.Start(netlocalmsg)
+			net.Start(NET_SEND_LOCAL_MSG)
 			net.WriteString(string.sub(text,1,MAX_CHARS))
 			net.SendToServer()
 		end)
@@ -470,10 +470,10 @@ if CLIENT then
 			local pattern = "<(.-)=(.-)>"
 			local parts = string.Explode(pattern,str,true)
 			local index = 1
-			for tag,values in string.gmatch(str,pattern) do
+			for TAG,values in string.gmatch(str,pattern) do
 				EasyChat.AppendText(parts[index])
 				index = index + 1
-				if tag == "color" then
+				if TAG == "color" then
 					local r,g,b
 					string.gsub(values,"(%d+),(%d+),(%d+)",function(sr,sg,sb)
 						r = tonumber(sr)
@@ -549,7 +549,7 @@ if CLIENT then
 				self:SetText(string.Replace(self:GetText(),"╚​",""))
 				if string.Trim(self:GetText()) ~= "" then
 					if EasyChat.Mode == 0 then
-						net.Start(netreceivemsg)
+						net.Start(NET_SEND_MSG)
 						net.WriteString(string.sub(self:GetText(),1,MAX_CHARS))
 						net.WriteBool(false)
 						net.SendToServer()
@@ -586,7 +586,7 @@ if CLIENT then
 			end
 		end
 
-		hook.Add("StartChat",tag,function(isteam)
+		hook.Add("StartChat",TAG,function(isteam)
 			ECOpen(isteam)
 			return true
 		end)
@@ -600,7 +600,7 @@ if CLIENT then
 		local settings = vgui.Create("ECSettingsTab")
 		EasyChat.AddTab("Settings",settings)
 
-		hook.Add("ChatText",tag, function(index,name,text,type)
+		hook.Add("ChatText",TAG, function(index,name,text,type)
 			if type == "none" then
 				chat.AddText(text)
 			end
@@ -624,13 +624,13 @@ if CLIENT then
 			return false
 		end
 
-		hook.Add("HUDShouldDraw",tag,function(hudelement)
+		hook.Add("HUDShouldDraw",TAG,function(hudelement)
 			if hudelement == "CHudChat" then
 				return false
 			end
 		end)
 
-		hook.Add("PreRender",tag,function()
+		hook.Add("PreRender",TAG,function()
 			if EasyChat.IsOpened() then
 				if input.IsKeyDown(KEY_ESCAPE) then
 					EasyChat.GUI.TextEntry:SetText("")
@@ -648,7 +648,7 @@ if CLIENT then
 			end
 		end)
 
-		hook.Add("Think",tag,function()
+		hook.Add("Think",TAG,function()
 			if not IsValid(EasyChat.GUI.ChatBox) or not EasyChat.ChatHUD or (EasyChat.ChatHUD and not IsValid(EasyChat.ChatHUD.Frame)) then return end
 			if not EC_HUD_FOLLOW:GetBool() then
 					EasyChat.ChatHUD.Frame:SetVisible(true)
@@ -665,7 +665,7 @@ if CLIENT then
 
 	end
 
-	net.Receive(netbroadcastmsgs,function()
+	net.Receive(NET_BROADCAST_MSG,function()
 		local ply  = net.ReadEntity()
 		local msg  = net.ReadString()
 		local dead = net.ReadBool()
@@ -674,7 +674,7 @@ if CLIENT then
 		gamemode.Call("OnPlayerChat",ply,msg,isteam,dead,false)
 	end)
 
-	net.Receive(netlocalsend,function()
+	net.Receive(NET_BROADCAST_LOCAL_MSG,function()
 		local ply  = net.ReadEntity()
 		local msg  = net.ReadString()
 		local dead = net.ReadBool()
@@ -682,7 +682,7 @@ if CLIENT then
 		gamemode.Call("OnPlayerChat",ply,msg,false,dead,true)
 	end)
 
-	hook.Add("Initialize",tag,function()
+	hook.Add("Initialize",TAG,function()
 		if EC_ENABLE:GetBool() then
 			EasyChat.Init()
 		end
@@ -739,11 +739,11 @@ end
 EasyChat.Destroy = function()
 
 	if CLIENT then
-		hook.Remove("StartChat",tag)
-		hook.Remove("ChatText",tag)
-		hook.Remove("PreRender",tag)
-		hook.Remove("Think",tag)
-		hook.Remove("HUDShouldDraw",tag)
+		hook.Remove("StartChat",TAG)
+		hook.Remove("ChatText",TAG)
+		hook.Remove("PreRender",TAG)
+		hook.Remove("Think",TAG)
+		hook.Remove("HUDShouldDraw",TAG)
 
 		if chat.old_AddText then
 			chat.AddText 		= chat.old_AddText

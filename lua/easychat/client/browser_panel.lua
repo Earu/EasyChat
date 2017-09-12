@@ -1,4 +1,4 @@
-local browser = {
+local BROWSER = {
     History = {},
     HistoryPos = 0,
     HistoryMove = false,
@@ -184,4 +184,4 @@ local browser = {
 
 }
 
-vgui.Register("ECBrowser", browser, "DFrame")
+vgui.Register("ECBrowser", BROWSER, "DFrame")
