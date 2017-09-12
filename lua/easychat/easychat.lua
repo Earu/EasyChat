@@ -96,25 +96,27 @@ end
 
 if CLIENT then
 
-	local surface = _G.surface
+	local MAX_CHARS = 3000
+	local surface 	= _G.surface
+	local JSON_COLS = file.Read("easychat/colors.txt","DATA")
+	
+	local EC_GLOBAL_ON_OPEN = CreateConVar("easychat_global_on_open","1",FCVAR_ARCHIVE,"Set the chat to always open global chat tab on open")
+	local EC_FONT 			= CreateConVar("easychat_font",(system.IsWindows() and "Verdana" or "Tahoma"),FCVAR_ARCHIVE,"Set the font to use for the chat")
+	local EC_FONT_SIZE 		= CreateConVar("easychat_font_size","15",FCVAR_ARCHIVE,"Set the font size for chatbox")
+	local EC_TIMESTAMPS		= CreateConVar("easychat_timestamps","0",FCVAR_ARCHIVE,"Display timestamp in front of messages or not")
+	local EC_TEAMS 			= CreateConVar("easychat_teams","0",FCVAR_ARCHIVE,"Display team in front of messages or not")
+	local EC_TEAMS_COLOR 	= CreateConVar("easychat_teams_colored","0",FCVAR_ARCHIVE,"Display team with its relative color")
+	local EC_PLAYER_COLOR 	= CreateConVar("easychat_players_colored","1",FCVAR_ARCHIVE,"Display player with its relative team color")
+	local EC_ENABLE 		= CreateConVar("easychat_enable","1",{FCVAR_ARCHIVE,FCVAR_USERINFO},"Use easychat or not")
+	local EC_DERMASKIN 		= CreateConVar("easychat_use_dermaskin","0",{FCVAR_ARCHIVE,FCVAR_USERINFO},"Use dermaskin look or not")
+	local EC_LOCAL_MSG_DIST = CreateConVar("easychat_local_msg_distance","300",FCVAR_ARCHIVE,"Set the maximum distance for users to receive local messages")
+	local EC_NO_MODULES 	= CreateConVar("easychat_no_modules","0",FCVAR_ARCHIVE,"Should easychat load modules or not")
+	local EC_HUD_FOLLOW 	= CreateConVar("easychat_hud_follow","0",FCVAR_ARCHIVE,"Set the chat hud to follow the chatbox")
 
-	local ec_global_on_open = CreateConVar("easychat_global_on_open","1",FCVAR_ARCHIVE,"Set the chat to always open global chat tab on open")
-	local ec_font 			= CreateConVar("easychat_font",(system.IsWindows() and "Verdana" or "Tahoma"),FCVAR_ARCHIVE,"Set the font to use for the chat")
-	local ec_font_size 		= CreateConVar("easychat_font_size","15",FCVAR_ARCHIVE,"Set the font size for chatbox")
-	local ec_timestamps		= CreateConVar("easychat_timestamps","0",FCVAR_ARCHIVE,"Display timestamp in front of messages or not")
-	local ec_teams 			= CreateConVar("easychat_teams","0",FCVAR_ARCHIVE,"Display team in front of messages or not")
-	local ec_teams_color 	= CreateConVar("easychat_teams_colored","0",FCVAR_ARCHIVE,"Display team with its relative color")
-	local ec_player_color 	= CreateConVar("easychat_players_colored","1",FCVAR_ARCHIVE,"Display player with its relative team color")
-	local ec_enable 		= CreateConVar("easychat_enable","1",{FCVAR_ARCHIVE,FCVAR_USERINFO},"Use easychat or not")
-	local ec_dermaskin 		= CreateConVar("easychat_use_dermaskin","0",{FCVAR_ARCHIVE,FCVAR_USERINFO},"Use dermaskin look or not")
-	local ec_local_msg_dist = CreateConVar("easychat_local_msg_distance","300",FCVAR_ARCHIVE,"Set the maximum distance for users to receive local messages")
-	local ec_no_modules 	= CreateConVar("easychat_no_modules","0",FCVAR_ARCHIVE,"Should easychat load modules or not")
-	local ec_hud_follow 	= CreateConVar("easychat_hud_follow","0",FCVAR_ARCHIVE,"Set the chat hud to follow the chatbox")
-
-	EasyChat.UseDermaSkin = ec_dermaskin:GetBool()
+	EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
 
 	cvars.AddChangeCallback("easychat_enable",function(name,old,new)
-		if ec_enable:GetBool() then
+		if EC_ENABLE:GetBool() then
 			EasyChat.Init()
 		else
 			EasyChat.Destroy()
@@ -125,12 +127,12 @@ if CLIENT then
 	end)
 
 	cvars.AddChangeCallback("easychat_use_dermaskin",function(name,old,new)
-		EasyChat.UseDermaSkin = ec_dermaskin:GetBool()
+		EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
 		LocalPlayer():ConCommand("easychat_reload")
 	end)
 
-	EasyChat.FontName = ec_font:GetString()
-	EasyChat.FontSize = ec_font_size:GetInt()
+	EasyChat.FontName = EC_FONT:GetString()
+	EasyChat.FontSize = EC_FONT_SIZE:GetInt()
 
 	local UpdateChatBoxFont = function(fontname,size)
 		EasyChat.FontName = fontname
@@ -155,13 +157,12 @@ if CLIENT then
 		UpdateChatBoxFont(EasyChat.FontName,tonumber(new))
 	end)
 
-	local coljson = file.Read("easychat/colors.txt","DATA")
-	if coljson then
-		local cols = util.JSONToTable(coljson)
-		EasyChat.OutlayColor        = cols.outlay
-		EasyChat.OutlayOutlineColor = cols.outlayoutline
-		EasyChat.TabOutlineColor    = cols.taboutline
-		EasyChat.TabColor           = cols.tab
+	if JSON_COLS then
+		local colors = util.JSONToTable(JSON_COLS)
+		EasyChat.OutlayColor        = colors.outlay
+		EasyChat.OutlayOutlineColor = colors.outlayoutline
+		EasyChat.TabOutlineColor    = colors.taboutline
+		EasyChat.TabColor           = colors.tab
 	else
         EasyChat.OutlayColor        = Color(62,62,62,173)
         EasyChat.OutlayOutlineColor = Color(104,104,104,103)
@@ -197,7 +198,7 @@ if CLIENT then
 		EasyChat.GUI.ChatBox:Show()
 		EasyChat.GUI.ChatBox:MakePopup()
 		EasyChat.Mode = isteam and 1 or 0
-		if ec_global_on_open:GetBool() then
+		if EC_GLOBAL_ON_OPEN:GetBool() then
 			EasyChat.GUI.TabControl:SetActiveTab(EasyChat.GUI.TabControl.Items[1].Tab)
 			EasyChat.GUI.TextEntry:RequestFocus()
 		end
@@ -296,14 +297,14 @@ if CLIENT then
 
 		EasyChat.AddMode("Team",function(text)
 			net.Start(netreceivemsg)
-			net.WriteString(text)
+			net.WriteString(string.sub(text,1,MAX_CHARS))
 			net.WriteBool(true)
 			net.SendToServer()
 		end)
 
 		EasyChat.AddMode("Local",function(text)
 			net.Start(netlocalmsg)
-			net.WriteString(text)
+			net.WriteString(string.sub(text,1,MAX_CHARS))
 			net.SendToServer()
 		end)
 
@@ -345,7 +346,7 @@ if CLIENT then
 							EasyChat.AppendText(arg)
 						end
 					elseif arg:IsPlayer() then
-						local col = ec_player_color:GetBool() and team.GetColor(arg:Team()) or Color(255,255,255)
+						local col = EC_PLAYER_COLOR:GetBool() and team.GetColor(arg:Team()) or Color(255,255,255)
 						EasyChat.InsertColorChange(col.r,col.g,col.b,255)
 						EasyChat.AppendTaggedText(arg:Nick())
 					else
@@ -549,7 +550,7 @@ if CLIENT then
 				if string.Trim(self:GetText()) ~= "" then
 					if EasyChat.Mode == 0 then
 						net.Start(netreceivemsg)
-						net.WriteString(string.sub(self:GetText(),1,3000))
+						net.WriteString(string.sub(self:GetText(),1,MAX_CHARS))
 						net.WriteBool(false)
 						net.SendToServer()
 					else
@@ -590,7 +591,7 @@ if CLIENT then
 			return true
 		end)
 
-		if not ec_no_modules:GetBool() then
+		if not EC_NO_MODULES:GetBool() then
 			hook.Run("ECPreLoadModules")
 			EasyChat.LoadModules()
 			hook.Run("ECPostLoadModules")
@@ -649,7 +650,7 @@ if CLIENT then
 
 		hook.Add("Think",tag,function()
 			if not IsValid(EasyChat.GUI.ChatBox) or not EasyChat.ChatHUD or (EasyChat.ChatHUD and not IsValid(EasyChat.ChatHUD.Frame)) then return end
-			if not ec_hud_follow:GetBool() then
+			if not EC_HUD_FOLLOW:GetBool() then
 					EasyChat.ChatHUD.Frame:SetVisible(true)
 					EasyChat.ChatHUD.Frame:SetPos(25,ScrH() - 150)
 					EasyChat.ChatHUD.Frame:SetSize(550,320)
@@ -682,19 +683,19 @@ if CLIENT then
 	end)
 
 	hook.Add("Initialize",tag,function()
-		if ec_enable:GetBool() then
+		if EC_ENABLE:GetBool() then
 			EasyChat.Init()
 		end
 
 		GAMEMODE.OnPlayerChat = function(self,ply,msg,isteam,isdead,islocal) -- this is for the best
 			local tab = {}
 
-			if ec_enable:GetBool() then
-				if ec_timestamps:GetBool() then
+			if EC_ENABLE:GetBool() then
+				if EC_TIMESTAMPS:GetBool() then
 					table.insert(tab,os.date("%H:%M:%S").." - ")
 				end
-				if IsValid(ply) and ec_teams:GetBool() then
-					if ec_teams_color:GetBool() then
+				if IsValid(ply) and EC_TEAMS:GetBool() then
+					if EC_TEAMS_COLOR:GetBool() then
 						local tcol = team.GetColor(ply:Team())
 						table.insert(tab,tcol)
 					end
