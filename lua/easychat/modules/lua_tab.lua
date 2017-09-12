@@ -1,10 +1,10 @@
-local netluaclients = "EASY_CHAT_MODULE_LUA_CLIENTS"
-local netluasv      = "EASY_CHAT_MODULE_LUA_SV"
-local lua           = {}
+local NET_LUA_CLIENTS = "EASY_CHAT_MODULE_LUA_CLIENTS"
+local NET_LUA_SV      = "EASY_CHAT_MODULE_LUA_SV"
+local lua             = {}
 
 if CLIENT then
     lua.RunOnClients = function(code,ply)
-        net.Start(netluasv)
+        net.Start(NET_LUA_SV)
         net.WriteString(code)
         net.WriteString("clients")
         net.SendToServer()
@@ -17,20 +17,20 @@ if CLIENT then
     end
 
     lua.RunOnShared = function(code,ply)
-        net.Start(netluasv)
+        net.Start(NET_LUA_SV)
         net.WriteString(code)
         net.WriteString("shared")
         net.SendToServer()
     end
 
     lua.RunOnServer = function(code,ply)
-        net.Start(netluasv)
+        net.Start(NET_LUA_SV)
         net.WriteString(code)
         net.WriteString("server")
         net.SendToServer()
     end
 
-    net.Receive(netluaclients,function(len)
+    net.Receive(NET_LUA_CLIENTS,function(len)
         local code = net.ReadString()
         local ply = net.ReadEntity()
         if not IsValid(ply) then return end
@@ -51,10 +51,10 @@ if CLIENT then
 end
 
 if SERVER then
-    util.AddNetworkString(netluaclients)
-    util.AddNetworkString(netluasv)
+    util.AddNetworkString(NET_LUA_CLIENTS)
+    util.AddNetworkString(NET_LUA_SV)
 
-    net.Receive(netluasv,function(len,ply)
+    net.Receive(NET_LUA_SV,function(len,ply)
         if not IsValid(ply) then return end
         local code = net.ReadString()
         local mode = net.ReadString()
@@ -62,13 +62,13 @@ if SERVER then
             if string.match(mode,"server") then
                 CompileString(code,ply:GetName())()
             elseif string.match(mode,"clients") then
-                net.Start(netluaclients)
+                net.Start(NET_LUA_CLIENTS)
                 net.WriteString(code)
                 net.WriteEntity(ply)
                 net.Broadcast()
             elseif string.match(mode,"shared") then
                 CompileString(code,ply:GetName())()
-                net.Start(netluaclients)
+                net.Start(NET_LUA_CLIENTS)
                 net.WriteString(code)
                 net.WriteEntity(ply)
                 net.Broadcast()
@@ -79,7 +79,7 @@ end
 
 if CLIENT then
 
-    local lua_tab = {
+    local LUA_TAB = {
         Code = "",
         LastAction = {
             Script = "",
@@ -182,8 +182,7 @@ if CLIENT then
         end,
     }
 
-    vgui.Register("ECLuaTab",lua_tab,"DPanel")
-
+    vgui.Register("ECLuaTab",LUA_TAB,"DPanel")
 
     CreateConVar("easychat_luatab","1",FCVAR_ARCHIVE,"Display luatab or not")
     cvars.AddChangeCallback("easychat_luatab",function(name,old,new)

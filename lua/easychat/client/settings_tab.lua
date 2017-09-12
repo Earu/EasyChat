@@ -1,11 +1,11 @@
-local ec_global_on_open = GetConVar("easychat_global_on_open")
-local ec_timestamps		= GetConVar("easychat_timestamps")
-local ec_teams 			= GetConVar("easychat_teams")
-local ec_teams_color 	= GetConVar("easychat_teams_colored")
-local ec_player_color 	= GetConVar("easychat_players_colored")
-local ec_hud_follow 	= GetConVar("easychat_hud_follow")
-local ec_font 			= GetConVar("easychat_font")
-local ec_font_size 		= GetConVar("easychat_font_size")
+local EC_GLOBAL_ON_OPEN = GetConVar("easychat_global_on_open")
+local EC_TIMESTAMPS		= GetConVar("easychat_timestamps")
+local EC_TEAMS 			= GetConVar("easychat_teams")
+local EC_TEAMS_COLOR 	= GetConVar("easychat_teams_colored")
+local EC_PLAYER_COLOR 	= GetConVar("easychat_players_colored")
+local EC_HUD_FOLLOW 	= GetConVar("easychat_hud_follow")
+local EC_FONT 			= GetConVar("easychat_font")
+local EC_FONT_SIZE 		= GetConVar("easychat_font_size")
 
 local UpdateSettingsFont = function(name,size)
     size = size - 3
@@ -21,7 +21,7 @@ end
 
 UpdateSettingsFont(EasyChat.Font,EasyChat.FontSize)
 
-local settings_tab = {
+local SETTINGS_TAB = {
     Checkboxes = {},
 
     Init = function(self)
@@ -140,7 +140,7 @@ local settings_tab = {
         self.TBoxHUDFollow:SetText("HUD follows chatbox")
         self.TBoxHUDFollow:SetFont("ECSettingsFont")
         self.TBoxHUDFollow:SetPos(170,15)
-        self.TBoxHUDFollow:SetChecked(ec_hud_follow:GetBool())
+        self.TBoxHUDFollow:SetChecked(EC_HUD_FOLLOW:GetBool())
         self.TBoxHUDFollow.OnChange = function(self,val)
             RunConsoleCommand("easychat_hud_follow",(val and "1" or "0"))
         end
@@ -151,7 +151,7 @@ local settings_tab = {
         self.TBoxTimeStamps:SetText("Display timestamps")
         self.TBoxTimeStamps:SetFont("ECSettingsFont")
         self.TBoxTimeStamps:SetPos(170,40)
-        self.TBoxTimeStamps:SetChecked(ec_timestamps:GetBool())
+        self.TBoxTimeStamps:SetChecked(EC_TIMESTAMPS:GetBool())
         self.TBoxTimeStamps.OnChange = function(self,val)
             RunConsoleCommand("easychat_timestamps",(val and "1" or "0"))
         end
@@ -162,7 +162,7 @@ local settings_tab = {
         self.TBoxDisplayTeam:SetText("Display team tags")
         self.TBoxDisplayTeam:SetFont("ECSettingsFont")
         self.TBoxDisplayTeam:SetPos(170,65)
-        self.TBoxDisplayTeam:SetChecked(ec_teams:GetBool())
+        self.TBoxDisplayTeam:SetChecked(EC_TEAMS:GetBool())
         self.TBoxDisplayTeam.OnChange = function(self,val)
             RunConsoleCommand("easychat_teams",(val and "1" or "0"))
         end
@@ -173,7 +173,7 @@ local settings_tab = {
         self.TBoxColorTeamTags:SetText("Color team tags")
         self.TBoxColorTeamTags:SetFont("ECSettingsFont")
         self.TBoxColorTeamTags:SetPos(170,90)
-        self.TBoxColorTeamTags:SetChecked(ec_teams_color:GetBool())
+        self.TBoxColorTeamTags:SetChecked(EC_TEAMS_COLOR:GetBool())
         self.TBoxColorTeamTags.OnChange = function(self,val)
             RunConsoleCommand("easychat_teams_colored",(val and "1" or "0"))
         end
@@ -184,7 +184,7 @@ local settings_tab = {
         self.TBoxColorPlayerNames:SetText("Color players")
         self.TBoxColorPlayerNames:SetFont("ECSettingsFont")
         self.TBoxColorPlayerNames:SetPos(170,115)
-        self.TBoxColorPlayerNames:SetChecked(ec_player_color:GetBool())
+        self.TBoxColorPlayerNames:SetChecked(EC_PLAYER_COLOR:GetBool())
         self.TBoxColorPlayerNames.OnChange = function(self,val)
             RunConsoleCommand("easychat_players_colored",(val and "1" or "0"))
         end
@@ -195,7 +195,7 @@ local settings_tab = {
         self.TBoxGlobalTabOnOpen:SetText("Global tab on open")
         self.TBoxGlobalTabOnOpen:SetFont("ECSettingsFont")
         self.TBoxGlobalTabOnOpen:SetPos(170,140)
-        self.TBoxGlobalTabOnOpen:SetChecked(ec_global_on_open:GetBool())
+        self.TBoxGlobalTabOnOpen:SetChecked(EC_GLOBAL_ON_OPEN:GetBool())
         self.TBoxGlobalTabOnOpen.OnChange = function(self,val)
             RunConsoleCommand("easychat_global_on_open",(val and "1" or "0"))
         end
@@ -340,4 +340,4 @@ local settings_tab = {
     end,
 }
 
-vgui.Register("ECSettingsTab",settings_tab,"DPanel")
+vgui.Register("ECSettingsTab",SETTINGS_TAB,"DPanel")
