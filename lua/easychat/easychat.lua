@@ -112,6 +112,7 @@ if CLIENT then
 	local EC_LOCAL_MSG_DIST = CreateConVar("easychat_local_msg_distance","300",FCVAR_ARCHIVE,"Set the maximum distance for users to receive local messages")
 	local EC_NO_MODULES 	= CreateConVar("easychat_no_modules","0",FCVAR_ARCHIVE,"Should easychat load modules or not")
 	local EC_HUD_FOLLOW 	= CreateConVar("easychat_hud_follow","0",FCVAR_ARCHIVE,"Set the chat hud to follow the chatbox")
+	local EC_HUD_ENABLE		= CreateConVar("easychat_hud_enable","1",FCVAR_ARCHIVE,"Should easychat use source chathud or its own chathud")
 
 	EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
 
@@ -195,6 +196,8 @@ if CLIENT then
 	ECNextNotif = 0
 
 	local ECOpen = function(isteam)
+		local ok = hook.Run("ECShouldOpen")
+		if ok == false then return end
 		EasyChat.GUI.ChatBox:Show()
 		EasyChat.GUI.ChatBox:MakePopup()
 		EasyChat.Mode = isteam and 1 or 0
@@ -625,7 +628,19 @@ if CLIENT then
 		end
 
 		hook.Add("HUDShouldDraw",TAG,function(hudelement)
-			if hudelement == "CHudChat" then
+			if hudelement == "CHudChat" and EC_HUD_ENABLE:GetBool() then
+				return false
+			end
+		end)
+
+		hook.Add("ChatHudDraw",TAG,function()
+			if not EC_HUD_ENABLE:GetBool() then
+				return false
+			end
+		end)
+
+		hook.Add("ChatHudAddText",TAG,function()
+			if not EC_HUD_ENABLE:GetBool() then
 				return false
 			end
 		end)
@@ -744,6 +759,8 @@ EasyChat.Destroy = function()
 		hook.Remove("PreRender",TAG)
 		hook.Remove("Think",TAG)
 		hook.Remove("HUDShouldDraw",TAG)
+		hook.Remove("ChatHudDraw",TAG)
+		hook.Remove("ChatHudAddText",TAG)
 
 		if chat.old_AddText then
 			chat.AddText 		= chat.old_AddText
