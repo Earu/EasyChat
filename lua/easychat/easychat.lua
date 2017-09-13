@@ -96,9 +96,8 @@ end
 
 if CLIENT then
 
-	local MAX_CHARS = 3000
-	local surface 	= _G.surface
-	local JSON_COLS = file.Read("easychat/colors.txt","DATA")
+	local MAX_CHARS   = 3000
+	local JSON_COLS   = file.Read("easychat/colors.txt","DATA")
 	
 	local EC_GLOBAL_ON_OPEN = CreateConVar("easychat_global_on_open","1",FCVAR_ARCHIVE,"Set the chat to always open global chat tab on open")
 	local EC_FONT 			= CreateConVar("easychat_font",(system.IsWindows() and "Verdana" or "Tahoma"),FCVAR_ARCHIVE,"Set the font to use for the chat")
@@ -113,6 +112,7 @@ if CLIENT then
 	local EC_NO_MODULES 	= CreateConVar("easychat_no_modules","0",FCVAR_ARCHIVE,"Should easychat load modules or not")
 	local EC_HUD_FOLLOW 	= CreateConVar("easychat_hud_follow","0",FCVAR_ARCHIVE,"Set the chat hud to follow the chatbox")
 	local EC_HUD_ENABLE		= CreateConVar("easychat_hud_enable","1",FCVAR_ARCHIVE,"Should easychat use source chathud or its own chathud")
+	local EC_TICK_SOUND		= CreateConVar("easychat_tick_sound","1",FCVAR_ARCHIVE,"Should a tick sound be played on new messages or not")
 
 	EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
 
@@ -176,6 +176,8 @@ if CLIENT then
 	EasyChat.Mode 	   = 0
 	EasyChat.Modes 	   = {}
 	EasyChat.Tabs 	   = {}
+
+	local surface = _G.surface
 
 	--after easychat var declarations [necessary]
 	include("easychat/client/chathud.lua")
@@ -261,12 +263,12 @@ if CLIENT then
 			EasyChat.GUI.ChatBox:SetMouseInputEnabled( false )
 			EasyChat.GUI.ChatBox:SetKeyboardInputEnabled( false )
 			gui.EnableScreenClicker( false )
-			EasyChat.GUI.TextEntry:SetText( "" )
-			gamemode.Call( "ChatTextChanged", "" )
-			gamemode.Call( "FinishChat" )
+			EasyChat.GUI.TextEntry:SetText("")
+			chat.old_Close()
+			gamemode.Call("ChatTextChanged","")
+			gamemode.Call("FinishChat")
 			SavePosSize()
 			EasyChat.GUI.ChatBox:Hide()
-			chat.Close()
 			hook.Run("ECClosed",LocalPlayer())
 			net.Start(NET_SET_TYPING)
 			net.WriteBool(false)
@@ -318,9 +320,11 @@ if CLIENT then
 		do
 			EasyChat.ChatHUD.Init()
 
-			chat.old_AddText 		= chat.old_AddText 		or chat.AddText
+			chat.old_AddText 		= chat.old_AddText 		  or chat.AddText
 			chat.old_GetChatBoxPos  = chat.old_GetChatBoxPos  or chat.GetChatBoxPos
 			chat.old_GetChatBoxSize = chat.old_GetChatBoxSize or chat.GetChatBoxSize
+			chat.old_Open			= chat.old_Open			  or chat.Open
+			chat.old_Close			= chat.old_Close		  or chat.Close
 
 			chat.AddText = function(...)
 				EasyChat.AppendText("\n")
@@ -358,6 +362,9 @@ if CLIENT then
 					end
 				end
 				chat.old_AddText(...)
+				if EC_TICK_SOUND:GetBool() then
+					chat.PlaySound()
+				end
 			end
 
 			chat.GetChatBoxPos = function()
@@ -376,6 +383,16 @@ if CLIENT then
 				else
 					return chat.old_GetChatBoxSize()
 				end
+			end
+
+			chat.Open = function(input)
+				local isteam = input == 0 
+				ECOpen(input)
+				chat.old_Open(input)
+			end
+
+			chat.Close = function()
+				ECClose()
 			end
 
 		end
@@ -590,7 +607,12 @@ if CLIENT then
 		end
 
 		hook.Add("StartChat",TAG,function(isteam)
+			if not EC_HUD_ENABLE:GetBool() then
+				chat.old_Close()
+			end
+
 			ECOpen(isteam)
+
 			if EC_HUD_ENABLE:GetBool() then
 				return true
 			end
@@ -768,6 +790,8 @@ EasyChat.Destroy = function()
 			chat.AddText 		= chat.old_AddText
 			chat.GetChatBoxPos  = chat.old_GetChatBoxPos
 			chat.GetChatBoxSize = chat.old_GetChatBoxSize
+			chat.Open 			= chat.old_Open
+			chat.Close			= chat.old_Close
 		end
 
 		EasyChat.ModeCount = 0
