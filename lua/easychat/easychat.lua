@@ -310,6 +310,7 @@ if CLIENT then
 	end
 
 	EasyChat.Init = function()
+		ECConvars = {} -- reset for reload
 
 		EasyChat.RegisterConvar(EC_GLOBAL_ON_OPEN,"Open chatbox in global tab")
 		EasyChat.RegisterConvar(EC_TIMESTAMPS,"Display timestamps")
