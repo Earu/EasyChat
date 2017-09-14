@@ -347,7 +347,7 @@ if CLIENT then
 									EasyChat.GUI.RichText:InsertClickableTextEnd()
 								else
 									EasyChat.AppendText(v)
-								end
+								end	
 							end
 						else
 							EasyChat.AppendText(arg)
@@ -387,8 +387,8 @@ if CLIENT then
 
 			chat.Open = function(input)
 				local isteam = input == 0 
-				ECOpen(input)
-				chat.old_Open(input)
+				ECOpen(isteam)
+				--chat.old_Open(input)
 			end
 
 			chat.Close = function()
