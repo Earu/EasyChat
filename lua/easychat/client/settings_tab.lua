@@ -159,7 +159,7 @@ local SETTINGS_TAB = {
             cvars.AddChangeCallback(cvar:GetName(),function(name,old,new)
                 self[index]:SetChecked(old == "0")
             end,index)
-            ConvarCallbacks[index]
+            ConvarCallbacks[index] = true
             ypos = ypos + self[index]:GetTall() + 5
         end
 
