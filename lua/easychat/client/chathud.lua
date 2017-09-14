@@ -118,6 +118,7 @@ local ParseStoreArgs = function(str)
 end
 
 local HashString = function(str,maxwidth)
+    if not str then return "" end
 	local lines    = {}
     local strlen   = string.len(str)
     local strstart = 1
