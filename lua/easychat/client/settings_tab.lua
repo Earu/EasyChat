@@ -21,6 +21,8 @@ end
 
 UpdateSettingsFont(EasyChat.Font,EasyChat.FontSize)
 
+local ConvarCallbacks = {}
+
 local SETTINGS_TAB = {
     Checkboxes = {},
 
@@ -151,9 +153,13 @@ local SETTINGS_TAB = {
             self[index].OnChange = function(self,val)
                 RunConsoleCommand(cvar:GetName(),(val and "1" or "0"))
             end
+            if ConvarCallbacks[index] then
+                cvars.RemoveChangeCallback(cvar:GetName(),index)
+            end
             cvars.AddChangeCallback(cvar:GetName(),function(name,old,new)
                 self[index]:SetChecked(old == "0")
-            end)
+            end,index)
+            ConvarCallbacks[index]
             ypos = ypos + self[index]:GetTall() + 5
         end
 
