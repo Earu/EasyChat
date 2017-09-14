@@ -184,12 +184,14 @@ if CLIENT then
 
     vgui.Register("ECLuaTab",LUA_TAB,"DPanel")
 
-    CreateConVar("easychat_luatab","1",FCVAR_ARCHIVE,"Display luatab or not")
+    local EC_LUA_TAB = CreateConVar("easychat_luatab","1",FCVAR_ARCHIVE,"Display luatab or not")
     cvars.AddChangeCallback("easychat_luatab",function(name,old,new)
         RunConsoleCommand("easychat_reload")
     end)
 
-    if GetConVar("easychat_luatab"):GetBool() then
+    EasyChat.RegisterConvar(EC_LUA_TAB,"Display lua tab")
+
+    if EC_LUA_TAB:GetBool() then
         local luatab = vgui.Create("ECLuaTab")
         EasyChat.AddTab("Lua",luatab)
         EasyChat.SetFocusForOn("Lua",luatab.HTMLIDE)

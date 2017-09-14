@@ -137,113 +137,78 @@ local SETTINGS_TAB = {
             frame:ResetFont()
         end
 
-        self.TBoxHUDFollow:SetText("HUD follows chatbox")
-        self.TBoxHUDFollow:SetFont("ECSettingsFont")
-        self.TBoxHUDFollow:SetPos(170,15)
-        self.TBoxHUDFollow:SetChecked(EC_HUD_FOLLOW:GetBool())
-        self.TBoxHUDFollow.OnChange = function(self,val)
-            RunConsoleCommand("easychat_hud_follow",(val and "1" or "0"))
+        local ConventionizeString = function(str)
+            local parts = string.Explode("_",str)
+            for index,part in pairs(parts) do
+                parts[index] = string.SetChar(part,1,string.upper(part[1]))
+            end
+            return table.concat(parts,"")
         end
-        cvars.AddChangeCallback("easychat_hud_follow",function(name,old,new)
-            self.TBoxHUDFollow:SetChecked(old == "0")
-        end)
 
-        self.TBoxTimeStamps:SetText("Display timestamps")
-        self.TBoxTimeStamps:SetFont("ECSettingsFont")
-        self.TBoxTimeStamps:SetPos(170,40)
-        self.TBoxTimeStamps:SetChecked(EC_TIMESTAMPS:GetBool())
-        self.TBoxTimeStamps.OnChange = function(self,val)
-            RunConsoleCommand("easychat_timestamps",(val and "1" or "0"))
+        local ypos = 15
+        for _,v in pairs(EasyChat.GetRegisteredConvars()) do
+            local cvar = v.Convar
+            local index = "TBox"..ConventionizeString(cvar:GetName())
+            self[index] = self:Add("DCheckBoxLabel")
+            self[index]:SetText(v.Description)
+            self[index]:SetFont("ECSettingsFont")
+            self[index]:SetPos(170,ypos)
+            self[index]:SetChecked(cvar:GetBool())
+            self[index].OnChange = function(self,val)
+                RunConsoleCommand(cvar:GetName(),(val and "1" or "0"))
+            end
+            cvars.AddChangeCallback(cvar:GetName(),function(name,old,new)
+                self[index]:SetChecked(old == "0")
+            end)
+            ypos = ypos + self[index]:GetTall() + 5
         end
-        cvars.AddChangeCallback("easychat_timestamps",function(name,old,new)
-            self.TBoxTimeStamps:SetChecked(old == "0")
-        end)
 
-        self.TBoxDisplayTeam:SetText("Display team tags")
-        self.TBoxDisplayTeam:SetFont("ECSettingsFont")
-        self.TBoxDisplayTeam:SetPos(170,65)
-        self.TBoxDisplayTeam:SetChecked(EC_TEAMS:GetBool())
-        self.TBoxDisplayTeam.OnChange = function(self,val)
-            RunConsoleCommand("easychat_teams",(val and "1" or "0"))
-        end
-        cvars.AddChangeCallback("easychat_teams",function(name,old,new)
-            self.TBoxDisplayTeam:SetChecked(old == "0")
-        end)
-
-        self.TBoxColorTeamTags:SetText("Color team tags")
-        self.TBoxColorTeamTags:SetFont("ECSettingsFont")
-        self.TBoxColorTeamTags:SetPos(170,90)
-        self.TBoxColorTeamTags:SetChecked(EC_TEAMS_COLOR:GetBool())
-        self.TBoxColorTeamTags.OnChange = function(self,val)
-            RunConsoleCommand("easychat_teams_colored",(val and "1" or "0"))
-        end
-        cvars.AddChangeCallback("easychat_teams_colored",function(name,old,new)
-            self.TBoxColorTeamTags:SetChecked(old == "0")
-        end)
-
-        self.TBoxColorPlayerNames:SetText("Color players")
-        self.TBoxColorPlayerNames:SetFont("ECSettingsFont")
-        self.TBoxColorPlayerNames:SetPos(170,115)
-        self.TBoxColorPlayerNames:SetChecked(EC_PLAYER_COLOR:GetBool())
-        self.TBoxColorPlayerNames.OnChange = function(self,val)
-            RunConsoleCommand("easychat_players_colored",(val and "1" or "0"))
-        end
-        cvars.AddChangeCallback("easychat_players_colored",function(name,old,new)
-            self.TBoxColorPlayerNames:SetChecked(old == "0")
-        end)
-
-        self.TBoxGlobalTabOnOpen:SetText("Global tab on open")
-        self.TBoxGlobalTabOnOpen:SetFont("ECSettingsFont")
-        self.TBoxGlobalTabOnOpen:SetPos(170,140)
-        self.TBoxGlobalTabOnOpen:SetChecked(EC_GLOBAL_ON_OPEN:GetBool())
-        self.TBoxGlobalTabOnOpen.OnChange = function(self,val)
-            RunConsoleCommand("easychat_global_on_open",(val and "1" or "0"))
-        end
-        cvars.AddChangeCallback("easychat_global_on_open",function(name,old,new)
-            self.TBoxGlobalTabOnOpen:SetChecked(old == "0")
-        end)
-
-        self.BtnResetOptions:SetPos(170,165)
+        self.BtnResetOptions:SetPos(170,ypos)
         self.BtnResetOptions:SetText("Reset Options")
         self.BtnResetOptions:SetFont("ECSettingsFont")
         self.BtnResetOptions:SetSize(100,25)
         self.BtnResetOptions.DoClick = function(self)
             frame:ResetOptions()
         end
+        ypos = ypos + self.BtnResetOptions:GetTall() + 10
 
-        self.BtnResetAll:SetPos(170,200)
+        self.BtnResetAll:SetPos(170,ypos)
         self.BtnResetAll:SetText("Reset Everything")
         self.BtnResetAll:SetFont("ECSettingsFont")
         self.BtnResetAll:SetSize(100,25)
         self.BtnResetAll.DoClick = function(self)
             frame:ResetAll()
         end
+        ypos = ypos + self.BtnResetAll:GetTall() + 10
 
         concommand.Add("easychat_reset_settings",self.ResetAll)
 
-        self.BtnReloadChat:SetPos(170,235)
+        self.BtnReloadChat:SetPos(170,ypos)
         self.BtnReloadChat:SetText("Reload Chatbox")
         self.BtnReloadChat:SetFont("ECSettingsFont")
         self.BtnReloadChat:SetSize(100,25)
         self.BtnReloadChat.DoClick = function(self)
             frame:ReloadChat()
         end
+        ypos = ypos + self.BtnReloadChat:GetTall() + 10
 
-        self.BtnUseDermaSkin:SetPos(170,270)
+        self.BtnUseDermaSkin:SetPos(170,ypos)
         self.BtnUseDermaSkin:SetText(EasyChat.UseDermaSkin and "Use custom skin" or "Use dermaskin")
         self.BtnUseDermaSkin:SetFont("ECSettingsFont")
         self.BtnUseDermaSkin:SetSize(100,25)
         self.BtnUseDermaSkin.DoClick = function()
             RunConsoleCommand("easychat_use_dermaskin",(EasyChat.UseDermaSkin and "0" or "1"))
         end
+        ypos = ypos + self.BtnUseDermaSkin:GetTall() + 10
 
-        self.BtnDisableEC:SetPos(170,305)
+        self.BtnDisableEC:SetPos(170,ypos)
         self.BtnDisableEC:SetText("Disable EC")
         self.BtnDisableEC:SetFont("ECSettingsFont")
         self.BtnDisableEC:SetSize(100,25)
         self.BtnDisableEC.DoClick = function()
             RunConsoleCommand("easychat_enable","0")
         end
+        ypos = ypos + self.BtnDisableEC:GetTall() + 10
 
         if not EasyChat.UseDermaSkin then
 
@@ -322,11 +287,10 @@ local SETTINGS_TAB = {
     end,
 
     ResetOptions = function(self)
-        RunConsoleCommand("easychat_timestamps","0")
-        RunConsoleCommand("easychat_teams","0")
-        RunConsoleCommand("easychat_teams_colored","0")
-        RunConsoleCommand("easychat_global_on_open","1")
-        RunConsoleCommand("easychat_players_colored","1")
+        for _,v in pairs(EasyChat.GetRegisteredConvars()) do
+            local cvar = v.Convar
+            RunConsoleCommand(cvar:GetName(),cvar:GetDefault())
+        end
     end,
 
     ResetAll = function(self)

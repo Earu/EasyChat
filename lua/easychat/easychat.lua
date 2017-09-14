@@ -186,6 +186,18 @@ if CLIENT then
 	include("easychat/client/chat_tab.lua")
 	include("easychat/client/settings_tab.lua")
 
+	local ECConvars = {}
+	EasyChat.RegisterConvar = function(convar,desc)
+		table.insert(ECConvars,{
+			Convar = convar,
+			Description = desc,
+		})
+	end
+
+	EasyChat.GetRegisteredConvars = function()
+		return ECConvars
+	end
+
 	EasyChat.AddMode = function(name,callback)
 		table.insert(EasyChat.Modes,{Name = name,Callback = callback})
 		EasyChat.ModeCount = #EasyChat.Modes
@@ -195,8 +207,7 @@ if CLIENT then
 		return EasyChat.GUI and IsValid(EasyChat.GUI.ChatBox) and EasyChat.GUI.ChatBox:IsVisible()
 	end
 
-	ECNextNotif = 0
-
+	local ECNextNotif = 0
 	local ECOpen = function(isteam)
 		local ok = hook.Run("ECShouldOpen")
 		if ok == false then return end
@@ -260,9 +271,9 @@ if CLIENT then
 
 	local ECClose = function()
 		if EasyChat.IsOpened() then
-			EasyChat.GUI.ChatBox:SetMouseInputEnabled( false )
-			EasyChat.GUI.ChatBox:SetKeyboardInputEnabled( false )
-			gui.EnableScreenClicker( false )
+			EasyChat.GUI.ChatBox:SetMouseInputEnabled(false)
+			EasyChat.GUI.ChatBox:SetKeyboardInputEnabled(false)
+			gui.EnableScreenClicker(false)
 			EasyChat.GUI.TextEntry:SetText("")
 			chat.old_Close()
 			gamemode.Call("ChatTextChanged","")
@@ -299,6 +310,15 @@ if CLIENT then
 	end
 
 	EasyChat.Init = function()
+
+		EasyChat.RegisterConvar(EC_GLOBAL_ON_OPEN,"Open chatbox in global tab")
+		EasyChat.RegisterConvar(EC_TIMESTAMPS,"Display timestamps")
+		EasyChat.RegisterConvar(EC_TEAMS,"Display teams")
+		EasyChat.RegisterConvar(EC_TEAMS_COLOR,"Color the team tags")
+		EasyChat.RegisterConvar(EC_PLAYER_COLOR,"Color players in their team color")
+		EasyChat.RegisterConvar(EC_HUD_ENABLE,"Use easychat hud")
+		EasyChat.RegisterConvar(EC_HUD_FOLLOW,"Chathud follows chatbox")
+		EasyChat.RegisterConvar(EC_TICK_SOUND,"Tick sound on new messages")
 
 		EasyChat.AddMode("Team",function(text)
 			net.Start(NET_SEND_MSG)
@@ -490,10 +510,10 @@ if CLIENT then
 			local pattern = "<(.-)=(.-)>"
 			local parts = string.Explode(pattern,str,true)
 			local index = 1
-			for TAG,values in string.gmatch(str,pattern) do
+			for tag,values in string.gmatch(str,pattern) do
 				EasyChat.AppendText(parts[index])
 				index = index + 1
-				if TAG == "color" then
+				if tag == "color" then
 					local r,g,b
 					string.gsub(values,"(%d+),(%d+),(%d+)",function(sr,sg,sb)
 						r = tonumber(sr)
@@ -510,32 +530,32 @@ if CLIENT then
 			EasyChat.InsertColorChange(255,255,255,255)
 		end
 
-		EasyChat.CTRLShortcuts = {}
-		EasyChat.ALTShortcuts  = {}
+		local CTRLShortcuts = {}
+		local ALTShortcuts  = {}
 
-		EasyChat.AddCTRLShortcut = function(key,callback)
+		EasyChat.RegisterCTRLShortcut = function(key,callback)
 			if key == KEY_ENTER or key == KEY_PAD_ENTER or key == KEY_ESCAPE or key == KEY_TAB then return end
-			EasyChat.CTRLShortcuts[key] = callback
+			CTRLShortcuts[key] = callback
 		end
 
-		EasyChat.AddALTShortcut = function(key,callback)
+		EasyChat.RegisterALTShortcut = function(key,callback)
 			if key == KEY_ENTER or key == KEY_PAD_ENTER or key == KEY_ESCAPE or key == KEY_TAB then return end
-			EasyChat.ALTShortcuts[key] = callback
+			ALTShortcuts[key] = callback
 		end
 
-		EasyChat.UseRegisteredShortcuts = function(textentry,last_key,key)
-			if last_key == KEY_LCONTROL or last_key == KEY_LALT or last_key == KEY_RCONTROL or last_key == KEY_RALT then
+		EasyChat.UseRegisteredShortcuts = function(textentry,lastkey,key)
+			if lastkey == KEY_LCONTROL or lastkey == KEY_LALT or lastkey == KEY_RCONTROL or lastkey == KEY_RALT then
 				local pos = textentry:GetCaretPos()
 				local first = string.sub(textentry:GetText(),1,pos+1)
-				local last = string.sub(textentry:GetText(),pos+1,string.len(textentry:GetText()))
+				local last = string.sub(textentry:GetText(),pos+2,#textentry:GetText())
 
-				if EasyChat.CTRLShortcuts[key] then
-					local retrieved = EasyChat.CTRLShortcuts[key](textentry,textentry:GetText(),pos,first,last)
+				if CTRLShortcuts[key] then
+					local retrieved = CTRLShortcuts[key](textentry,textentry:GetText(),pos,first,last)
 					if retrieved then
 						textentry:SetText(retrieved)
 					end
-				elseif EasyChat.ALTShortcuts[key] then
-					local retrieved = EasyChat.ALTShortcuts[key](textentry,textentry:GetText(),pos,first,last)
+				elseif ALTShortcuts[key] then
+					local retrieved = ALTShortcuts[key](textentry,textentry:GetText(),pos,first,last)
 					if retrieved then
 						textentry:SetText(retrieved)
 					end
@@ -558,10 +578,10 @@ if CLIENT then
 			end
 		end
 
-		local last_key = KEY_ENTER
-		EasyChat.GUI.TextEntry.OnKeyCodeTyped = function( self, code )
+		local lastkey = KEY_ENTER
+		EasyChat.GUI.TextEntry.OnKeyCodeTyped = function(self,code)
 			EasyChat.SetupHistory(self,code)
-			EasyChat.UseRegisteredShortcuts(self,last_key,code)
+			EasyChat.UseRegisteredShortcuts(self,lastkey,code)
 
 			if code == KEY_ESCAPE then
 				ECClose()
@@ -581,13 +601,16 @@ if CLIENT then
 				ECClose()
 			end
 
-			last_key = code
+			lastkey = code
 
 			if code == KEY_TAB then
 				if self:GetText() ~= "" then
-					local a = gamemode.Call("OnChatTab", self:GetText())
+					local a = gamemode.Call("OnChatTab",self:GetText())
 					self:SetText(a)
-					timer.Simple(0, function() self:RequestFocus() self:SetCaretPos(#self:GetText()) end)
+					timer.Simple(0,function() 
+						self:RequestFocus() 
+						self:SetCaretPos(#self:GetText()) 
+					end)
 				else
 					local modeplus = EasyChat.Mode + 1
 					EasyChat.Mode = modeplus > EasyChat.ModeCount and 0 or modeplus
