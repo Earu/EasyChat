@@ -1,7 +1,3 @@
-if _G.EasyChat then
-	EasyChat.Destroy()
-end
-
 local EasyChat = _G.EasyChat or {}
 _G.EasyChat = EasyChat
 
@@ -495,16 +491,12 @@ if CLIENT then
 
 		EasyChat.InsertColorChange = function(r,g,b,a)
 			EasyChat.GUI.RichText:InsertColorChange(r,g,b,a)
-			if EasyChat.ChatHUD then
-				EasyChat.ChatHUD.InsertColorChange(r,g,b,a)
-			end
+			EasyChat.ChatHUD.InsertColorChange(r,g,b,a)
 		end
 
 		EasyChat.AppendText = function(text)
 			EasyChat.GUI.RichText:AppendText(text)
-			if EasyChat.ChatHUD then
-				EasyChat.ChatHUD.AppendText(text)
-			end
+			EasyChat.ChatHUD.AppendText(text)
 		end
 
 		EasyChat.AppendTaggedText = function(str)
@@ -533,19 +525,49 @@ if CLIENT then
 
 		local CTRLShortcuts = {}
 		local ALTShortcuts  = {}
+		
+		local IsValidShortcutKey = function(key)
+			local notvalids = {
+				KEY_ENTER 	  = true,
+				KEY_PAD_ENTER = true,
+				KEY_ESCAPE    = true,
+				KEY_TAB       = true,
+			}
+			if notvalids[key] then
+				return false
+			else
+				return true
+			end
+		end
+		
+		local IsBaseShortcutKey = function(key)
+			local valids = {
+				KEY_LCONTROL = true,
+				KEY_LALT 	 = true,
+				KEY_RCONTROL = true,
+				KEY_RALT 	 = true,
+			}
+			if valids[key] then
+				return true
+			else
+				return false
+			end
+		end
 
 		EasyChat.RegisterCTRLShortcut = function(key,callback)
-			if key == KEY_ENTER or key == KEY_PAD_ENTER or key == KEY_ESCAPE or key == KEY_TAB then return end
-			CTRLShortcuts[key] = callback
+			if IsValidShortcutKey(key) then
+				CTRLShortcuts[key] = callback
+			end
 		end
 
 		EasyChat.RegisterALTShortcut = function(key,callback)
-			if key == KEY_ENTER or key == KEY_PAD_ENTER or key == KEY_ESCAPE or key == KEY_TAB then return end
-			ALTShortcuts[key] = callback
+			if not IsValidShortcutKey(key) then
+				ALTShortcuts[key] = callback
+			end
 		end
 
 		EasyChat.UseRegisteredShortcuts = function(textentry,lastkey,key)
-			if lastkey == KEY_LCONTROL or lastkey == KEY_LALT or lastkey == KEY_RCONTROL or lastkey == KEY_RALT then
+			if IsBaseShortcutKey(lastkey) then
 				local pos = textentry:GetCaretPos()
 				local first = string.sub(textentry:GetText(),1,pos+1)
 				local last = string.sub(textentry:GetText(),pos+2,#textentry:GetText())
@@ -845,7 +867,3 @@ concommand.Add("easychat_reload",function()
 		end
 	end
 end)
-
-if me then
-	EasyChat.Init()
-end
