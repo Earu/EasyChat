@@ -1,9 +1,3 @@
-if EasyChat.ChatHUD and EasyChat.ChatHUD.Frame then
-    EasyChat.ChatHUD.Frame:Remove()
-end
-
---NOW THIS IS PAINFUL
-
 local ChatHUD = EasyChat.ChatHUD or {}
 EasyChat.ChatHUD = ChatHUD
 
@@ -95,7 +89,6 @@ ChatHUD.AddTag = function(name,callback)
 end
 
 include("easychat/client/default_tags.lua")
-
 
 --[[
     STORING ARGS DECLARATIONS
@@ -261,8 +254,6 @@ local DrawPlayer = function(arg,x,y)
     return x + w,y
 end
 
-
-
 local Draw = function(self,w,h)
     if hook.Run("ChatHudDraw",self,w,h) == false then return end
     ChatHUD.CurrentWidth = w
@@ -302,8 +293,4 @@ ChatHUD.Init = function()
     ChatHUD.Frame:SetPos(25,ScrH() - 150)
     ChatHUD.Frame:SetSize(550,320)
     ChatHUD.Frame.Paint = Draw
-end
-
-if me then
-   ChatHUD.Init()
 end
