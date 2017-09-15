@@ -134,6 +134,7 @@ local SETTINGS_TAB = {
         end
 
         local ConventionizeString = function(str)
+            local str = string.gsub(str,"easychat_","")
             local parts = string.Explode("_",str)
             for index,part in pairs(parts) do
                 parts[index] = string.SetChar(part,1,string.upper(part[1]))
