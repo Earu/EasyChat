@@ -1,7 +1,3 @@
-if EasyChat.GUI.LocalPanel then
-    EasyChat.GUI.LocalPanel:Remove()
-end
-
 local panel = vgui.Create("DFrame")
 panel:SetTitle("")
 panel.btnClose:Hide()
@@ -17,7 +13,7 @@ end
 panel:SetWide(150)
 panel.old_paint = panel.Paint
 panel.Paint = function(self,w,h)
-    if EasyChat.IsOpened() and EasyChat.Modes[EasyChat.Mode] and EasyChat.Modes[EasyChat.Mode].Name == "Local" then
+    if EasyChat.IsOpened() and EasyChat.Modes[EasyChat.Mode].Name == "Local" then
         if EasyChat.UseDermaSkin then
             self.old_paint(self,w,h)
         else
