@@ -741,7 +741,7 @@ if CLIENT then
 					EasyChat.ChatHUD.Frame:SetSize(550,320)
 			else
 				local x,y,w,h = EasyChat.GUI.ChatBox:GetBounds()
-				EasyChat.ChatHUD.Frame:SetPos(x,y)
+				EasyChat.ChatHUD.Frame:SetPos(x,y + h)
 				EasyChat.ChatHUD.Frame:SetSize(w,h)
 			end
 		end)
