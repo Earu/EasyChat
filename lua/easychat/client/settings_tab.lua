@@ -110,10 +110,14 @@ local SETTINGS_TAB = {
         self.NbrWFontSize:SetMin(0)
         self.NbrWFontSize:SetMax(40)
         self.NbrWFontSize:SetValue(EasyChat.FontSize)
+        if ConvarCallbacks["NbrWFontSize"] then
+            cvars.RemoveChangeCallback("easychat_font_size","NbrWFontSize")
+        end
         cvars.AddChangeCallback("easychat_font_size",function(name,old,new)
             self.NbrWFontSize:SetValue(tonumber(new))
             UpdateSettingsFont(EasyChat.Font,tonumber(new))
-        end)
+        end,"NbrWFontSize")
+        ConvarCallbacks["NbrWFontSize"] = true
 
         self.BtnApplyFont:SetPos(15,270) --270
         self.BtnApplyFont:SetSize(100,25)
