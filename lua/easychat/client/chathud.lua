@@ -1,24 +1,29 @@
-local ChatHUD = EasyChat.ChatHUD or {}
-EasyChat.ChatHUD = ChatHUD
+local ChatHUD             = {}
+local CHUDArguments       = {}
+local CHUDShadowColor     = Color(25,50,100,255)
+local CHUDDefaultFontSize = 17
+local CHUDDefaultFont     = system.IsWindows() and "Verdana" or "Tahoma"
+local CHUDCurrentFontSize = CHUDDefaultFontSize
+local CHUDCurrentFont     = CHUDDefaultFont
+local CHUDCurrentColor    = Color(255,255,255)
+local CHUDCurrentWidth    = 550
+local CHUDCurrentOffset   = 0
+local CHUDMaxArgs         = 140
+local CHUDTimeToFade      = 16
+local CHUDFadeTime        = 2
+local CHUDTags            = {}
+local CHUDFonts           = {}
 
-ChatHUD.Arguments       = {}
-ChatHUD.ShadowColor     = Color(25,50,100,255)
-ChatHUD.DefaultFontSize = 17
-ChatHUD.DefaultFont     = system.IsWindows() and "Verdana" or "Tahoma"
-ChatHUD.CurrentSize     = ChatHUD.DefaultFontSize
-ChatHUD.CurrentFont     = ChatHUD.DefaultFont
-ChatHUD.CurrentColor    = Color(255,255,255)
-ChatHUD.CurrentWidth    = 550
-ChatHUD.CurrentOffSet   = 0
-ChatHUD.MaxArguments    = 140
-ChatHUD.TimeToFade      = 16
-ChatHUD.FadeTime        = 2
-ChatHUD.Tags            = {}
+--this is for possible use in tags
+ChatHUD.CurrentFontSize = CHUDCurrentFontSize
+ChatHUD.CurrentFont     = CHUDCurrentFont
+ChatHUD.CurrentColor    = CHUDCurrentColor
+ChatHUD.DefaultFont     = CHUDDefaultFont
+ChatHUD.DefaultFontSize = CHUDDefaultFontSize
 
-local Fonts = {}
 local UpdateFont = function(fontname,size)
-    if not Fonts[fontname..size] then
-        Fonts[fontname..size] = true
+    if not CHUDFonts[fontname..size] then
+        CHUDFonts[fontname..size] = true
         surface.CreateFont("ECCHUD_"..fontname.."_"..size,{
             font      = fontname,
             extended  = true,
@@ -33,8 +38,8 @@ local UpdateFont = function(fontname,size)
             blursize  = 2,
         })
     end
-    ChatHUD.CurrentFont = fontname
-    ChatHUD.CurrentSize = size
+    CHUDCurrentFont= fontname
+    CHUDCurrentFontSize = size
 end
 
 local GetFontNames = function(fontname,size)
@@ -44,27 +49,27 @@ local GetFontNames = function(fontname,size)
     return font,shadow
 end
 
-UpdateFont(ChatHUD.DefaultFont,ChatHUD.DefaultFontSize)
+UpdateFont(CHUDDefaultFont,CHUDDefaultFontSize)
 
 local ClearArgs = function()
     local amount = 0
-    for k,v in ipairs(ChatHUD.Arguments) do
+    for k,v in ipairs(CHUDArguments) do
         if v.Type == "STOP" then
             amount = k
-            local nxt = ChatHUD.Arguments[k+1]
+            local nxt = CHUDArguments[k+1]
             if not nxt or not nxt.Faded then
                 break
             end
         end
     end
-    for _=1,amount do
-        table.remove(ChatHUD.Arguments,1)
+    for _ = 1,amount do
+        table.remove(CHUDArguments,1)
     end
 end
 
 local GetOffset = function()
     local line = ""
-    for _,v in ipairs(ChatHUD.Arguments) do
+    for _,v in ipairs(CHUDArguments) do
         if v.Type == "string" then
             line = line..v.Arg
         end
@@ -73,22 +78,20 @@ local GetOffset = function()
     for _,_ in string.gmatch(line,"\n") do
         count = count + 1
     end
-    return count * ChatHUD.DefaultFontSize
+    return count * CHUDDefaultFontSize
 end
 
 local StoreArg = function(arg,type)
-    table.insert(ChatHUD.Arguments,{ Arg = arg, Type = type, ID = #ChatHUD.Arguments})
-    if ChatHUD.Arguments[1].Faded or #ChatHUD.Arguments >= ChatHUD.MaxArguments then
+    table.insert(CHUDArguments,{ Arg = arg, Type = type, ID = #CHUDArguments})
+    if CHUDArguments[1].Faded or #CHUDArguments >= CHUDMaxArgs then
         ClearArgs()
     end
-    ChatHUD.CurrentOffSet = GetOffset()
+    CHUDCurrentOffset = GetOffset()
 end
 
 ChatHUD.AddTag = function(name,callback)
-    ChatHUD.Tags[name] = callback
+    CHUDTags[name] = callback
 end
-
-include("easychat/client/default_tags.lua")
 
 --[[
     STORING ARGS DECLARATIONS
@@ -101,9 +104,9 @@ local ParseStoreArgs = function(str)
     for tag,content in string.gmatch(str,pattern) do
         StoreArg(parts[index],"string")
         index = index + 1
-        if ChatHUD.Tags[tag] then
+        if CHUDTags[tag] then
             local values = string.Explode(",",content)
-            ChatHUD.Tags[tag](unpack(values))
+            CHUDTags[tag](unpack(values))
             string.gsub(content,".*","")
         end
     end
@@ -152,7 +155,7 @@ end
 
 ChatHUD.AppendText = function(str)
 	if hook.Run("ChatHudAddText",str) == false then return end
-    local hashed_string = HashString(str,ChatHUD.CurrentWidth)
+    local hashed_string = HashString(str,CHUDCurrentWidth)
 	ParseStoreArgs(hashed_string)
 end
 
@@ -164,7 +167,7 @@ end
 
 ChatHUD.InsertFontChange = function(font, size)
 	if hook.Run("ChatHudAddFont", font) == false then return end
-	local size = size or ChatHUD.DefaultFontSize
+	local size = size or CHUDDefaultFontSize
 	StoreArg({Name = font, Size = size},"font")
 end
 
@@ -190,15 +193,15 @@ end
     DRAWING DECLARATIONS
 ]]--
 local Fade = function(arg,col)
-    local col   = col or ChatHUD.CurrentColor
-    local bgcol = ChatHUD.ShadowColor
+    local col   = col or CHUDCurrentColor
+    local bgcol = CHUDShadowColor
     local alfv  = 0
 
     col.InitAlpha = col.InitAlpha or col.a
     bgcol.InitAlpha = bgcol.InitAlpha or bgcol.a
 
-    arg.FadeStartTime = arg.FadeStartTime or RealTime() + ChatHUD.TimeToFade
-    alfv              = 1 - ((RealTime() - arg.FadeStartTime) / ChatHUD.FadeTime)
+    arg.FadeStartTime = arg.FadeStartTime or RealTime() + CHUDTimeToFade
+    alfv              = 1 - ((RealTime() - arg.FadeStartTime) / CHUDFadeTime)
     alfv              = math.Clamp(alfv,0,1)
     arg.Faded         = alfv <= 0
 
@@ -208,12 +211,12 @@ local Fade = function(arg,col)
 end
 
 local DrawString = function(txt,x,y,bgcol,col)
-    local font,bgfont = GetFontNames(ChatHUD.CurrentFont,ChatHUD.CurrentSize)
+    local font,bgfont = GetFontNames(CHUDCurrentFont,CHUDCurrentFontSize)
 
     surface.SetTextColor(bgcol)
     surface.SetFont(bgfont)
 
-    for _ = 1,10 do
+    for _ = 1,8 do
         surface.SetTextPos(x,y)
         surface.DrawText(txt)
     end
@@ -237,7 +240,7 @@ local DrawText = function(arg,x,y)
     for num,line in pairs(lines) do
         if num > 1 then
             x = 1
-            y = y + ChatHUD.CurrentSize
+            y = y + CHUDCurrentFontSize
         end
         w,_ = DrawString(line,x,y,bgcol,col)
     end
@@ -256,16 +259,16 @@ end
 
 local Draw = function(self,w,h)
     if hook.Run("ChatHudDraw",self,w,h) == false then return end
-    ChatHUD.CurrentWidth = w
+    CHUDCurrentWidth = w
 
     surface.DisableClipping(true)
     
-    local x,y = 1, -ChatHUD.CurrentOffSet
+    local x,y = 1, -CHUDCurrentOffset
     local matrixcount = 0
-    for _,arg in ipairs(ChatHUD.Arguments) do
+    for _,arg in ipairs(CHUDArguments) do
         Fade(arg)
         if arg.Type == "color" then
-            ChatHUD.CurrentColor = arg.Arg
+            CHUDCurrentColor = arg.Arg
         elseif arg.Type == "string" then
             x,y = DrawText(arg,x,y)
         elseif arg.Type == "font" then
@@ -275,8 +278,8 @@ local Draw = function(self,w,h)
             cam.PushModelMatrix(arg.Arg)
             matrixcount = matrixcount + 1
         elseif arg.Type == "stop" then
-            ChatHUD.CurrentColor = Color(255,255,255)
-            UpdateFont(ChatHUD.DefaultFont,ChatHUD.DefaultFontSize)
+            CHUDCurrentColor = Color(255,255,255)
+            UpdateFont(CHUDDefaultFont,CHUDDefaultFontSize)
             for i=1,matrixcount do
                 cam.PopModelMatrix()
             end
@@ -289,8 +292,11 @@ local Draw = function(self,w,h)
 end
 
 ChatHUD.Init = function()
-    ChatHUD.Frame = vgui.Create("DPanel")
-    ChatHUD.Frame:SetPos(25,ScrH() - 150)
-    ChatHUD.Frame:SetSize(550,320)
-    ChatHUD.Frame.Paint = Draw
+    local frame = vgui.Create("DPanel")
+    frame:SetPos(25,ScrH() - 150)
+    frame:SetSize(550,320)
+    frame.Paint = Draw
+    ChatHUD.Frame = frame
 end
+
+return ChatHUD
