@@ -33,7 +33,7 @@ local IssueModule = function(filename,err,where)
 	MsgC(coldef,"[ECModule - "..where.."] ⮞ ",colbad,"Couldn't load "..filename.."\n "..err.."\n")
 end
 
-EasyChat.LoadModules = function(path)
+local LoadModules = function(path)
 	local path    = path or "easychat/modules/"
 	local pline   = "-----------------------------------------------\n"
 
@@ -83,6 +83,8 @@ EasyChat.LoadModules = function(path)
 
 end
 
-EasyChat.GetModules = function()
+local GetModules = function()
     return modules
 end
+
+return LoadModules,GetModules
