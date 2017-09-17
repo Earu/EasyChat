@@ -11,7 +11,7 @@ end)
 ChatHUD.AddTag("font",function(font)
     if not font then return end
 
-    ChatHUD.InsertFontChange(font,ChatHUD.CurrentSize)
+    ChatHUD.InsertFontChange(font,ChatHUD.CurrenFonttSize)
 end)
 
 ChatHUD.AddTag("size",function(size)
