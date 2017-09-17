@@ -12,8 +12,9 @@ local NET_SEND_LOCAL_MSG      = "EASY_CHAT_LOCAL_MSG"
 local NET_BROADCAST_LOCAL_MSG = "EASY_CHAT_LOCAL_SEND"
 local NET_SET_TYPING	      = "EASY_CHAT_START_CHAT"
 local TAG              		  = "EasyChat"
+local LoadModules,GetModules  = include("easychat/autoloader.lua")
 
-include("easychat/autoloader.lua")
+EasyChat.GetModules = GetModules -- maybe useful for modules?
 
 PLY.ECIsEnabled = function(self)
 	return self:GetInfoNum("easychat_enable",0) == 1
@@ -82,7 +83,7 @@ if SERVER then
 
 	EasyChat.Init = function()
 		hook.Run("ECPreLoadModules")
-		EasyChat.LoadModules()
+		LoadModules()
 		hook.Run("ECPostLoadModules")
 		hook.Run("ECInitialized")
 	end
@@ -168,19 +169,20 @@ if CLIENT then
 	end
 
 	EasyChat.TextColor = Color(255,255,255,255)
-	EasyChat.ModeCount = 0
-	EasyChat.Mode 	   = 0
-	EasyChat.Modes 	   = {}
-	EasyChat.Tabs 	   = {}
-
-	local surface = _G.surface
+	EasyChat.Mode	   = 0
+	EasyChat.Modes     = {}
+	EasyChat.ChatHUD   = include("easychat/client/chathud.lua")
+	
+	local ECModeCount = 0
+	local ECTabs 	  = {}
+	local surface 	  = _G.surface
 
 	--after easychat var declarations [necessary]
-	include("easychat/client/chathud.lua")
 	include("easychat/client/chatbox_panel.lua")
 	include("easychat/client/browser_panel.lua")
 	include("easychat/client/chat_tab.lua")
 	include("easychat/client/settings_tab.lua")
+	include("easychat/client/default_tags.lua")
 
 	local ECConvars = {}
 	EasyChat.RegisterConvar = function(convar,desc)
@@ -196,7 +198,7 @@ if CLIENT then
 
 	EasyChat.AddMode = function(name,callback)
 		table.insert(EasyChat.Modes,{Name = name,Callback = callback})
-		EasyChat.ModeCount = #EasyChat.Modes
+		ECModeCount = #EasyChat.Modes
 	end
 
 	EasyChat.IsOpened = function()
@@ -216,7 +218,7 @@ if CLIENT then
 		end
 		if ECNextNotif <= CurTime() then
 			ECNextNotif = CurTime() + 40
-			for k,v in pairs(EasyChat.Tabs) do
+			for k,v in pairs(ECTabs) do
 				if v.NotificationCount and v.NotificationCount > 0 then
 					chat.AddText("EC",Color(175,175,175)," ⮞ ",Color(255, 127, 127),v.NotificationCount,Color(255,255,255)," new notifications from "..k)
 				end
@@ -427,7 +429,7 @@ if CLIENT then
 				local tab = frame.Tabs:AddSheet(name,panel)
 				tab.Tab:SetFont("EasyChatFont")
 				tab.Tab:SetTextColor(Color(255,255,255))
-				EasyChat.Tabs[name] = tab
+				ECTabs[name] = tab
 				panel:Dock(FILL)
 				if not EasyChat.UseDermaSkin then
 					panel.Paint = function(self,w,h)
@@ -462,15 +464,15 @@ if CLIENT then
 			end
 
 			EasyChat.SetFocusForOn = function(name,panel)
-				if EasyChat.Tabs[name] then
-					EasyChat.Tabs[name].Tab.FocusOn = panel
+				if ECTabs[name] then
+					ECTabs[name].Tab.FocusOn = panel
 				end
 			end
 
 			EasyChat.FlashTab = function(name)
-				if EasyChat.Tabs[name] then
-					EasyChat.Tabs[name].Tab.Flashed = true
-					EasyChat.Tabs[name].NotificationCount = EasyChat.Tabs[name].NotificationCount and EasyChat.Tabs[name].NotificationCount + 1 or 1
+				if ECTabs[name] then
+					ECTabs[name].Tab.Flashed = true
+					ECTabs[name].NotificationCount = ECTabs[name].NotificationCount and ECTabs[name].NotificationCount + 1 or 1
 				end
 			end
 
@@ -636,7 +638,7 @@ if CLIENT then
 					end)
 				else
 					local modeplus = EasyChat.Mode + 1
-					EasyChat.Mode = modeplus > EasyChat.ModeCount and 0 or modeplus
+					EasyChat.Mode = modeplus > ECModeCount and 0 or modeplus
 				end
 				return true
 			end
@@ -666,7 +668,7 @@ if CLIENT then
 
 		if not EC_NO_MODULES:GetBool() then
 			hook.Run("ECPreLoadModules")
-			EasyChat.LoadModules()
+			LoadModules()
 			hook.Run("ECPostLoadModules")
 		end
 
@@ -840,7 +842,7 @@ EasyChat.Destroy = function()
 			chat.Close			= chat.old_Close
 		end
 
-		EasyChat.ModeCount = 0
+		ECModeCount = 0
 		EasyChat.Mode = 0
 		EasyChat.Modes = {}
 
