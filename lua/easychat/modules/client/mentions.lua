@@ -6,6 +6,7 @@ local Mention = function(arg,txt)
         if not system.HasFocus() then
             system.FlashWindow()
         end
+        EasyChat.FlashWindow("Global")
         if type(arg) == "string" then
             if string.TrimLeft(arg) == "" or string.lower(arg) == lname then return end
             chat.AddText(Color(114,137,218),"[Discord] "..arg,Color(255,255,255),": "..txt)
