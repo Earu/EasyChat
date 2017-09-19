@@ -1,3 +1,5 @@
+EC_MODULE_PATH = "easychat/modules/"
+
 local modules = {}
 local colgood = Color(0,160,220)
 local colbad  = Color(255,127,127)
@@ -34,7 +36,7 @@ local IssueModule = function(filename,err,where)
 end
 
 local LoadModules = function(path)
-	local path    = path or "easychat/modules/"
+	local path    = path or EC_MODULE_PATH
 	local pline   = "-----------------------------------------------\n"
 
 	MsgC(coldef,"- EasyChat -\n")

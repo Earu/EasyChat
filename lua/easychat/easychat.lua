@@ -172,8 +172,8 @@ if CLIENT then
 	EasyChat.Mode	   = 0
 	EasyChat.Modes     = {}
 	EasyChat.ChatHUD   = include("easychat/client/chathud.lua")
+	EasyChat.ModeCount = 0
 	
-	local ECModeCount = 0
 	local ECTabs 	  = {}
 	local surface 	  = _G.surface
 
@@ -198,7 +198,7 @@ if CLIENT then
 
 	EasyChat.AddMode = function(name,callback)
 		table.insert(EasyChat.Modes,{Name = name,Callback = callback})
-		ECModeCount = #EasyChat.Modes
+		EasyChat.ModeCount = #EasyChat.Modes
 	end
 
 	EasyChat.IsOpened = function()
@@ -638,7 +638,7 @@ if CLIENT then
 					end)
 				else
 					local modeplus = EasyChat.Mode + 1
-					EasyChat.Mode = modeplus > ECModeCount and 0 or modeplus
+					EasyChat.Mode = modeplus > EasyChat.ModeCount and 0 or modeplus
 				end
 				return true
 			end
@@ -842,7 +842,7 @@ EasyChat.Destroy = function()
 			chat.Close			= chat.old_Close
 		end
 
-		ECModeCount = 0
+		EasyChat.ModeCount = 0
 		EasyChat.Mode = 0
 		EasyChat.Modes = {}
 
