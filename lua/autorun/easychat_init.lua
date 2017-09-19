@@ -1,5 +1,6 @@
 AddCSLuaFile("easychat/easychat.lua")
 AddCSLuaFile("easychat/autoloader.lua")
+AddCSLuaFile("easychat/private_messaging.lua")
 
 AddCSLuaFile("easychat/client/chatbox_panel.lua")
 AddCSLuaFile("easychat/client/chat_tab.lua")
