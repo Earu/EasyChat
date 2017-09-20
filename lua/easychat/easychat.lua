@@ -345,36 +345,50 @@ if CLIENT then
 			chat.old_Open			= chat.old_Open			  or chat.Open
 			chat.old_Close			= chat.old_Close		  or chat.Close
 
+			local AddTextHandles = {}
+			EasyChat.AddTextTypeHandle = function(type,callback)
+				AddTextHandles[type] = callback
+			end
+
+			EasyChat.AddTextTypeHandle("table",function(arg)
+				EasyChat.InsertColorChange(arg.r,arg.g,arg.b,arg.a or 255)
+			end)
+
+			EasyChat.AddTextTypeHandle("string",function(arg)
+				if EasyChat.IsURL(arg) then
+					local words = string.Explode(" ",arg)
+					for k,v in pairs(words) do
+						if k > 1 then
+							EasyChat.AppendText(" ")
+						end
+						if EasyChat.IsURL(v) then
+							local url = string.gsub(v,"^%s:","")
+							EasyChat.GUI.RichText:InsertClickableTextStart(url)
+							EasyChat.AppendText(url)
+							EasyChat.GUI.RichText:InsertClickableTextEnd()
+						else
+							EasyChat.AppendText(v)
+						end	
+					end
+				else
+					EasyChat.AppendText(arg)
+				end
+			end)
+
+			EasyChat.AddTextTypeHandle("Player",function(arg)
+				local col = EC_PLAYER_COLOR:GetBool() and team.GetColor(arg:Team()) or Color(255,255,255)
+				EasyChat.InsertColorChange(col.r,col.g,col.b,255)
+				EasyChat.AppendTaggedText(arg:Nick())
+			end)
+
 			chat.AddText = function(...)
 				EasyChat.AppendText("\n")
 				EasyChat.ChatHUD.AddTagStop()
 				local args = { ... }
 				for _,arg in pairs(args) do
-					if type(arg) == "table" then
-						EasyChat.InsertColorChange(arg.r,arg.g,arg.b,arg.a or 255)
-					elseif type(arg) == "string" then
-						if EasyChat.IsURL(arg) then
-							local words = string.Explode(" ",arg)
-							for k,v in pairs(words) do
-								if k > 1 then
-									EasyChat.AppendText(" ")
-								end
-								if EasyChat.IsURL(v) then
-									local url = string.gsub(v,"^%s:","")
-									EasyChat.GUI.RichText:InsertClickableTextStart(url)
-									EasyChat.AppendText(url)
-									EasyChat.GUI.RichText:InsertClickableTextEnd()
-								else
-									EasyChat.AppendText(v)
-								end	
-							end
-						else
-							EasyChat.AppendText(arg)
-						end
-					elseif arg:IsPlayer() then
-						local col = EC_PLAYER_COLOR:GetBool() and team.GetColor(arg:Team()) or Color(255,255,255)
-						EasyChat.InsertColorChange(col.r,col.g,col.b,255)
-						EasyChat.AppendTaggedText(arg:Nick())
+					local callback = AddTextHandles[type(arg)]
+					if callback then
+						pcall(callback,arg)
 					else
 						local str = tostring(arg)
 						EasyChat.AppendText(str)
