@@ -3,24 +3,24 @@
 ]]--
 local ipairs  = _G.ipairs
 
-local String_Explode = string.Explode
-local String_Gmatch  = string.gmatch
-local String_Len     = string.len
-local String_Sub     = string.sub
-local String_Gsub    = string.gsub
-local String_Trim    = string.Trim
+local stringExplode = string.Explode
+local stringGmatch  = string.gmatch
+local stringLen     = string.len
+local stringSub     = string.sub
+local stringGsub    = string.gsub
+local stringTrim    = string.Trim
 
-local Table_Insert = table.insert
-local Table_Remove = table.remove
-local Table_Concat = table.concat
+local tableInsert = table.insert
+local tableRemove = table.remove
+local tableConcat = table.concat
 
-local Surface_DrawText        = surface.DrawText
-local Surface_SetTextColor    = surface.SetTextColor
-local Surface_SetFont         = surface.SetFont
-local Surface_SetTextPos      = surface.SetTextPos
-local Surface_CreateFont      = surface.CreateFont
-local Surface_GetTextSize     = surface.GetTextSize
-local Surface_DisableClipping = surface.DisableClipping
+local surfaceDrawText        = surface.DrawText
+local surfaceSetTextColor    = surface.SetTextColor
+local surfaceSetFont         = surface.SetFont
+local surfaceSetTextPos      = surface.SetTextPos
+local surfaceCreateFont      = surface.CreateFont
+local surfaceGetTextSize     = surface.GetTextSize
+local surfaceDisableClipping = surface.DisableClipping
 
 local ChatHUD             = {}
 local CHUDArguments       = {}
@@ -51,13 +51,13 @@ ChatHUD.DefaultFontSize = CHUDDefaultFontSize
 local UpdateFont = function(fontname,size)
     if not CHUDFonts[fontname..size] then
         CHUDFonts[fontname..size] = true
-        Surface_CreateFont("ECCHUD_"..fontname.."_"..size,{
+        surfaceCreateFont("ECCHUD_"..fontname.."_"..size,{
             font      = fontname,
             extended  = true,
             size      = size,
             weight    = 600,
         })
-        Surface_CreateFont("ECCHUD_SHADOW_"..fontname.."_"..size,{
+        surfaceCreateFont("ECCHUD_SHADOW_"..fontname.."_"..size,{
             font      = fontname,
             extended  = true,
             size      = size,
@@ -90,7 +90,7 @@ local ClearArgs = function()
         end
     end
     for _ = 1,amount do
-        Table_Remove(CHUDArguments,1)
+        tableRemove(CHUDArguments,1)
     end
 end
 
@@ -102,14 +102,14 @@ local GetOffset = function()
         end
     end
     local count = 1
-    for _,_ in String_Gmatch(line,"\n") do
+    for _,_ in stringGmatch(line,"\n") do
         count = count + 1
     end
     return count * CHUDDefaultFontSize
 end
 
 local StoreArg = function(arg,type)
-    Table_Insert(CHUDArguments,{ Arg = arg, Type = type, ID = #CHUDArguments})
+    tableInsert(CHUDArguments,{ Arg = arg, Type = type, ID = #CHUDArguments})
     if CHUDArguments[1].Faded or #CHUDArguments >= CHUDMaxArgs then
         ClearArgs()
     end
@@ -125,16 +125,16 @@ end
 ]]--
 local ParseStoreArgs = function(str)
     local pattern = "<(.-)=(.-)>"
-    local parts = String_Explode(pattern,str,true)
+    local parts = stringExplode(pattern,str,true)
     local index = 1
 
-    for tag,content in String_Gmatch(str,pattern) do
+    for tag,content in stringGmatch(str,pattern) do
         StoreArg(parts[index],"string")
         index = index + 1
         if CHUDTags[tag] then
-            local values = String_Explode(",",content)
+            local values = stringExplode(",",content)
             CHUDTags[tag](unpack(values))
-            String_Gsub(content,".*","")
+            stringGsub(content,".*","")
         end
     end
     StoreArg(parts[#parts],"string")
@@ -143,15 +143,15 @@ end
 local HashString = function(str,maxwidth)
     if not str then return "" end
 	local lines    = {}
-    local strlen   = String_Len(str)
+    local strlen   = stringLen(str)
     local strstart = 1
     local strend   = 1
 
 	while (strend < strlen) do
 		strend = strend + 1
 
-		if (Surface_GetTextSize(String_Sub(str,strstart,strend)) > maxwidth) then
-			local n = String_Sub(str,strend,strend)
+		if (surfaceGetTextSize(stringSub(str,strstart,strend)) > maxwidth) then
+			local n = stringSub(str,strend,strend)
 			local I = 0
 
 			for i = 1, 15 do
@@ -159,7 +159,7 @@ local HashString = function(str,maxwidth)
 
 				if (n ~= " " and n ~= "," and n ~= "." and n ~= "\n") then
 					strend = strend - 1
-					n = String_Sub(str,strend,strend)
+					n = stringSub(str,strend,strend)
 				else
 					break
 				end
@@ -169,15 +169,15 @@ local HashString = function(str,maxwidth)
 				strend = strend + 14
 			end
 
-			local finalstr = String_Trim(String_Sub(str,strstart,strend))
-			Table_Insert(lines,finalstr)
+			local finalstr = stringTrim(stringSub(str,strstart,strend))
+			tableInsert(lines,finalstr)
 			strstart = strend + 1
 		end
 	end
 
-	Table_Insert(lines,String_Sub(str,strstart,strend))
+	tableInsert(lines,stringSub(str,strstart,strend))
 
-    return Table_Concat(lines,"\n")
+    return tableConcat(lines,"\n")
 end
 
 ChatHUD.AppendText = function(str)
@@ -240,25 +240,25 @@ end
 local DrawString = function(txt,x,y,bgcol,col)
     local font,bgfont = GetFontNames(CHUDCurrentFont,CHUDCurrentFontSize)
 
-    Surface_SetTextColor(bgcol)
-    Surface_SetFont(bgfont)
+    surfaceSetTextColor(bgcol)
+    surfaceSetFont(bgfont)
 
     for _ = 1,8 do
-        Surface_SetTextPos(x,y)
-        Surface_DrawText(txt)
+        surfaceSetTextPos(x,y)
+        surfaceDrawText(txt)
     end
 
-    Surface_SetTextColor(col)
-    Surface_SetFont(font)
-    Surface_SetTextPos(x,y)
-    Surface_DrawText(txt)
+    surfaceSetTextColor(col)
+    surfaceSetFont(font)
+    surfaceSetTextPos(x,y)
+    surfaceDrawText(txt)
 
-    return Surface_GetTextSize(txt)
+    return surfaceGetTextSize(txt)
 
 end
 
 local DrawText = function(arg,x,y)
-    local lines = String_Explode("\n",arg.Arg)
+    local lines = stringExplode("\n",arg.Arg)
     local w = 0
     local col,bgcol = Fade(arg)
     local y = y
@@ -288,7 +288,7 @@ local Draw = function(self,w,h)
     if hook.Run("ChatHudDraw",self,w,h) == false then return end
     CHUDCurrentWidth = w
 
-    Surface_DisableClipping(true)
+    surfaceDisableClipping(true)
 
     local x,y = 1, -CHUDCurrentOffset
     local matrixcount = 0
@@ -314,7 +314,7 @@ local Draw = function(self,w,h)
         end
     end
 
-    Surface_DisableClipping(false)
+    surfaceDisableClipping(false)
 
 end
 
