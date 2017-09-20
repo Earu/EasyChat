@@ -9,6 +9,8 @@ local gamemode = _G.gamemode
 local util	   = _G.util
 local player   = _G.player
 local PLY	   = FindMetaTable("Player")
+local pairs    = _G.pairs
+local ipairs   = _G.ipairs
 
 local NET_BROADCAST_MSG 	  = "EASY_CHAT_BROADCAST_MSG"
 local NET_SEND_MSG    		  = "EASY_CHAT_RECEIVE_MSG"
