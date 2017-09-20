@@ -1,10 +1,14 @@
 local EasyChat = _G.EasyChat or {}
 _G.EasyChat = EasyChat
 
-local string = _G.string
-local net	 = _G.net
-local print  = _G._print or _G.print
-local PLY	 = FindMetaTable("Player")
+local string   = _G.string
+local net	   = _G.net
+local print    = _G._print or _G.print --epoe compat
+local hook     = _G.hook
+local gamemode = _G.gamemode
+local util	   = _G.util
+local player   = _G.player
+local PLY	   = FindMetaTable("Player")
 
 local NET_BROADCAST_MSG 	  = "EASY_CHAT_BROADCAST_MSG"
 local NET_SEND_MSG    		  = "EASY_CHAT_RECEIVE_MSG"
@@ -63,7 +67,7 @@ if SERVER then
 		net.WriteString(msg)
 		net.WriteBool(IsValid(ply) and (not ply:Alive()) or false)
 		local receivers = {}
-		for k,v in pairs(player.GetAll()) do
+		for _,v in ipairs(player.GetAll()) do
 			if IsValid(v) and v:GetPos():Distance(ply:GetPos()) <= ply:GetInfoNum("easychat_local_msg_distance",150) then
 				table.insert(receivers,v)
 			end
@@ -95,7 +99,7 @@ if CLIENT then
 
 	local MAX_CHARS   = 3000
 	local JSON_COLS   = file.Read("easychat/colors.txt","DATA")
-	
+
 	local EC_GLOBAL_ON_OPEN = CreateConVar("easychat_global_on_open","1",FCVAR_ARCHIVE,"Set the chat to always open global chat tab on open")
 	local EC_FONT 			= CreateConVar("easychat_font",(system.IsWindows() and "Verdana" or "Tahoma"),FCVAR_ARCHIVE,"Set the font to use for the chat")
 	local EC_FONT_SIZE 		= CreateConVar("easychat_font_size","15",FCVAR_ARCHIVE,"Set the font size for chatbox")
@@ -173,9 +177,14 @@ if CLIENT then
 	EasyChat.Modes     = {}
 	EasyChat.ChatHUD   = include("easychat/client/chathud.lua")
 	EasyChat.ModeCount = 0
-	
+
 	local ECTabs 	  = {}
+	local LocalPlayer = _G.LocalPlayer
 	local surface 	  = _G.surface
+	local IsValid	  = _G.IsValid
+	local table		  = _G.table
+	local file		  = _G.file
+	local input		  = _G.input
 
 	--after easychat var declarations [necessary]
 	include("easychat/client/chatbox_panel.lua")
@@ -244,16 +253,19 @@ if CLIENT then
 	end
 
 	local LoadPosSize = function()
-		local w,h = chat.GetChatBoxSize()
+		local w,h = 550,320
+		local x,y = 25,(ScrH() - 150)
 		local json = file.Read("easychat/possize.txt","DATA")
-		if not json then return 25,25,w,h*1.5 end
+
+		if not json then return x,y,w,h end
 		local tab = util.JSONToTable(json)
+
 		if tab then
 			if tab.x >= ScrW() then
-				tab.x = 25
+				tab.x = x
 			end
 			if tab.y >= ScrH() then
-				tab.y = 25
+				tab.y = y
 			end
 			if tab.w >= ScrW() then
 				tab.w = w
@@ -263,7 +275,7 @@ if CLIENT then
 			end
 			return tab.x,tab.y,tab.w,tab.h
 		else
-			return 25,(ScrH() - 150),550,320
+			return x,y,w,h
 		end
 	end
 
@@ -291,7 +303,7 @@ if CLIENT then
 			"ftp://[^%s%\"]+",
 			"steam://[^%s%\"]+",
 		}
-		for index,pattern in pairs(LinkPatterns) do
+		for index,pattern in ipairs(LinkPatterns) do
 			if string.match(str,pattern) then
 				return true
 			end
@@ -306,7 +318,7 @@ if CLIENT then
 		browser:MakePopup()
 		browser:OpenURL(url or "www.google.com")
 	end
-			
+
 	local ECAddTextHandles = {}
 	EasyChat.SetAddTextTypeHandle = function(type,callback)
 		ECAddTextHandles[type] = callback
@@ -346,14 +358,14 @@ if CLIENT then
 			LocalPlayer():ConCommand(text)
 		end)
 
-		EasyChat.SetAddTextTypeHandle("table",function(arg)
-			EasyChat.InsertColorChange(arg.r,arg.g,arg.b,arg.a or 255)
+		EasyChat.SetAddTextTypeHandle("table",function(col)
+			EasyChat.InsertColorChange(col.r,col.g,col.b,col.a or 255)
 		end)
 
-		EasyChat.SetAddTextTypeHandle("string",function(arg)
-			if EasyChat.IsURL(arg) then
-				local words = string.Explode(" ",arg)
-				for k,v in pairs(words) do
+		EasyChat.SetAddTextTypeHandle("string",function(str)
+			if EasyChat.IsURL(str) then
+				local words = string.Explode(" ",str)
+				for k,v in i(words) do
 					if k > 1 then
 						EasyChat.AppendText(" ")
 					end
@@ -364,17 +376,17 @@ if CLIENT then
 						EasyChat.GUI.RichText:InsertClickableTextEnd()
 					else
 						EasyChat.AppendText(v)
-					end	
+					end
 				end
 			else
-				EasyChat.AppendText(arg)
+				EasyChat.AppendText(str)
 			end
 		end)
 
-		EasyChat.SetAddTextTypeHandle("Player",function(arg)
-			local col = EC_PLAYER_COLOR:GetBool() and team.GetColor(arg:Team()) or Color(255,255,255)
+		EasyChat.SetAddTextTypeHandle("Player",function(ply)
+			local col = EC_PLAYER_COLOR:GetBool() and team.GetColor(ply:Team()) or Color(255,255,255)
 			EasyChat.InsertColorChange(col.r,col.g,col.b,255)
-			EasyChat.AppendTaggedText(arg:Nick())
+			EasyChat.AppendTaggedText(ply:Nick())
 		end)
 
 		do
@@ -390,7 +402,7 @@ if CLIENT then
 				EasyChat.AppendText("\n")
 				EasyChat.ChatHUD.AddTagStop()
 				local args = { ... }
-				for _,arg in ipairs(args) do
+				for _,arg in i(args) do
 					local callback = ECAddTextHandles[type(arg)]
 					if callback then
 						pcall(callback,arg)
@@ -424,7 +436,7 @@ if CLIENT then
 			end
 
 			chat.Open = function(input)
-				local isteam = input == 0 
+				local isteam = input == 0
 				ECOpen(isteam)
 				--chat.old_Open(input)
 			end
@@ -546,7 +558,7 @@ if CLIENT then
 
 		local CTRLShortcuts = {}
 		local ALTShortcuts  = {}
-		
+
 		local IsValidShortcutKey = function(key)
 			local notvalids = {
 				KEY_ENTER 	  = true,
@@ -560,7 +572,7 @@ if CLIENT then
 				return true
 			end
 		end
-		
+
 		local IsBaseShortcutKey = function(key)
 			local valids = {
 				KEY_LCONTROL = true,
@@ -651,9 +663,9 @@ if CLIENT then
 				if self:GetText() ~= "" then
 					local a = gamemode.Call("OnChatTab",self:GetText())
 					self:SetText(a)
-					timer.Simple(0,function() 
-						self:RequestFocus() 
-						self:SetCaretPos(#self:GetText()) 
+					timer.Simple(0,function()
+						self:RequestFocus()
+						self:SetCaretPos(#self:GetText())
 					end)
 				else
 					local modeplus = EasyChat.Mode + 1
@@ -709,7 +721,7 @@ if CLIENT then
 				KEY_U,KEY_V,KEY_W,KEY_X,KEY_Y,
 				KEY_Z,KEY_ENTER,KEY_TAB,
 			}
-			for _,key in pairs(letters) do
+			for _,key in ipairs(letters) do
 				if input.IsKeyDown(key) then
 					local k = input.GetKeyName(key)
 					return true,((k ~= "TAB" and k ~= "ENTER") and k or "")
@@ -883,7 +895,7 @@ concommand.Add("easychat_reload",function()
 	EasyChat.Destroy()
 	EasyChat.Init()
 	if SERVER then
-		for k,v in pairs(player.GetAll()) do
+		for _,v in ipairs(player.GetAll()) do
 			v:SendLua([[EasyChat.Destroy() EasyChat.Init()]])
 		end
 	end
