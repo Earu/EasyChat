@@ -365,7 +365,7 @@ if CLIENT then
 		EasyChat.SetAddTextTypeHandle("string",function(str)
 			if EasyChat.IsURL(str) then
 				local words = string.Explode(" ",str)
-				for k,v in i(words) do
+				for k,v in ipairs(words) do
 					if k > 1 then
 						EasyChat.AppendText(" ")
 					end
