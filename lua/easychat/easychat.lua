@@ -404,7 +404,7 @@ if CLIENT then
 				EasyChat.AppendText("\n")
 				EasyChat.ChatHUD.AddTagStop()
 				local args = { ... }
-				for _,arg in i(args) do
+				for _,arg in ipairs(args) do
 					local callback = ECAddTextHandles[type(arg)]
 					if callback then
 						pcall(callback,arg)
