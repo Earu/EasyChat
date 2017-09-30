@@ -318,11 +318,18 @@ local Draw = function(self,w,h)
 
 end
 
+local Think = function(self)
+	EasyChat.ChatHUD.DuringShouldDraw = true
+	self:SetVisible(hook.Run("HUDShouldDraw","CHudChat") ~= false)
+	EasyChat.ChatHUD.DuringShouldDraw = false
+end
+
 ChatHUD.Init = function()
     local frame = vgui.Create("DPanel")
     frame:SetPos(25,ScrH() - 150)
     frame:SetSize(550,320)
     frame.Paint = Draw
+    frame.Think = Think
     ChatHUD.Frame = frame
 end
 
