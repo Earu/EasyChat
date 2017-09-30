@@ -738,18 +738,6 @@ if CLIENT then
 			end
 		end)
 
-		hook.Add("ChatHudDraw",TAG,function()
-			if not EC_HUD_ENABLE:GetBool() then
-				return false
-			end
-		end)
-
-		hook.Add("ChatHudAddText",TAG,function()
-			if not EC_HUD_ENABLE:GetBool() then
-				return false
-			end
-		end)
-
 		hook.Add("PreRender",TAG,function()
 			if EasyChat.IsOpened() then
 				if input.IsKeyDown(KEY_ESCAPE) then
@@ -864,8 +852,6 @@ EasyChat.Destroy = function()
 		hook.Remove("PreRender",TAG)
 		hook.Remove("Think",TAG)
 		hook.Remove("HUDShouldDraw",TAG)
-		hook.Remove("ChatHudDraw",TAG)
-		hook.Remove("ChatHudAddText",TAG)
 
 		if chat.old_AddText then
 			chat.AddText 		= chat.old_AddText
