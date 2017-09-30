@@ -733,6 +733,7 @@ if CLIENT then
 		end
 
 		hook.Add("HUDShouldDraw",TAG,function(hudelement)
+			if EasyChat.ChatHUD.DuringShouldDraw then return end
 			if hudelement == "CHudChat" and EC_HUD_ENABLE:GetBool() then
 				return false
 			end
