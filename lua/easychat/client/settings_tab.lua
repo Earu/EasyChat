@@ -264,7 +264,7 @@ local SETTINGS_TAB = {
 
     SaveColors = function(self)
         for k,v in pairs(self.Checkboxes) do
-            if v:GetChecked() then
+            if v:IsValid() and v:GetChecked() then -- v manages to be a NULL panel sometimes ??? don't ask me why idk
                 if v:GetText() == "Outlay Color" then
                     EasyChat.OutlayColor = self.ColorMixer:GetColor()
                 elseif v:GetText() == "Outlay Outline Color" then
