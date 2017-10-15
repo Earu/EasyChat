@@ -5,23 +5,47 @@ if SERVER then
 
     hook.Add("PlayerSay","EasyChatDarkRP",function(ply,txt)
         local str = string.lower(txt)
-        if string.match(txt,"^%/ooc") or string.match(txt,"^%/advert") then
+        if string.match(txt,"^%/") or string.match(txt,"^%/") then
+            local parts = string.Explode(" ",txt)
+            local cmd = string.gsub(parts[1],"^.","")
+
             net.Start(netstring)
-            net.WriteString(string.gsub(txt,"^.",""))
+            net.WriteEntity(ply)
+            net.WriteString(cmd)
+            net.WriteString(table.concat(parts," ",2,#parts))
             net.Broadcast()
+
             return ""
         end
     end)
 end
 
 if CLIENT then
-    net.Receive(netstring,function(ply)
-        local mode = net.ReadString()
-        if mode == "ooc" then
-            chat.AddText(Color(125,125,125),"[OOC] ",ply,Color(255,255,255),":"..string.sub(txt,5,string.len(txt)))
-        else
+
+    local modes = {
+        ooc = function(ply,txt)
+            chat.AddText(Color(125,125,125),"[OOC] ",ply,Color(255,255,255),":"..txt)
+        end,
+        advert = function(ply,txt)
             chat.AddText(Color(244,167,66),"►---------◄ Advert By "..ply:GetName().." ►---------◄")
-            chat.AddText(Color(244,167,66),"⮞⮞ ",Color(255,255,255),string.upper(string.sub(txt,8,string.len(txt))))
+            chat.AddText(Color(244,167,66),"⮞⮞ ",Color(255,255,255),txt)
+        end,
+        y = function(ply,txt)
+            chat.AddText(Color(240,125,125),"[Yell] ",ply,Color(255,255,255),":"..txt)
+        end,
+        w = function(ply,txt)
+            chat.AddText(Color(75,75,240),"[Whisper] ",ply,Color(255,255,255),":"..txt)
+        end,
+    }
+
+    net.Receive(netstring,function()
+        local ply = net.ReadEntity()
+        local mode = net.ReadString()
+        local txt = net.ReadString()
+
+        if modes[mode] then
+            modes[mode](ply,txt)
         end
     end)
+
 end
