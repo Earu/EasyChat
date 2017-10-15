@@ -46,7 +46,7 @@ if CLIENT then
         end,
         pm = function(ply,txt)
             local parts = string.Explode(" ",txt)
-            if string.match(parts[1],LocalPlayer():GetName()) then
+            if string.match(parts[1],LocalPlayer():Nick()) then
                 chat.AddText(Color(220,220,60),"[PM] ",ply,Color(255,255,255),": " .. table.concat(parts," ",2,#parts))
             end
         end,
