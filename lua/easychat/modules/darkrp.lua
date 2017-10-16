@@ -9,7 +9,7 @@ if SERVER then
 
     local FindPlyByName = function(name)
         for _,ply in ipairs(player.GetAll()) do
-            if string.match(ProperNick(ply),name) do
+            if string.match(ProperNick(ply),name) then
                 return ply
             end
         end
