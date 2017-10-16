@@ -48,12 +48,14 @@ end
 
 if CLIENT then
 
+    local OOC = function(ply,txt)
+        chat.AddText(Color(125,125,125),"[OOC] ",ply,Color(255,255,255),": "..txt)
+    end
+
     local modes = {
-        ooc = function(ply,txt)
-            chat.AddText(Color(125,125,125),"[OOC] ",ply,Color(255,255,255),": "..txt)
-        end,
-        ["/"] = modes.ooc, --alias in darkrp
-        a = modes.ooc, --another ooc alias
+        ooc = OOC,
+        ["/"] = OOC, --alias in darkrp
+        a = OOC, --another ooc alias
         advert = function(ply,txt)
             chat.AddText(Color(244,167,66),"►---------◄ Advert By "..ply:GetName().." ►---------◄")
             chat.AddText(Color(244,167,66),"⮞⮞ ",Color(255,255,255),txt)
