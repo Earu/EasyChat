@@ -3,6 +3,19 @@ local netstring = "EASY_CHAT_DARKRP"
 if SERVER then
     util.AddNetworkString(netstring)
 
+    local ProperNick = function(ply)
+        return string.gsub(ply:Nick(),"<.->","")
+    end
+
+    local FindPlyByName = function(name)
+        for _,ply in ipairs(player.GetAll()) do
+            if string.match(ProperNick(ply),name) do
+                return ply
+            end
+        end
+        return nil
+    end
+
     hook.Add("PlayerSay","EasyChatDarkRP",function(ply,txt)
         local str = string.lower(txt)
         if string.match(txt,"^%/") or string.match(txt,"^%/") then
@@ -12,8 +25,21 @@ if SERVER then
             net.Start(netstring)
             net.WriteEntity(ply)
             net.WriteString(cmd)
-            net.WriteString(table.concat(parts," ",2,#parts))
-            net.Broadcast()
+
+            if cmd == "pm" then --secure pm and group
+                local target = FindPlyByName(parts[2])
+                if target then
+                    net.WriteString(table.concat(parts," ",3,#parts))
+                    net.Send(target)
+                end
+            elseif cmd == "group" then
+                local plys = team.GetPlayers(ply:Team())
+                net.WriteString(table.concat(parts," ",2,#parts))
+                net.Send(plys)
+            else
+                net.WriteString(table.concat(parts," ",2,#parts))
+                net.Broadcast()
+            end
 
             return ""
         end
@@ -45,15 +71,10 @@ if CLIENT then
             chat.AddText(Color(150,20,20),"[Broadcast] ",ply,Color(255,255,255),": " .. txt)
         end,
         pm = function(ply,txt)
-            local parts = string.Explode(" ",txt)
-            if string.match(parts[1],LocalPlayer():Nick()) then
-                chat.AddText(Color(220,220,60),"[PM] ",ply,Color(255,255,255),": " .. table.concat(parts," ",2,#parts))
-            end
+            chat.AddText(Color(220,220,60),"[PM] ",ply,Color(255,255,255),": " .. txt)
         end,
         group = function(ply,txt)
-            if ply:Team() == LocalPlayer():Team() then
-                chat.AddText(Color(220,60,220),"[Group] ",ply,Color(255,255,255),": " .. txt)
-            end
+            chat.AddText(Color(220,60,220),"[Group] ",ply,Color(255,255,255),": " .. txt)
         end,
     }
 
