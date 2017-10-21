@@ -708,7 +708,7 @@ if CLIENT then
 		local settings = vgui.Create("ECSettingsTab")
 		EasyChat.AddTab("Settings",settings)
 
-		hook.Add("ChatText",TAG, function(index,name,text,type)
+		hook.Add("",TAG, function(index,name,text,type)
 			local types = {
 				none = true, -- fallback
 				darkrp = true, --darkrp compat most likely?
@@ -807,6 +807,8 @@ if CLIENT then
 		GAMEMODE.OnPlayerChat = function(self,ply,msg,isteam,isdead,islocal) -- this is for the best
 			local tab = {}
 
+			table.insert(tab,Color(255,255,255)) -- we don't want previous colors to be used again
+
 			if EC_ENABLE:GetBool() then
 				if EC_TIMESTAMPS:GetBool() then
 					table.insert(tab,os.date("%H:%M:%S").." - ")
@@ -825,7 +827,7 @@ if CLIENT then
 				table.insert(tab,"*DEAD* " )
 			end
 
-			if islocal then
+			if islocal == true then
 				table.insert(tab,Color(120,210,255))
 				table.insert(tab,"(Local) ")
 			end
@@ -857,7 +859,7 @@ EasyChat.Destroy = function()
 
 	if CLIENT then
 		hook.Remove("StartChat",TAG)
-		hook.Remove("ChatText",TAG)
+		hook.Remove("",TAG)
 		hook.Remove("PreRender",TAG)
 		hook.Remove("Think",TAG)
 		hook.Remove("HUDShouldDraw",TAG)
