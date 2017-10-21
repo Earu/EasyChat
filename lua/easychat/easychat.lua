@@ -851,6 +851,8 @@ if CLIENT then
 
 			return true
 		end
+
+		hook.Run("ECPostInitialize")
 	end)
 
 end
