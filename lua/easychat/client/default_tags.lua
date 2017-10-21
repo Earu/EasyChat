@@ -8,6 +8,9 @@ ChatHUD.AddTag("color",function(r,g,b)
     ChatHUD.InsertColorChange(r,g,b,255)
 end)
 
+--[[
+Temp removal because it fucks the chathud
+
 ChatHUD.AddTag("font",function(font)
     if not font then return end
 
@@ -20,3 +23,4 @@ ChatHUD.AddTag("size",function(size)
 
     ChatHUD.InsertFontChange(ChatHUD.CurrentFont,size)
 end)
+--]]
