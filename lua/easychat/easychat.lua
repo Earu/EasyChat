@@ -709,7 +709,15 @@ if CLIENT then
 		EasyChat.AddTab("Settings",settings)
 
 		hook.Add("ChatText",TAG, function(index,name,text,type)
-			if type == "none" then
+			local types = {
+				none = true, -- fallback
+				darkrp = true, --darkrp compat most likely?
+				--namechange = true, -- annoying
+				--servermsg = true, -- annoying
+				--teamchange = true, -- annoying
+				--chat = true, -- deprecated
+			}
+			if types[type] then
 				chat.AddText(text)
 			end
 		end)
