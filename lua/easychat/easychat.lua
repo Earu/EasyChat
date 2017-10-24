@@ -403,6 +403,7 @@ if CLIENT then
 			chat.AddText = function(...)
 				EasyChat.AppendText("\n")
 				EasyChat.ChatHUD.AddTagStop()
+				EasyChat.InsertColorChange(255,255,255,255)
 
 				if EC_ENABLE:GetBool() then
 					if EC_TIMESTAMPS:GetBool() then
