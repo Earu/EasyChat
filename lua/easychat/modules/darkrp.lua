@@ -1,4 +1,4 @@
-if not gmod.GetGamemode().Name == "DarkRP" then return end
+if gmod.GetGamemode().Name ~= "DarkRP" then return end
 
 if CLIENT then
     hook.Add("ECPostInitialize","EasyChatModuleDarkRP",function()
