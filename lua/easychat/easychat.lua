@@ -403,6 +403,13 @@ if CLIENT then
 			chat.AddText = function(...)
 				EasyChat.AppendText("\n")
 				EasyChat.ChatHUD.AddTagStop()
+
+				if EC_ENABLE:GetBool() then
+					if EC_TIMESTAMPS:GetBool() then
+						EasyChat.AppendText(os.date("%H:%M").." - ")
+					end
+				end
+
 				local args = { ... }
 				for _,arg in ipairs(args) do
 					local callback = ECAddTextHandles[type(arg)]
@@ -810,9 +817,6 @@ if CLIENT then
 			table.insert(tab,Color(255,255,255)) -- we don't want previous colors to be used again
 
 			if EC_ENABLE:GetBool() then
-				if EC_TIMESTAMPS:GetBool() then
-					table.insert(tab,os.date("%H:%M:%S").." - ")
-				end
 				if IsValid(ply) and EC_TEAMS:GetBool() then
 					if EC_TEAMS_COLOR:GetBool() then
 						local tcol = team.GetColor(ply:Team())
