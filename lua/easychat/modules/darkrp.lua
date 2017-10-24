@@ -17,9 +17,6 @@ if CLIENT then
             table.insert(tab,Color(255,255,255)) -- we don't want previous colors to be used again
 
             if EC_ENABLE:GetBool() then
-                if EC_TIMESTAMPS:GetBool() then
-                    table.insert(tab,os.date("%H:%M:%S").." - ")
-                end
                 if IsValid(ply) and EC_TEAMS:GetBool() then
                     if EC_TEAMS_COLOR:GetBool() then
                         local tcol = team.GetColor(ply:Team())
