@@ -716,14 +716,14 @@ if CLIENT then
 		local settings = vgui.Create("ECSettingsTab")
 		EasyChat.AddTab("Settings",settings)
 
-		hook.Add("",TAG, function(index,name,text,type)
+		hook.Add("ChatText",TAG, function(index,name,text,type)
 			local types = {
-				none = true, -- fallback
-				darkrp = true, --darkrp compat most likely?
+				none = true,         -- fallback
+				darkrp = true,       --darkrp compat most likely?
 				--namechange = true, -- annoying
-				--servermsg = true, -- annoying
+				--servermsg = true,  -- annoying
 				--teamchange = true, -- annoying
-				--chat = true, -- deprecated
+				--chat = true,       -- deprecated
 			}
 			if types[type] then
 				chat.AddText(text)
