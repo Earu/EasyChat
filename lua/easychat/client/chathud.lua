@@ -149,8 +149,9 @@ local HashString = function(str,maxwidth)
 
 	while (strend < strlen) do
 		strend = strend + 1
+        local width,_ = surfaceGetTextSize(stringSub(str,strstart,strend))
 
-		if (surfaceGetTextSize(stringSub(str,strstart,strend)) > maxwidth) then
+		if width and width > maxwidth then
 			local n = stringSub(str,strend,strend)
 			local I = 0
 
