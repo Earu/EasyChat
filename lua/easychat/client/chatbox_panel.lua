@@ -15,6 +15,7 @@ local CHATBOX = {
         self.BtnMaxim = self:Add("DButton")
         self.Tabs     = self:Add("DPropertySheet")
         self.Scroller = self.Tabs.tabScroller
+        self.OldTab   = NULL
 
         self.BtnClose:SetSize(45,18)
         self.BtnClose:SetZPos(10)
@@ -71,6 +72,11 @@ local CHATBOX = {
         self.Tabs.Think = function(self)
             local x,y,w,h = frame:GetBounds()
             frame.Tabs:SetSize(w-13,h-11)
+            local curent = frame:GetActiveTab()
+            if current ~= self.OldTab then
+                self.OldTab = curent
+                hook.Run("ECTabChanged",current:GetParent().Name)
+            end
         end
 
         self.Scroller:SetParent(self.Tabs)
