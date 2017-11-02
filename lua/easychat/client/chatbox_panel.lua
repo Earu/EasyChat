@@ -74,8 +74,8 @@ local CHATBOX = {
             self:SetSize(w-13,h-11)
             local current = self:GetActiveTab()
             if current ~= frame.OldTab then
+                hook.Run("ECTabChanged",frame.OldTab.Name,current.Name)
                 frame.OldTab = current
-                hook.Run("ECTabChanged",current:GetParent().Name)
             end
         end
 
