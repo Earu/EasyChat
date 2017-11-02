@@ -47,48 +47,48 @@ if SERVER then
 		local str = net.ReadString()
 		local isteam = net.ReadBool()
 		local msg = gamemode.Call("PlayerSay",ply,str,isteam)
-		
+
 		if type(msg) ~= "string" or string.Trim(msg) == "" then return end
-		
+
 		net.Start(NET_BROADCAST_MSG)
 		net.WriteEntity(ply)
 		net.WriteString(msg)
 		net.WriteBool(IsValid(ply) and (not ply:Alive()) or false)
 		net.WriteBool(isteam)
-		
+
 		if isteam then
 			net.Send(team.GetPlayers(ply:Team()))
 		else
 			net.Broadcast()
 			print((string.gsub(ply:Nick(),"<.->",""))..": "..msg) --shows in server console
 		end
-	
+
 	end)
 
 	net.Receive(NET_SEND_LOCAL_MSG,function(len,ply)
 		local msg = net.ReadString()
-		
+
 		if type(msg) ~= "string" or string.Trim(msg) == "" then return end
-		
+
 		net.Start(NET_BROADCAST_LOCAL_MSG)
 		net.WriteEntity(ply)
 		net.WriteString(msg)
 		net.WriteBool(IsValid(ply) and (not ply:Alive()) or false)
-		
+
 		local receivers = {}
 		for _,v in ipairs(player.GetAll()) do
 			if IsValid(v) and v:GetPos():Distance(ply:GetPos()) <= ply:GetInfoNum("easychat_local_msg_distance",150) then
 				table.insert(receivers,v)
 			end
 		end
-		
+
 		net.Send(receivers)
 	end)
 
 	net.Receive(NET_SET_TYPING,function(len,ply)
 		local bool = net.ReadBool()
 		ply:SetNWBool("ec_is_typing",bool)
-		
+
 		if bool then
 			hook.Run("ECOpened",ply)
 		else
@@ -477,10 +477,10 @@ if CLIENT then
 
 			EasyChat.AddTab = function(name,panel)
 				local tab = frame.Tabs:AddSheet(name,panel)
+				tab.Tab.Name = name
 				tab.Tab:SetFont("EasyChatFont")
 				tab.Tab:SetTextColor(Color(255,255,255))
 				ECTabs[name] = tab
-				tab.Name = name
 				panel:Dock(FILL)
 				if not EasyChat.UseDermaSkin then
 					panel.Paint = function(self,w,h)
@@ -523,7 +523,7 @@ if CLIENT then
 			end
 
 			EasyChat.GetActiveTab = function()
-				local active = frame.Tabs:GetActiveTab():GetParent()
+				local active = frame.Tabs:GetActiveTab()
 				return ECTabs[active.Name]
 			end
 
