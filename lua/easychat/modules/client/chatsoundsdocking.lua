@@ -6,17 +6,17 @@ hook.Add("ChatsoundsUpdated","EasyChatModuleChatsoundsDocking",function()
 	chatgui = EasyChat.GUI.ChatBox
 end)
 
+hook.Add("ECOpened", "chatsounds_autocomplete", function()
+	local func = hook.GetTable().StartChat.chatsounds_autocomplete
+	if func then func() end
+end)
+
 cvars.AddChangeCallback("easychat_enable",function(name,old,new)
 	if chatsounds then
 		if GetConVar(name):GetBool() then
 			chatgui = EasyChat.GUI.ChatBox
-			hook.Add("ECOpened", "chatsounds_autocomplete", function()
-				local func = hook.GetTable().StartChat.chatsounds_autocomplete
-				if func then func() end
-			end)
 		else
 			chatgui = nil
-			hook.Remove("ECOpened", "chatsounds_autocomplete")
 		end
 	end
 end)
