@@ -724,10 +724,6 @@ if CLIENT then
 			end
 
 			ECOpen(isteam)
-
-			if EC_HUD_ENABLE:GetBool() then
-				return true
-			end
 		end)
 
 		if not EC_NO_MODULES:GetBool() then
