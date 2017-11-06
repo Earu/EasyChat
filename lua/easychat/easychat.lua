@@ -1,3 +1,6 @@
+if EasyChat and EasyChat.ChatHUD and EasyChat.ChatHUD.Panel then
+	EasyChat.ChatHUD.Panel:Remove()
+end
 local EasyChat = _G.EasyChat or {}
 _G.EasyChat = EasyChat
 
@@ -724,10 +727,6 @@ if CLIENT then
 			end
 
 			ECOpen(isteam)
-
-			if EC_HUD_ENABLE:GetBool() then
-				return true
-			end
 		end)
 
 		if not EC_NO_MODULES:GetBool() then
