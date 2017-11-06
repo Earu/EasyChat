@@ -1,3 +1,6 @@
+if EasyChat and EasyChat.ChatHUD and EasyChat.ChatHUD.Panel then
+	EasyChat.ChatHUD.Panel:Remove()
+end
 local EasyChat = _G.EasyChat or {}
 _G.EasyChat = EasyChat
 
