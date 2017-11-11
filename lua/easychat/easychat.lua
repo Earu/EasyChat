@@ -122,7 +122,6 @@ if CLIENT then
 	local EC_LOCAL_MSG_DIST = CreateConVar("easychat_local_msg_distance","300",FCVAR_ARCHIVE,"Set the maximum distance for users to receive local messages")
 	local EC_NO_MODULES 	= CreateConVar("easychat_no_modules","0",FCVAR_ARCHIVE,"Should easychat load modules or not")
 	local EC_HUD_FOLLOW 	= CreateConVar("easychat_hud_follow","0",FCVAR_ARCHIVE,"Set the chat hud to follow the chatbox")
-	local EC_HUD_ENABLE		= CreateConVar("easychat_hud_enable","1",FCVAR_ARCHIVE,"Should easychat use source chathud or its own chathud")
 	local EC_TICK_SOUND		= CreateConVar("easychat_tick_sound","1",FCVAR_ARCHIVE,"Should a tick sound be played on new messages or not")
 
 	EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
@@ -355,7 +354,6 @@ if CLIENT then
 		EasyChat.RegisterConvar(EC_TEAMS,"Display teams")
 		EasyChat.RegisterConvar(EC_TEAMS_COLOR,"Color the team tags")
 		EasyChat.RegisterConvar(EC_PLAYER_COLOR,"Color players in their team color")
-		EasyChat.RegisterConvar(EC_HUD_ENABLE,"Use easychat hud")
 		EasyChat.RegisterConvar(EC_HUD_FOLLOW,"Chathud follows chatbox")
 		EasyChat.RegisterConvar(EC_TICK_SOUND,"Tick sound on new messages")
 
@@ -726,17 +724,11 @@ if CLIENT then
 		end
 
 		hook.Add("PlayerBindPress", TAG, function(ply, bind, status)
-			local hit = false
-
-			if bind == 'messagemode' then
+			if bind == "messagemode" then
 				ECOpen(false)
-				hit = true
-			elseif bind == 'messagemode2' then
+				return true
+			elseif bind == "messagemode2" then
 				ECOpen(true)
-				hit = true
-			end
-
-			if hit and EC_HUD_ENABLE:GetBool() then
 				return true
 			end
 		end)
@@ -784,7 +776,7 @@ if CLIENT then
 
 		hook.Add("HUDShouldDraw",TAG,function(hudelement)
 			if EasyChat.ChatHUD.DuringShouldDraw then return end
-			if hudelement == "CHudChat" and EC_HUD_ENABLE:GetBool() then
+			if hudelement == "CHudChat" then
 				return false
 			end
 		end)
@@ -841,14 +833,13 @@ if CLIENT then
 		gamemode.Call("OnPlayerChat",ply,msg,false,dead,true)
 	end)
 
-	hook.Add('Initialize', TAG, function()
+	hook.Add("Initialize", TAG, function()
 		if EC_ENABLE:GetBool() then
 			EasyChat.Init()
 		end
-
+		
 		GAMEMODE.OnPlayerChat = function(self,ply,msg,isteam,isdead,islocal) -- this is for the best
 			local tab = {}
-
 			table.insert(tab,Color(255,255,255)) -- we don't want previous colors to be used again
 
 			if EC_ENABLE:GetBool() then
@@ -899,7 +890,6 @@ end
 EasyChat.Destroy = function()
 
 	if CLIENT then
-		hook.Remove("",TAG)
 		hook.Remove("PreRender",TAG)
 		hook.Remove("Think",TAG)
 		hook.Remove("PlayerBindPress", TAG)
