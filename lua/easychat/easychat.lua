@@ -900,6 +900,7 @@ EasyChat.Destroy = function()
 		hook.Remove("",TAG)
 		hook.Remove("PreRender",TAG)
 		hook.Remove("Think",TAG)
+		hook.Remove("PlayerBindPress", TAG)
 		hook.Remove("HUDShouldDraw",TAG)
 
 		if chat.old_AddText then
