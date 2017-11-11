@@ -229,6 +229,9 @@ if CLIENT then
 		local ok = hook.Run("ECShouldOpen")
 		if ok == false then return end
 
+		ok = hook.Run('StartChat', isteam)
+		if ok == true then return end
+
 		EasyChat.GUI.ChatBox:Show()
 		EasyChat.GUI.ChatBox:MakePopup()
 		EasyChat.Mode = isteam and 1 or 0
@@ -248,7 +251,6 @@ if CLIENT then
 		end
 
 		hook.Run("ECOpened",LocalPlayer())
-		hook.Run('StartChat', isteam)
 
 		net.Start(NET_SET_TYPING)
 		net.WriteBool(true)
