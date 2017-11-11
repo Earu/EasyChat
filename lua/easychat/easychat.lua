@@ -103,7 +103,7 @@ if SERVER then
 		hook.Run("ECInitialized")
 	end
 
-	timer.Simple(0, EasyChat.Init)
+	hook.Add('Initialize', TAG, EasyChat.Init)
 end
 
 if CLIENT then
@@ -839,7 +839,7 @@ if CLIENT then
 		gamemode.Call("OnPlayerChat",ply,msg,false,dead,true)
 	end)
 
-	timer.Simple(0, function()
+	hook.Add('Initialize', TAG, function()
 		if EC_ENABLE:GetBool() then
 			EasyChat.Init()
 		end
