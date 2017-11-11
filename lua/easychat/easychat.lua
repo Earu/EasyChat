@@ -103,11 +103,10 @@ if SERVER then
 		hook.Run("ECInitialized")
 	end
 
-	hook.Add("Initialize", TAG, EasyChat.Init)
+	hook.Add('Initialize', TAG, EasyChat.Init)
 end
 
 if CLIENT then
-
 	local MAX_CHARS   = 3000
 	local JSON_COLS   = file.Read("easychat/colors.txt","DATA")
 
@@ -128,7 +127,7 @@ if CLIENT then
 
 	EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
 
-	cvars.AddChangeCallback("easychat_enable",function(name,old,new)
+	cvars.AddChangeCallback("easychat_enable", function(name,old,new)
 		if EC_ENABLE:GetBool() then
 			EasyChat.Init()
 		else
@@ -229,13 +228,19 @@ if CLIENT then
 	local ECOpen = function(isteam)
 		local ok = hook.Run("ECShouldOpen")
 		if ok == false then return end
+
+		ok = hook.Run('StartChat', isteam)
+		if ok == true then return end
+
 		EasyChat.GUI.ChatBox:Show()
 		EasyChat.GUI.ChatBox:MakePopup()
 		EasyChat.Mode = isteam and 1 or 0
+
 		if EC_GLOBAL_ON_OPEN:GetBool() then
 			EasyChat.GUI.TabControl:SetActiveTab(EasyChat.GUI.TabControl.Items[1].Tab)
 			EasyChat.GUI.TextEntry:RequestFocus()
 		end
+
 		if ECNextNotif <= CurTime() then
 			ECNextNotif = CurTime() + 40
 			for k,v in pairs(ECTabs) do
@@ -244,7 +249,9 @@ if CLIENT then
 				end
 			end
 		end
+
 		hook.Run("ECOpened",LocalPlayer())
+
 		net.Start(NET_SET_TYPING)
 		net.WriteBool(true)
 		net.SendToServer()
@@ -718,14 +725,18 @@ if CLIENT then
 			end
 		end
 
-		hook.Add("StartChat",TAG,function(isteam)
-			if not EC_HUD_ENABLE:GetBool() then
-				chat.old_Close()
+		hook.Add("PlayerBindPress", TAG, function(ply, bind, status)
+			local hit = false
+
+			if bind == 'messagemode' then
+				ECOpen(false)
+				hit = true
+			elseif bind == 'messagemode2' then
+				ECOpen(true)
+				hit = true
 			end
 
-			ECOpen(isteam)
-
-			if EC_HUD_ENABLE:GetBool() then
+			if hit and EC_HUD_ENABLE:GetBool() then
 				return true
 			end
 		end)
@@ -830,7 +841,7 @@ if CLIENT then
 		gamemode.Call("OnPlayerChat",ply,msg,false,dead,true)
 	end)
 
-	hook.Add("Initialize",TAG,function()
+	hook.Add('Initialize', TAG, function()
 		if EC_ENABLE:GetBool() then
 			EasyChat.Init()
 		end
@@ -888,10 +899,10 @@ end
 EasyChat.Destroy = function()
 
 	if CLIENT then
-		hook.Remove("StartChat",TAG)
 		hook.Remove("",TAG)
 		hook.Remove("PreRender",TAG)
 		hook.Remove("Think",TAG)
+		hook.Remove("PlayerBindPress", TAG)
 		hook.Remove("HUDShouldDraw",TAG)
 
 		if chat.old_AddText then
