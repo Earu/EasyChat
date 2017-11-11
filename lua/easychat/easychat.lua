@@ -103,11 +103,10 @@ if SERVER then
 		hook.Run("ECInitialized")
 	end
 
-	hook.Add("Initialize", TAG, EasyChat.Init)
+	timer.Simple(0, EasyChat.Init)
 end
 
 if CLIENT then
-
 	local MAX_CHARS   = 3000
 	local JSON_COLS   = file.Read("easychat/colors.txt","DATA")
 
@@ -128,7 +127,7 @@ if CLIENT then
 
 	EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
 
-	cvars.AddChangeCallback("easychat_enable",function(name,old,new)
+	cvars.AddChangeCallback("easychat_enable", function(name,old,new)
 		if EC_ENABLE:GetBool() then
 			EasyChat.Init()
 		else
@@ -718,14 +717,18 @@ if CLIENT then
 			end
 		end
 
-		hook.Add("StartChat",TAG,function(isteam)
-			if not EC_HUD_ENABLE:GetBool() then
-				chat.old_Close()
+		hook.Add("PlayerBindPress", TAG, function(ply, bind, status)
+			local hit = false
+
+			if bind == 'messagemode' then
+				ECOpen(false)
+				hit = true
+			elseif bind == 'messagemode2' then
+				ECOpen(true)
+				hit = true
 			end
 
-			ECOpen(isteam)
-
-			if EC_HUD_ENABLE:GetBool() then
+			if hit and EC_HUD_ENABLE:GetBool() then
 				return true
 			end
 		end)
@@ -830,7 +833,7 @@ if CLIENT then
 		gamemode.Call("OnPlayerChat",ply,msg,false,dead,true)
 	end)
 
-	hook.Add("Initialize",TAG,function()
+	timer.Simple(0, function()
 		if EC_ENABLE:GetBool() then
 			EasyChat.Init()
 		end
