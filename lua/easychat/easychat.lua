@@ -228,13 +228,16 @@ if CLIENT then
 	local ECOpen = function(isteam)
 		local ok = hook.Run("ECShouldOpen")
 		if ok == false then return end
+
 		EasyChat.GUI.ChatBox:Show()
 		EasyChat.GUI.ChatBox:MakePopup()
 		EasyChat.Mode = isteam and 1 or 0
+
 		if EC_GLOBAL_ON_OPEN:GetBool() then
 			EasyChat.GUI.TabControl:SetActiveTab(EasyChat.GUI.TabControl.Items[1].Tab)
 			EasyChat.GUI.TextEntry:RequestFocus()
 		end
+
 		if ECNextNotif <= CurTime() then
 			ECNextNotif = CurTime() + 40
 			for k,v in pairs(ECTabs) do
@@ -243,7 +246,10 @@ if CLIENT then
 				end
 			end
 		end
+
 		hook.Run("ECOpened",LocalPlayer())
+		hook.Run('StartChat', isteam)
+
 		net.Start(NET_SET_TYPING)
 		net.WriteBool(true)
 		net.SendToServer()
@@ -891,7 +897,6 @@ end
 EasyChat.Destroy = function()
 
 	if CLIENT then
-		hook.Remove("StartChat",TAG)
 		hook.Remove("",TAG)
 		hook.Remove("PreRender",TAG)
 		hook.Remove("Think",TAG)
