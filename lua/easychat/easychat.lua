@@ -4,8 +4,6 @@ _G.EasyChat = EasyChat
 local string   = _G.string
 local net	   = _G.net
 local print    = _G._print or _G.print --epoe compat
-local hook     = _G.hook
-local gamemode = _G.gamemode
 local util	   = _G.util
 local player   = _G.player
 local PLY	   = FindMetaTable("Player")
@@ -664,9 +662,11 @@ if CLIENT then
 			end
 			if not textentry.HistoryPos then return end
 			if key == KEY_UP then
+				textentry:AddHistory(textentry:GetText())
 				textentry.HistoryPos = textentry.HistoryPos - 1
 				textentry:UpdateFromHistory()
 			elseif key == KEY_DOWN then
+				textentry:AddHistory(textentry:GetText())
 				textentry.HistoryPos = textentry.HistoryPos + 1
 				textentry:UpdateFromHistory()
 			end
@@ -757,14 +757,28 @@ if CLIENT then
 		end)
 
 		local IsChatKeyPressed = function()
+			local nonvalids = {
+				KEY_LCONTROL,
+				KEY_LALT,
+				KEY_RCONTROL,
+				KEY_RALT,
+			}
 			local letters = {
 				KEY_A,KEY_B,KEY_C,KEY_D,KEY_E,
 				KEY_F,KEY_G,KEY_H,KEY_I,KEY_J,
 				KEY_K,KEY_L,KEY_M,KEY_N,KEY_O,
 				KEY_P,KEY_Q,KEY_R,KEY_S,KEY_T,
 				KEY_U,KEY_V,KEY_W,KEY_X,KEY_Y,
-				KEY_Z,KEY_ENTER,KEY_TAB,
+				KEY_Z,KEY_ENTER,KEY_TAB,KEY_SPACE,
+				KEY_BACKSPACE,
 			}
+
+			for _,key in ipairs(nonvalids) do
+				if input.IsKeyDown(key) then
+					return false
+				end
+			end
+
 			for _,key in ipairs(letters) do
 				if input.IsKeyDown(key) then
 					local k = input.GetKeyName(key)
