@@ -7,8 +7,10 @@ hook.Add("ChatsoundsUpdated","EasyChatModuleChatsoundsDocking",function()
 end)
 
 hook.Add("ECOpened", "chatsounds_autocomplete", function()
-	local func = hook.GetTable().StartChat.chatsounds_autocomplete
-	if func then func() end
+	if hook.GetTable().StartChat then
+		local func = hook.GetTable().StartChat.chatsounds_autocomplete
+		if func then func() end
+	end
 end)
 
 cvars.AddChangeCallback("easychat_enable",function(name,old,new)
