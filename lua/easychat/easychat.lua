@@ -662,13 +662,15 @@ if CLIENT then
 				textentry:AddHistory(textentry:GetText())
 				textentry.HistoryPos = 0
 			end
+			if key == KEY_ESCAPE then
+				textentry.HistoryPos = 0
+			end
+
 			if not textentry.HistoryPos then return end
 			if key == KEY_UP then
-				textentry:AddHistory(textentry:GetText())
 				textentry.HistoryPos = textentry.HistoryPos - 1
 				textentry:UpdateFromHistory()
 			elseif key == KEY_DOWN then
-				textentry:AddHistory(textentry:GetText())
 				textentry.HistoryPos = textentry.HistoryPos + 1
 				textentry:UpdateFromHistory()
 			end
@@ -681,6 +683,7 @@ if CLIENT then
 
 			if code == KEY_ESCAPE then
 				ECClose()
+				gui.HideGameUI()
 			elseif code == KEY_ENTER or code == KEY_PAD_ENTER then
 				self:SetText(string.Replace(self:GetText(),"╚​",""))
 				if string.Trim(self:GetText()) ~= "" then
