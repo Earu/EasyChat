@@ -668,11 +668,9 @@ if CLIENT then
 
 			if not textentry.HistoryPos then return end
 			if key == KEY_UP then
-				textentry:AddHistory(textentry:GetText())
 				textentry.HistoryPos = textentry.HistoryPos - 1
 				textentry:UpdateFromHistory()
 			elseif key == KEY_DOWN then
-				textentry:AddHistory(textentry:GetText())
 				textentry.HistoryPos = textentry.HistoryPos + 1
 				textentry:UpdateFromHistory()
 			end
