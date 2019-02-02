@@ -37,14 +37,17 @@ if CLIENT then
         CompileString(code,ply:GetName())()
     end)
 
-    if notagain and notagain.hasloaded then
+    -- ugly hack to get luadev from notagain
+    if notagain and notagain.hasloaded and notagain.loaded_libraries.luadev then
         lua = notagain.loaded_libraries.luadev
     else
         if _G.luadev then
             lua = _G.luadev
         else
             hook.Add("NotagainPostLoad","EasyChatModuleLuaTab",function()
-                lua = notagain.loaded_libraries.luadev
+                if notagain.loaded_libraries.luadev then
+                    lua = notagain.loaded_libraries.luadev
+                end
             end)
         end
     end

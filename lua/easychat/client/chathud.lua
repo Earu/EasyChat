@@ -22,6 +22,8 @@ local surfaceCreateFont      = surface.CreateFont
 local surfaceGetTextSize     = surface.GetTextSize
 local surfaceDisableClipping = surface.DisableClipping
 
+local EC_HUD_TTL = GetConVar("easychat_hud_ttl")
+
 local ChatHUD             = {}
 local CHUDArguments       = {}
 local CHUDShadowColor     = Color(25,50,100,255)
@@ -33,10 +35,14 @@ local CHUDCurrentColor    = Color(255,255,255)
 local CHUDCurrentWidth    = 550
 local CHUDCurrentOffset   = 0
 local CHUDMaxArgs         = 140
-local CHUDTimeToFade      = 16
+local CHUDTimeToFade      = EC_HUD_TTL:GetInt()
 local CHUDFadeTime        = 2
 local CHUDTags            = {}
 local CHUDFonts           = {}
+
+cvars.AddChangeCallback("easychat_hud_ttl",function(_,_,new)
+    CHUDTimeToFade = new
+end)
 --[[
     !Optimization
 ]]--

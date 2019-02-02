@@ -116,12 +116,13 @@ if CLIENT then
 	local EC_TEAMS_COLOR 	= CreateConVar("easychat_teams_colored","0",FCVAR_ARCHIVE,"Display team with its relative color")
 	local EC_PLAYER_COLOR 	= CreateConVar("easychat_players_colored","1",FCVAR_ARCHIVE,"Display player with its relative team color")
 	local EC_ENABLE 		= CreateConVar("easychat_enable","1",{FCVAR_ARCHIVE,FCVAR_USERINFO},"Use easychat or not")
-	local EC_ENABLEBROWSER	= CreateConVar("easychat_enablebrowser","1",{FCVAR_ARCHIVE,FCVAR_USERINFO},"Use easychat browser or not")
+	local EC_ENABLEBROWSER	= CreateConVar("easychat_enablebrowser","0",{FCVAR_ARCHIVE,FCVAR_USERINFO},"Use easychat browser or not")
 	local EC_DERMASKIN 		= CreateConVar("easychat_use_dermaskin","0",{FCVAR_ARCHIVE,FCVAR_USERINFO},"Use dermaskin look or not")
 	local EC_LOCAL_MSG_DIST = CreateConVar("easychat_local_msg_distance","300",FCVAR_ARCHIVE,"Set the maximum distance for users to receive local messages")
 	local EC_NO_MODULES 	= CreateConVar("easychat_no_modules","0",FCVAR_ARCHIVE,"Should easychat load modules or not")
 	local EC_HUD_FOLLOW 	= CreateConVar("easychat_hud_follow","0",FCVAR_ARCHIVE,"Set the chat hud to follow the chatbox")
 	local EC_TICK_SOUND		= CreateConVar("easychat_tick_sound","1",FCVAR_ARCHIVE,"Should a tick sound be played on new messages or not")
+	local EC_HUD_TTL        = CreateConVar("easychat_hud_ttl","16",FCVAR_ARCHIVE,"How long messages stay before vanishing")
 
 	EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
 
@@ -222,7 +223,6 @@ if CLIENT then
 		return EasyChat.GUI and IsValid(EasyChat.GUI.ChatBox) and EasyChat.GUI.ChatBox:IsVisible()
 	end
 
-	local ECNextNotif = 0
 	local ECOpen = function(isteam)
 		local ok = hook.Run("ECShouldOpen")
 		if ok == false then return end
@@ -237,15 +237,6 @@ if CLIENT then
 		if EC_GLOBAL_ON_OPEN:GetBool() then
 			EasyChat.GUI.TabControl:SetActiveTab(EasyChat.GUI.TabControl.Items[1].Tab)
 			EasyChat.GUI.TextEntry:RequestFocus()
-		end
-
-		if ECNextNotif <= CurTime() then
-			ECNextNotif = CurTime() + 40
-			for k,v in pairs(ECTabs) do
-				if v.NotificationCount and v.NotificationCount > 0 then
-					chat.AddText("EC",Color(175,175,175)," ⮞ ",Color(255, 127, 127),v.NotificationCount,Color(255,255,255)," new notifications from "..k)
-				end
-			end
 		end
 
 		hook.Run("ECOpened",LocalPlayer())
@@ -480,6 +471,10 @@ if CLIENT then
 				ECClose()
 			end
 
+			frame.Tabs.OnActiveTabChanged = function(oldtab,newtab)
+				hook.Run("ECTabChanged",oldtab.Name,newtab.Name)
+			end
+
 			EasyChat.AddTab = function(name,panel)
 				local tab = frame.Tabs:AddSheet(name,panel)
 				tab.Tab.Name = name
@@ -497,7 +492,6 @@ if CLIENT then
 					tab.Tab.Paint = function(self,w,h)
 						if self == frame.Tabs:GetActiveTab() then
 							self.Flashed = false
-							tab.NotificationCount = 0
 							surface.SetDrawColor(EasyChat.TabColor)
 						else
 							if self.Flashed then
@@ -541,7 +535,6 @@ if CLIENT then
 			EasyChat.FlashTab = function(name)
 				if ECTabs[name] then
 					ECTabs[name].Tab.Flashed = true
-					ECTabs[name].NotificationCount = ECTabs[name].NotificationCount and ECTabs[name].NotificationCount + 1 or 1
 				end
 			end
 
