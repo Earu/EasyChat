@@ -6,6 +6,7 @@ local EC_PLAYER_COLOR 	= GetConVar("easychat_players_colored")
 local EC_HUD_FOLLOW 	= GetConVar("easychat_hud_follow")
 local EC_FONT 			= GetConVar("easychat_font")
 local EC_FONT_SIZE 		= GetConVar("easychat_font_size")
+local EC_HUD_TTL        = GetConVar("easychat_hud_ttl")
 
 local UpdateSettingsFont = function(name,size)
     size = size - 3
@@ -41,6 +42,10 @@ local SETTINGS_TAB = {
         self.LblFontSize            = self:Add("DLabel")
         self.NbrWFontSize           = self:Add("DNumberWang")
         self.BtnFontReset           = self:Add("DButton")
+        self.LblHUDTTL              = self:Add("DLabel")
+        self.NbrWHUDTTL             = self:Add("DNumberWang")
+        self.BtnApplyTTL            = self:Add("DButton")
+        self.BtnResetTTL            = self:Add("DButton")
         self.BtnResetOptions        = self:Add("DButton")
         self.BtnResetAll            = self:Add("DButton")
         self.BtnReloadChat          = self:Add("DButton")
@@ -137,6 +142,40 @@ local SETTINGS_TAB = {
             frame:ResetFont()
         end
 
+        self.LblHUDTTL:SetPos(15,340)
+        self.LblHUDTTL:SetSize(100,10)
+        self.LblHUDTTL:SetText("Message Duration")
+        self.LblHUDTTL:SetFont("ECSettingsFont")
+
+        self.NbrWHUDTTL:SetPos(15,350)
+        self.NbrWHUDTTL:SetSize(100,25)
+        self.NbrWHUDTTL:SetMin(0)
+        self.NbrWHUDTTL:SetMax(50)
+        self.NbrWHUDTTL:SetValue(EC_HUD_TTL:GetInt())
+        if ConvarCallbacks["NbrWHUDTTL"] then
+            cvars.RemoveChangeCallback("easychat_hud_ttl","NbrWHUDTTL")
+        end
+        cvars.AddChangeCallback("easychat_hud_ttl",function(name,old,new)
+            self.NbrWHUDTTL:SetValue(tonumber(new))
+        end,"NbrWHUDTTL")
+        ConvarCallbacks["NbrWHUDTTL"] = true
+
+        self.BtnApplyTTL:SetPos(15,390)
+        self.BtnApplyTTL:SetSize(100,25)
+        self.BtnApplyTTL:SetText("Apply Duration")
+        self.BtnApplyTTL:SetFont("ECSettingsFont")
+        self.BtnApplyTTL.DoClick = function()
+            RunConsoleCommand("easychat_hud_ttl",self.NbrWHUDTTL:GetValue())
+        end
+
+        self.BtnResetTTL:SetPos(15,425)
+        self.BtnResetTTL:SetSize(100,25)
+        self.BtnResetTTL:SetText("Reset Duration")
+        self.BtnResetTTL:SetFont("ECSettingsFont")
+        self.BtnResetTTL.DoClick = function()
+            frame:ResetTTL()
+        end
+
         local ConventionizeString = function(str)
             local str = string.gsub(str,"easychat_","")
             local parts = string.Explode("_",str)
@@ -221,6 +260,8 @@ local SETTINGS_TAB = {
             self.BtnResetColors:SetTextColor(EasyChat.TextColor)
             self.BtnApplyFont:SetTextColor(EasyChat.TextColor)
             self.BtnFontReset:SetTextColor(EasyChat.TextColor)
+            self.BtnApplyTTL:SetTextColor(EasyChat.TextColor)
+            self.BtnResetTTL:SetTextColor(EasyChat.TextColor)
             self.BtnResetOptions:SetTextColor(EasyChat.TextColor)
             self.BtnResetAll:SetTextColor(EasyChat.TextColor)
             self.BtnReloadChat:SetTextColor(EasyChat.TextColor)
@@ -239,6 +280,8 @@ local SETTINGS_TAB = {
             self.BtnResetColors.Paint  = ECButtonPaint
             self.BtnApplyFont.Paint    = ECButtonPaint
             self.BtnFontReset.Paint    = ECButtonPaint
+            self.BtnApplyTTL.Paint     = ECButtonPaint
+            self.BtnResetTTL.Paint     = ECButtonPaint
             self.BtnResetOptions.Paint = ECButtonPaint
             self.BtnResetAll.Paint     = ECButtonPaint
             self.BtnReloadChat.Paint   = ECButtonPaint
@@ -286,6 +329,10 @@ local SETTINGS_TAB = {
         file.Write("easychat/colors.txt",json)
     end,
 
+    ResetTTL = function(self)
+        RunConsoleCommand("easychat_hud_ttl","16")
+    end,
+
     ResetFont = function(self)
         RunConsoleCommand("easychat_font",(system.IsWindows() and "Verdana" or "Tahoma"))
         RunConsoleCommand("easychat_font_size","15")
@@ -301,6 +348,7 @@ local SETTINGS_TAB = {
     ResetAll = function(self)
         self:ResetColors()
         self:ResetFont()
+        self:ResetTTL()
         self:ResetOptions()
     end,
 
@@ -309,4 +357,4 @@ local SETTINGS_TAB = {
     end,
 }
 
-vgui.Register("ECSettingsTab",SETTINGS_TAB,"DPanel")
+vgui.Register("ECSettingsTab",SETTINGS_TAB,"DScrollPanel")
