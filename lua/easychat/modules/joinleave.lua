@@ -12,14 +12,19 @@ if SERVER then
     hook.Add("player_connect", TAG, function(data)
         if not EC_JOIN_LEAVE:GetBool() then return end
         net.Start(TAG)
-        net.WriteTable(data)
+        net.WriteBool(true)
+        net.WriteString(data.name)
+        net.WriteString(data.networkid)
         net.Broadcast()
     end)
 
     hook.Add("player_disconnect", TAG, function(data)
         if not EC_JOIN_LEAVE:GetBool() then return end
         net.Start(TAG)
-        net.WriteTable(data)
+        net.WriteBool(false)
+        net.WriteString(data.name)
+        net.WriteString(data.reason)
+        net.WriteString(data.networkid)
         net.Broadcast()
     end)
 
@@ -34,11 +39,17 @@ if CLIENT then
     end)
 
     net.Receive(TAG, function()
-        local info = net.ReadTable()
-        if not info.reason then
-            chat.AddText(Color(127, 255, 127), "⮞ ", Color(200, 200, 200), info.name, Color(175, 175, 175), " (" .. info.networkid .. ") is ", Color(127, 255, 127), "joining")
+        local isconnect = net.ReadBool()
+        local name = net.ReadString()
+        local reason
+        if not isconnect then
+            reason = net.ReadString()
+        end
+        local networkid = net.ReadString()
+        if not reason then
+            chat.AddText(Color(127, 255, 127), "⮞ ", Color(200, 200, 200), name, Color(175, 175, 175), " (" .. networkid .. ") is ", Color(127, 255, 127), "joining")
         else
-            chat.AddText(Color(255, 127, 127), "⮞ ", Color(200, 200, 200), info.name, Color(175, 175, 175), " (" .. info.networkid .. ") has ", Color(255, 127, 127), "left", Color(175, 175, 175), " (" .. info.reason .. ")")
+            chat.AddText(Color(255, 127, 127), "⮞ ", Color(200, 200, 200), name, Color(175, 175, 175), " (" .. networkid .. ") has ", Color(255, 127, 127), "left", Color(175, 175, 175), " (" .. reason .. ")")
         end
     end)
 
