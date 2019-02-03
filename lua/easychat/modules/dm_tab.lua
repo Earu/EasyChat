@@ -274,23 +274,10 @@ if CLIENT then
         end
     end)
 
-    local firsttime = true
-    hook.Add("InitPostEntity","EasyChatModuleDMTab",function()
+    hook.Add("ECInitialized","EasyChatModuleDMTab",function()
         for _,ply in pairs(player.GetAll()) do
             if ply ~= LocalPlayer() then
                 dmtab:CreateChat(ply)
-            end
-        end
-        firsttime = false
-        hook.Remove("InitPostEntity","EasyChatModuleDMTab")
-    end)
-
-    hook.Add("ECInitialized","EasyChatModuleDMTab",function()
-        if not firsttime then
-            for _,ply in pairs(player.GetAll()) do
-                if ply ~= LocalPlayer() then
-                    dmtab:CreateChat(ply)
-                end
             end
         end
     end)
