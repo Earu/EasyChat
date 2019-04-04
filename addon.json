@@ -5,6 +5,8 @@
   "ignore": [
     "*.psd",
     "*.vcproj",
-    "*.svn*"
+    "*.svn*",
+    "*.md",
+    ".git/*"
   ]
 }
