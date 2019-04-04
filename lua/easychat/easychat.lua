@@ -34,7 +34,6 @@ PLY.IsTyping = function(self)
 end
 
 if SERVER then
-
 	util.AddNetworkString(NET_SEND_MSG)
 	util.AddNetworkString(NET_BROADCAST_MSG)
 	util.AddNetworkString(NET_SEND_LOCAL_MSG)
@@ -101,7 +100,7 @@ if SERVER then
 		hook.Run("ECInitialized")
 	end
 
-	hook.Add('Initialize', TAG, EasyChat.Init)
+	hook.Add("Initialize", TAG, EasyChat.Init)
 end
 
 if CLIENT then
@@ -123,6 +122,7 @@ if CLIENT then
 	local EC_HUD_FOLLOW 	= CreateConVar("easychat_hud_follow","0",FCVAR_ARCHIVE,"Set the chat hud to follow the chatbox")
 	local EC_TICK_SOUND		= CreateConVar("easychat_tick_sound","1",FCVAR_ARCHIVE,"Should a tick sound be played on new messages or not")
 	local EC_HUD_TTL        = CreateConVar("easychat_hud_ttl","16",FCVAR_ARCHIVE,"How long messages stay before vanishing")
+	local EC_TIMESTAMPS_12  = CreateConVar("easychat_timestamps_12", "0", FCVAR_ARCHIVE, "Display timestamps in 12 hours mode or not")
 
 	EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
 
@@ -227,7 +227,7 @@ if CLIENT then
 		local ok = hook.Run("ECShouldOpen")
 		if ok == false then return end
 
-		ok = hook.Run('StartChat', isteam)
+		ok = hook.Run("StartChat", isteam)
 		if ok == true then return end
 
 		EasyChat.GUI.ChatBox:Show()
@@ -238,6 +238,8 @@ if CLIENT then
 			EasyChat.GUI.TabControl:SetActiveTab(EasyChat.GUI.TabControl.Items[1].Tab)
 			EasyChat.GUI.TextEntry:RequestFocus()
 		end
+
+		EasyChat.GUI.TextEntry:SetText("")
 
 		hook.Run("ECOpened",LocalPlayer())
 
@@ -342,6 +344,7 @@ if CLIENT then
 
 		EasyChat.RegisterConvar(EC_GLOBAL_ON_OPEN,"Open chatbox in global tab")
 		EasyChat.RegisterConvar(EC_TIMESTAMPS,"Display timestamps")
+		EasyChat.RegisterConvar(EC_TIMESTAMPS_12, "12 hours mode timestamps")
 		EasyChat.RegisterConvar(EC_TEAMS,"Display teams")
 		EasyChat.RegisterConvar(EC_TEAMS_COLOR,"Color the team tags")
 		EasyChat.RegisterConvar(EC_PLAYER_COLOR,"Color players in their team color")
@@ -412,7 +415,11 @@ if CLIENT then
 
 				if EC_ENABLE:GetBool() then
 					if EC_TIMESTAMPS:GetBool() then
-						EasyChat.AppendText(os.date("%H:%M").." - ")
+						if EC_TIMESTAMPS_12:GetBool() then
+							EasyChat.AppendText(os.date("%I:%M %p").." - ")
+						else
+							EasyChat.AppendText(os.date("%H:%M").." - ")
+						end
 					end
 				end
 
@@ -798,6 +805,7 @@ if CLIENT then
 				if input.IsKeyDown(KEY_ESCAPE) then
 					EasyChat.GUI.TextEntry:SetText("")
 					ECClose()
+					gui.HideGameUI()
 				end
 				local tab = EasyChat.GUI.TabControl:GetActiveTab()
 				if tab.FocusOn and not tab.FocusOn:HasFocus() then
