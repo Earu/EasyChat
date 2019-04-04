@@ -291,10 +291,9 @@ local DrawPlayer = function(arg,x,y)
     return x + w,y
 end
 
-local IsOpened = _G.EasyChat.IsOpened
 local Draw = function(self,w,h)
     if hook.Run("ChatHudDraw",self,w,h) == false then return end
-    if IsOpened() then return end
+    if EasyChat.IsOpened and EasyChat.IsOpened() then return end
 
     CHUDCurrentWidth = w
 
