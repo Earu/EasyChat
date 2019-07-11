@@ -245,6 +245,7 @@ if CLIENT then
             local chat = dmtab.ActiveChat
             if IsValid(chat.Player) and chat.NewMessages > 0 then
                 chat.NewMessages = 0
+                chat.RichText:GotoTextEnd()
             end
         end
     end)
