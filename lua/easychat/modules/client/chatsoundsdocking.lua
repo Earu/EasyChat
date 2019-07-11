@@ -23,8 +23,4 @@ cvars.AddChangeCallback("easychat_enable",function(name,old,new)
 	end
 end)
 
-EasyChat.AddMode("Chatsound",function(text)
-	LocalPlayer():ConCommand("saysound "..text)
-end)
-
 return "Chatsounds"
