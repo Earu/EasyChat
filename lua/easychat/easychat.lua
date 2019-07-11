@@ -12,8 +12,6 @@ local ipairs   = _G.ipairs
 
 local NET_BROADCAST_MSG 	  = "EASY_CHAT_BROADCAST_MSG"
 local NET_SEND_MSG    		  = "EASY_CHAT_RECEIVE_MSG"
-local NET_SEND_LOCAL_MSG      = "EASY_CHAT_LOCAL_MSG"
-local NET_BROADCAST_LOCAL_MSG = "EASY_CHAT_LOCAL_SEND"
 local NET_SET_TYPING	      = "EASY_CHAT_START_CHAT"
 local TAG              		  = "EasyChat"
 local LoadModules,GetModules  = include("easychat/autoloader.lua")
@@ -36,50 +34,62 @@ end
 if SERVER then
 	util.AddNetworkString(NET_SEND_MSG)
 	util.AddNetworkString(NET_BROADCAST_MSG)
-	util.AddNetworkString(NET_SEND_LOCAL_MSG)
-	util.AddNetworkString(NET_BROADCAST_LOCAL_MSG)
 	util.AddNetworkString(NET_SET_TYPING)
 
 	net.Receive(NET_SEND_MSG,function(len,ply)
 		local str = net.ReadString()
 		local isteam = net.ReadBool()
+		local islocal = net.ReadBool()
 		local msg = gamemode.Call("PlayerSay",ply,str,isteam)
-
 		if type(msg) ~= "string" or string.Trim(msg) == "" then return end
+
+		local filter = {}
+		local override = false
+		local players = player.GetAll()
+		filter[ply:SteamID64()] = ply
+
+		if isteam then
+			for _,listener in pairs(team.GetPlayers(ply:Team())) do
+				if IsValid(listener) then
+					filter[listener:SteamID64()] = listener
+				end
+			end
+		elseif islocal then
+			for _,listener in ipairs(players) do
+				if IsValid(listener) and listener:GetPos():Distance(ply:GetPos()) <= ply:GetInfoNum("easychat_local_msg_distance",150) then
+					filter[listener:SteamID64()] = listener
+				end
+			end
+		else
+			for _,listener in ipairs(players) do
+				if IsValid(listener) then
+					filter[listener:SteamID64()] = listener
+				end
+			end
+		end
+
+		--[[for _,listener in ipairs(players) do
+			if listener ~= ply then
+				local cansee = gamemode.Call("PlayerCanSeePlayersChat",isteam,listener,ply)
+				if cansee == true then -- can be another type than a bool
+					filter[listener:SteamID64()] = listener
+				elseif cansee == false then -- can be nil so need to check for false
+					filter[listener:SteamID64()] = nil
+				end
+			end
+		end]]--
+
+		filter = table.ClearKeys(filter)
 
 		net.Start(NET_BROADCAST_MSG)
 		net.WriteEntity(ply)
 		net.WriteString(msg)
 		net.WriteBool(IsValid(ply) and (not ply:Alive()) or false)
 		net.WriteBool(isteam)
+		net.WriteBool(islocal)
+		net.Send(filter)
 
-		if isteam then
-			net.Send(team.GetPlayers(ply:Team()))
-		else
-			net.Broadcast()
-			print((string.gsub(ply:Nick(),"<.->",""))..": "..msg) --shows in server console
-		end
-
-	end)
-
-	net.Receive(NET_SEND_LOCAL_MSG,function(len,ply)
-		local msg = net.ReadString()
-
-		if type(msg) ~= "string" or string.Trim(msg) == "" then return end
-
-		net.Start(NET_BROADCAST_LOCAL_MSG)
-		net.WriteEntity(ply)
-		net.WriteString(msg)
-		net.WriteBool(IsValid(ply) and (not ply:Alive()) or false)
-
-		local receivers = {}
-		for _,v in ipairs(player.GetAll()) do
-			if IsValid(v) and v:GetPos():Distance(ply:GetPos()) <= ply:GetInfoNum("easychat_local_msg_distance",150) then
-				table.insert(receivers,v)
-			end
-		end
-
-		net.Send(receivers)
+		print((string.gsub(ply:Nick(),"<.->",""))..": "..msg) --shows in server console
 	end)
 
 	net.Receive(NET_SET_TYPING,function(len,ply)
@@ -355,12 +365,15 @@ if CLIENT then
 			net.Start(NET_SEND_MSG)
 			net.WriteString(string.sub(text,1,MAX_CHARS))
 			net.WriteBool(true)
+			net.WriteBool(false)
 			net.SendToServer()
 		end)
 
 		EasyChat.AddMode("Local",function(text)
-			net.Start(NET_SEND_LOCAL_MSG)
+			net.Start(NET_SEND_MSG)
 			net.WriteString(string.sub(text,1,MAX_CHARS))
+			net.WriteBool(false)
+			net.WriteBool(true)
 			net.SendToServer()
 		end)
 
@@ -691,6 +704,7 @@ if CLIENT then
 						net.Start(NET_SEND_MSG)
 						net.WriteString(string.sub(self:GetText(),1,MAX_CHARS))
 						net.WriteBool(false)
+						net.WriteBool(false)
 						net.SendToServer()
 					else
 						local mode = EasyChat.Modes[EasyChat.Mode]
@@ -841,16 +855,10 @@ if CLIENT then
 		local msg  = net.ReadString()
 		local dead = net.ReadBool()
 		local isteam = net.ReadBool()
+		local islocal = net.ReadBool()
 
-		gamemode.Call("OnPlayerChat",ply,msg,isteam,dead,false)
-	end)
-
-	net.Receive(NET_BROADCAST_LOCAL_MSG,function()
-		local ply  = net.ReadEntity()
-		local msg  = net.ReadString()
-		local dead = net.ReadBool()
-
-		gamemode.Call("OnPlayerChat",ply,msg,false,dead,true)
+		if islocal and isteam then isteam = false end -- so we never have the two together
+		gamemode.Call("OnPlayerChat",ply,msg,isteam,dead,islocal)
 	end)
 
 	hook.Add("Initialize", TAG, function()
