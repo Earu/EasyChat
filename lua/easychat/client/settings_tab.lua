@@ -50,6 +50,7 @@ local SETTINGS_TAB = {
         self.BtnResetAll            = self:Add("DButton")
         self.BtnReloadChat          = self:Add("DButton")
         self.BtnUseDermaSkin        = self:Add("DButton")
+        self.BtnClearHistory        = self:Add("DButton")
         self.BtnDisableEC           = self:Add("DButton")
 
         self.TBoxOutlayColor:SetText("Outlay Color")
@@ -245,6 +246,18 @@ local SETTINGS_TAB = {
         end
         ypos = ypos + self.BtnUseDermaSkin:GetTall() + 10
 
+        self.BtnClearHistory:SetPos(170,ypos)
+        self.BtnClearHistory:SetText("Clear History")
+        self.BtnClearHistory:SetFont("ECSettingsFont")
+        self.BtnClearHistory:SetSize(100,25)
+        self.BtnClearHistory.DoClick = function()
+            local files, _ = file.Find("easychat/*_history.txt", "DATA")
+            for _, f in pairs(files) do
+                file.Delete("easychat/" .. f)
+            end
+        end
+        ypos = ypos + self.BtnClearHistory:GetTall() + 10
+
         self.BtnDisableEC:SetPos(170,ypos)
         self.BtnDisableEC:SetText("Disable EC")
         self.BtnDisableEC:SetFont("ECSettingsFont")
@@ -255,7 +268,6 @@ local SETTINGS_TAB = {
         ypos = ypos + self.BtnDisableEC:GetTall() + 10
 
         if not EasyChat.UseDermaSkin then
-
             self.BtnApplyColors:SetTextColor(EasyChat.TextColor)
             self.BtnResetColors:SetTextColor(EasyChat.TextColor)
             self.BtnApplyFont:SetTextColor(EasyChat.TextColor)
@@ -266,12 +278,19 @@ local SETTINGS_TAB = {
             self.BtnResetAll:SetTextColor(EasyChat.TextColor)
             self.BtnReloadChat:SetTextColor(EasyChat.TextColor)
             self.BtnUseDermaSkin:SetTextColor(EasyChat.TextColor)
+            self.BtnClearHistory:SetTextColor(EasyChat.TextColor)
             self.BtnDisableEC:SetTextColor(EasyChat.TextColor)
 
             local ECButtonPaint = function(self,w,h)
-                surface.SetDrawColor(EasyChat.OutlayColor)
+                local col1,col2 = EasyChat.OutlayColor, EasyChat.TabOutlineColor
+                if self:IsHovered() then
+                    col1 = Color(col1.r + 50, col1.g + 50, col1.b + 50, col1.a + 50)
+                    col2 = Color(255 - col2.r, 255 - col2.g, 255 - col2.b, 255 - col2.a)
+                end
+
+                surface.SetDrawColor(col1)
                 surface.DrawRect(0,0,w,h)
-                surface.SetDrawColor(EasyChat.TabOutlineColor)
+                surface.SetDrawColor(col2)
                 surface.DrawOutlinedRect(0,0,w,h)
             end
 
@@ -285,6 +304,7 @@ local SETTINGS_TAB = {
             self.BtnResetOptions.Paint = ECButtonPaint
             self.BtnResetAll.Paint     = ECButtonPaint
             self.BtnReloadChat.Paint   = ECButtonPaint
+            self.BtnClearHistory.Paint = ECButtonPaint
             self.BtnDisableEC.Paint    = ECButtonPaint
         end
 
