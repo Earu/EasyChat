@@ -98,7 +98,6 @@ if CLIENT then
 
     vgui.Register("ECAdminTab", ADMIN_TAB, "DPanel")
     local admintab = vgui.Create("ECAdminTab")
-    local admins = {}
 
     net.Receive(EASYCHAT_ADMIN,function()
         local sender = net.ReadEntity()
