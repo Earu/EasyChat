@@ -83,10 +83,12 @@ if CLIENT then
                 self.RichText:GotoTextEnd()
             end
         end,
-        Notify = function(self,message)
-            self.NewMessages = self.NewMessages + 1
-            EasyChat.FlashTab("Admin")
-            _G.chat.AddText(Color(255,255,255),"[Admin Chat | ",Color(255,127,127),chat.Player,Color(255,255,255),"] " .. message)
+        Notify = function(self,ply,message)
+            if ply ~= LocalPlayer() then
+                self.NewMessages = self.NewMessages + 1
+                EasyChat.FlashTab("Admin")
+            end
+            _G.chat.AddText(Color(255,255,255),"[Admin Chat | ",Color(255,127,127),ply,Color(255,255,255),"] " .. message)
         end,
         SendMessage = function(self, msg)
             net.Start(EASYCHAT_ADMIN)
@@ -106,11 +108,11 @@ if CLIENT then
 
         EasyChat.AddText(admintab, admintab.RichText, team.GetColor(sender:Team()), sender,": " .. msg)
         if not EasyChat.IsOpened() then
-            admintab:Notify(msg)
+            admintab:Notify(sender, msg)
         else
             local activetabname = EasyChat.GetActiveTab().Tab.Name
             if activetabname ~= "Admin" then
-                admintab:Notify(msg)
+                admintab:Notify(sender, msg)
             end
         end
     end)
@@ -118,12 +120,16 @@ if CLIENT then
     hook.Add("ECTabChanged","EasyChatModuleDMTab",function(_,tab)
         if tab == "Admin" then
             admintab.NewMessages = 0
+            admintab.RichText:GotoTextEnd()
             if not LocalPlayer():IsAdmin() then
                 EasyChat.AddText(self, self.RichText, "You cannot see the content of this channel because you are not an admin")
             end
         end
     end)
 
+    EasyChat.AddMode("Admin", function(text)
+        admintab:SendMessage(text)
+    end)
     EasyChat.AddTab("Admin", admintab)
     EasyChat.SetFocusForOn("Admin", admintab.TextEntry)
 end
