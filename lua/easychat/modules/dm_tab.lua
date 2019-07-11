@@ -105,12 +105,12 @@ if CLIENT then
             local richtext = self:Add("RichText")
             if not EasyChat.UseDermaSkin then
                 richtext:InsertColorChange(255,255,255,255)
-            else
-                richtext:InsertColorChange(0,0,0,255)
             end
             richtext.PerformLayout = function(self)
                 self:SetFontInternal("EasyChatFont")
-                self:SetFGColor(not EasyChat.UseDermaSkin and EasyChat.TextColor or Color(0,0,0,255))
+                if not EasyChat.UseDermaSkin then
+                    self:SetFGColor(EasyChat.TextColor)
+                end
             end
             richtext.ActionSignal = function(self,name,value)
                 if name == "TextClicked" then
@@ -186,8 +186,6 @@ if CLIENT then
                 if type(arg) == "string" then
                     if not EasyChat.UseDermaSkin then
                         richtext:InsertColorChange(255,255,255,255)
-                    else
-                        richtext:InsertColorChange(0,0,0,255)
                     end
                     if EasyChat.IsURL(arg) then
                         local words = string.Explode(" ",arg)
