@@ -44,40 +44,17 @@ if SERVER then
 		if type(msg) ~= "string" or string.Trim(msg) == "" then return end
 
 		local filter = {}
-		local override = false
-		local players = player.GetAll()
 		filter[ply:SteamID64()] = ply
-
-		if isteam then
-			for _,listener in pairs(team.GetPlayers(ply:Team())) do
-				if IsValid(listener) then
-					filter[listener:SteamID64()] = listener
-				end
-			end
-		elseif islocal then
-			for _,listener in ipairs(players) do
-				if IsValid(listener) and listener:GetPos():Distance(ply:GetPos()) <= ply:GetInfoNum("easychat_local_msg_distance",150) then
-					filter[listener:SteamID64()] = listener
-				end
-			end
-		else
-			for _,listener in ipairs(players) do
-				if IsValid(listener) then
-					filter[listener:SteamID64()] = listener
-				end
-			end
-		end
-
-		--[[for _,listener in ipairs(players) do
+		for _,listener in ipairs(player.GetAll()) do
 			if listener ~= ply then
-				local cansee = gamemode.Call("PlayerCanSeePlayersChat",isteam,listener,ply)
+				local cansee = gamemode.Call("PlayerCanSeePlayersChat",msg,isteam,listener,ply,islocal)
 				if cansee == true then -- can be another type than a bool
 					filter[listener:SteamID64()] = listener
 				elseif cansee == false then -- can be nil so need to check for false
 					filter[listener:SteamID64()] = nil
 				end
 			end
-		end]]--
+		end
 
 		filter = table.ClearKeys(filter)
 
@@ -95,12 +72,7 @@ if SERVER then
 	net.Receive(NET_SET_TYPING,function(len,ply)
 		local bool = net.ReadBool()
 		ply:SetNWBool("ec_is_typing",bool)
-
-		if bool then
-			hook.Run("ECOpened",ply)
-		else
-			hook.Run("ECClosed",ply)
-		end
+		hook.Run(bool and "ECOpened" or "ECClosed",ply)
 	end)
 
 	EasyChat.Init = function()
@@ -110,12 +82,22 @@ if SERVER then
 		hook.Run("ECInitialized")
 	end
 
+	EasyChat.PlayerCanSeePlayersChat = function(msg, isteam, listener, speaker, islocal)
+		if islocal then
+			if not IsValid(listener) or not IsValid(speaker) then return false end
+			if islocal and listener:GetPos():Distance(speaker:GetPos()) > speaker:GetInfoNum("easychat_local_msg_distance",150) then
+				return false
+			end
+		end
+	end
+
 	hook.Add("Initialize", TAG, EasyChat.Init)
+	hook.Add("PlayerCanSeePlayersChat", TAG, EasyChat.PlayerCanSeePlayersChat)
 end
 
 if CLIENT then
-	local MAX_CHARS   = 3000
-	local JSON_COLS   = file.Read("easychat/colors.txt","DATA")
+	local MAX_CHARS = 3000
+	local JSON_COLS = file.Read("easychat/colors.txt","DATA")
 
 	local EC_GLOBAL_ON_OPEN = CreateConVar("easychat_global_on_open","1",FCVAR_ARCHIVE,"Set the chat to always open global chat tab on open")
 	local EC_FONT 			= CreateConVar("easychat_font",(system.IsWindows() and "Verdana" or "Tahoma"),FCVAR_ARCHIVE,"Set the font to use for the chat")
