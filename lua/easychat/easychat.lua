@@ -364,7 +364,7 @@ if CLIENT then
 		end)
 
 		EasyChat.SetAddTextTypeHandle("table",function(col)
-			EasyChat.InsertColorChange(col.r,col.g,col.b,col.a or 255)
+			EasyChat.InsertColorChange(col.r or 255, col.g or 255, col.b or 255, col.a or 255)
 		end)
 
 		EasyChat.SetAddTextTypeHandle("string",function(str)
@@ -393,6 +393,85 @@ if CLIENT then
 			EasyChat.InsertColorChange(col.r,col.g,col.b,255)
 			EasyChat.AppendTaggedText(ply:Nick())
 		end)
+
+		EasyChat.SaveToHistory = function(name, content)
+			if not name or not content then return end
+			if string.Trim(content) == "" then return end
+
+			if not file.Exists("easychat","DATA") then
+				file.CreateDir("easychat")
+			end
+
+			local filename = "easychat/" .. name:lower() .. "_history.txt"
+			if not file.Exists(filename, "DATA") then
+				file.Write(filename, content)
+			else
+				file.Append(filename, content)
+			end
+		end
+
+		EasyChat.ReadFromHistory = function(name)
+			if not name then return "" end
+			local filename = "easychat/" .. name:lower() .. "_history.txt"
+			if not file.Exists(filename, "DATA") then return "" end
+
+			return file.Read(filename, "DATA")
+		end
+
+		local AppendText = function(richtext, txt)
+			if richtext.HistoryName then
+				richtext.Log = richtext.Log and richtext.Log .. txt or txt
+			end
+			richtext:AppendText(txt)
+		end
+
+		local SaveText = function(richtext)
+			if not richtext.HistoryName then return end
+			EasyChat.SaveToHistory(richtext.HistoryName, richtext.Log)
+			richtext.Log = ""
+		end
+
+		EasyChat.AddText = function(tab, richtext, ...)
+            AppendText(richtext, "\n")
+            if EC_TIMESTAMPS:GetBool() then
+                if EC_TIMESTAMPS_12:GetBool() then
+                    AppendText(richtext, os.date("%I:%M %p").." - ")
+                else
+                    AppendText(richtext, os.date("%H:%M").." - ")
+                end
+            end
+            local args = { ... }
+            for _,arg in ipairs(args) do
+                if type(arg) == "string" then
+                    if not EasyChat.UseDermaSkin then
+                        richtext:InsertColorChange(255,255,255,255)
+                    end
+                    if EasyChat.IsURL(arg) then
+                        local words = string.Explode(" ",arg)
+                        for k,v in ipairs(words) do
+                            if k > 1 then
+                                AppendText(richtext, " ")
+                            end
+                            if EasyChat.IsURL(v) then
+                                local url = string.gsub(v,"^%s:","")
+                                richtext:InsertClickableTextStart(url)
+                                AppendText(richtext, url)
+                                richtext:InsertClickableTextEnd()
+                            else
+                                AppendText(richtext, v)
+                            end
+                        end
+                    else
+                        AppendText(richtext, arg)
+                    end
+                elseif type(arg) == "Player" then
+                    AppendText(richtext, arg == LocalPlayer() and "me" or arg:Nick())
+				elseif type(arg) == "table" then
+					richtext:InsertColorChange(arg.r or 255, arg.g or 255, arg.b or 255, arg.a or 255)
+				end
+			end
+			SaveText(richtext)
+		end
 
 		do
 			EasyChat.ChatHUD.Init()
@@ -428,7 +507,9 @@ if CLIENT then
 						EasyChat.AppendText(str)
 					end
 				end
+
 				chat.old_AddText(...)
+				SaveText(EasyChat.GUI.RichText)
 				if EC_TICK_SOUND:GetBool() then
 					chat.PlaySound()
 				end
@@ -469,9 +550,7 @@ if CLIENT then
 			local cx,cy,cw,ch = LoadPosSize()
 			frame:SetSize(cw,ch)
 			frame:SetPos(cx,cy)
-			frame.BtnClose.DoClick = function()
-				ECClose()
-			end
+			frame.BtnClose.DoClick = ECClose
 
 			frame.Tabs.OnActiveTabChanged = function(oldtab,newtab)
 				hook.Run("ECTabChanged",oldtab.Name,newtab.Name)
@@ -497,7 +576,7 @@ if CLIENT then
 							surface.SetDrawColor(EasyChat.TabColor)
 						else
 							if self.Flashed then
-								surface.SetDrawColor( math.abs(math.sin(CurTime()*3)*244),math.abs(math.sin(CurTime()*3)*167), math.abs(math.sin(CurTime()*3)*66),255)
+								surface.SetDrawColor(math.abs(math.sin(CurTime()*3)*244), math.abs(math.sin(CurTime()*3)*167), math.abs(math.sin(CurTime()*3)*66),255)
 							else
 								surface.SetDrawColor(EasyChat.OutlayColor)
 							end
@@ -544,6 +623,20 @@ if CLIENT then
 			EasyChat.AddTab("Global",maintab)
 			EasyChat.SetFocusForOn("Global",maintab.TextEntry)
 
+			if not EasyChat.UseDermaSkin then
+				maintab.RichText:InsertColorChange(255,255,255,255)
+			end
+
+			maintab.RichText.HistoryName = "global"
+			local history = EasyChat.ReadFromHistory("global")
+			if string.Trim(history) ~= "" then
+				maintab.RichText:AppendText(history)
+				local historynotice = "\n^^^^^ Last Session History ^^^^^\n\n"
+				maintab.RichText:AppendText(historynotice)
+				EasyChat.SaveToHistory("global", historynotice)
+				maintab.RichText:GotoTextEnd()
+			end
+
 			-- Only the neccesary elements --
 			EasyChat.GUI = {
 				ChatBox 	= frame,
@@ -561,8 +654,8 @@ if CLIENT then
 		end
 
 		EasyChat.AppendText = function(text)
-			EasyChat.GUI.RichText:AppendText(text)
 			EasyChat.ChatHUD.AppendText(text)
+			AppendText(EasyChat.GUI.RichText, text)
 		end
 
 		EasyChat.AppendTaggedText = function(str)
