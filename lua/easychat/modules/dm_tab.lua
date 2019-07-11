@@ -7,12 +7,13 @@ if SERVER then
 
     net.Receive(EASYCHAT_DM,function(_,ply)
         local target = net.ReadEntity()
-        local message = net.ReadString()
-        if not IsValid(target) or message:Trim() == "" then return end
+        local msg = net.ReadString()
+        msg = msg:Trim()
+        if not IsValid(target) or msg == "" then return end
 
         net.Start(EASYCHAT_DM)
         net.WriteEntity(ply)
-        net.WriteString(message)
+        net.WriteString(msg)
         net.Send(target)
     end)
 
@@ -24,6 +25,10 @@ if SERVER then
 end
 
 if CLIENT then
+    local EC_TIMESTAMPS = GetConVar("easychat_timestamps")
+    local EC_TIMESTAMPS_12 = GetConVar("easychat_timestamps_12")
+    local PLY_COL = Color(255,127,127)
+
     local DM_TAB = {
         Chats = {},
         ActiveChat = {
@@ -102,7 +107,9 @@ if CLIENT then
             if not IsValid(ply) then return end
             if self.Chats[ply] then return end
 
+            local id64 = ply:SteamID64()
             local richtext = self:Add("RichText")
+            richtext.HistoryName = id64 -- so we save our chat history with that player
             if not EasyChat.UseDermaSkin then
                 richtext:InsertColorChange(255,255,255,255)
             end
@@ -140,6 +147,14 @@ if CLIENT then
                 self.ActiveChat = chat
             end
 
+            local history = EasyChat.ReadFromHistory(id64)
+            if history == "" then
+                EasyChat.AddText(self, richtext, "This is the beginning of your conversation!\n\n")
+            else
+                richtext:AppendText(history) -- so we do not log twice
+                EasyChat.AddText(self, richtext, "\n^^^^^ Last Session History ^^^^^\n\n")
+            end
+
             return chat
         end,
         RemoveChat = function(self,ply)
@@ -168,53 +183,21 @@ if CLIENT then
             local ply = line.Player
             if IsValid(ply) then
                 local chat = self.Chats[ply]
-                self:AddText(chat.RichText,LocalPlayer(),": " .. message)
+                EasyChat.AddText(self,chat.RichText,PLY_COL,LocalPlayer(),": " .. message)
                 net.Start(EASYCHAT_DM)
                 net.WriteEntity(chat.Player)
                 net.WriteString(message)
                 net.SendToServer()
             else
-                self:AddText(chat.RichText,"The player you are trying to message is not on the server anymore!")
+                EasyChat.AddText(self,chat.RichText,"The player you are trying to message is not on the server anymore!")
             end
 
             self.TextEntry:SetText("")
         end,
-        AddText = function(self,richtext,...)
-            richtext:AppendText("\n")
-            local args = { ... }
-            for _,arg in ipairs(args) do
-                if type(arg) == "string" then
-                    if not EasyChat.UseDermaSkin then
-                        richtext:InsertColorChange(255,255,255,255)
-                    end
-                    if EasyChat.IsURL(arg) then
-                        local words = string.Explode(" ",arg)
-                        for k,v in ipairs(words) do
-                            if k > 1 then
-                                richtext:AppendText(" ")
-                            end
-                            if EasyChat.IsURL(v) then
-                                local url = string.gsub(v,"^%s:","")
-                                richtext:InsertClickableTextStart(url)
-                                richtext:AppendText(url)
-                                richtext:InsertClickableTextEnd()
-                            else
-                                richtext:AppendText(v)
-                            end
-                        end
-                    else
-                        richtext:AppendText(arg)
-                    end
-                elseif type(arg) == "Player" then
-                    richtext:InsertColorChange(66,134,244,255)
-                    richtext:AppendText(arg == LocalPlayer() and "me" or arg:Nick())
-                end
-            end
-        end,
         Notify = function(self,chat,message)
             chat.NewMessages = chat.NewMessages + 1
             EasyChat.FlashTab("DM")
-            _G.chat.AddText(Color(255,255,255),"[DM | ",Color(255,127,127),chat.Player,Color(255,255,255),"] " .. message)
+            _G.chat.AddText(Color(255,255,255),"[DM | ",PLY_COL,chat.Player,Color(255,255,255),"] " .. message)
         end,
         Think = function(self)
             for _,chat in pairs(self.Chats) do
@@ -241,7 +224,7 @@ if CLIENT then
         if not chat then
             chat = dmtab:CreateChat(sender)
         end
-        dmtab:AddText(chat.RichText,sender,": " .. message)
+        EasyChat.AddText(dmtab, chat.RichText,PLY_COL,sender,": " .. message)
         if not EasyChat.IsOpened() then
             dmtab:Notify(chat,message)
         else
