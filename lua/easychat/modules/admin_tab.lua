@@ -38,6 +38,59 @@ if CLIENT then
             self.TextEntry.HistoryPos = 0
             self.TextEntry:SetUpdateOnType(true)
 
+            self.AdminList = self:Add("DListView")
+            self.AdminList:SetWide(100)
+            self.AdminList:Dock(LEFT)
+            self.AdminList:AddColumn("Admins")
+
+            if not EasyChat.UseDermaSkin then
+                self.AdminList.Paint = function(self,w,h)
+                    surface.SetDrawColor(EasyChat.OutlayColor)
+                    surface.DrawRect(0, 0, w,h)
+                    surface.SetDrawColor(EasyChat.OutlayOutlineColor)
+                    surface.DrawOutlinedRect(0, 0, w,h)
+
+                    for i,ply in ipairs(player.GetAll()) do
+                        if ply:IsAdmin() then
+                            local tcol = team.GetColor(ply:Team())
+                            surface.SetFont("EasyChatFont")
+                            surface.SetTextPos(10,  20 * i)
+                            surface.SetTextColor(0,255,0,255)
+                            surface.DrawText("•")
+                            surface.SetTextPos(20,  20 * i)
+                            surface.SetTextColor(tcol.r,tcol.g,tcol.b,tcol.a)
+                            surface.DrawText(ply:Nick())
+                        end
+                    end
+                end
+
+                local header = self.AdminList.Columns[1].Header
+                header:SetTextColor(Color(255,255,255))
+                header.Paint = function(self,w,h)
+                    surface.SetDrawColor(EasyChat.OutlayColor)
+                    surface.DrawRect(0, 0, w,h)
+                    surface.SetDrawColor(EasyChat.OutlayOutlineColor)
+                    surface.DrawOutlinedRect(0, 0, w,h)
+                end
+            else
+                local old_Paint = self.AdminList.Paint
+                self.AdminList.Paint = function(self,w,h)
+                    old_Paint(self,w,h)
+                    for i,ply in ipairs(player.GetAll()) do
+                        if ply:IsAdmin() then
+                            local tcol = team.GetColor(ply:Team())
+                            surface.SetFont("EasyChatFont")
+                            surface.SetTextPos(10,  20 * i)
+                            surface.SetTextColor(0,255,0,255)
+                            surface.DrawText("•")
+                            surface.SetTextPos(20,  20 * i)
+                            surface.SetTextColor(tcol.r,tcol.g,tcol.b,tcol.a)
+                            surface.DrawText(ply:Nick())
+                        end
+                    end
+                end
+            end
+
             self.RichText = self:Add("RichText")
             self.RichText.HistoryName = "admin"
             if not EasyChat.UseDermaSkin then
