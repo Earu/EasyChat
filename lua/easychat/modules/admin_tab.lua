@@ -31,17 +31,17 @@ if CLIENT then
         Init = function(self)
             local frame = self
 
+            self.AdminList = self:Add("DListView")
+            self.AdminList:SetWide(100)
+            self.AdminList:Dock(LEFT)
+            self.AdminList:AddColumn("Admins")
+
             self.TextEntry = self:Add("DTextEntry")
             self.TextEntry:SetTall(20)
             self.TextEntry:Dock(BOTTOM)
             self.TextEntry:SetHistoryEnabled(true)
             self.TextEntry.HistoryPos = 0
             self.TextEntry:SetUpdateOnType(true)
-
-            self.AdminList = self:Add("DListView")
-            self.AdminList:SetWide(100)
-            self.AdminList:Dock(LEFT)
-            self.AdminList:AddColumn("Admins")
 
             if not EasyChat.UseDermaSkin then
                 self.AdminList.Paint = function(self,w,h)
