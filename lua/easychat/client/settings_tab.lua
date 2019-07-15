@@ -238,7 +238,7 @@ local SETTINGS_TAB = {
         ypos = ypos + self.BtnReloadChat:GetTall() + 10
 
         self.BtnUseDermaSkin:SetPos(170,ypos)
-        self.BtnUseDermaSkin:SetText(EasyChat.UseDermaSkin and "Use custom skin" or "Use dermaskin")
+        self.BtnUseDermaSkin:SetText(EasyChat.UseDermaSkin and "Use Custom Skin" or "Use Dermaskin")
         self.BtnUseDermaSkin:SetFont("ECSettingsFont")
         self.BtnUseDermaSkin:SetSize(100,25)
         self.BtnUseDermaSkin.DoClick = function()
@@ -255,6 +255,7 @@ local SETTINGS_TAB = {
             for _, f in pairs(files) do
                 file.Delete("easychat/" .. f)
             end
+            frame:ReloadChat()
         end
         ypos = ypos + self.BtnClearHistory:GetTall() + 10
 
