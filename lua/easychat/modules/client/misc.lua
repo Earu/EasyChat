@@ -5,12 +5,18 @@ local replaces = {
     [".unflip "]   = [[┬─┬ ノ( ゜-゜ノ)]],
 }
 
+local EC_EMOTES = CreateConVar("easychat_misc_emotes", "1", FCVAR_ARCHIVE, "Should we try to make sense of input when pressing tab")
+local EC_GREENTEXT = CreateConVar("easychat_misc_greentext", "1", FCVAR_ARCHIVE, "Makes your text green when using > at the beginning of a message")
+local EC_REPLACE = CreateConVar("easychat_misc_replace", "1", FCVAR_ARCHIVE, "Allows quoting replacement with s/x/y")
+
 hook.Add("OnChatTab","EasyChatModuleMisc",function(text)
-    local args = string.Explode(" ",text)
-    if replaces[args[#args]] then
-        args[#args] = replaces[args[#args]]
-    end
-    return table.concat(args," ",1,#args)
+	if EC_EMOTES:GetBool() then
+		local args = string.Explode(" ",text)
+		if replaces[args[#args]] then
+			args[#args] = replaces[args[#args]]
+		end
+		return table.concat(args," ",1,#args)
+	end
 end)
 
 local stored = {}
@@ -25,12 +31,12 @@ local store = function(ply,txt)
 end
 
 hook.Add("OnPlayerChat","EasyChatModuleMisc",function(ply,txt)
-    if string.match(txt,"^>") then
+    if EC_GREENTEXT:GetBool() and string.match(txt,"^>") then
 		chat.AddText(ply,Color(255,255,255),": ",Color(0,255,0),txt)
 		return true
 	end
 
-    if string.match(txt,"^s%/.+%/.+") then
+    if EC_REPLACE:GetBool() and string.match(txt,"^s%/.+%/.+") then
 		local args = string.Explode("/",txt)
 		local toreplace
 		if not args[2] or not args[3] then return end
