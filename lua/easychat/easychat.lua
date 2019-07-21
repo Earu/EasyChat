@@ -44,14 +44,25 @@ if SERVER then
 		if type(msg) ~= "string" or string.Trim(msg) == "" then return end
 
 		local filter = {}
-		filter[ply:SteamID64()] = ply
+		local brokencount = 1
+		local AddToFilter = function(ply)
+			local id = ply:AccountID()
+			if not id then
+				filter[brokencount] = ply
+				brokencount = brokencount + 1
+			else
+				filter[id] = ply
+			end
+		end
+
+		AddToFilter(ply)
 		for _,listener in ipairs(player.GetAll()) do
 			if listener ~= ply then
 				local cansee = gamemode.Call("PlayerCanSeePlayersChat",msg,isteam,listener,ply,islocal)
 				if cansee == true then -- can be another type than a bool
-					filter[listener:SteamID64()] = listener
+					AddToFilter(listener)
 				elseif cansee == false then -- can be nil so need to check for false
-					filter[listener:SteamID64()] = nil
+					filter[listener:AccountID() or 0] = nil
 				end
 			end
 		end
