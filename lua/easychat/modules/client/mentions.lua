@@ -1,4 +1,7 @@
+local EC_MENTION = CreateConVar("easychat_mentions","1",FCVAR_ARCHIVE,"Highlights messages containing your name")
+
 local Mention = function(arg,txt)
+    if not EC_MENTION:GetBool() then return end
     if not LocalPlayer().Nick then return end
     local str = string.lower(txt)
     local lname = string.lower(string.gsub(LocalPlayer():Nick(),"<.->",""))
