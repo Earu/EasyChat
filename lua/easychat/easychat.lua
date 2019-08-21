@@ -117,15 +117,16 @@ if CLIENT then
 	local EC_TEAMS 			= CreateConVar("easychat_teams","0",FCVAR_ARCHIVE,"Display team in front of messages or not")
 	local EC_TEAMS_COLOR 	= CreateConVar("easychat_teams_colored","0",FCVAR_ARCHIVE,"Display team with its relative color")
 	local EC_PLAYER_COLOR 	= CreateConVar("easychat_players_colored","1",FCVAR_ARCHIVE,"Display player with its relative team color")
-	local EC_ENABLE 		= CreateConVar("easychat_enable","1",{FCVAR_ARCHIVE,FCVAR_USERINFO},"Use easychat or not")
-	local EC_ENABLEBROWSER	= CreateConVar("easychat_enablebrowser","0",{FCVAR_ARCHIVE,FCVAR_USERINFO},"Use easychat browser or not")
-	local EC_DERMASKIN 		= CreateConVar("easychat_use_dermaskin","0",{FCVAR_ARCHIVE,FCVAR_USERINFO},"Use dermaskin look or not")
+	local EC_ENABLE 		= CreateConVar("easychat_enable","1", { FCVAR_ARCHIVE, FCVAR_USERINFO },"Use easychat or not")
+	local EC_ENABLEBROWSER	= CreateConVar("easychat_enablebrowser","0", { FCVAR_ARCHIVE, FCVAR_USERINFO },"Use easychat browser or not")
+	local EC_DERMASKIN 		= CreateConVar("easychat_use_dermaskin","0", {FCVAR_ARCHIVE, FCVAR_USERINFO },"Use dermaskin look or not")
 	local EC_LOCAL_MSG_DIST = CreateConVar("easychat_local_msg_distance","300",FCVAR_ARCHIVE,"Set the maximum distance for users to receive local messages")
 	local EC_NO_MODULES 	= CreateConVar("easychat_no_modules","0",FCVAR_ARCHIVE,"Should easychat load modules or not")
 	local EC_HUD_FOLLOW 	= CreateConVar("easychat_hud_follow","0",FCVAR_ARCHIVE,"Set the chat hud to follow the chatbox")
 	local EC_TICK_SOUND		= CreateConVar("easychat_tick_sound","1",FCVAR_ARCHIVE,"Should a tick sound be played on new messages or not")
 	local EC_HUD_TTL        = CreateConVar("easychat_hud_ttl","16",FCVAR_ARCHIVE,"How long messages stay before vanishing")
 	local EC_TIMESTAMPS_12  = CreateConVar("easychat_timestamps_12", "0", FCVAR_ARCHIVE, "Display timestamps in 12 hours mode or not")
+	local EC_HISTORY        = CreateConVar("easychat_history", "1", FCVAR_ARCHIVE, "Should the history be shown")
 
 	EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
 
@@ -346,6 +347,7 @@ if CLIENT then
 		ECAddTextHandles = {}
 
 		EasyChat.RegisterConvar(EC_GLOBAL_ON_OPEN,"Open chatbox in global tab")
+		EasyChat.RegisterConvar(EC_HISTORY,"Enable history")
 		EasyChat.RegisterConvar(EC_TIMESTAMPS,"Display timestamps")
 		EasyChat.RegisterConvar(EC_TIMESTAMPS_12, "12 hours mode timestamps")
 		EasyChat.RegisterConvar(EC_TEAMS,"Display teams")
@@ -402,7 +404,12 @@ if CLIENT then
 		EasyChat.SetAddTextTypeHandle("Player",function(ply)
 			local col = EC_PLAYER_COLOR:GetBool() and team.GetColor(ply:Team()) or Color(255,255,255)
 			EasyChat.InsertColorChange(col.r,col.g,col.b,255)
-			EasyChat.AppendTaggedText(ply:Nick())
+			local lp = LocalPlayer()
+			if IsValid(lp) and lp == ply then
+				EasyChat.AppendTaggedText("me")
+			else
+				EasyChat.AppendTaggedText(ply:Nick())
+			end
 		end)
 
 		EasyChat.SaveToHistory = function(name, content)
@@ -639,13 +646,15 @@ if CLIENT then
 			end
 
 			maintab.RichText.HistoryName = "global"
-			local history = EasyChat.ReadFromHistory("global")
-			if string.Trim(history) ~= "" then
-				maintab.RichText:AppendText(history)
-				local historynotice = "\n^^^^^ Last Session History ^^^^^\n\n"
-				maintab.RichText:AppendText(historynotice)
-				EasyChat.SaveToHistory("global", historynotice)
-				maintab.RichText:GotoTextEnd()
+			if EC_HISTORY:GetBool() then
+				local history = EasyChat.ReadFromHistory("global")
+				if string.Trim(history) ~= "" then
+					maintab.RichText:AppendText(history)
+					local historynotice = "\n^^^^^ Last Session History ^^^^^\n\n"
+					maintab.RichText:AppendText(historynotice)
+					EasyChat.SaveToHistory("global", historynotice)
+					maintab.RichText:GotoTextEnd()
+				end
 			end
 
 			-- Only the neccesary elements --
