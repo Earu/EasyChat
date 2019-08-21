@@ -27,6 +27,7 @@ end
 if CLIENT then
     local EC_TIMESTAMPS = GetConVar("easychat_timestamps")
     local EC_TIMESTAMPS_12 = GetConVar("easychat_timestamps_12")
+    local EC_HISTORY = GetConVar("easychat_history")
     local PLY_COL = Color(255,127,127)
 
     local DM_TAB = {
@@ -147,12 +148,16 @@ if CLIENT then
                 self.ActiveChat = chat
             end
 
-            local history = EasyChat.ReadFromHistory(id64)
-            if history == "" then
-                EasyChat.AddText(self, richtext, "This is the beginning of your conversation!\n\n")
+            if EC_HISTORY:GetBool() then
+                local history = EasyChat.ReadFromHistory(id64)
+                if history == "" then
+                    EasyChat.AddText(self, richtext, "This is the beginning of your conversation!\n\n")
+                else
+                    richtext:AppendText(history) -- so we do not log twice
+                    EasyChat.AddText(self, richtext, "\n^^^^^ Last Session History ^^^^^\n\n")
+                end
             else
-                richtext:AppendText(history) -- so we do not log twice
-                EasyChat.AddText(self, richtext, "\n^^^^^ Last Session History ^^^^^\n\n")
+                EasyChat.AddText(self, richtext, "This is the beginning of your conversation!\n\n")
             end
 
             return chat

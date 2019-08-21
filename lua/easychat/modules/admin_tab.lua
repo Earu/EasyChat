@@ -25,6 +25,7 @@ end
 
 if CLIENT then
     local PLY_COL = Color(255,127,127)
+    local EC_HISTORY = GetConVar("easychat_history")
 
     local ADMIN_TAB = {
         NewMessages = 0,
@@ -127,13 +128,17 @@ if CLIENT then
                 lastkey = code
             end
 
-            local history = EasyChat.ReadFromHistory("admin")
-            if string.Trim(history) == "" then
-                EasyChat.AddText(self, self.RichText, "Welcome to the admin chat!")
+            if EC_HISTORY:GetBool() then
+                local history = EasyChat.ReadFromHistory("admin")
+                if string.Trim(history) == "" then
+                    EasyChat.AddText(self, self.RichText, "Welcome to the admin chat!")
+                else
+                    self.RichText:AppendText(history) -- so we do not log twice
+                    EasyChat.AddText(self, self.RichText, "\n^^^^^ Last Session History ^^^^^\n\n")
+                    self.RichText:GotoTextEnd()
+                end
             else
-                self.RichText:AppendText(history) -- so we do not log twice
-                EasyChat.AddText(self, self.RichText, "\n^^^^^ Last Session History ^^^^^\n\n")
-                self.RichText:GotoTextEnd()
+                EasyChat.AddText(self, self.RichText, "Welcome to the admin chat!")
             end
         end,
         Notify = function(self,ply,message)
