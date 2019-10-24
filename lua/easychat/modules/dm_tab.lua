@@ -172,9 +172,11 @@ if CLIENT then
 
             self.DMList:Clear()
             for _,chat in pairs(self.Chats) do
-                local line = self.DMList:AddLine(chat.Player:Nick())
-                chat.Line = line
-                line.Player = chat.Player
+                if IsValid(chat.Player) then
+                    local line = self.DMList:AddLine(chat.Player:Nick())
+                    chat.Line = line
+                    line.Player = chat.Player
+                end
             end
         end,
         SendMessage = function(self,message)
@@ -223,6 +225,7 @@ if CLIENT then
     net.Receive(EASYCHAT_DM,function()
         local sender = net.ReadEntity()
         local message = net.ReadString()
+        if not IsValid(dmtab) then return end
         if not IsValid(sender) then return end
 
         local chat = dmtab.Chats[sender]
@@ -242,11 +245,12 @@ if CLIENT then
 
     net.Receive(EASYCHAT_DM_REMOVE,function()
         local ply = net.ReadEntity()
+        if not IsValid(dmtab) then return end
         dmtab:RemoveChat(ply)
     end)
 
     hook.Add("ECTabChanged","EasyChatModuleDMTab",function(_,tab)
-        if tab == "DM" then
+        if tab == "DM" and IsValid(dmtab) then
             local chat = dmtab.ActiveChat
             if IsValid(chat.Player) and chat.NewMessages > 0 then
                 chat.NewMessages = 0
@@ -256,12 +260,13 @@ if CLIENT then
     end)
 
     hook.Add("NetworkEntityCreated","EasyChatModuleDMTab",function(ent)
-        if ent:IsPlayer() and ent ~= LocalPlayer() then
+        if ent:IsPlayer() and ent ~= LocalPlayer() and IsValid(dmtab) then
             dmtab:CreateChat(ent)
         end
     end)
 
     hook.Add("ECInitialized","EasyChatModuleDMTab",function()
+        if not IsValid(dmtab) then return end
         for _,ply in pairs(player.GetAll()) do
             if ply ~= LocalPlayer() then
                 dmtab:CreateChat(ply)
