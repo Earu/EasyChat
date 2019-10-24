@@ -51,16 +51,18 @@ if CLIENT then
                     surface.SetDrawColor(EasyChat.OutlayOutlineColor)
                     surface.DrawOutlinedRect(0, 0, w,h)
 
-                    for i,ply in ipairs(player.GetAll()) do
+                    local i = 1
+                    for _,ply in ipairs(player.GetAll()) do
                         if ply:IsAdmin() then
                             local tcol = team.GetColor(ply:Team())
                             surface.SetFont("EasyChatFont")
                             surface.SetTextPos(10,  20 * i)
                             surface.SetTextColor(0,255,0,255)
                             surface.DrawText("•")
-                            surface.SetTextPos(20,  20 * i)
+                            surface.SetTextPos(20, 20 * i)
                             surface.SetTextColor(tcol.r,tcol.g,tcol.b,tcol.a)
                             surface.DrawText(ply:Nick())
+                            i = i + 1
                         end
                     end
                 end
