@@ -87,25 +87,20 @@ local CHATBOX = {
         if not EasyChat.UseDermaSkin then
             self.Paint = function(self,w,h)
                 surface.SetDrawColor(EasyChat.OutlayColor)
-                surface.DrawRect(0,0,w,h)
+                surface.DrawRect(6, 0, w - 13, h - 5)
                 surface.SetDrawColor(EasyChat.OutlayOutlineColor)
-                surface.DrawOutlinedRect(0,0,w,h)
+                surface.DrawOutlinedRect(6, 0, w - 13, h - 5)
+			end
+
+			self.BtnMaxim.Paint = function(self,w,h)
+				surface.SetDrawColor(Color(225,225,225))
+				surface.DrawRect(0, 0, w, h)
             end
 
-            self.BtnClose.Paint = function(self,w,h)
-                draw.RoundedBoxEx(3,0,0,w,h,EasyChat.OutlayOutlineColor,false,true,false,true)
-                draw.RoundedBoxEx(3,1,1,w-2,h-2,Color(246,40,40),false,true,false,true)
-                surface.SetDrawColor(EasyChat.OutlayOutlineColor)
-                surface.DrawLine(0,2,w,2)
+			self.BtnClose.Paint = function(self,w,h)
+				surface.SetDrawColor(Color(246,40,40))
+				surface.DrawRect(0, 0, w - 1, h)
             end
-
-            self.BtnMaxim.Paint = function(self,w,h)
-                draw.RoundedBoxEx(3,0,0,w,h,EasyChat.OutlayOutlineColor,true,false,true,false)
-                draw.RoundedBoxEx(3,1,1,w-2,h-2,Color(225,225,225),true,false,true,false)
-                surface.SetDrawColor(EasyChat.OutlayOutlineColor)
-                surface.DrawLine(0,7,w,7)
-            end
-
 
             self.Tabs.Paint = function(self,w,h)
                 surface.SetDrawColor(0,0,0,0)
