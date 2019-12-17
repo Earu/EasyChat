@@ -71,7 +71,21 @@ local SETTINGS_TAB = {
         self.TBoxTabOutlineColor:SetText("Tab Outline Color")
         self.TBoxTabOutlineColor:SetFont("ECSettingsFont")
         self.TBoxTabOutlineColor:SetPos(15,90)
-        table.insert(self.Checkboxes,self.TBoxTabOutlineColor)
+		table.insert(self.Checkboxes,self.TBoxTabOutlineColor)
+
+		if not EasyChat.UseDermaSkin then
+			for _, checkbox in pairs(self.Checkboxes) do
+				checkbox.Button.Paint = function(self, w, h)
+					surface.SetDrawColor(EasyChat.OutlayColor)
+					surface.DrawRect(0, 0, w, h)
+
+					if self:GetChecked() then
+						surface.SetDrawColor(EasyChat.TextColor)
+						surface.DrawRect(2, 2, w - 4, h - 4)
+					end
+				end
+			end
+		end
 
         self.ColorMixer:Dock(RIGHT)
         self.ColorMixer:DockMargin(0,15,15,0)
@@ -197,7 +211,18 @@ local SETTINGS_TAB = {
             self[index]:SetChecked(cvar:GetBool())
             self[index].OnChange = function(self,val)
                 RunConsoleCommand(cvar:GetName(),(val and "1" or "0"))
-            end
+			end
+			if not EasyChat.UseDermaSkin then
+				self[index].Button.Paint = function(self, w, h)
+					surface.SetDrawColor(EasyChat.OutlayColor)
+					surface.DrawRect(0, 0, w, h)
+
+					if self:GetChecked() then
+						surface.SetDrawColor(EasyChat.TextColor)
+						surface.DrawRect(2, 2, w - 4, h - 4)
+					end
+				end
+			end
             if ConvarCallbacks[index] then
                 cvars.RemoveChangeCallback(cvar:GetName(),index)
             end
@@ -312,10 +337,10 @@ local SETTINGS_TAB = {
     end,
 
     ResetColors = function(self)
-        EasyChat.OutlayColor        = Color(62,62,62,173)
-        EasyChat.OutlayOutlineColor = Color(104,104,104,103)
-        EasyChat.TabOutlineColor    = Color(5,5,5,123)
-        EasyChat.TabColor     		= Color(36,36,36,255)
+        EasyChat.OutlayColor        = Color(62, 62, 62, 255)
+        EasyChat.OutlayOutlineColor = Color(0, 0, 0, 0)
+        EasyChat.TabOutlineColor    = Color(0, 0, 0, 0)
+        EasyChat.TabColor     		= Color(36, 36, 36, 255)
         local tab = {
             outlay		  = EasyChat.OutlayColor,
             outlayoutline = EasyChat.OutlayOutlineColor,
