@@ -179,10 +179,10 @@ if CLIENT then
 		EasyChat.TabOutlineColor    = colors.taboutline
 		EasyChat.TabColor           = colors.tab
 	else
-        EasyChat.OutlayColor        = Color(62,62,62,173)
-        EasyChat.OutlayOutlineColor = Color(104,104,104,103)
-        EasyChat.TabOutlineColor    = Color(5,5,5,123)
-        EasyChat.TabColor     		= Color(36,36,36,255)
+        EasyChat.OutlayColor        = Color(62, 62, 62, 255)
+        EasyChat.OutlayOutlineColor = Color(0, 0, 0, 0)
+        EasyChat.TabOutlineColor    = Color(0, 0, 0, 0)
+        EasyChat.TabColor     		= Color(36, 36, 36, 255)
 	end
 
 	EasyChat.TextColor = Color(255,255,255,255)
@@ -596,18 +596,21 @@ if CLIENT then
 							if self.Flashed then
 								surface.SetDrawColor(math.abs(math.sin(CurTime()*3)*244), math.abs(math.sin(CurTime()*3)*167), math.abs(math.sin(CurTime()*3)*66),255)
 							else
-								surface.SetDrawColor(EasyChat.OutlayColor)
+								surface.SetDrawColor(Color(0, 0, 0, 0))
 							end
 						end
-						surface.DrawRect(0,0,w,h)
+
+						surface.DrawRect(0, 0, w, h)
 						if self == frame.Tabs:GetActiveTab() then
+							surface.SetDrawColor(EasyChat.TextColor)
+							surface.DisableClipping(true)
+								surface.DrawRect(0, -2, w, 2)
+							surface.DisableClipping(false)
+
 							surface.SetDrawColor(EasyChat.TabOutlineColor)
-						else
-							surface.SetDrawColor(EasyChat.OutlayOutlineColor)
+							surface.DrawLine(0,0,0,h)
+							surface.DrawLine(w-1,0,w-1,h)
 						end
-						surface.DrawLine(0,0,w,0)
-						surface.DrawLine(0,0,0,h)
-						surface.DrawLine(w-1,0,w-1,h)
 					end
 				end
 			end

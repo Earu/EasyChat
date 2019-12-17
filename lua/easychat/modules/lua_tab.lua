@@ -108,15 +108,15 @@ if CLIENT then
                 end
             end
 
+			self:AddExecButton("Self","icon16/cog_go.png", function()
+                lua.RunOnSelf(self.Code,LocalPlayer())
+                self:RegisterAction(self.Code,"self")
+			end,40,50)
+
             self:AddExecButton("Clients","icon16/user.png",function()
                 lua.RunOnClients(self.Code,LocalPlayer())
                 self:RegisterAction(self.Code,"clients")
             end,50,60)
-
-            self:AddExecButton("Self","icon16/cog_go.png", function()
-                lua.RunOnSelf(self.Code,LocalPlayer())
-                self:RegisterAction(self.Code,"self")
-            end,40,50)
 
             self:AddExecButton("Shared","icon16/world.png", function()
                 lua.RunOnShared(self.Code,LocalPlayer())
