@@ -3,8 +3,7 @@
 ]]-------------------------------------------------------------------------------
 local ipairs, pairs = _G.ipairs, _G.pairs
 local Color, Vector, Matrix = _G.Color, _G.Vector, _G.Matrix
-local RealTime = _G.RealTime
-local type = _G.type
+local RealTime, type, tostring = _G.RealTime, _G.type, _G.tostring
 
 local table_copy = _G.table.Copy
 local table_insert = _G.table.insert
@@ -24,6 +23,10 @@ local cam_PopModelMatrix = _G.cam.PopModelMatrix
 local cam_PushModelMatrix = _G.cam.PushModelMatrix
 
 local hook_run = _G.hook.Run
+
+local string_explode = _G.string.Explode
+local string_gmatch = _G.string.gmatch
+local string_replace = _G.string.Replace
 ---------------------------------------------------------------------------------
 
 local chat_x, chat_y = chat.GetChatBoxPos()
@@ -45,6 +48,7 @@ cvars.AddChangeCallback("easychat_hud_ttl", function(_, _, new)
 end)]]--
 
 local default_part = {
+	Type = "default",
 	Pos = { X = 0, Y = 0 },
 	Size =  { W = 0, H = 0 },
 	-- fading and color
@@ -69,11 +73,14 @@ end
 
 function chathud:RegisterPart(name, part)
 	if not name or not part then return end
+	name = string.lower(name)
+
 	local new_part = table_copy(default_part)
 	for k, v in pairs(part) do
 		new_part[k] = v
 	end
 
+	new_part.Type = name
 	self.Parts[name] = new_part
 end
 
@@ -113,9 +120,11 @@ local scale_part = {
 	Scale = Vector(1, 1, 1)
 }
 
-function scale_part:Ctor(scale)
+function scale_part:Ctor(str)
 	self:ComputeSize()
-	self.Scale = scale
+	self.Scale = tonumber(str) or 1
+
+	return self
 end
 
 function stop_part:ComputeSize()
@@ -139,9 +148,16 @@ local color_part = {
 	Color = Color(255, 255, 255)
 }
 
-function color_part:Ctor(col)
+function color_part:Ctor(str)
 	self:ComputeSize()
-	self.Color = col
+	local col_components = string_explode("%s*,%s*", str, true)
+	local r, g, b =
+		tonumber(col_components[1]) or 255,
+		tonumber(col_components[2]) or 255,
+		tonumber(col_components[3]) or 255
+	self.Color = Color(r, g, b)
+
+	return self
 end
 
 function stop_part:ComputeSize()
@@ -150,8 +166,8 @@ end
 
 function color_part:Draw(ctx)
 	self.Color.a = self.Line.Alpha
-	surface.SetDrawColor(self.Color)
-	surface.SetTextColor(self.Color)
+	surface_SetDrawColor(self.Color)
+	surface_SetTextColor(self.Color)
 end
 
 chathud:RegisterPart("color", color_part)
@@ -169,9 +185,10 @@ local text_part = {
 
 function text_part:Ctor(content, font)
 	self.Content = content
-	self.Font = font
-
+	self.Font = font or self.Font
 	self:ComputeSize()
+
+	return self
 end
 
 function text_part:ComputeSize()
@@ -194,7 +211,7 @@ chathud:RegisterPart("text", text_part)
 local base_line = {
 	Components = {},
 	Pos = { X = 0, Y = 0 },
-	Height = 0
+	Size = { W = 0, H = 0 }
 }
 
 function base_line:Remove()
@@ -224,31 +241,61 @@ function base_line:Draw(ctx)
 	end
 end
 
-function chathud:CreateLine()
+function chathud:NewLine()
 	local new_line = table_copy(base_line)
 	new_line.Index = table_insert(self.Lines, new_line)
+
+	self:InvalidateLayout()
+
+	return new_line
 end
 
 function chathud:InvalidateLayout()
+	local line_count, total_height = #self.Lines, 0
+	for i=line_count, 1, -1 do -- process from bottom to top (most recent to ancient)
+		local line = self.Lines[i]
+		line.Size.W = 0
+
+		for _, component in ipairs(line.Components) do
+			component:ComputeSize()
+
+			line.Size.W = line.Size.W + component.Size.W
+			component.Pos.X = chathud.Pos.X + line.Size.W
+
+			if component.Size.H > line.Size.H then -- update line height to the tallest possible
+				line.Size.H = component.Size.H
+			end
+		end
+
+		total_height = total_height + line.Size.H
+		line.Pos.Y = chathud.Pos.Y + chathud.Size.H - total_height
+	end
 end
 
-function chathud:CreatePartComponent(name, ...)
+function chathud:PushPartComponent(name, ...)
 	local part = self.Parts[name]
 	if not part then return end
 
 	local component = table_copy(part):Ctor(...)
+
 	local line = self.Lines[#self.Lines]
-	if not line or need_new_line then
-		line = self:CreateLine()
+	if not line then -- create a line if there are none
+		line = self:NewLine()
 	end
 
-	if component.Height > line.Height then -- update line height to the tallest possible
-		line.Height = component.Height
-	end
+	if line.Size.W + component.Size.W > self.Size.W then
+		if component.Type == "text" then
+			-- line breaking HERE
+		else
+			-- insert new line for everything else than text with width?
+		end
+	else
+		component.Line = line
+		component.Pos = { X = line.Pos.X + line.Size.W, Y = line.Pos.Y }
+		table_insert(line.Components, component)
 
-	component.Line = line
-	component.Pos = { X = line.Pos.X, Y = line.Pos.Y }
-	table_insert(line.Components, component)
+		line.Size.W = line.Size.W + component.Size.W -- need to update width for inserting next components properly
+	end
 end
 
 --[[-----------------------------------------------------------------------------
@@ -304,12 +351,25 @@ local function is_color(c)
 	return c.r and c.g and c.b and c.a
 end
 
-function chathud:ParseString(str)
-	local parts = str:Explode(self.TagPattern, str, true)
-	local enumerator = str:gmatch(self.TagPattern)
-	for tag, content in enumerator do
+local function color_to_expr(c)
+	return string_replace(tostring(c), " ", ",")
+end
 
+function chathud:PushString(str)
+	local str_parts = string_explode(self.TagPattern, str, true)
+	local enumerator = string_gmatch(str, self.TagPattern)
+	local i = 1
+	for tag, content in enumerator do
+		self:PushPartComponent("text", str_parts[i])
+		i = i + 1
+
+		local part = self.Parts[tag]
+		if part and part.Usable then
+			self:PushPartComponent(tag, content)
+		end
 	end
+
+	self:PushPartComponent("text", str_parts[#str_parts])
 end
 
 function chathud:AddText(...)
@@ -317,9 +377,15 @@ function chathud:AddText(...)
 	for _, arg in ipairs(args) do
 		local t = type(arg)
 		if t == "Player" then
-
+			local team_color = team.GetColor(arg:Team())
+			self:PushPartComponent("color", color_to_expr(team_color)) -- push team color before player name
+			self:PushString(arg:Nick())
 		elseif t == "table" and is_color(arg) then
-			self:CreatePartComponent("color", arg)
+			self:PushPartComponent("color", color_to_expr(arg))
+		elseif t == "string" then
+			self:PushString(arg)
+		else
+			self:PushString(tostring(arg))
 		end
 	end
 end
