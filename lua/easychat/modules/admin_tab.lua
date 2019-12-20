@@ -25,7 +25,7 @@ end
 
 if CLIENT then
     local PLY_COL = Color(255,127,127)
-    local EC_HISTORY = GetConVar("easychat_history")
+	local EC_HISTORY = GetConVar("easychat_history")
 
     local ADMIN_TAB = {
         NewMessages = 0,
