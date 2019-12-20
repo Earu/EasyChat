@@ -78,7 +78,9 @@ chathud:RegisterPart("hsv", hsv_part)
 
 	Scales other components up and down.
 ]]-------------------------------------------------------------------------------
-local scale_part = {}
+local scale_part = {
+	OkInNicks = false,
+}
 
 function scale_part:Ctor(str)
 	self:ComputeSize()
