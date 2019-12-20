@@ -144,7 +144,7 @@ local chathud = {
 	Size = { W = chat_w, H = chat_h },
 	Lines = {},
 	Parts = {},
-	TagPattern = "<(.-)=(.-)>",
+	TagPattern = "<(.-)=%[?(.-)%]?>",
 	ShouldClean = false,
 }
 
