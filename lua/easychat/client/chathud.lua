@@ -1,111 +1,16 @@
 --[[
 	TODO:
-	- Linebreak to get rid of overflowing text
 	- Handle font changes
 	- Fix matrices not working / text not displaying when using them
 ]]--
-
---[[-----------------------------------------------------------------------------
-	Expressions for usage inside chathud components
-]]-------------------------------------------------------------------------------
-local expr_env = {
-	PI = math.pi,
-	pi = math.pi,
-	rand = math.random,
-	random = math.random,
-	randx = function(a,b)
-		a = a or -1
-		b = b or 1
-		return math.Rand(a, b)
-	end,
-
-	abs = math.abs,
-	sgn = function (x)
-		if x < 0 then return -1 end
-		if x > 0 then return  1 end
-		return 0
-	end,
-
-	pwm = function(offset, w)
-		w = w or 0.5
-		return offset%1 > w and 1 or 0
-	end,
-
-	square = function(x)
-		x = math.sin(x)
-
-		if x < 0 then return -1 end
-		if x > 0 then return  1 end
-
-		return 0
-	end,
-
-	acos = math.acos,
-	asin = math.asin,
-	atan = math.atan,
-	atan2 = math.atan2,
-	ceil = math.ceil,
-	cos = math.cos,
-	cosh = math.cosh,
-	deg = math.deg,
-	exp = math.exp,
-	floor = math.floor,
-	frexp = math.frexp,
-	ldexp = math.ldexp,
-	log = math.log,
-	log10 = math.log10,
-	max = math.max,
-	min = math.min,
-	rad = math.rad,
-	sin = math.sin,
-	sinc = function (x)
-		if x == 0 then return 1 end
-		return math.sin(x) / x
-	end,
-	sinh = math.sinh,
-	sqrt = math.sqrt,
-	tanh = math.tanh,
-	tan = math.tan,
-
-	clamp = math.Clamp,
-	pow = math.pow,
-
-	t = RealTime,
-	time = RealTime,
-}
-
-local blacklist = { "repeat", "until", "function", "end" }
-
-local function compile_expression(str)
-    for _, word in pairs(blacklist) do
-        if str:find("[%p%s]" .. word) or str:find(word .. "[%p%s]") then
-            return false, string.format("illegal characters used %q", word)
-        end
-    end
-
-    local functions = {}
-
-    for k,v in pairs(expr_env) do functions[k] = v end
-
-    functions.select = select
-    str = "local IN = select(1, ...) return " .. str
-
-    local func = CompileString(str, "easychat_expression", false)
-
-    if type(func) == "string" then
-        return false, func
-    else
-        setfenv(func, functions)
-        return true, func
-    end
-end
 
 --[[-----------------------------------------------------------------------------
 	Micro Optimization
 ]]-------------------------------------------------------------------------------
 local ipairs, pairs, tonumber = _G.ipairs, _G.pairs, _G.tonumber
 local Color, Vector, Matrix = _G.Color, _G.Vector, _G.Matrix
-local type, tostring, RealFrameTime = _G.type, _G.tostring, _G.RealFrameTime
+local type, tostring, RealFrameTime, ScrH = _G.type, _G.tostring, _G.RealFrameTime, _G.ScrH
+local select, setfenv, CompileString = _G.select, _G.setfenv, _G.CompileString
 
 local table_copy = _G.table.Copy
 local table_insert = _G.table.insert
@@ -133,32 +38,43 @@ local string_gmatch = _G.string.gmatch
 local string_replace = _G.string.Replace
 local string_sub = _G.string.sub
 local string_len = _G.string.len
----------------------------------------------------------------------------------
+local string_find = _G.string.find
+local string_format = _G.string.format
+local string_lower = _G.string.lower
 
+local chat_GetPos = chat.GetChatBoxPos
+local chat_GetSize = chat.GetChatBoxSize
+
+--[[-----------------------------------------------------------------------------
+	Base ChatHUD
+]]-------------------------------------------------------------------------------
 local chat_x, chat_y = chat.GetChatBoxPos()
 local chat_w, chat_h = chat.GetChatBoxSize()
 
 local chathud = {
 	FadeTime = 16,
-	Pos = { X = chat_x, Y = chat_y },
-	Size = { W = chat_w, H = chat_h },
+	Pos = { X = 25, Y = ScrH() - 150 },
+	Size = { W = 550, H = 320 },
 	Lines = {},
 	Parts = {},
 	TagPattern = "<(.-)=%[?(.-)%]?>",
 	ShouldClean = false,
+	DefaultColor = Color(255, 255, 255),
+	DefaultFont = "DermaLarge",
 }
 
---[[local EC_HUD_TTL = GetConVar("easychat_hud_ttl")
+local EC_HUD_TTL = GetConVar("easychat_hud_ttl")
+local EC_HUD_FOLLOW = GetConVar("easychat_hud_follow")
+
 chathud.FadeTime = EC_HUD_TTL:GetInt()
 cvars.AddChangeCallback("easychat_hud_ttl", function(_, _, new)
     chathud.FadeTime = new
-end)]]--
+end)
 
 local default_part = {
 	Type = "default",
 	Pos = { X = 0, Y = 0 },
 	Size =  { W = 0, H = 0 },
-	-- fading and color
 	Usable = true,
 }
 
@@ -168,6 +84,9 @@ function default_part:Ctor()
 end
 
 -- meant to be overriden
+function default_part:LineBreak() end
+
+-- meant to be overriden
 function default_part:ComputeSize() end
 
 -- meant to be overriden
@@ -175,7 +94,7 @@ function default_part:Draw() end
 
 function chathud:RegisterPart(name, part)
 	if not name or not part then return end
-	name = string.lower(name)
+	name = string_lower(name)
 
 	local new_part = table_copy(default_part)
 	for k, v in pairs(part) do
@@ -210,38 +129,11 @@ end
 chathud:RegisterPart("stop", stop_part)
 
 --[[-----------------------------------------------------------------------------
-	Scale Component
-
-	Scales other components up and down.
-]]-------------------------------------------------------------------------------
-local scale_part = {
-	Scale = Vector(1, 1, 1)
-}
-
-function scale_part:Ctor(str)
-	self:ComputeSize()
-	local n = tonumber(str) or 1
-	self.Scale = Vector(n, n, n)
-
-	return self
-end
-
-function scale_part:Draw(ctx)
-	local mat = Matrix()
-	mat:SetScale(self.Scale)
-	ctx:PushMatrix(mat)
-end
-
-chathud:RegisterPart("scale", scale_part)
-
---[[-----------------------------------------------------------------------------
 	Color Component
 
 	Color modulation with rgb values.
 ]]-------------------------------------------------------------------------------
-local color_part = {
-	Color = Color(255, 255, 255)
-}
+local color_part = {}
 
 function color_part:Ctor(str)
 	self:ComputeSize()
@@ -264,96 +156,32 @@ end
 chathud:RegisterPart("color", color_part)
 
 --[[-----------------------------------------------------------------------------
-	Color Component
-
-	Color modulation with hexadecimal values.
-]]-------------------------------------------------------------------------------
-local color_hex_part = {
-	Color = Color(255, 255, 255)
-}
-
-function color_hex_part:HexToRGB(hex)
-	local hex = string_replace(hex, "#","")
-	local function n(input) return tonumber(input) or 255 end
-
-    if string_len(hex) == 3 then
-    	return (n("0x" .. string_sub(hex, 1, 1)) * 17), (n("0x" .. string_sub(hex, 2, 2)) * 17), (n("0x" .. string_sub(hex, 3, 3)) * 17)
-    else
-      	return n("0x" .. string_sub(hex, 1, 2)), n("0x" .. string_sub(hex, 3, 4)), n("0x" .. string_sub(hex, 5, 6))
-    end
-end
-
-function color_hex_part:Ctor(str)
-	self:ComputeSize()
-	local r, g, b = self:HexToRGB(str)
-	self.Color = Color(r, g, b)
-
-	return self
-end
-
-function color_hex_part:Draw(ctx)
-	self.Color.a = ctx.Alpha
-	surface_SetDrawColor(self.Color)
-	surface_SetTextColor(self.Color)
-end
-
-chathud:RegisterPart("c", color_hex_part)
-
---[[-----------------------------------------------------------------------------
-	HSV Component
-
-	Color modulation with HSV values.
-]]-------------------------------------------------------------------------------
-local hsv_part = {
-	Color = Color(255, 255, 255),
-	RunExpression = function() return 360, 1, 1 end
-}
-
-function hsv_part:Ctor(expr)
-	local succ, ret = compile_expression(expr)
-	if succ then
-		self.RunExpression = ret
-	end
-
-	return self
-end
-
-function hsv_part:ComputeHSV()
-	local h, s, v = self.RunExpression()
-
-	h = (tonumber(h) or 360) % 360
-	s = math_clamp(tonumber(s) or 1, 0, 1)
-	v = math_clamp(tonumber(v) or 1, 0, 1)
-
-	self.Color = HSVToColor(h, s, v)
-end
-
-function hsv_part:Draw(ctx)
-	self:ComputeHSV()
-	self.Color.a = ctx.Alpha
-	surface_SetDrawColor(self.Color)
-	surface_SetTextColor(self.Color)
-end
-
-chathud:RegisterPart("hsv", hsv_part)
-
---[[-----------------------------------------------------------------------------
 	Text Component
 
 	Draws normal text.
 ]]-------------------------------------------------------------------------------
 local text_part = {
-	Font = "DermaLarge",
 	Content = "",
 	Usable = false
 }
 
-function text_part:Ctor(content, font)
+function text_part:Ctor(content)
 	self.Content = content
-	self.Font = font or self.Font
+	self.Font = self:GetLastFont()
 	self:ComputeSize()
 
 	return self
+end
+
+function text_part:GetLastFont()
+	--[[for i=self.Index, 1, -1 do
+		local component = self.Line.Components[i]
+		if component.Type == "font" then
+			return component.Font
+		end
+	end]]--
+
+	return chathud.DefaultFont
 end
 
 function text_part:ComputeSize()
@@ -368,10 +196,69 @@ function text_part:Draw()
 	surface_DrawText(self.Content)
 end
 
+function text_part:IsTextWider(text, width)
+	surface_SetFont(self.Font)
+	local w, _ = surface_GetTextSize(text)
+	return w >= width
+end
+
+local hard_break_treshold = 10
+local breaking_chars = {
+	[" "] = true,
+	[","] = true,
+	["."] = true,
+	["\t"] = true,
+}
+
+function text_part:FitWidth()
+	local last_line = chathud:LastLine()
+	local left_width = chathud.Size.W - last_line.Size.W
+	local text = self.Content
+
+	local len = string_len(text)
+	for i=1, len do
+		if self:IsTextWider(string_sub(text, 1, i), left_width) then
+			local sub_str = string_sub(text, i, i)
+
+			-- try n times before hard breaking
+			for j=1, hard_break_treshold do
+				if breaking_chars[sub_str] then
+					-- we found a breaking char, break here
+					self.Content = string_sub(text, 1, i - j)
+					break
+				else
+					sub_str = string_sub(text, i - j, i - j)
+				end
+			end
+
+			-- check if content is the same, and if it is, hard-break
+			if text == self.Content then
+				self.Content = string_sub(text, 1, i)
+			end
+
+			break -- we're done getting our first chunk of text to fit for the last line
+		end
+	end
+
+	last_line:PushComponent(self)
+
+	-- send back remaining text
+	return string_sub(text, string_len(self.Content) + 1, len)
+end
+
+function text_part:LineBreak()
+	local remaining_text = self:FitWidth()
+	repeat
+		local new_line = chathud:NewLine()
+		local component = chathud:CreateComponent("text", remaining_text)
+		remaining_text = component:FitWidth()
+	until remaining_text == ""
+end
+
 chathud:RegisterPart("text", text_part)
 
 --[[-----------------------------------------------------------------------------
-	ChatHUD base
+	ChatHUD layouting
 ]]-------------------------------------------------------------------------------
 local base_line = {
 	Components = {},
@@ -401,6 +288,15 @@ function base_line:Draw(ctx)
 	end
 end
 
+function base_line:PushComponent(component)
+	component.Line = self
+	component.Pos = { X = self.Pos.X + self.Size.W, Y = self.Pos.Y }
+	component.Index = table_insert(self.Components, component)
+
+	-- need to update width for inserting next components properly
+	self.Size.W = self.Size.W + component.Size.W
+end
+
 function chathud:NewLine()
 	local new_line = table_copy(base_line)
 	new_line.Index = table_insert(self.Lines, new_line)
@@ -410,9 +306,11 @@ function chathud:NewLine()
 		table_remove(self.Lines, 1)
 	end
 
-	self:InvalidateLayout()
-
 	return new_line
+end
+
+function chathud:LastLine()
+	return self.Lines[#self.Lines]
 end
 
 function chathud:InvalidateLayout()
@@ -444,26 +342,55 @@ function chathud:InvalidateLayout()
 	end
 end
 
-function chathud:PushPartComponent(name, ...)
+function chathud:CreateComponent(name, ...)
 	local part = self.Parts[name]
 	if not part then return end
 
-	local component = table_copy(part):Ctor(...)
+	return table_copy(part):Ctor(...)
+end
 
-	local line = self.Lines[#self.Lines]
-	--[[if line.Size.W + component.Size.W > self.Size.W then
-		if component.Type == "text" then
-			-- line breaking HERE
-		else
-			-- insert new line for everything else than text with width?
+function chathud:PushPartComponent(name, ...)
+	local component = self:CreateComponent(name, ...)
+	if not component then return end
+
+	local line = self:LastLine()
+	if line.Size.W + component.Size.W > self.Size.W then
+		component:LineBreak()
+	else
+		line:PushComponent(component)
+	end
+end
+
+function chathud:PushMultilineTextComponent(str)
+	local str_lines = string_explode("\r?\n", str, true)
+	self:PushPartComponent("text", str_lines[1])
+	table_remove(str_lines, 1)
+
+	for i=1, #str_lines do
+		self:NewLine()
+		self:PushPartComponent("text", str_lines[i])
+	end
+end
+
+function chathud:PushString(str)
+	local str_parts = string_explode(self.TagPattern, str, true)
+	local enumerator = string_gmatch(str, self.TagPattern)
+	local i = 1
+	for tag, content in enumerator do
+		self:PushMultilineTextComponent(str_parts[i])
+		i = i + 1
+
+		local part = self.Parts[tag]
+		if part and part.Usable then
+			self:PushPartComponent(tag, content)
 		end
-	else]]--
-		component.Pos = { X = line.Pos.X + line.Size.W, Y = line.Pos.Y }
-		table_insert(line.Components, component)
+	end
 
-		-- need to update width for inserting next components properly
-		line.Size.W = line.Size.W + component.Size.W
-	--end
+	self:PushMultilineTextComponent(str_parts[#str_parts])
+end
+
+function chathud:Clear()
+	self.Lines = {}
 end
 
 --[[-----------------------------------------------------------------------------
@@ -471,8 +398,6 @@ end
 ]]-------------------------------------------------------------------------------
 local draw_context = {
 	MatrixCount = 0,
-	DefaultColor = Color(255, 255, 255),
-	DefaultFont = "DermaDefault"
 }
 
 function draw_context:PushMatrix(mat)
@@ -488,18 +413,33 @@ function draw_context:PopMatrix()
 end
 
 function draw_context:ResetColors()
-	surface_SetDrawColor(self.DefaultColor)
-	surface_SetTextColor(self.DefaultColor)
+	surface_SetDrawColor(chathud.DefaultColor)
+	surface_SetTextColor(chathud.DefaultColor)
 end
 
 function draw_context:ResetFont()
-	surface_SetFont(self.DefaultFont)
+	surface_SetFont(chathud.DefaultFont)
 end
 
 chathud.DrawContext = draw_context
 
+function chathud:ComputePos()
+	if EC_HUD_FOLLOW:GetBool() then
+		local chat_x, chat_y = chat_GetPos()
+		local chat_w, chat_h = chat_GetSize()
+
+		self.Pos = { X = chat_x, Y = chat_y }
+		self.Size = { W = chat_w, H = chat_h }
+	else
+		self.Pos = { X = 25, Y = ScrH() - 150 }
+		self.Size = { W = 550, H = 320 }
+	end
+end
+
 function chathud:Draw()
 	--if hook_run("HUDShouldDraw","CHudChat") == false then return end
+	self:ComputePos()
+
 	for _, line in ipairs(self.Lines) do
 		line:Draw(draw_context)
 	end
@@ -516,15 +456,10 @@ function chathud:Draw()
 	end
 end
 
-local black = Color(0, 0, 0, 255)
-hook.Add("HUDPaint", "EASYCHAT_CHATHUD", function()
-	surface_SetDrawColor(black)
-	surface_DrawOutlinedRect(chathud.Pos.X, chathud.Pos.Y, chathud.Size.W, chathud.Size.H)
-	chathud:Draw()
-end)
+hook.Add("HUDPaint", "EasyChat", function() chathud:Draw() end)
 
 --[[-----------------------------------------------------------------------------
-	Parsing and pushing of new components
+	Input into ChatHUD
 ]]-------------------------------------------------------------------------------
 local function is_color(c)
 	return c.r and c.g and c.b and c.a
@@ -534,28 +469,16 @@ local function color_to_expr(c)
 	return string_replace(tostring(c), " ", ",")
 end
 
-function chathud:PushString(str)
-	local str_parts = string_explode(self.TagPattern, str, true)
-	local enumerator = string_gmatch(str, self.TagPattern)
-	local i = 1
-	for tag, content in enumerator do
-		self:PushPartComponent("text", str_parts[i])
-		i = i + 1
-
-		local part = self.Parts[tag]
-		if part and part.Usable then
-			self:PushPartComponent(tag, content)
-		end
-	end
-
-	self:PushPartComponent("text", str_parts[#str_parts])
+function chathud:AppendText(txt)
+	self:PushString(txt)
 end
 
-function chathud:Clear()
-	self.Lines = {}
+function chathud:InsertColorChange(r, g, b)
+	local expr = ("%d,%d,%d"):format(r, g, b)
+	self:PushPartComponent("color", expr)
 end
 
-function chathud:AddText(...)
+--[[function chathud:AddText(...)
 	local args = { ... }
 	self:NewLine()
 	for _, arg in ipairs(args) do
@@ -574,13 +497,6 @@ function chathud:AddText(...)
 	end
 	self:PushPartComponent("stop")
 	self:InvalidateLayout()
-end
+end]]--
 
--- testing
-chat.MetaAddText = chat.MetaAddText or chat.AddText
-function chat.AddText(...)
-	chathud:AddText(...)
-	chat.MetaAddText(...)
-end
-
-_G.ChatHUD = chathud
+return chathud

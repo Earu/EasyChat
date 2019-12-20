@@ -127,6 +127,7 @@ if CLIENT then
 	local EC_HUD_TTL        = CreateConVar("easychat_hud_ttl","16",FCVAR_ARCHIVE,"How long messages stay before vanishing")
 	local EC_TIMESTAMPS_12  = CreateConVar("easychat_timestamps_12", "0", FCVAR_ARCHIVE, "Display timestamps in 12 hours mode or not")
 	local EC_HISTORY        = CreateConVar("easychat_history", "1", FCVAR_ARCHIVE, "Should the history be shown")
+	local EC_USE_ME         = CreateConVar("easychat_use_me", "0", FCVAR_ARCHIVE, "Should the chat display your name or \"me\"")
 
 	EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
 
@@ -185,11 +186,12 @@ if CLIENT then
         EasyChat.TabColor     		= Color(36, 36, 36, 255)
 	end
 
-	EasyChat.TextColor = Color(255,255,255,255)
-	EasyChat.Mode	   = 0
-	EasyChat.Modes     = {}
-	EasyChat.ChatHUD   = include("easychat/client/chathud.lua")
-	EasyChat.ModeCount = 0
+	EasyChat.TextColor   = Color(255, 255, 255, 255)
+	EasyChat.Mode	     = 0
+	EasyChat.Modes       = {}
+	EasyChat.Expressions = include("easychat/client/expressions.lua")
+	EasyChat.ChatHUD     = include("easychat/client/chathud.lua")
+	EasyChat.ModeCount   = 0
 
 	local ECTabs 	  = {}
 	local LocalPlayer = _G.LocalPlayer
@@ -401,11 +403,11 @@ if CLIENT then
 			end
 		end)
 
-		EasyChat.SetAddTextTypeHandle("Player",function(ply)
-			local col = EC_PLAYER_COLOR:GetBool() and team.GetColor(ply:Team()) or Color(255,255,255)
-			EasyChat.InsertColorChange(col.r,col.g,col.b,255)
+		EasyChat.SetAddTextTypeHandle("Player", function(ply)
+			local col = EC_PLAYER_COLOR:GetBool() and team.GetColor(ply:Team()) or Color(255, 255, 255)
+			EasyChat.InsertColorChange(col.r, col.g, col.b, 255)
 			local lp = LocalPlayer()
-			if IsValid(lp) and lp == ply then
+			if IsValid(lp) and lp == ply and EC_USE_ME:GetBool() then
 				EasyChat.AppendTaggedText("me")
 			else
 				EasyChat.AppendTaggedText(ply:Nick())
@@ -483,7 +485,7 @@ if CLIENT then
                         AppendText(richtext, arg)
                     end
                 elseif type(arg) == "Player" then
-                    AppendText(richtext, arg == LocalPlayer() and "me" or arg:Nick())
+                    AppendText(richtext, (EC_USE_ME:GetBool() and arg == LocalPlayer()) and "me" or arg:Nick())
 				elseif type(arg) == "table" then
 					richtext:InsertColorChange(arg.r or 255, arg.g or 255, arg.b or 255, arg.a or 255)
 				end
@@ -492,8 +494,6 @@ if CLIENT then
 		end
 
 		do
-			EasyChat.ChatHUD.Init()
-
 			chat.old_AddText 		= chat.old_AddText 		  or chat.AddText
 			chat.old_GetChatBoxPos  = chat.old_GetChatBoxPos  or chat.GetChatBoxPos
 			chat.old_GetChatBoxSize = chat.old_GetChatBoxSize or chat.GetChatBoxSize
@@ -501,9 +501,9 @@ if CLIENT then
 			chat.old_Close			= chat.old_Close		  or chat.Close
 
 			chat.AddText = function(...)
-				EasyChat.AppendText("\n")
-				EasyChat.ChatHUD.AddTagStop()
-				EasyChat.InsertColorChange(255,255,255,255)
+				EasyChat.ChatHUD:NewLine()
+				AppendText(EasyChat.GUI.RichText, "\n")
+				EasyChat.InsertColorChange(255, 255, 255, 255)
 
 				if EC_ENABLE:GetBool() then
 					if EC_TIMESTAMPS:GetBool() then
@@ -519,12 +519,15 @@ if CLIENT then
 				for _,arg in ipairs(args) do
 					local callback = ECAddTextHandles[type(arg)]
 					if callback then
-						pcall(callback,arg)
+						pcall(callback, arg)
 					else
 						local str = tostring(arg)
 						EasyChat.AppendText(str)
 					end
 				end
+
+				EasyChat.ChatHUD:PushPartComponent("stop")
+				EasyChat.ChatHUD:InvalidateLayout()
 
 				chat.old_AddText(...)
 				SaveText(EasyChat.GUI.RichText)
@@ -673,36 +676,35 @@ if CLIENT then
 
 		EasyChat.InsertColorChange = function(r,g,b,a)
 			EasyChat.GUI.RichText:InsertColorChange(r,g,b,a)
-			EasyChat.ChatHUD.InsertColorChange(r,g,b,a)
+			EasyChat.ChatHUD:InsertColorChange(r,g,b)
 		end
 
 		EasyChat.AppendText = function(text)
-			EasyChat.ChatHUD.AppendText(text)
+			EasyChat.ChatHUD:AppendText(text)
 			AppendText(EasyChat.GUI.RichText, text)
 		end
 
 		EasyChat.AppendTaggedText = function(str)
-			local pattern = "<(.-)=(.-)>"
-			local parts = string.Explode(pattern,str,true)
-			local index = 1
-			for tag,values in string.gmatch(str,pattern) do
-				EasyChat.AppendText(parts[index])
-				index = index + 1
-				if tag == "color" then
-					local r,g,b
-					string.gsub(values,"(%d+),(%d+),(%d+)",function(sr,sg,sb)
-						r = tonumber(sr)
-						g = tonumber(sg)
-						b = tonumber(sb)
-						return ""
-					end)
-					if r and g and b then
-						EasyChat.InsertColorChange(r,g,b,255)
-					end
+			local chathud = EasyChat.ChatHUD
+			local pattern = chathud.TagPattern
+			local str_parts = string.Explode(pattern, str, true)
+			local i = 1
+			for tag, values in string.gmatch(str, pattern) do
+				AppendText(EasyChat.GUI.RichText, str_parts[i])
+				i = i + 1
+
+				local component = chathud:CreateComponent(tag, values)
+				if component and component.Color then -- because tags that handle a color have a Color property set
+					local c = component.Color
+					EasyChat.GUI.RichText:InsertColorChange(c.r, c.g, c.b, 255)
 				end
 			end
-			EasyChat.AppendText(parts[#parts])
-			EasyChat.InsertColorChange(255,255,255,255)
+
+			AppendText(EasyChat.GUI.RichText, str_parts[#str_parts])
+			EasyChat.GUI.RichText:InsertColorChange(255, 255, 255, 255)
+
+			-- let the chathud do its own thing
+			chathud:AppendText(str)
 		end
 
 		local CTRLShortcuts = {}
@@ -906,10 +908,7 @@ if CLIENT then
 		end
 
 		hook.Add("HUDShouldDraw",TAG,function(hudelement)
-			if EasyChat.ChatHUD.DuringShouldDraw then return end
-			if hudelement == "CHudChat" then
-				return false
-			end
+			if hudelement == "CHudChat" then return false end
 		end)
 
 		hook.Add("PreRender",TAG,function()
@@ -928,19 +927,6 @@ if CLIENT then
 						tab.FocusOn:SetCaretPos(#tab.FocusOn:GetText())
 					end
 				end
-			end
-		end)
-
-		hook.Add("Think",TAG,function()
-			if not IsValid(EasyChat.GUI.ChatBox) or not EasyChat.ChatHUD or (EasyChat.ChatHUD and not IsValid(EasyChat.ChatHUD.Frame)) then return end
-			if not EC_HUD_FOLLOW:GetBool() then
-					EasyChat.ChatHUD.Frame:SetVisible(true)
-					EasyChat.ChatHUD.Frame:SetPos(25,ScrH() - 150)
-					EasyChat.ChatHUD.Frame:SetSize(550,320)
-			else
-				local x,y,w,h = EasyChat.GUI.ChatBox:GetBounds()
-				EasyChat.ChatHUD.Frame:SetPos(x,y + h)
-				EasyChat.ChatHUD.Frame:SetSize(w,h)
 			end
 		end)
 
@@ -1016,10 +1002,11 @@ end
 EasyChat.Destroy = function()
 
 	if CLIENT then
-		hook.Remove("PreRender",TAG)
-		hook.Remove("Think",TAG)
+		hook.Remove("PreRender", TAG)
+		hook.Remove("Think", TAG)
 		hook.Remove("PlayerBindPress", TAG)
-		hook.Remove("HUDShouldDraw",TAG)
+		hook.Remove("HUDShouldDraw", TAG)
+		hook.Remove("HUDPaint", TAG)
 
 		if chat.old_AddText then
 			chat.AddText 		= chat.old_AddText
@@ -1036,11 +1023,6 @@ EasyChat.Destroy = function()
 		if EasyChat.GUI and IsValid(EasyChat.GUI.ChatBox) then
 			EasyChat.GUI.ChatBox:Remove()
 		end
-
-		if EasyChat.ChatHUD and IsValid(EasyChat.ChatHUD.Frame) then
-			EasyChat.ChatHUD.Frame:Remove()
-		end
-
 	end
 
 	hook.Run("ECDestroyed")
