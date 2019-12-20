@@ -1,6 +1,5 @@
 --[[
 	TODO:
-	- Handle font changes
 	- Fix matrices not working / text not displaying when using them
 ]]--
 
@@ -23,6 +22,7 @@ local surface_DrawOutlinedRect = _G.surface.DrawOutlinedRect
 local surface_SetFont = _G.surface.SetFont
 local surface_SetTextPos = _G.surface.SetTextPos
 local surface_DrawText = _G.surface.DrawText
+local surface_CreateFont = _G.surface.CreateFont
 
 local math_max = _G.math.max
 local math_floor = _G.math.floor
@@ -48,8 +48,12 @@ local chat_GetSize = chat.GetChatBoxSize
 --[[-----------------------------------------------------------------------------
 	Base ChatHUD
 ]]-------------------------------------------------------------------------------
-local chat_x, chat_y = chat.GetChatBoxPos()
-local chat_w, chat_h = chat.GetChatBoxSize()
+surface_CreateFont("ECCHUDDefault", {
+	font = system.IsWindows() and "Verdana" or "Tahoma",
+	extended = true,
+	size = 17,
+	weight = 600,
+})
 
 local chathud = {
 	FadeTime = 16,
@@ -60,7 +64,7 @@ local chathud = {
 	TagPattern = "<(.-)=%[?(.-)%]?>",
 	ShouldClean = false,
 	DefaultColor = Color(255, 255, 255),
-	DefaultFont = "DermaLarge",
+	DefaultFont = "ECCHUDDefault",
 }
 
 local EC_HUD_TTL = GetConVar("easychat_hud_ttl")
@@ -76,6 +80,7 @@ local default_part = {
 	Pos = { X = 0, Y = 0 },
 	Size =  { W = 0, H = 0 },
 	Usable = true,
+	OkInNicks = true,
 }
 
 function default_part:Ctor()
@@ -85,12 +90,9 @@ end
 
 -- meant to be overriden
 function default_part:LineBreak() end
-
--- meant to be overriden
 function default_part:ComputeSize() end
-
--- meant to be overriden
 function default_part:Draw() end
+function default_part:PreLinePush() end
 
 function chathud:RegisterPart(name, part)
 	if not name or not part then return end
@@ -114,7 +116,8 @@ end
 	to the drawing context is set back to a "default" state.
 ]]-------------------------------------------------------------------------------
 local stop_part = {
-	Usable = false
+	Usable = false,
+	OkInNicks = false,
 }
 
 function stop_part:Draw(ctx)
@@ -156,32 +159,98 @@ end
 chathud:RegisterPart("color", color_part)
 
 --[[-----------------------------------------------------------------------------
+	Font Component
+
+	Font changes.
+]]-------------------------------------------------------------------------------
+local font_part = {}
+
+function font_part:Ctor(str)
+	local succ, _ = pcall(surface_SetFont, str) -- only way to check if a font is valid
+	self.Font = succ and str or chathud.DefaultFont
+	if not succ then self.Invalid = true end
+
+	return self
+end
+
+function font_part:PreLinePush(line, _)
+	if self.Invalid then return end
+	line.HasFontTags = true
+end
+
+-- we dont need a SetFont call the text part already does it for us
+function font_part:Draw() end
+
+chathud:RegisterPart("font", font_part)
+
+--[[-----------------------------------------------------------------------------
 	Text Component
 
 	Draws normal text.
 ]]-------------------------------------------------------------------------------
 local text_part = {
 	Content = "",
+	Font = chathud.DefaultFont,
 	Usable = false
 }
 
 function text_part:Ctor(content)
 	self.Content = content
-	self.Font = self:GetLastFont()
-	self:ComputeSize()
 
 	return self
 end
 
-function text_part:GetLastFont()
-	--[[for i=self.Index, 1, -1 do
-		local component = self.Line.Components[i]
-		if component.Type == "font" then
-			return component.Font
-		end
-	end]]--
+function text_part:PreLinePush(line, last_index)
+	-- dont waste time trying to find something that does not exist
+	if not line.HasFontTags then
+		self.Font = chathud.DefaultFont
+		self:ComputeSize()
+		return
+	end
 
-	return chathud.DefaultFont
+	local line_index = line.Index
+
+	-- look for last font on the same line
+	local cur_line = chathud.Lines[line_index]
+	for i = last_index, 1, -1 do
+		local component = cur_line.Components[i]
+		if component.Type == "font" and not component.Invalid then
+			self.Font = component.Font
+			self:ComputeSize()
+			return
+		elseif component.Type == "stop" then
+			self.Font = chathud.DefaultFont
+			self:ComputeSize()
+			return
+		end
+	end
+
+	-- this is the last line being displayed, nothing before
+	if line_index == 1 then
+		self.Font = chathud.DefaultFont
+		self:ComputeSize()
+		return
+	end
+
+	-- not found, then look for previous lines
+	for i = line_index - 1, 1, -1 do
+		local line = chathud.Lines[i]
+		for j = #line.Components, 1, -1 do
+			local component = line.Components[j]
+			if component.Type == "font" and not component.Invalid then
+				self.Font = component.Font
+				self:ComputeSize()
+				return
+			elseif component.Type == "stop" then
+				self.Font = chathud.DefaultFont
+				self:ComputeSize()
+				return
+			end
+		end
+	end
+
+	self.Font = chathud.DefaultFont
+	self:ComputeSize()
 end
 
 function text_part:ComputeSize()
@@ -251,6 +320,7 @@ function text_part:LineBreak()
 	repeat
 		local new_line = chathud:NewLine()
 		local component = chathud:CreateComponent("text", remaining_text)
+		component.Font = self.Font
 		remaining_text = component:FitWidth()
 	until remaining_text == ""
 end
@@ -354,6 +424,7 @@ function chathud:PushPartComponent(name, ...)
 	if not component then return end
 
 	local line = self:LastLine()
+	component:PreLinePush(line, #line.Components)
 	if line.Size.W + component.Size.W > self.Size.W then
 		component:LineBreak()
 	else
@@ -440,9 +511,13 @@ function chathud:Draw()
 	--if hook_run("HUDShouldDraw","CHudChat") == false then return end
 	self:ComputePos()
 
-	for _, line in ipairs(self.Lines) do
-		line:Draw(draw_context)
-	end
+	render.PushFilterMag(TEXFILTER.ANISOTROPIC)
+	render.PushFilterMin(TEXFILTER.ANISOTROPIC)
+		for _, line in ipairs(self.Lines) do
+			line:Draw(draw_context)
+		end
+	render.PopFilterMag(TEXFILTER.ANISOTROPIC)
+	render.PopFilterMin(TEXFILTER.ANISOTROPIC)
 
 	-- this is done here so we can freely draw without odd behaviors
 	if self.ShouldClean then
@@ -461,14 +536,6 @@ hook.Add("HUDPaint", "EasyChat", function() chathud:Draw() end)
 --[[-----------------------------------------------------------------------------
 	Input into ChatHUD
 ]]-------------------------------------------------------------------------------
-local function is_color(c)
-	return c.r and c.g and c.b and c.a
-end
-
-local function color_to_expr(c)
-	return string_replace(tostring(c), " ", ",")
-end
-
 function chathud:AppendText(txt)
 	self:PushString(txt)
 end
@@ -478,7 +545,18 @@ function chathud:InsertColorChange(r, g, b)
 	self:PushPartComponent("color", expr)
 end
 
---[[function chathud:AddText(...)
+--[[-------------------------------------------------------------------------------
+	For testing
+-----------------------------------------------------------------------------------
+local function is_color(c)
+	return c.r and c.g and c.b and c.a
+end
+
+local function color_to_expr(c)
+	return string_replace(tostring(c), " ", ",")
+end
+
+function chathud:AddText(...)
 	local args = { ... }
 	self:NewLine()
 	for _, arg in ipairs(args) do
@@ -497,6 +575,7 @@ end
 	end
 	self:PushPartComponent("stop")
 	self:InvalidateLayout()
-end]]--
+end
+]]--
 
 return chathud
