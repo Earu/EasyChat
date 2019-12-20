@@ -443,7 +443,7 @@ function chathud:PushMultilineTextComponent(str)
 	end
 end
 
-function chathud:PushString(str)
+function chathud:PushString(str, nick)
 	local str_parts = string_explode(self.TagPattern, str, true)
 	local enumerator = string_gmatch(str, self.TagPattern)
 	local i = 1
@@ -453,7 +453,11 @@ function chathud:PushString(str)
 
 		local part = self.Parts[tag]
 		if part and part.Usable then
-			self:PushPartComponent(tag, content)
+			if nick and part.OkInNicks then
+				self:PushPartComponent(tag, content)
+			elseif not nick then
+				self:PushPartComponent(tag, content)
+			end
 		end
 	end
 
@@ -508,7 +512,7 @@ function chathud:ComputePos()
 end
 
 function chathud:Draw()
-	--if hook_run("HUDShouldDraw","CHudChat") == false then return end
+	--if hook_run("HUDShouldDraw", "CHudChat") == false then return end
 	self:ComputePos()
 
 	render.PushFilterMag(TEXFILTER.ANISOTROPIC)
@@ -537,7 +541,11 @@ hook.Add("HUDPaint", "EasyChat", function() chathud:Draw() end)
 	Input into ChatHUD
 ]]-------------------------------------------------------------------------------
 function chathud:AppendText(txt)
-	self:PushString(txt)
+	self:PushString(txt, false)
+end
+
+function chathud:AppendNick(nick)
+	self:PushString(nick, true)
 end
 
 function chathud:InsertColorChange(r, g, b)
