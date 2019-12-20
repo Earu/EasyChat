@@ -1000,13 +1000,11 @@ if CLIENT then
 end
 
 EasyChat.Destroy = function()
-
 	if CLIENT then
 		hook.Remove("PreRender", TAG)
 		hook.Remove("Think", TAG)
 		hook.Remove("PlayerBindPress", TAG)
 		hook.Remove("HUDShouldDraw", TAG)
-		hook.Remove("HUDPaint", TAG)
 
 		if chat.old_AddText then
 			chat.AddText 		= chat.old_AddText
@@ -1023,10 +1021,13 @@ EasyChat.Destroy = function()
 		if EasyChat.GUI and IsValid(EasyChat.GUI.ChatBox) then
 			EasyChat.GUI.ChatBox:Remove()
 		end
+
+		if EasyChat.ChatHUD then
+			EasyChat.ChatHUD:Clear()
+		end
 	end
 
 	hook.Run("ECDestroyed")
-
 end
 
 concommand.Add("easychat_reload",function()
