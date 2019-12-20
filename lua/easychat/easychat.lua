@@ -408,9 +408,9 @@ if CLIENT then
 			EasyChat.InsertColorChange(col.r, col.g, col.b, 255)
 			local lp = LocalPlayer()
 			if IsValid(lp) and lp == ply and EC_USE_ME:GetBool() then
-				EasyChat.AppendTaggedText("me")
+				EasyChat.AppendText("me")
 			else
-				EasyChat.AppendTaggedText(ply:Nick())
+				EasyChat.AppendNick(ply:Nick())
 			end
 		end)
 
@@ -684,7 +684,7 @@ if CLIENT then
 			AppendText(EasyChat.GUI.RichText, text)
 		end
 
-		EasyChat.AppendTaggedText = function(str)
+		EasyChat.AppendNick = function(str)
 			local chathud = EasyChat.ChatHUD
 			local pattern = chathud.TagPattern
 			local str_parts = string.Explode(pattern, str, true)
@@ -694,7 +694,8 @@ if CLIENT then
 				i = i + 1
 
 				local component = chathud:CreateComponent(tag, values)
-				if component and component.Color then -- because tags that handle a color have a Color property set
+				-- because tags that handle a color have a Color property set
+				if component and component.Usable and component.OkInNicks and component.Color then
 					local c = component.Color
 					EasyChat.GUI.RichText:InsertColorChange(c.r, c.g, c.b, 255)
 				end
@@ -704,7 +705,7 @@ if CLIENT then
 			EasyChat.GUI.RichText:InsertColorChange(255, 255, 255, 255)
 
 			-- let the chathud do its own thing
-			chathud:AppendText(str)
+			chathud:AppendNick(str)
 		end
 
 		local CTRLShortcuts = {}
