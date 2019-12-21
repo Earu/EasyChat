@@ -538,8 +538,8 @@ if CLIENT then
 
 			chat.GetChatBoxPos = function()
 				if EasyChat.GUI and IsValid(EasyChat.GUI.ChatBox) then
-					local x,y,_,_ = EasyChat.GUI.ChatBox:GetBounds()
-					return x,y
+					local x, y, _, _ = EasyChat.GUI.ChatBox:GetBounds()
+					return x, y
 				else
 					return chat.old_GetChatBoxPos()
 				end
@@ -547,8 +547,8 @@ if CLIENT then
 
 			chat.GetChatBoxSize = function()
 				if EasyChat.GUI and IsValid(EasyChat.GUI.ChatBox) then
-					local _,_,w,h = EasyChat.GUI.ChatBox:GetBounds()
-					return w,h
+					local _, _, w, h = EasyChat.GUI.ChatBox:GetBounds()
+					return w, h
 				else
 					return chat.old_GetChatBoxSize()
 				end
@@ -670,6 +670,17 @@ if CLIENT then
 				RichText 	= maintab.RichText,
 				TabControl 	= frame.Tabs,
 			}
+
+			hook.Add("Think", TAG, function()
+				if EC_HUD_FOLLOW:GetBool() then
+					local x, y, w, h = frame:GetBounds()
+					EasyChat.ChatHUD.Pos = { X = x, Y = y }
+					EasyChat.ChatHUD.Size = { W = w, H = h }
+				else
+					EasyChat.ChatHUD.Pos = { X = 25, Y = ScrH() - (320 + 150) }
+					EasyChat.ChatHUD.Size = { W = 550, H = 320 }
+				end
+			end)
 
 			ECClose()
 		end
