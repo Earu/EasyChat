@@ -8,7 +8,7 @@
 ]]-------------------------------------------------------------------------------
 local ipairs, pairs, tonumber = _G.ipairs, _G.pairs, _G.tonumber
 local Color, Vector, Matrix = _G.Color, _G.Vector, _G.Matrix
-local type, tostring, RealFrameTime, ScrH = _G.type, _G.tostring, _G.RealFrameTime, _G.ScrH
+local type, tostring, RealFrameTime, ScrH, RealTime = _G.type, _G.tostring, _G.RealFrameTime, _G.ScrH, _G.RealTime
 local select, setfenv, CompileString = _G.select, _G.setfenv, _G.CompileString
 
 local table_copy = _G.table.Copy
@@ -23,6 +23,8 @@ local surface_SetFont = _G.surface.SetFont
 local surface_SetTextPos = _G.surface.SetTextPos
 local surface_DrawText = _G.surface.DrawText
 local surface_CreateFont = _G.surface.CreateFont
+
+local draw_GetFontHeight = _G.draw.GetFontHeight
 
 local math_max = _G.math.max
 local math_floor = _G.math.floor
@@ -48,16 +50,10 @@ local chat_GetSize = chat.GetChatBoxSize
 --[[-----------------------------------------------------------------------------
 	Base ChatHUD
 ]]-------------------------------------------------------------------------------
-surface_CreateFont("ECCHUDDefault", {
-	font = system.IsWindows() and "Verdana" or "Tahoma",
-	extended = true,
-	size = 17,
-	weight = 600,
-})
 
 local chathud = {
 	FadeTime = 16,
-	Pos = { X = 25, Y = ScrH() - 150 },
+	Pos = { X = 25, Y = ScrH() - (320 + 150) },
 	Size = { W = 550, H = 320 },
 	Lines = {},
 	Parts = {},
@@ -67,12 +63,35 @@ local chathud = {
 	DefaultFont = "ECCHUDDefault",
 }
 
+function chathud:UpdateFontSize(size)
+	surface_CreateFont("ECCHUDDefault", {
+		font = "Verdana",
+		extended = true,
+		size = size,
+		weight = 600,
+		shadow = true,
+	})
+
+	surface_CreateFont("ECHUDShadowDefault", {
+		font = "Verdana",
+		extended = true,
+		size = size,
+		weight = 600,
+		blursize = 2,
+	})
+end
+
+chathud:UpdateFontSize(18)
+
 local EC_HUD_TTL = GetConVar("easychat_hud_ttl")
-local EC_HUD_FOLLOW = GetConVar("easychat_hud_follow")
 
 chathud.FadeTime = EC_HUD_TTL:GetInt()
 cvars.AddChangeCallback("easychat_hud_ttl", function(_, _, new)
     chathud.FadeTime = new
+end)
+
+cvars.AddChangeCallback("easychat_hud_follow", function()
+	chathud:InvalidateLayout()
 end)
 
 local default_part = {
@@ -151,9 +170,7 @@ function color_part:Ctor(str)
 end
 
 function color_part:Draw(ctx)
-	self.Color.a = ctx.Alpha
-	surface_SetDrawColor(self.Color)
-	surface_SetTextColor(self.Color)
+	ctx:UpdateColor(self.Color)
 end
 
 chathud:RegisterPart("color", color_part)
@@ -216,6 +233,7 @@ function text_part:PreLinePush(line, last_index)
 		local component = cur_line.Components[i]
 		if component.Type == "font" and not component.Invalid then
 			self.Font = component.Font
+			self:CreateShadowFont()
 			self:ComputeSize()
 			return
 		elseif component.Type == "stop" then
@@ -239,6 +257,7 @@ function text_part:PreLinePush(line, last_index)
 			local component = line.Components[j]
 			if component.Type == "font" and not component.Invalid then
 				self.Font = component.Font
+				self:CreateShadowFont()
 				self:ComputeSize()
 				return
 			elseif component.Type == "stop" then
@@ -259,9 +278,39 @@ function text_part:ComputeSize()
 	self.Size = { W = w, H = h }
 end
 
-function text_part:Draw()
-	surface_SetFont(self.Font)
+local shadow_fonts = {}
+function text_part:CreateShadowFont()
+	local name = string_format("ECHUDShadow_%s", self.Font)
+	if not shadow_fonts[name] then
+		surface_CreateFont(name, {
+			font = self.Font,
+			extended = true,
+			size = draw_GetFontHeight(self.Font),
+			blursize = 2,
+		})
+
+		shadow_fonts[name] = true
+	end
+
+	self.ShadowFont = name
+end
+
+function text_part:DrawShadow(ctx)
+	surface_SetTextColor(Color(30, 30, 30, ctx.Alpha))
+	surface_SetFont(self.ShadowFont and self.ShadowFont or "ECHUDShadowDefault")
+
+	for _ = 1, 5 do
+		surface_SetTextPos(self.Pos.X, self.Pos.Y)
+		surface_DrawText(self.Content)
+	end
+end
+
+function text_part:Draw(ctx)
+	self:DrawShadow(ctx)
+
+	surface_SetTextColor(ctx.Color)
 	surface_SetTextPos(self.Pos.X, self.Pos.Y)
+	surface_SetFont(self.Font)
 	surface_DrawText(self.Content)
 end
 
@@ -473,6 +522,7 @@ end
 ]]-------------------------------------------------------------------------------
 local draw_context = {
 	MatrixCount = 0,
+	Color = chathud.DefaultColor
 }
 
 function draw_context:PushMatrix(mat)
@@ -487,6 +537,17 @@ function draw_context:PopMatrix()
 	self.MatrixCount = self.MatrixCount - 1
 end
 
+function draw_context:HasMatrices()
+	return self.MatrixCount > 0
+end
+
+function draw_context:UpdateColor(col)
+	col.a = self.Alpha
+	surface_SetDrawColor(col)
+	surface_SetTextColor(col)
+	self.Color = col
+end
+
 function draw_context:ResetColors()
 	surface_SetDrawColor(chathud.DefaultColor)
 	surface_SetTextColor(chathud.DefaultColor)
@@ -498,30 +559,12 @@ end
 
 chathud.DrawContext = draw_context
 
-function chathud:ComputePos()
-	if EC_HUD_FOLLOW:GetBool() then
-		local chat_x, chat_y = chat_GetPos()
-		local chat_w, chat_h = chat_GetSize()
-
-		self.Pos = { X = chat_x, Y = chat_y }
-		self.Size = { W = chat_w, H = chat_h }
-	else
-		self.Pos = { X = 25, Y = ScrH() - 150 }
-		self.Size = { W = 550, H = 320 }
-	end
-end
-
 function chathud:Draw()
 	--if hook_run("HUDShouldDraw", "CHudChat") == false then return end
-	self:ComputePos()
 
-	render.PushFilterMag(TEXFILTER.ANISOTROPIC)
-	render.PushFilterMin(TEXFILTER.ANISOTROPIC)
-		for _, line in ipairs(self.Lines) do
-			line:Draw(draw_context)
-		end
-	render.PopFilterMag(TEXFILTER.ANISOTROPIC)
-	render.PopFilterMin(TEXFILTER.ANISOTROPIC)
+	for _, line in ipairs(self.Lines) do
+		line:Draw(draw_context)
+	end
 
 	-- this is done here so we can freely draw without odd behaviors
 	if self.ShouldClean then
