@@ -1,7 +1,12 @@
 local chathud = EasyChat.ChatHUD
 local compile_expression = EasyChat.Expressions.Compile
+
 local surface_SetDrawColor = surface.SetDrawColor
 local surface_SetTextColor = surface.SetTextColor
+local surface_SetMaterial = surface.SetMaterial
+local surface_DrawTexturedRect = surface.DrawTexturedRect
+
+local draw_NoTexture = draw.NoTexture
 
 --[[-----------------------------------------------------------------------------
 	Color Component
@@ -14,10 +19,16 @@ function color_hex_part:HexToRGB(hex)
 	local hex = string.Replace(hex, "#","")
 	local function n(input) return tonumber(input) or 255 end
 
-    if string_len(hex) == 3 then
-    	return (n("0x" .. string.sub(hex, 1, 1)) * 17), (n("0x" .. string.sub(hex, 2, 2)) * 17), (n("0x" .. string.sub(hex, 3, 3)) * 17)
+    if string.len(hex) == 3 then
+		return
+			(n("0x" .. string.sub(hex, 1, 1)) * 17),
+			(n("0x" .. string.sub(hex, 2, 2)) * 17),
+			(n("0x" .. string.sub(hex, 3, 3)) * 17)
     else
-      	return n("0x" .. string.sub(hex, 1, 2)), n("0x" .. string.sub(hex, 3, 4)), n("0x" .. string.sub(hex, 5, 6))
+		return
+			n("0x" .. string.sub(hex, 1, 2)),
+			n("0x" .. string.sub(hex, 3, 4)),
+			n("0x" .. string.sub(hex, 5, 6))
     end
 end
 
@@ -69,6 +80,7 @@ function hsv_part:Draw(ctx)
 end
 
 chathud:RegisterPart("hsv", hsv_part)
+
 --[[-----------------------------------------------------------------------------
 	Scale Component
 
@@ -108,3 +120,63 @@ end
 
 -- removed until I find out how to work with matrices properly
 -- chathud:RegisterPart("scale", scale_part)
+
+--[[-----------------------------------------------------------------------------
+	Texture Component
+
+	Shows a texture in the chat.
+]]-------------------------------------------------------------------------------
+local texture_part = {}
+
+function texture_part:Ctor(str)
+	local texture_components = string.Explode(str, "%s*,%s*", true)
+	self.Material = Material(texture_components[1] or "vgui/white")
+	self.TextureSize = math.Clamp(tonumber(texture_components[2]) or 16, 16, 64)
+
+	return self
+end
+
+function texture_part:ComputeSize()
+	self.Size = { W = self.TextureSize, H = self.TextureSize }
+end
+
+function texture_part:Draw(ctx)
+	surface_SetMaterial(self.Material)
+	surface_DrawTexturedRect(self.Pos.X, self.Pos.Y, self.TextureSize, self.TextureSize)
+	draw_NoTexture()
+end
+
+chathud:RegisterPart("texture", texture_part)
+
+--[[-----------------------------------------------------------------------------
+	Translate Component
+
+	Translates text from its original position to another.
+]]-------------------------------------------------------------------------------
+local translate_part = {
+	RunExpression = function() return 0, 0 end,
+	Offset = { X = 0, Y = 0 }
+}
+
+function translate_part:Ctor(expr)
+	self:ComputeSize()
+
+	local succ, ret = compile_expression(expr)
+	if succ then
+		self.RunExpression = ret
+	end
+
+	return self
+end
+
+function translate_part:ComputeOffset()
+	local x,y = self.RunExpression()
+	self.Offset = { X = tonumber(x) or 0, Y = tonumber(y) or 0 }
+end
+
+function translate_part:Draw(ctx)
+	self:ComputeOffset()
+	ctx:UpdateTextOffset(self.Offset)
+end
+
+chathud:RegisterPart("translate", translate_part)
