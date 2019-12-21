@@ -1,8 +1,3 @@
---[[
-	TODO:
-	- Fix matrices not working / text not displaying when using them
-]]--
-
 --[[-----------------------------------------------------------------------------
 	Micro Optimization
 ]]-------------------------------------------------------------------------------
@@ -23,6 +18,7 @@ local surface_SetFont = _G.surface.SetFont
 local surface_SetTextPos = _G.surface.SetTextPos
 local surface_DrawText = _G.surface.DrawText
 local surface_CreateFont = _G.surface.CreateFont
+local surface_GetLuaFonts = _G.surface.GetLuaFonts
 
 local draw_GetFontHeight = _G.draw.GetFontHeight
 
@@ -51,6 +47,34 @@ local chat_GetSize = chat.GetChatBoxSize
 	Base ChatHUD
 ]]-------------------------------------------------------------------------------
 
+-- this is used later for creating shadow fonts properly
+local engine_fonts_info = {}
+if file.Exists("sourceengine/resource/clientscheme.res", "BASE_PATH") then
+	local content = file.Read("sourceengine/resource/clientscheme.res", "BASE_PATH")
+	local key_values = util.KeyValuesToTable(content)
+	engine_fonts_info = key_values.fonts
+end
+
+engine_fonts_info["dermalarge"] = {
+	name = "Roboto",
+	tall = 32,
+	weight = 550,
+	antialias = 1,
+}
+
+engine_fonts_info["dermadefault"] = {
+	name = "Tahoma",
+	tall = 13,
+	weight = 500,
+	antialias = 1,
+}
+
+engine_fonts_info["dermadefaultbold"] = {
+	name = "Tahoma",
+	tall = 13,
+	weight = 600,
+}
+
 local chathud = {
 	FadeTime = 16,
 	Pos = { X = 25, Y = ScrH() - (320 + 150) },
@@ -60,11 +84,12 @@ local chathud = {
 	TagPattern = "<(.-)=%[?(.-)%]?>",
 	ShouldClean = false,
 	DefaultColor = Color(255, 255, 255),
-	DefaultFont = "ECCHUDDefault",
+	DefaultFont = "ECHUDDefault",
+	DefaultShadowFont = "ECHUDShadowDefault",
 }
 
 function chathud:UpdateFontSize(size)
-	surface_CreateFont("ECCHUDDefault", {
+	surface_CreateFont("ECHUDDefault", {
 		font = "Verdana",
 		extended = true,
 		size = size,
@@ -146,6 +171,7 @@ function stop_part:Draw(ctx)
 
 	ctx:ResetColors()
 	ctx:ResetFont()
+	ctx:ResetTextOffset()
 end
 
 chathud:RegisterPart("stop", stop_part)
@@ -217,10 +243,14 @@ function text_part:Ctor(content)
 	return self
 end
 
+function text_part:SetFont(font)
+	self.Font = font
+end
+
 function text_part:PreLinePush(line, last_index)
 	-- dont waste time trying to find something that does not exist
 	if not line.HasFontTags then
-		self.Font = chathud.DefaultFont
+		self:SetFont(chathud.DefaultFont)
 		self:ComputeSize()
 		return
 	end
@@ -232,12 +262,12 @@ function text_part:PreLinePush(line, last_index)
 	for i = last_index, 1, -1 do
 		local component = cur_line.Components[i]
 		if component.Type == "font" and not component.Invalid then
-			self.Font = component.Font
+			self:SetFont(component.Font)
 			self:CreateShadowFont()
 			self:ComputeSize()
 			return
 		elseif component.Type == "stop" then
-			self.Font = chathud.DefaultFont
+			self:SetFont(chathud.DefaultFont)
 			self:ComputeSize()
 			return
 		end
@@ -245,7 +275,7 @@ function text_part:PreLinePush(line, last_index)
 
 	-- this is the last line being displayed, nothing before
 	if line_index == 1 then
-		self.Font = chathud.DefaultFont
+		self:SetFont(chathud.DefaultFont)
 		self:ComputeSize()
 		return
 	end
@@ -256,19 +286,19 @@ function text_part:PreLinePush(line, last_index)
 		for j = #line.Components, 1, -1 do
 			local component = line.Components[j]
 			if component.Type == "font" and not component.Invalid then
-				self.Font = component.Font
+				self:SetFont(component.Font)
 				self:CreateShadowFont()
 				self:ComputeSize()
 				return
 			elseif component.Type == "stop" then
-				self.Font = chathud.DefaultFont
+				self:SetFont(chathud.DefaultFont)
 				self:ComputeSize()
 				return
 			end
 		end
 	end
 
-	self.Font = chathud.DefaultFont
+	self:SetFont(chathud.DefaultFont)
 	self:ComputeSize()
 end
 
@@ -282,12 +312,33 @@ local shadow_fonts = {}
 function text_part:CreateShadowFont()
 	local name = string_format("ECHUDShadow_%s", self.Font)
 	if not shadow_fonts[name] then
-		surface_CreateFont(name, {
-			font = self.Font,
-			extended = true,
-			size = draw_GetFontHeight(self.Font),
-			blursize = 2,
-		})
+		local info = engine_fonts_info[string_lower(self.Font)]
+		if info then
+			surface_CreateFont(name, {
+				font = info.name,
+				extended = true,
+				size = info.tall,
+				weight = info.weight,
+				blursize = 2,
+				antialias = tobool(info.antialias),
+				outline = tobool(info.outline),
+			})
+		else
+			info = surface_GetLuaFonts()[string_lower(self.Font)]
+			if info then
+				local font_data = table_copy(info)
+				font_data.blursize = 2
+				surface_CreateFont(name, font_data)
+			else
+				-- fallback to trying to do something?
+				surface_CreateFont(name, {
+					font = self.Font,
+					extended = true,
+					size = draw_GetFontHeight(self.Font),
+					blursize = 2,
+				})
+			end
+		end
 
 		shadow_fonts[name] = true
 	end
@@ -295,12 +346,14 @@ function text_part:CreateShadowFont()
 	self.ShadowFont = name
 end
 
+local shadow_col = Color(0, 0, 0, 255)
 function text_part:DrawShadow(ctx)
-	surface_SetTextColor(Color(30, 30, 30, ctx.Alpha))
-	surface_SetFont(self.ShadowFont and self.ShadowFont or "ECHUDShadowDefault")
+	shadow_col.a = ctx.Alpha
+	surface_SetTextColor(shadow_col)
+	surface_SetFont(self.ShadowFont and self.ShadowFont or chathud.DefaultShadowFont)
 
 	for _ = 1, 5 do
-		surface_SetTextPos(self.Pos.X, self.Pos.Y)
+		surface_SetTextPos(self.Pos.X + ctx.TextOffset.X, self.Pos.Y + ctx.TextOffset.Y)
 		surface_DrawText(self.Content)
 	end
 end
@@ -309,7 +362,7 @@ function text_part:Draw(ctx)
 	self:DrawShadow(ctx)
 
 	surface_SetTextColor(ctx.Color)
-	surface_SetTextPos(self.Pos.X, self.Pos.Y)
+	surface_SetTextPos(self.Pos.X + ctx.TextOffset.X, self.Pos.Y + ctx.TextOffset.Y)
 	surface_SetFont(self.Font)
 	surface_DrawText(self.Content)
 end
@@ -370,6 +423,7 @@ function text_part:LineBreak()
 		local new_line = chathud:NewLine()
 		local component = chathud:CreateComponent("text", remaining_text)
 		component.Font = self.Font
+		component.ShadowFont = self.ShadowFont
 		remaining_text = component:FitWidth()
 	until remaining_text == ""
 end
@@ -522,7 +576,8 @@ end
 ]]-------------------------------------------------------------------------------
 local draw_context = {
 	MatrixCount = 0,
-	Color = chathud.DefaultColor
+	Color = chathud.DefaultColor,
+	TextOffset = { X = 0, Y = 0 }
 }
 
 function draw_context:PushMatrix(mat)
@@ -548,6 +603,10 @@ function draw_context:UpdateColor(col)
 	self.Color = col
 end
 
+function draw_context:UpdateTextOffset(offset)
+	self.TextOffset = offset
+end
+
 function draw_context:ResetColors()
 	surface_SetDrawColor(chathud.DefaultColor)
 	surface_SetTextColor(chathud.DefaultColor)
@@ -555,6 +614,10 @@ end
 
 function draw_context:ResetFont()
 	surface_SetFont(chathud.DefaultFont)
+end
+
+function draw_context:ResetTextOffset()
+	self.TextOffset = { X = 0, Y = 0 }
 end
 
 chathud.DrawContext = draw_context
