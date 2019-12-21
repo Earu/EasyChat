@@ -1,26 +1,110 @@
-local ChatHUD = EasyChat.ChatHUD
+local chathud = EasyChat.ChatHUD
+local compile_expression = EasyChat.Expressions.Compile
+local surface_SetDrawColor = surface.SetDrawColor
+local surface_SetTextColor = surface.SetTextColor
 
-ChatHUD.AddTag("color",function(r,g,b)
-    local r = r and tonumber(r) or 0
-    local g = g and tonumber(g) or 0
-    local b = b and tonumber(b) or 0
+--[[-----------------------------------------------------------------------------
+	Color Component
 
-    ChatHUD.InsertColorChange(r,g,b,255)
-end)
+	Color modulation with hexadecimal values.
+]]-------------------------------------------------------------------------------
+local color_hex_part = {}
 
---[[
-Temp removal because it fucks the chathud
+function color_hex_part:HexToRGB(hex)
+	local hex = string.Replace(hex, "#","")
+	local function n(input) return tonumber(input) or 255 end
 
-ChatHUD.AddTag("font",function(font)
-    if not font then return end
+    if string_len(hex) == 3 then
+    	return (n("0x" .. string.sub(hex, 1, 1)) * 17), (n("0x" .. string.sub(hex, 2, 2)) * 17), (n("0x" .. string.sub(hex, 3, 3)) * 17)
+    else
+      	return n("0x" .. string.sub(hex, 1, 2)), n("0x" .. string.sub(hex, 3, 4)), n("0x" .. string.sub(hex, 5, 6))
+    end
+end
 
-    ChatHUD.InsertFontChange(font,ChatHUD.CurrenFonttSize)
-end)
+function color_hex_part:Ctor(str)
+	self:ComputeSize()
+	local r, g, b = self:HexToRGB(str)
+	self.Color = Color(r, g, b)
 
-ChatHUD.AddTag("size",function(size)
-    if not size then return end
-    local size = math.Clamp(tonumber(size) * ChatHUD.DefaultFontSize,0.2,5)
+	return self
+end
 
-    ChatHUD.InsertFontChange(ChatHUD.CurrentFont,size)
-end)
---]]
+function color_hex_part:Draw(ctx)
+	ctx:UpdateColor(self.Color)
+end
+
+chathud:RegisterPart("c", color_hex_part)
+
+--[[-----------------------------------------------------------------------------
+	HSV Component
+
+	Color modulation with HSV values.
+]]-------------------------------------------------------------------------------
+local hsv_part = {
+	RunExpression = function() return 360, 1, 1 end
+}
+
+function hsv_part:Ctor(expr)
+	local succ, ret = compile_expression(expr)
+	if succ then
+		self.RunExpression = ret
+	end
+
+	return self
+end
+
+function hsv_part:ComputeHSV()
+	local h, s, v = self.RunExpression()
+
+	h = (tonumber(h) or 360) % 360
+	s = math.Clamp(tonumber(s) or 1, 0, 1)
+	v = math.Clamp(tonumber(v) or 1, 0, 1)
+
+	self.Color = HSVToColor(h, s, v)
+end
+
+function hsv_part:Draw(ctx)
+	self:ComputeHSV()
+	ctx:UpdateColor(self.Color)
+end
+
+chathud:RegisterPart("hsv", hsv_part)
+--[[-----------------------------------------------------------------------------
+	Scale Component
+
+	Scales other components up and down.
+]]-------------------------------------------------------------------------------
+local scale_part = {
+	OkInNicks = false,
+	RunExpression = function() return 1 end
+}
+
+function scale_part:Ctor(expr)
+	self:ComputeSize()
+
+	local succ, ret = compile_expression(expr)
+	if succ then
+		self.RunExpression = ret
+	end
+
+	return self
+end
+
+function scale_part:ComputeScale()
+	local ret = self.RunExpression()
+	local n = tonumber(ret) or 1
+	self.Scale = Vector(n, n, n)
+end
+
+function scale_part:Draw(ctx)
+	self:ComputeScale()
+
+	local translation = Vector(self.Pos.X, self.Pos.Y)
+	local mat = Matrix()
+	mat:SetTranslation(translation)
+	mat:Scale(self.Scale)
+	ctx:PushMatrix(mat)
+end
+
+-- removed until I find out how to work with matrices properly
+-- chathud:RegisterPart("scale", scale_part)
