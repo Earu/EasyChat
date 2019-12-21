@@ -1,345 +1,632 @@
 --[[
-    Optimization
+	TODO:
+	- Fix matrices not working / text not displaying when using them
 ]]--
-local ipairs  = _G.ipairs
 
-local stringExplode = string.Explode
-local stringGmatch  = string.gmatch
-local stringLen     = string.len
-local stringSub     = string.sub
-local stringGsub    = string.gsub
-local stringTrim    = string.Trim
+--[[-----------------------------------------------------------------------------
+	Micro Optimization
+]]-------------------------------------------------------------------------------
+local ipairs, pairs, tonumber = _G.ipairs, _G.pairs, _G.tonumber
+local Color, Vector, Matrix = _G.Color, _G.Vector, _G.Matrix
+local type, tostring, RealFrameTime, ScrH, RealTime = _G.type, _G.tostring, _G.RealFrameTime, _G.ScrH, _G.RealTime
+local select, setfenv, CompileString = _G.select, _G.setfenv, _G.CompileString
 
-local tableInsert = table.insert
-local tableRemove = table.remove
-local tableConcat = table.concat
+local table_copy = _G.table.Copy
+local table_insert = _G.table.insert
+local table_remove = _G.table.remove
 
-local surfaceDrawText        = surface.DrawText
-local surfaceSetTextColor    = surface.SetTextColor
-local surfaceSetFont         = surface.SetFont
-local surfaceSetTextPos      = surface.SetTextPos
-local surfaceCreateFont      = surface.CreateFont
-local surfaceGetTextSize     = surface.GetTextSize
-local surfaceDisableClipping = surface.DisableClipping
+local surface_SetDrawColor = _G.surface.SetDrawColor
+local surface_SetTextColor = _G.surface.SetTextColor
+local surface_GetTextSize = _G.surface.GetTextSize
+local surface_DrawOutlinedRect = _G.surface.DrawOutlinedRect
+local surface_SetFont = _G.surface.SetFont
+local surface_SetTextPos = _G.surface.SetTextPos
+local surface_DrawText = _G.surface.DrawText
+local surface_CreateFont = _G.surface.CreateFont
+
+local draw_GetFontHeight = _G.draw.GetFontHeight
+
+local math_max = _G.math.max
+local math_floor = _G.math.floor
+local math_clamp = _G.math.Clamp
+
+local cam_PopModelMatrix = _G.cam.PopModelMatrix
+local cam_PushModelMatrix = _G.cam.PushModelMatrix
+
+local hook_run = _G.hook.Run
+
+local string_explode = _G.string.Explode
+local string_gmatch = _G.string.gmatch
+local string_replace = _G.string.Replace
+local string_sub = _G.string.sub
+local string_len = _G.string.len
+local string_find = _G.string.find
+local string_format = _G.string.format
+local string_lower = _G.string.lower
+
+local chat_GetPos = chat.GetChatBoxPos
+local chat_GetSize = chat.GetChatBoxSize
+
+--[[-----------------------------------------------------------------------------
+	Base ChatHUD
+]]-------------------------------------------------------------------------------
+
+local chathud = {
+	FadeTime = 16,
+	Pos = { X = 25, Y = ScrH() - (320 + 150) },
+	Size = { W = 550, H = 320 },
+	Lines = {},
+	Parts = {},
+	TagPattern = "<(.-)=%[?(.-)%]?>",
+	ShouldClean = false,
+	DefaultColor = Color(255, 255, 255),
+	DefaultFont = "ECCHUDDefault",
+}
+
+function chathud:UpdateFontSize(size)
+	surface_CreateFont("ECCHUDDefault", {
+		font = "Verdana",
+		extended = true,
+		size = size,
+		weight = 600,
+		shadow = true,
+	})
+
+	surface_CreateFont("ECHUDShadowDefault", {
+		font = "Verdana",
+		extended = true,
+		size = size,
+		weight = 600,
+		blursize = 2,
+	})
+end
+
+chathud:UpdateFontSize(18)
 
 local EC_HUD_TTL = GetConVar("easychat_hud_ttl")
 
-local ChatHUD             = {}
-local CHUDArguments       = {}
-local CHUDShadowColor     = Color(25,50,100,255)
-local CHUDDefaultFontSize = 17
-local CHUDDefaultFont     = system.IsWindows() and "Verdana" or "Tahoma"
-local CHUDCurrentFontSize = CHUDDefaultFontSize
-local CHUDCurrentFont     = CHUDDefaultFont
-local CHUDCurrentColor    = Color(255,255,255)
-local CHUDCurrentWidth    = 550
-local CHUDCurrentOffset   = 0
-local CHUDMaxArgs         = 140
-local CHUDTimeToFade      = EC_HUD_TTL:GetInt()
-local CHUDFadeTime        = 2
-local CHUDTags            = {}
-local CHUDFonts           = {}
-
-cvars.AddChangeCallback("easychat_hud_ttl",function(_,_,new)
-    CHUDTimeToFade = new
+chathud.FadeTime = EC_HUD_TTL:GetInt()
+cvars.AddChangeCallback("easychat_hud_ttl", function(_, _, new)
+    chathud.FadeTime = new
 end)
---[[
-    !Optimization
-]]--
 
---this is for possible use in tags
-ChatHUD.CurrentFontSize = CHUDCurrentFontSize
-ChatHUD.CurrentFont     = CHUDCurrentFont
-ChatHUD.CurrentColor    = CHUDCurrentColor
-ChatHUD.DefaultFont     = CHUDDefaultFont
-ChatHUD.DefaultFontSize = CHUDDefaultFontSize
+cvars.AddChangeCallback("easychat_hud_follow", function()
+	chathud:InvalidateLayout()
+end)
 
-local UpdateFont = function(fontname,size)
-    if not CHUDFonts[fontname..size] then
-        CHUDFonts[fontname..size] = true
-        surfaceCreateFont("ECCHUD_"..fontname.."_"..size,{
-            font      = fontname,
-            extended  = true,
-            size      = size,
-            weight    = 600,
-        })
-        surfaceCreateFont("ECCHUD_SHADOW_"..fontname.."_"..size,{
-            font      = fontname,
-            extended  = true,
-            size      = size,
-            weight    = 600,
-            blursize  = 2,
-        })
-    end
-    CHUDCurrentFont= fontname
-    CHUDCurrentFontSize = size
+local default_part = {
+	Type = "default",
+	Pos = { X = 0, Y = 0 },
+	Size =  { W = 0, H = 0 },
+	Usable = true,
+	OkInNicks = true,
+}
+
+function default_part:Ctor()
+	self:ComputeSize()
+	return self
 end
 
-local GetFontNames = function(fontname,size)
-    local font   = "ECCHUD_"..fontname.."_"..size
-    local shadow = "ECCHUD_SHADOW_"..fontname.."_"..size
+-- meant to be overriden
+function default_part:LineBreak() end
+function default_part:ComputeSize() end
+function default_part:Draw() end
+function default_part:PreLinePush() end
 
-    return font,shadow
+function chathud:RegisterPart(name, part)
+	if not name or not part then return end
+	name = string_lower(name)
+
+	local new_part = table_copy(default_part)
+	for k, v in pairs(part) do
+		new_part[k] = v
+	end
+
+	new_part.Type = name
+	self.Parts[name] = new_part
 end
 
-UpdateFont(CHUDDefaultFont,CHUDDefaultFontSize)
+--[[-----------------------------------------------------------------------------
+	Stop Component
 
-local ClearArgs = function()
-    local amount = 0
-    for k,v in ipairs(CHUDArguments) do
-        if v.Type == "STOP" then
-            amount = k
-            local nxt = CHUDArguments[k+1]
-            if not nxt or not nxt.Faded then
-                break
-            end
-        end
-    end
-    for _ = 1,amount do
-        tableRemove(CHUDArguments,1)
-    end
+	/!\ NEVER EVER REMOVE OR THE CHATHUD WILL BREAK HORRIBLY /!\
+
+	This guarantees all matrixes and generally every change made
+	to the drawing context is set back to a "default" state.
+]]-------------------------------------------------------------------------------
+local stop_part = {
+	Usable = false,
+	OkInNicks = false,
+}
+
+function stop_part:Draw(ctx)
+	while ctx.MatrixCount > 0 do
+		ctx:PopMatrix()
+	end
+
+	ctx:ResetColors()
+	ctx:ResetFont()
 end
 
-local GetOffset = function()
-    local line = ""
-    for _,v in ipairs(CHUDArguments) do
-        if v.Type == "string" then
-            line = line..v.Arg
-        end
-    end
-    local count = 1
-    for _,_ in stringGmatch(line,"\n") do
-        count = count + 1
-    end
-    return count * CHUDDefaultFontSize
+chathud:RegisterPart("stop", stop_part)
+
+--[[-----------------------------------------------------------------------------
+	Color Component
+
+	Color modulation with rgb values.
+]]-------------------------------------------------------------------------------
+local color_part = {}
+
+function color_part:Ctor(str)
+	self:ComputeSize()
+	local col_components = string_explode("%s*,%s*", str, true)
+	local r, g, b =
+		tonumber(col_components[1]) or 255,
+		tonumber(col_components[2]) or 255,
+		tonumber(col_components[3]) or 255
+	self.Color = Color(r, g, b)
+
+	return self
 end
 
-local StoreArg = function(arg,type)
-    tableInsert(CHUDArguments,{ Arg = arg, Type = type, ID = #CHUDArguments})
-    if CHUDArguments[1].Faded or #CHUDArguments >= CHUDMaxArgs then
-        ClearArgs()
-    end
-    CHUDCurrentOffset = GetOffset()
+function color_part:Draw(ctx)
+	ctx:UpdateColor(self.Color)
 end
 
-ChatHUD.AddTag = function(name,callback)
-    CHUDTags[name] = callback
+chathud:RegisterPart("color", color_part)
+
+--[[-----------------------------------------------------------------------------
+	Font Component
+
+	Font changes.
+]]-------------------------------------------------------------------------------
+local font_part = {}
+
+function font_part:Ctor(str)
+	local succ, _ = pcall(surface_SetFont, str) -- only way to check if a font is valid
+	self.Font = succ and str or chathud.DefaultFont
+	if not succ then self.Invalid = true end
+
+	return self
 end
 
---[[
-    STORING ARGS DECLARATIONS
-]]--
-local ParseStoreArgs = function(str)
-    local pattern = "<(.-)=(.-)>"
-    local parts = stringExplode(pattern,str,true)
-    local index = 1
-
-    for tag,content in stringGmatch(str,pattern) do
-        StoreArg(parts[index],"string")
-        index = index + 1
-        if CHUDTags[tag] then
-            local values = stringExplode(",",content)
-            CHUDTags[tag](unpack(values))
-            stringGsub(content,".*","")
-        end
-    end
-    StoreArg(parts[#parts],"string")
+function font_part:PreLinePush(line, _)
+	if self.Invalid then return end
+	line.HasFontTags = true
 end
 
-local HashString = function(str,maxwidth)
-    if not str then return "" end
-	local lines    = {}
-    local strlen   = stringLen(str)
-    local strstart = 1
-    local strend   = 1
+-- we dont need a SetFont call the text part already does it for us
+function font_part:Draw() end
 
-	while (strend < strlen) do
-		strend = strend + 1
-        local width,_ = surfaceGetTextSize(stringSub(str,strstart,strend))
+chathud:RegisterPart("font", font_part)
 
-		if width and width > maxwidth then
-			local n = stringSub(str,strend,strend)
-			local I = 0
+--[[-----------------------------------------------------------------------------
+	Text Component
 
-			for i = 1, 15 do
-				I = i
+	Draws normal text.
+]]-------------------------------------------------------------------------------
+local text_part = {
+	Content = "",
+	Font = chathud.DefaultFont,
+	Usable = false
+}
 
-				if (n ~= " " and n ~= "," and n ~= "." and n ~= "\n") then
-					strend = strend - 1
-					n = stringSub(str,strend,strend)
-				else
-					break
-				end
-			end
+function text_part:Ctor(content)
+	self.Content = content
 
-			if (I == 15) then
-				strend = strend + 14
-			end
+	return self
+end
 
-			local finalstr = stringTrim(stringSub(str,strstart,strend))
-			tableInsert(lines,finalstr)
-			strstart = strend + 1
+function text_part:PreLinePush(line, last_index)
+	-- dont waste time trying to find something that does not exist
+	if not line.HasFontTags then
+		self.Font = chathud.DefaultFont
+		self:ComputeSize()
+		return
+	end
+
+	local line_index = line.Index
+
+	-- look for last font on the same line
+	local cur_line = chathud.Lines[line_index]
+	for i = last_index, 1, -1 do
+		local component = cur_line.Components[i]
+		if component.Type == "font" and not component.Invalid then
+			self.Font = component.Font
+			self:CreateShadowFont()
+			self:ComputeSize()
+			return
+		elseif component.Type == "stop" then
+			self.Font = chathud.DefaultFont
+			self:ComputeSize()
+			return
 		end
 	end
 
-	tableInsert(lines,stringSub(str,strstart,strend))
+	-- this is the last line being displayed, nothing before
+	if line_index == 1 then
+		self.Font = chathud.DefaultFont
+		self:ComputeSize()
+		return
+	end
 
-    return tableConcat(lines,"\n")
+	-- not found, then look for previous lines
+	for i = line_index - 1, 1, -1 do
+		local line = chathud.Lines[i]
+		for j = #line.Components, 1, -1 do
+			local component = line.Components[j]
+			if component.Type == "font" and not component.Invalid then
+				self.Font = component.Font
+				self:CreateShadowFont()
+				self:ComputeSize()
+				return
+			elseif component.Type == "stop" then
+				self.Font = chathud.DefaultFont
+				self:ComputeSize()
+				return
+			end
+		end
+	end
+
+	self.Font = chathud.DefaultFont
+	self:ComputeSize()
 end
 
-ChatHUD.AppendText = function(str)
-	if hook.Run("ChatHudAddText",str) == false then return end
-    local hashed_string = HashString(str,CHUDCurrentWidth)
-	ParseStoreArgs(hashed_string)
+function text_part:ComputeSize()
+	surface_SetFont(self.Font)
+	local w, h = surface_GetTextSize(self.Content)
+	self.Size = { W = w, H = h }
 end
 
-ChatHUD.InsertColorChange = function(r,g,b,a)
-	local color = Color(r,g,b,a)
-	if hook.Run("ChatHudAddText",color) == false then return end
-	StoreArg(color,"color")
+local shadow_fonts = {}
+function text_part:CreateShadowFont()
+	local name = string_format("ECHUDShadow_%s", self.Font)
+	if not shadow_fonts[name] then
+		surface_CreateFont(name, {
+			font = self.Font,
+			extended = true,
+			size = draw_GetFontHeight(self.Font),
+			blursize = 2,
+		})
+
+		shadow_fonts[name] = true
+	end
+
+	self.ShadowFont = name
 end
 
-ChatHUD.InsertFontChange = function(font, size)
-	if hook.Run("ChatHudAddFont", font) == false then return end
-	local size = size or CHUDDefaultFontSize
-	StoreArg({Name = font, Size = size},"font")
+function text_part:DrawShadow(ctx)
+	surface_SetTextColor(Color(30, 30, 30, ctx.Alpha))
+	surface_SetFont(self.ShadowFont and self.ShadowFont or "ECHUDShadowDefault")
+
+	for _ = 1, 5 do
+		surface_SetTextPos(self.Pos.X, self.Pos.Y)
+		surface_DrawText(self.Content)
+	end
 end
 
-ChatHUD.AppendPlayer = function(ply)
-	if hook.Run("ChatHudAddText",ply) == false then return end
-	local nick = ply:Nick()
-	local color = team.GetColor(ply:Team())
+function text_part:Draw(ctx)
+	self:DrawShadow(ctx)
 
-    ChatHUD.InsertColorChange(color.r,color.g,color.b)
-    ChatHUD.AppendText(nick)
+	surface_SetTextColor(ctx.Color)
+	surface_SetTextPos(self.Pos.X, self.Pos.Y)
+	surface_SetFont(self.Font)
+	surface_DrawText(self.Content)
 end
 
-ChatHUD.AppendMatrix = function(mat)
-    if hook.Run("ChatHudAddText","") == false then return end
-    StoreArg(mat,"matrix")
+function text_part:IsTextWider(text, width)
+	surface_SetFont(self.Font)
+	local w, _ = surface_GetTextSize(text)
+	return w >= width
 end
 
-ChatHUD.AddTagStop = function(matrixcount)
-   StoreArg("STOP","STOP")
+local hard_break_treshold = 10
+local breaking_chars = {
+	[" "] = true,
+	[","] = true,
+	["."] = true,
+	["\t"] = true,
+}
+
+function text_part:FitWidth()
+	local last_line = chathud:LastLine()
+	local left_width = chathud.Size.W - last_line.Size.W
+	local text = self.Content
+
+	local len = string_len(text)
+	for i=1, len do
+		if self:IsTextWider(string_sub(text, 1, i), left_width) then
+			local sub_str = string_sub(text, i, i)
+
+			-- try n times before hard breaking
+			for j=1, hard_break_treshold do
+				if breaking_chars[sub_str] then
+					-- we found a breaking char, break here
+					self.Content = string_sub(text, 1, i - j)
+					break
+				else
+					sub_str = string_sub(text, i - j, i - j)
+				end
+			end
+
+			-- check if content is the same, and if it is, hard-break
+			if text == self.Content then
+				self.Content = string_sub(text, 1, i)
+			end
+
+			break -- we're done getting our first chunk of text to fit for the last line
+		end
+	end
+
+	last_line:PushComponent(self)
+
+	-- send back remaining text
+	return string_sub(text, string_len(self.Content) + 1, len)
 end
 
---[[
-    DRAWING DECLARATIONS
+function text_part:LineBreak()
+	local remaining_text = self:FitWidth()
+	repeat
+		local new_line = chathud:NewLine()
+		local component = chathud:CreateComponent("text", remaining_text)
+		component.Font = self.Font
+		remaining_text = component:FitWidth()
+	until remaining_text == ""
+end
+
+chathud:RegisterPart("text", text_part)
+
+--[[-----------------------------------------------------------------------------
+	ChatHUD layouting
+]]-------------------------------------------------------------------------------
+local base_line = {
+	Components = {},
+	Pos = { X = 0, Y = 0 },
+	Size = { W = 0, H = 0 },
+	LifeTime = 0,
+	Alpha = 255,
+}
+
+function base_line:Update()
+	local time = RealFrameTime()
+	self.LifeTime = self.LifeTime + time
+	if self.LifeTime >= chathud.FadeTime then
+		self.Alpha = math_floor(math_max(self.Alpha - (time * 10), 0))
+		if self.Alpha == 0 then
+			self.ShouldRemove = true
+			chathud.ShouldClean = true
+		end
+	end
+end
+
+function base_line:Draw(ctx)
+	self:Update()
+	ctx.Alpha = self.Alpha
+	for _, component in ipairs(self.Components) do
+		component:Draw(ctx)
+	end
+end
+
+function base_line:PushComponent(component)
+	component.Line = self
+	component.Pos = { X = self.Pos.X + self.Size.W, Y = self.Pos.Y }
+	component.Index = table_insert(self.Components, component)
+
+	-- need to update width for inserting next components properly
+	self.Size.W = self.Size.W + component.Size.W
+end
+
+function chathud:NewLine()
+	local new_line = table_copy(base_line)
+	new_line.Index = table_insert(self.Lines, new_line)
+
+	-- we never want to display that many lines
+	if #self.Lines > 50 then
+		table_remove(self.Lines, 1)
+	end
+
+	return new_line
+end
+
+function chathud:LastLine()
+	return self.Lines[#self.Lines]
+end
+
+function chathud:InvalidateLayout()
+	local line_count, total_height = #self.Lines, 0
+	-- process from bottom to top (most recent to ancient)
+	for i=line_count, 1, -1 do
+		local line = self.Lines[i]
+		line.Size.W = 0
+		line.Index = i
+
+		for _, component in ipairs(line.Components) do
+			component:ComputeSize()
+
+			component.Pos.X = chathud.Pos.X + line.Size.W
+			line.Size.W = line.Size.W + component.Size.W
+
+			-- update line height to the tallest possible
+			if component.Size.H > line.Size.H then
+				line.Size.H = component.Size.H
+			end
+		end
+
+		total_height = total_height + line.Size.H
+		line.Pos = { X = chathud.Pos.X, Y = chathud.Pos.Y + chathud.Size.H - total_height }
+
+		for _, component in ipairs(line.Components) do
+			component.Pos.Y = line.Pos.Y
+		end
+	end
+end
+
+function chathud:CreateComponent(name, ...)
+	local part = self.Parts[name]
+	if not part then return end
+
+	return table_copy(part):Ctor(...)
+end
+
+function chathud:PushPartComponent(name, ...)
+	local component = self:CreateComponent(name, ...)
+	if not component then return end
+
+	local line = self:LastLine()
+	component:PreLinePush(line, #line.Components)
+	if line.Size.W + component.Size.W > self.Size.W then
+		component:LineBreak()
+	else
+		line:PushComponent(component)
+	end
+end
+
+function chathud:PushMultilineTextComponent(str)
+	local str_lines = string_explode("\r?\n", str, true)
+	self:PushPartComponent("text", str_lines[1])
+	table_remove(str_lines, 1)
+
+	for i=1, #str_lines do
+		self:NewLine()
+		self:PushPartComponent("text", str_lines[i])
+	end
+end
+
+function chathud:PushString(str, nick)
+	local str_parts = string_explode(self.TagPattern, str, true)
+	local enumerator = string_gmatch(str, self.TagPattern)
+	local i = 1
+	for tag, content in enumerator do
+		self:PushMultilineTextComponent(str_parts[i])
+		i = i + 1
+
+		local part = self.Parts[tag]
+		if part and part.Usable then
+			if nick and part.OkInNicks then
+				self:PushPartComponent(tag, content)
+			elseif not nick then
+				self:PushPartComponent(tag, content)
+			end
+		end
+	end
+
+	self:PushMultilineTextComponent(str_parts[#str_parts])
+end
+
+function chathud:Clear()
+	self.Lines = {}
+end
+
+--[[-----------------------------------------------------------------------------
+	Actual ChatHUD drawing here
+]]-------------------------------------------------------------------------------
+local draw_context = {
+	MatrixCount = 0,
+	Color = chathud.DefaultColor
+}
+
+function draw_context:PushMatrix(mat)
+	cam_PushModelMatrix(mat)
+	self.MatrixCount = self.MatrixCount + 1
+end
+
+function draw_context:PopMatrix()
+	if self.MatrixCount <= 0 then return end
+
+	cam_PopModelMatrix()
+	self.MatrixCount = self.MatrixCount - 1
+end
+
+function draw_context:HasMatrices()
+	return self.MatrixCount > 0
+end
+
+function draw_context:UpdateColor(col)
+	col.a = self.Alpha
+	surface_SetDrawColor(col)
+	surface_SetTextColor(col)
+	self.Color = col
+end
+
+function draw_context:ResetColors()
+	surface_SetDrawColor(chathud.DefaultColor)
+	surface_SetTextColor(chathud.DefaultColor)
+end
+
+function draw_context:ResetFont()
+	surface_SetFont(chathud.DefaultFont)
+end
+
+chathud.DrawContext = draw_context
+
+function chathud:Draw()
+	--if hook_run("HUDShouldDraw", "CHudChat") == false then return end
+
+	for _, line in ipairs(self.Lines) do
+		line:Draw(draw_context)
+	end
+
+	-- this is done here so we can freely draw without odd behaviors
+	if self.ShouldClean then
+		for i, line in ipairs(self.Lines) do
+			if line.ShouldRemove then
+				table_remove(self.Lines, i)
+			end
+		end
+		self.ShouldClean = false
+		self:InvalidateLayout()
+	end
+end
+
+hook.Add("HUDPaint", "EasyChat", function() chathud:Draw() end)
+
+--[[-----------------------------------------------------------------------------
+	Input into ChatHUD
+]]-------------------------------------------------------------------------------
+function chathud:AppendText(txt)
+	self:PushString(txt, false)
+end
+
+function chathud:AppendNick(nick)
+	self:PushString(nick, true)
+end
+
+function chathud:InsertColorChange(r, g, b)
+	local expr = ("%d,%d,%d"):format(r, g, b)
+	self:PushPartComponent("color", expr)
+end
+
+--[[-------------------------------------------------------------------------------
+	For testing
+-----------------------------------------------------------------------------------
+local function is_color(c)
+	return c.r and c.g and c.b and c.a
+end
+
+local function color_to_expr(c)
+	return string_replace(tostring(c), " ", ",")
+end
+
+function chathud:AddText(...)
+	local args = { ... }
+	self:NewLine()
+	for _, arg in ipairs(args) do
+		local t = type(arg)
+		if t == "Player" then
+			local team_color = team.GetColor(arg:Team())
+			self:PushPartComponent("color", color_to_expr(team_color))
+			self:PushString(arg:Nick())
+		elseif t == "table" and is_color(arg) then
+			self:PushPartComponent("color", color_to_expr(arg))
+		elseif t == "string" then
+			self:PushString(arg)
+		else
+			self:PushString(tostring(arg))
+		end
+	end
+	self:PushPartComponent("stop")
+	self:InvalidateLayout()
+end
 ]]--
-local Fade = function(arg,col)
-    local col   = col or CHUDCurrentColor
-    local bgcol = CHUDShadowColor
-    local alfv  = 0
 
-    col.InitAlpha = col.InitAlpha or col.a
-    bgcol.InitAlpha = bgcol.InitAlpha or bgcol.a
-
-    arg.FadeStartTime = arg.FadeStartTime or RealTime() + CHUDTimeToFade
-    alfv              = 1 - ((RealTime() - arg.FadeStartTime) / CHUDFadeTime)
-    alfv              = math.Clamp(alfv,0,1)
-    arg.Faded         = alfv <= 0
-
-    col.a = col.InitAlpha * alfv
-    bgcol.a = bgcol.InitAlpha * alfv
-    return col,bgcol
-end
-
-local DrawString = function(txt,x,y,bgcol,col)
-    local font,bgfont = GetFontNames(CHUDCurrentFont,CHUDCurrentFontSize)
-
-    surfaceSetTextColor(bgcol)
-    surfaceSetFont(bgfont)
-
-    for _ = 1,8 do
-        surfaceSetTextPos(x,y)
-        surfaceDrawText(txt)
-    end
-
-    surfaceSetTextColor(col)
-    surfaceSetFont(font)
-    surfaceSetTextPos(x,y)
-    surfaceDrawText(txt)
-
-    return surfaceGetTextSize(txt)
-
-end
-
-local DrawText = function(arg,x,y)
-    local lines = stringExplode("\n",arg.Arg)
-    local w = 0
-    local col,bgcol = Fade(arg)
-    local y = y
-    if not col then return x,y end
-
-    for num,line in pairs(lines) do
-        if num > 1 then
-            x = 1
-            y = y + CHUDCurrentFontSize
-        end
-        w,_ = DrawString(line,x,y,bgcol,col)
-    end
-
-    return x + w,y
-end
-
-local DrawPlayer = function(arg,x,y)
-    local col,bgcol = Fade(arg)
-    if not col then return x,y end
-
-    local w,_ = DrawString(arg.Arg.Nick,x,y,bgcol,col)
-
-    return x + w,y
-end
-
-local Draw = function(self,w,h)
-    if hook.Run("ChatHudDraw",self,w,h) == false then return end
-    if EasyChat.IsOpened and EasyChat.IsOpened() then return end
-
-    CHUDCurrentWidth = w
-
-    surfaceDisableClipping(true)
-
-    local x,y = 1, -CHUDCurrentOffset
-    local matrixcount = 0
-    for _,arg in ipairs(CHUDArguments) do
-        Fade(arg)
-        if arg.Type == "color" then
-            CHUDCurrentColor = arg.Arg
-        elseif arg.Type == "string" then
-            x,y = DrawText(arg,x,y)
-        elseif arg.Type == "font" then
-            UpdateFont(arg.Arg.Name,arg.Arg.Size)
-        elseif arg.Type == "image" then
-        elseif arg.Type == "matrix" then
-            cam.PushModelMatrix(arg.Arg)
-            matrixcount = matrixcount + 1
-        elseif arg.Type == "stop" then
-            CHUDCurrentColor = Color(255,255,255)
-            UpdateFont(CHUDDefaultFont,CHUDDefaultFontSize)
-            for i=1,matrixcount do
-                cam.PopModelMatrix()
-            end
-            matrixcount = 0
-        end
-    end
-
-    surfaceDisableClipping(false)
-
-end
-
-local Think = function(self)
-	EasyChat.ChatHUD.DuringShouldDraw = true
-	self:SetVisible(hook.Run("HUDShouldDraw","CHudChat") ~= false)
-	EasyChat.ChatHUD.DuringShouldDraw = false
-end
-
-ChatHUD.Init = function()
-    local frame = vgui.Create("DPanel")
-    frame:SetPos(25,ScrH() - 150)
-    frame:SetSize(550,320)
-    frame.Paint = Draw
-    frame.Think = Think
-    ChatHUD.Frame = frame
-end
-
-return ChatHUD
+return chathud
