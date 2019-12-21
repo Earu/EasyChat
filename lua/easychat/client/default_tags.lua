@@ -30,9 +30,7 @@ function color_hex_part:Ctor(str)
 end
 
 function color_hex_part:Draw(ctx)
-	self.Color.a = ctx.Alpha
-	surface_SetDrawColor(self.Color)
-	surface_SetTextColor(self.Color)
+	ctx:UpdateColor(self.Color)
 end
 
 chathud:RegisterPart("c", color_hex_part)
@@ -67,9 +65,7 @@ end
 
 function hsv_part:Draw(ctx)
 	self:ComputeHSV()
-	self.Color.a = ctx.Alpha
-	surface_SetDrawColor(self.Color)
-	surface_SetTextColor(self.Color)
+	ctx:UpdateColor(self.Color)
 end
 
 chathud:RegisterPart("hsv", hsv_part)
@@ -80,20 +76,35 @@ chathud:RegisterPart("hsv", hsv_part)
 ]]-------------------------------------------------------------------------------
 local scale_part = {
 	OkInNicks = false,
+	RunExpression = function() return 1 end
 }
 
-function scale_part:Ctor(str)
+function scale_part:Ctor(expr)
 	self:ComputeSize()
-	local n = tonumber(str) or 1
-	self.Scale = Vector(n, n, n)
+
+	local succ, ret = compile_expression(expr)
+	if succ then
+		self.RunExpression = ret
+	end
 
 	return self
 end
 
+function scale_part:ComputeScale()
+	local ret = self.RunExpression()
+	local n = tonumber(ret) or 1
+	self.Scale = Vector(n, n, n)
+end
+
 function scale_part:Draw(ctx)
+	self:ComputeScale()
+
+	local translation = Vector(self.Pos.X, self.Pos.Y)
 	local mat = Matrix()
-	mat:SetScale(self.Scale)
+	mat:SetTranslation(translation)
+	mat:Scale(self.Scale)
 	ctx:PushMatrix(mat)
 end
 
-chathud:RegisterPart("scale", scale_part)
+-- removed until I find out how to work with matrices properly
+-- chathud:RegisterPart("scale", scale_part)
