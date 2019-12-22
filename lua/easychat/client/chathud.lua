@@ -603,8 +603,9 @@ function draw_context:UpdateColor(col)
 	self.Color = col
 end
 
-function draw_context:UpdateTextOffset(offset)
-	self.TextOffset = offset
+function draw_context:PushTextOffset(offset)
+	self.TextOffset.X = self.TextOffset.X + offset.X
+	self.TextOffset.Y = self.TextOffset.Y + offset.Y
 end
 
 function draw_context:ResetColors()
