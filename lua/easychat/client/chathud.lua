@@ -347,18 +347,21 @@ function text_part:CreateShadowFont()
 	self.ShadowFont = name
 end
 
+local smoothing_speed = 1
 function text_part:ComputePos()
 	if self.Pos.X ~= self.Pos.X or self.Pos.Y ~= self.Pos.Y then
+		local factor = smoothing_speed * RealFrameTime()
+
 		if self.RealPos.X > self.Pos.X then
-			self.RealPos.X = math_min(self.RealPos.X + 1, self.Pos.X)
+			self.RealPos.X = math_min(self.RealPos.X + factor, self.Pos.X)
 		else
-			self.RealPos.X = math_max(self.RealPos.X - 1, self.Pos.X)
+			self.RealPos.X = math_max(self.RealPos.X - factor, self.Pos.X)
 		end
 
 		if self.RealPos.Y > self.Pos.Y then
-			self.RealPos.Y = math_min(self.RealPos.Y + 1, self.Pos.Y)
+			self.RealPos.Y = math_min(self.RealPos.Y + factor, self.Pos.Y)
 		else
-			self.RealPos.Y = math_max(self.RealPos.Y - 1, self.Pos.Y)
+			self.RealPos.Y = math_max(self.RealPos.Y - factor, self.Pos.Y)
 		end
 	end
 end
