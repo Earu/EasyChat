@@ -3,3 +3,6 @@ Modular, fully customizable and developer friendly EasyChat provides a good amou
 
 ### Contributing
 Any contributions is welcome, please do follow the naming conventions already in use though. 
+
+
+![example](https://i.imgur.com/dReaidw.gif)
