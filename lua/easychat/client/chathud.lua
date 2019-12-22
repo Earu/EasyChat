@@ -138,6 +138,7 @@ function default_part:LineBreak() end
 function default_part:ComputeSize() end
 function default_part:Draw() end
 function default_part:PreLinePush() end
+function default_part:PostLinePush() end
 
 function chathud:RegisterPart(name, part)
 	if not name or not part then return end
@@ -236,6 +237,7 @@ local text_part = {
 	Content = "",
 	Font = chathud.DefaultFont,
 	Usable = false,
+	RealPos = { X = 0, Y = 0 }
 }
 
 function text_part:Ctor(content)
@@ -301,6 +303,10 @@ function text_part:PreLinePush(line, last_index)
 
 	self:SetFont(chathud.DefaultFont)
 	self:ComputeSize()
+end
+
+function text_part:PostLinePush()
+	self.RealPos = self.Pos
 end
 
 function text_part:ComputeSize()
@@ -499,6 +505,8 @@ function base_line:PushComponent(component)
 
 	-- need to update width for inserting next components properly
 	self.Size.W = self.Size.W + component.Size.W
+
+	component:PostLinePush()
 end
 
 function chathud:NewLine()
