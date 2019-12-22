@@ -118,8 +118,7 @@ function scale_part:Draw(ctx)
 	ctx:PushMatrix(mat)
 end
 
--- removed until I find out how to work with matrices properly
--- chathud:RegisterPart("scale", scale_part)
+chathud:RegisterPart("scale", scale_part)
 
 --[[-----------------------------------------------------------------------------
 	Texture Component
