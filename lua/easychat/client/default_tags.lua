@@ -128,12 +128,30 @@ end
 ]]-------------------------------------------------------------------------------
 local texture_part = {}
 
+local default_mat = CreateMaterial("ECDefaultTexture", "UnlitGeneric", {
+	["$basetexture"] = "vgui/white"
+})
 function texture_part:Ctor(str)
 	local texture_components = string.Explode(str, "%s*,%s*", true)
-	self.Material = Material(texture_components[1] or "vgui/white")
-	self.TextureSize = math.Clamp(tonumber(texture_components[2]) or 16, 16, 64)
+
+	--if self:TextureExists(texture_components[1]) then
+		self.Material = CreateMaterial(string_format("EC_%s", texture_components[1]), "UnlitGeneric", {
+			["$basetexture"] = texture_components[1],
+		})
+	--else
+	--	self.Material = default_mat
+	--end
+
+	self.TextureSize = math.Clamp(tonumber(texture_components[2]) or 32, 16, 64)
 
 	return self
+end
+
+function texture_part:TextureExists(path)
+	local t = Material(path):GetTexture("$basetexture")
+	if not t then return false end
+
+	return t:IsError()
 end
 
 function texture_part:ComputeSize()
@@ -143,6 +161,7 @@ end
 function texture_part:Draw(ctx)
 	surface_SetMaterial(self.Material)
 	surface_DrawTexturedRect(self.Pos.X, self.Pos.Y, self.TextureSize, self.TextureSize)
+
 	draw_NoTexture()
 end
 
@@ -176,7 +195,7 @@ end
 
 function translate_part:Draw(ctx)
 	self:ComputeOffset()
-	ctx:UpdateTextOffset(self.Offset)
+	ctx:PushTextOffset(self.Offset)
 end
 
 chathud:RegisterPart("translate", translate_part)
