@@ -23,6 +23,7 @@ local surface_GetLuaFonts = _G.surface.GetLuaFonts
 local draw_GetFontHeight = _G.draw.GetFontHeight
 
 local math_max = _G.math.max
+local math_min = _G.math.min
 local math_floor = _G.math.floor
 local math_clamp = _G.math.Clamp
 
@@ -234,7 +235,7 @@ chathud:RegisterPart("font", font_part)
 local text_part = {
 	Content = "",
 	Font = chathud.DefaultFont,
-	Usable = false
+	Usable = false,
 }
 
 function text_part:Ctor(content)
@@ -346,6 +347,32 @@ function text_part:CreateShadowFont()
 	self.ShadowFont = name
 end
 
+function text_part:ComputePos()
+	if self.Pos.X ~= self.Pos.X or self.Pos.Y ~= self.Pos.Y then
+		if self.RealPos.X > self.Pos.X then
+			self.RealPos.X = math_min(self.RealPos.X + 1, self.Pos.X)
+		else
+			self.RealPos.X = math_max(self.RealPos.X - 1, self.Pos.X)
+		end
+
+		if self.RealPos.Y > self.Pos.Y then
+			self.RealPos.Y = math_min(self.RealPos.Y + 1, self.Pos.Y)
+		else
+			self.RealPos.Y = math_max(self.RealPos.Y - 1, self.Pos.Y)
+		end
+	end
+end
+
+function text_part:SetTextDrawPos(ctx)
+	local x, y = self.RealPos.X + ctx.TextOffset.X, self.RealPos.Y + ctx.TextOffset.Y 
+
+	if ctx:HasMatrices() then
+		x, y = x - chathud.Pos.X, y - chathud.Pos.Y 
+	end
+
+	surface_SetTextPos(x, y)
+end
+
 local shadow_col = Color(0, 0, 0, 255)
 function text_part:DrawShadow(ctx)
 	shadow_col.a = ctx.Alpha
@@ -353,16 +380,17 @@ function text_part:DrawShadow(ctx)
 	surface_SetFont(self.ShadowFont and self.ShadowFont or chathud.DefaultShadowFont)
 
 	for _ = 1, 5 do
-		surface_SetTextPos(self.Pos.X + ctx.TextOffset.X, self.Pos.Y + ctx.TextOffset.Y)
+		self:SetTextDrawPos(ctx)
 		surface_DrawText(self.Content)
 	end
 end
 
 function text_part:Draw(ctx)
+	self:ComputePos()
 	self:DrawShadow(ctx)
+	self:SetTextDrawPos(ctx)
 
 	surface_SetTextColor(ctx.Color)
-	surface_SetTextPos(self.Pos.X + ctx.TextOffset.X, self.Pos.Y + ctx.TextOffset.Y)
 	surface_SetFont(self.Font)
 	surface_DrawText(self.Content)
 end
