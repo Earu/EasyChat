@@ -82,6 +82,7 @@ local chathud = {
 	Size = { W = 550, H = 320 },
 	Lines = {},
 	Parts = {},
+	SpecialParts = {},
 	TagPattern = "<(.-)=%[?(.-)%]?>",
 	ShouldClean = false,
 	DefaultColor = Color(255, 255, 255),
@@ -140,7 +141,7 @@ function default_part:Draw() end
 function default_part:PreLinePush() end
 function default_part:PostLinePush() end
 
-function chathud:RegisterPart(name, part)
+function chathud:RegisterPart(name, part, pattern)
 	if not name or not part then return end
 	name = string_lower(name)
 
@@ -150,7 +151,13 @@ function chathud:RegisterPart(name, part)
 	end
 
 	new_part.Type = name
-	self.Parts[name] = new_part
+
+	if pattern then
+		new_part.Pattern = pattern
+		self.SpecialParts[name] = new_part
+	else
+		self.Parts[name] = new_part
+	end
 end
 
 --[[-----------------------------------------------------------------------------
@@ -574,36 +581,56 @@ function chathud:PushPartComponent(name, ...)
 	end
 end
 
-function chathud:PushMultilineTextComponent(str)
-	local str_lines = string_explode("\r?\n", str, true)
-	self:PushPartComponent("text", str_lines[1])
-	table_remove(str_lines, 1)
+function chathud:PushText(text, multiline)
+	if multiline then
+		local text_lines = string_explode("\r?\n", text, true)
+		self:PushPartComponent("text", text_lines[1])
+		table_remove(text_lines, 1)
+	
+		for i=1, #text_lines do
+			self:NewLine()
+			self:PushPartComponent("text", text_lines[i])
+		end
+	else
+		self:PushPartComponent("text", text)
+	end
+end
 
-	for i=1, #str_lines do
-		self:NewLine()
-		self:PushPartComponent("text", str_lines[i])
+function chathud:PushSubString(str, nick)
+	self:PushText(str, nick)
+	return -- lets have something that works for now
+
+
+	local chunks = {}
+	
+	-- algo for splitting a string with multiple patterns here
+
+	for chunk in ipairs(chunks) do
+		if chunk.Type == "text" then
+			self:PushText(chunk.Value, nick)
+		else
+			self:PushPartComponent(chunk.Type, unpack(chunk.Value))
+		end
 	end
 end
 
 function chathud:PushString(str, nick)
 	local str_parts = string_explode(self.TagPattern, str, true)
-	local enumerator = string_gmatch(str, self.TagPattern)
+	local iterator = string_gmatch(str, self.TagPattern)
 	local i = 1
-	for tag, content in enumerator do
-		self:PushMultilineTextComponent(str_parts[i])
+	for tag, content in iterator do
+		self:PushSubString(str_parts[i], nick)
 		i = i + 1
 
 		local part = self.Parts[tag]
 		if part and part.Usable then
-			if nick and part.OkInNicks then
-				self:PushPartComponent(tag, content)
-			elseif not nick then
+			if (nick and part.OkInNicks) or not nick then
 				self:PushPartComponent(tag, content)
 			end
 		end
 	end
 
-	self:PushMultilineTextComponent(str_parts[#str_parts])
+	self:PushSubString(str_parts[#str_parts], nick)
 end
 
 function chathud:Clear()
