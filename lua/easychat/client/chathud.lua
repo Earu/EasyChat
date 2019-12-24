@@ -4,11 +4,12 @@
 local ipairs, pairs, tonumber = _G.ipairs, _G.pairs, _G.tonumber
 local Color, Vector, Matrix = _G.Color, _G.Vector, _G.Matrix
 local type, tostring, RealFrameTime, ScrH, RealTime = _G.type, _G.tostring, _G.RealFrameTime, _G.ScrH, _G.RealTime
-local select, setfenv, CompileString = _G.select, _G.setfenv, _G.CompileString
+local select, setfenv, CompileString, unpack = _G.select, _G.setfenv, _G.CompileString, _G.unpack
 
 local table_copy = _G.table.Copy
 local table_insert = _G.table.insert
 local table_remove = _G.table.remove
+local table_sort = _G.table.sort
 
 local surface_SetDrawColor = _G.surface.SetDrawColor
 local surface_SetTextColor = _G.surface.SetTextColor
@@ -40,6 +41,7 @@ local string_len = _G.string.len
 local string_find = _G.string.find
 local string_format = _G.string.format
 local string_lower = _G.string.lower
+local string_find = _G.string.find
 
 local chat_GetPos = chat.GetChatBoxPos
 local chat_GetSize = chat.GetChatBoxSize
@@ -600,17 +602,41 @@ function chathud:PushSubString(str, nick)
 	self:PushText(str, nick)
 	return -- lets have something that works for now
 
-
 	local chunks = {}
-	
-	-- algo for splitting a string with multiple patterns here
+	for part_name, part in pairs(self.SpecialParts) do
+		local done = false
+		local next_start_pos = 1
+		repeat
+			local start_pos, end_pos, a, b, c, d, e, f = string_find(str, part.Pattern, next_start_pos)
+			if start_pos then
+				table_insert(chunks, { 
+					Type = part_name,
+					StartPos = start_pos, 
+					EndPos = end_pos, 
+					Values = { a, b, c, d, e, f } 
+				})
 
+				if end_pos == #str then 
+					done = true
+				else
+					next_start_pos = end_pos + 1
+				end
+			else
+				done = true
+			end
+		until done
+	end
+
+	table.sort(chunks, function(a, b)
+		return a.StartPos > b.StartPos
+	end)
+
+	local last_end_pos = 1
 	for chunk in ipairs(chunks) do
-		if chunk.Type == "text" then
-			self:PushText(chunk.Value, nick)
-		else
-			self:PushPartComponent(chunk.Type, unpack(chunk.Value))
-		end
+		local text = string_sub(str, last_end_pos, chunk.StartPos)
+		self:PushText(text, nick)
+		self:PushPartComponent(chunk.Type, unpack(chunk.Values))
+		last_end_pos = chunk.EndPos + 1
 	end
 end
 
