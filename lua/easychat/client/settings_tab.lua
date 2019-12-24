@@ -30,6 +30,9 @@ local SETTINGS_TAB = {
     Init = function(self)
         local frame = self
 
+        -- So we dont keep invalid panels in, when we reload
+        self.Checkboxes = {}
+
         self.TBoxOutlayColor        = self:Add("DCheckBoxLabel")
         self.TBoxOutlayOutlineColor = self:Add("DCheckBoxLabel")
         self.TBoxTabColor           = self:Add("DCheckBoxLabel")
