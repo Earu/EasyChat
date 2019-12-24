@@ -10,6 +10,7 @@ local table_copy = _G.table.Copy
 local table_insert = _G.table.insert
 local table_remove = _G.table.remove
 local table_sort = _G.table.sort
+local table_concat = _G.table.concat
 
 local surface_SetDrawColor = _G.surface.SetDrawColor
 local surface_SetTextColor = _G.surface.SetTextColor
@@ -42,6 +43,7 @@ local string_find = _G.string.find
 local string_format = _G.string.format
 local string_lower = _G.string.lower
 local string_find = _G.string.find
+local string_gsub = _G.string.gsub
 
 local chat_GetPos = chat.GetChatBoxPos
 local chat_GetSize = chat.GetChatBoxSize
@@ -84,7 +86,7 @@ local chathud = {
 	Size = { W = 550, H = 320 },
 	Lines = {},
 	Parts = {},
-	SpecialParts = {},
+	SpecialPatterns = {},
 	TagPattern = "<(.-)=%[?(.-)%]?>",
 	ShouldClean = false,
 	DefaultColor = Color(255, 255, 255),
@@ -155,11 +157,10 @@ function chathud:RegisterPart(name, part, pattern)
 	new_part.Type = name
 
 	if pattern then
-		new_part.Pattern = pattern
-		self.SpecialParts[name] = new_part
-	else
-		self.Parts[name] = new_part
+		self.SpecialPatterns[name] = pattern
 	end
+	
+	self.Parts[name] = new_part
 end
 
 --[[-----------------------------------------------------------------------------
@@ -598,60 +599,18 @@ function chathud:PushText(text, multiline)
 	end
 end
 
-function chathud:PushSubString(str, nick)
-	local chunks = {}
-	for part_name, part in pairs(self.SpecialParts) do
-		local done = false
-		local next_start_pos = 1
-		repeat
-			local start_pos, end_pos, a, b, c, d, e, f = string_find(str, part.Pattern, next_start_pos)
-			if start_pos then
-				table_insert(chunks, { 
-					Type = part_name,
-					StartPos = start_pos, 
-					EndPos = end_pos, 
-					Values = { a, b, c, d, e, f } 
-				})
-
-				if end_pos == #str then 
-					done = true
-				else
-					next_start_pos = end_pos + 1
-				end
-			else
-				done = true
-			end
-		until done
-	end
-
-	if #chunks == 0 then
-		self:PushText(str, nick)
-		return -- dont do any extra processing for nothing
-	end
-
-	table_sort(chunks, function(a, b)
-		return a.StartPos > b.StartPos
-	end)
-
-	local last_end_pos = 1
-	for chunk in ipairs(chunks) do
-		-- we only add if there is text between the two chunks
-		if chunk.StartPos > last_end_pos then
-			local text = string_sub(str, last_end_pos, chunk.StartPos)
-			self:PushText(text, nick)
-		end
-
-		self:PushPartComponent(chunk.Type, unpack(chunk.Values))
-		last_end_pos = chunk.EndPos + 1
-	end
-end
-
 function chathud:PushString(str, nick)
+	for part_name, pattern in pairs(self.SpecialPatterns) do
+		string_gsub(str, pattern, function(...)
+			return string_format("<%s=%s>", part_name, table_concat({ ... }, ",")
+		end)
+	end
+
 	local str_parts = string_explode(self.TagPattern, str, true)
 	local iterator = string_gmatch(str, self.TagPattern)
 	local i = 1
 	for tag, content in iterator do
-		self:PushSubString(str_parts[i], nick)
+		self:PushText(str_parts[i], nick)
 		i = i + 1
 
 		local part = self.Parts[tag]
@@ -662,7 +621,7 @@ function chathud:PushString(str, nick)
 		end
 	end
 
-	self:PushSubString(str_parts[#str_parts], nick)
+	self:PushText(str_parts[#str_parts], nick)
 end
 
 function chathud:Clear()
