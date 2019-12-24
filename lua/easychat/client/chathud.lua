@@ -599,9 +599,6 @@ function chathud:PushText(text, multiline)
 end
 
 function chathud:PushSubString(str, nick)
-	self:PushText(str, nick)
-	return -- lets have something that works for now
-
 	local chunks = {}
 	for part_name, part in pairs(self.SpecialParts) do
 		local done = false
@@ -627,14 +624,23 @@ function chathud:PushSubString(str, nick)
 		until done
 	end
 
-	table.sort(chunks, function(a, b)
+	if #chunks == 0 then
+		self:PushText(str, nick)
+		return -- dont do any extra processing for nothing
+	end
+
+	table_sort(chunks, function(a, b)
 		return a.StartPos > b.StartPos
 	end)
 
 	local last_end_pos = 1
 	for chunk in ipairs(chunks) do
-		local text = string_sub(str, last_end_pos, chunk.StartPos)
-		self:PushText(text, nick)
+		-- we only add if there is text between the two chunks
+		if chunk.StartPos > last_end_pos then
+			local text = string_sub(str, last_end_pos, chunk.StartPos)
+			self:PushText(text, nick)
+		end
+
 		self:PushPartComponent(chunk.Type, unpack(chunk.Values))
 		last_end_pos = chunk.EndPos + 1
 	end
