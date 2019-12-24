@@ -19,17 +19,17 @@ function color_hex_part:HexToRGB(hex)
 	local hex = string.Replace(hex, "#","")
 	local function n(input) return tonumber(input) or 255 end
 
-    if string.len(hex) == 3 then
+		if string.len(hex) == 3 then
 		return
 			(n("0x" .. string.sub(hex, 1, 1)) * 17),
 			(n("0x" .. string.sub(hex, 2, 2)) * 17),
 			(n("0x" .. string.sub(hex, 3, 3)) * 17)
-    else
+		else
 		return
 			n("0x" .. string.sub(hex, 1, 2)),
 			n("0x" .. string.sub(hex, 3, 4)),
 			n("0x" .. string.sub(hex, 5, 6))
-    end
+		end
 end
 
 function color_hex_part:Ctor(str)
@@ -198,3 +198,63 @@ function translate_part:Draw(ctx)
 end
 
 chathud:RegisterPart("translate", translate_part)
+
+--[[-----------------------------------------------------------------------------
+	Emote Special Component
+
+	Transforms text into an actual emote.
+]]-------------------------------------------------------------------------------
+--[[local emote_part = {}
+
+function emote_part:Ctor(name)
+	self:ComputeSize()
+end
+
+function emote_part:ComputeSize()
+	self.Size = { W = 32, H = 32 }
+end
+
+function emote_part:Draw(ctx)
+end
+
+chathud:RegisterPart("emote", emote_part, "%:([A-Za-z0-9%_]+)%:")]]--
+
+--[[-----------------------------------------------------------------------------
+	Carat Color Component
+
+	Pre-hard-coded colors ready for use.
+]]-------------------------------------------------------------------------------
+local carat_colors = {
+    ["0"] = Color(0, 0, 0),
+    ["1"] = Color(128, 128, 128),
+    ["2"] = Color(192, 192, 192),
+    ["3"] = Color(255, 255, 255),
+    ["4"] = Color(0, 0, 128),
+    ["5"] = Color(0, 0, 255),
+    ["6"] = Color(0, 128, 128),
+    ["7"] = Color(0, 255, 255),
+    ["8"] = Color(0, 128, 0),
+    ["9"] = Color(0, 255, 0),
+    ["10"] = Color(128, 128, 0),
+    ["11"] = Color(255, 255, 0),
+    ["12"] = Color(128, 0, 0),
+    ["13"] = Color(255, 0, 0),
+    ["14"] = Color(128, 0, 128),
+    ["15"] = Color(255, 0, 255),
+}
+
+local carat_color_part = {}
+
+function carat_color_part:Ctor(num)
+	if carat_colors[num] then
+		self.Color = carat_colors[num]
+	else
+		self.Color = Color(255, 255, 255)
+	end
+end
+
+function carat_color_part:Draw(ctx)
+	ctx:UpdateColor(self.Color)
+end
+
+chathud:RegisterPart("caratcol", carat_color_part, "%^(%d%d?)")
