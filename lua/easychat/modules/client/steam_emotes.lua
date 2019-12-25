@@ -153,7 +153,9 @@ local function steam_emote(name)
 		return mat
 	end end
 
-	if mat == false then error("invalid emoticon") end
+	if mat == false then 
+		return function() end 
+	end
 
 	return function()
 		if not mat then
