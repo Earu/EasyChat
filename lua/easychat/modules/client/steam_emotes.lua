@@ -18,7 +18,7 @@ end
 
 local cache = {}
 
-local EMOTE_URL = "http://g1.metastruct.net:20080/opendata/public/emote_lzma.dat"
+local EMOTE_URL = "https://g1cf.metastruct.net/opendata/public/emote_lzma.dat"
 local EMOTES = "steam_emoticons.txt"
 local UNCACHED = false
 local PROCESSING = true
@@ -36,20 +36,20 @@ local function parse_emote_file(data)
 end
 
 http.Fetch(EMOTE_URL, function(dat, len, hdr, ret)
-    if not dat or ret ~= 200 then
-        ErrorNoHalt("steam emoticons update failed\n")
-        return
-    end
-    
-    local t = {  }
-    dat = util.Decompress(dat)
-    
-    file.Write(EMOTES, dat)
-    local count = count(dat, ",")
-    print(("Saved %d emoticons to %s"):format(count, EMOTES))
-    parse_emote_file(dat)
+	if not dat or ret ~= 200 then
+		ErrorNoHalt("steam emoticons update failed\n")
+		return
+	end
+	
+	local t = {}
+	dat = util.Decompress(dat)
+	
+	file.Write(EMOTES, dat)
+	local count = count(dat, ",")
+	print(("Saved %d emoticons to %s"):format(count, EMOTES))
+	parse_emote_file(dat)
 end, function(err)
-    ErrorNoHalt("[SteamEmots] " .. err .. "\n")
+	ErrorNoHalt("[SteamEmots] " .. err .. "\n")
 end, { Referer = "http://steam.tools/emoticons/" })
 
 local FOLDER = "steam_emoticons_big"
@@ -61,24 +61,24 @@ end
 
 local BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 local function base64_decode(data)
-    data = string.gsub(data, "[^" .. BASE64 .. "=]", "")
-    return (data:gsub(".", function(x)
-        if (x == "=") then return "" end
-        local r, f = "", (BASE64:find(x) - 1)
-        for i = 6, 1, -1 do 
-            r = r .. (f % 2^i - f % 2^(i-1) > 0 and "1" or "0") 
-        end
-        
-        return r
-    end):gsub("%d%d%d?%d?%d?%d?%d?%d?", function(x)
-        if (#x ~= 8) then return "" end
-        local c = 0
-        for i=1, 8 do 
-            c = c + (x:sub(i, i) == "1" and 2^(8 - i) or 0) 
-        end
+	data = string.gsub(data, "[^" .. BASE64 .. "=]", "")
+	return (data:gsub(".", function(x)
+		if (x == "=") then return "" end
+		local r, f = "", (BASE64:find(x) - 1)
+		for i = 6, 1, -1 do 
+			r = r .. (f % 2^i - f % 2^(i-1) > 0 and "1" or "0") 
+		end
+		
+		return r
+	end):gsub("%d%d%d?%d?%d?%d?%d?%d?", function(x)
+		if (#x ~= 8) then return "" end
+		local c = 0
+		for i=1, 8 do 
+			c = c + (x:sub(i, i) == "1" and 2^(8 - i) or 0) 
+		end
 
-        return string.char(c)
-    end))
+		return string.char(c)
+	end))
 end
 
 local function get_steam_emote(name)
@@ -100,8 +100,8 @@ local function get_steam_emote(name)
 		local mat = material_data(path)
 
 		if not mat or mat:IsError() then
-            Msg("[Emoticons] ")
-            print("Material found, but is error: ", name, "redownloading")
+			Msg("[Emoticons] ")
+			print("Material found, but is error: ", name, "redownloading")
 		else
 			c = mat
 			cache[name] = c
@@ -111,8 +111,8 @@ local function get_steam_emote(name)
 
 	local url = "http://steamcommunity-a.akamaihd.net/economy/emoticonhover/" .. name
 	local function fail(err)
-        Msg("[Emoticons] ")
-        print("Http fetch failed for", url, ": " .. tostring(err))
+		Msg("[Emoticons] ")
+		print("Http fetch failed for", url, ": " .. tostring(err))
 	end
 
 	http.Fetch(url, function(data, len, hdr, code)
@@ -135,8 +135,8 @@ local function get_steam_emote(name)
 		local mat = material_data(path)
 
 		if not mat or mat:IsError() then
-            Msg("[Emoticons] ")
-            print("Downloaded material, but is error: ", name)
+			Msg("[Emoticons] ")
+			print("Downloaded material, but is error: ", name)
 			return
 		end
 
@@ -175,30 +175,30 @@ if content then
 end
 
 --[[-----------------------------------------------------------------------------
-    Steam Emote Component
+	Steam Emote Component
 
-    Displays steam emotes.
+	Displays steam emotes.
 ]]-------------------------------------------------------------------------------
 local emote_part = {
-    SetEmoteMaterial = function() draw.NoTexture() end
+	SetEmoteMaterial = function() draw.NoTexture() end
 }
 
 function emote_part:Ctor(name)
-    self:ComputeSize()
-    self.SetEmoteMaterial = steam_emote(name)
+	self:ComputeSize()
+	self.SetEmoteMaterial = steam_emote(name)
 
-    return self
+	return self
 end
 
 function emote_part:ComputeSize()
-    local height = draw.GetFontHeight(chathud.DefaultFont)
-    self.Size = { W = height, H = height }
+	local height = draw.GetFontHeight(chathud.DefaultFont)
+	self.Size = { W = height, H = height }
 end
 
 function emote_part:Draw()
-    self.SetEmoteMaterial()
-    surface.DrawTexturedRect(self.Pos.X, self.Pos.Y, self.Size.W, self.Size.H)
-    draw.NoTexture()
+	self.SetEmoteMaterial()
+	surface.DrawTexturedRect(self.Pos.X, self.Pos.Y, self.Size.W, self.Size.H)
+	draw.NoTexture()
 end
 
 chathud:RegisterPart("emote", emote_part, "%:([A-Za-z0-9_]+)%:")
