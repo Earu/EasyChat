@@ -206,7 +206,6 @@ if CLIENT then
 	include("easychat/client/browser_panel.lua")
 	include("easychat/client/chat_tab.lua")
 	include("easychat/client/settings_tab.lua")
-	include("easychat/client/default_tags.lua")
 
 	local ECConvars = {}
 	EasyChat.RegisterConvar = function(convar,desc)
