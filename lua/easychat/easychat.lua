@@ -180,10 +180,10 @@ if CLIENT then
 		EasyChat.TabOutlineColor    = colors.taboutline
 		EasyChat.TabColor           = colors.tab
 	else
-        EasyChat.OutlayColor        = Color(62, 62, 62, 255)
-        EasyChat.OutlayOutlineColor = Color(0, 0, 0, 0)
-        EasyChat.TabOutlineColor    = Color(0, 0, 0, 0)
-        EasyChat.TabColor     		= Color(36, 36, 36, 255)
+		EasyChat.OutlayColor        = Color(62, 62, 62, 255)
+		EasyChat.OutlayOutlineColor = Color(0, 0, 0, 0)
+		EasyChat.TabOutlineColor    = Color(0, 0, 0, 0)
+		EasyChat.TabColor     		= Color(36, 36, 36, 255)
 	end
 
 	EasyChat.TextColor   = Color(255, 255, 255, 255)
@@ -452,40 +452,40 @@ if CLIENT then
 		end
 
 		EasyChat.AddText = function(tab, richtext, ...)
-            AppendText(richtext, "\n")
-            if EC_TIMESTAMPS:GetBool() then
-                if EC_TIMESTAMPS_12:GetBool() then
-                    AppendText(richtext, os.date("%I:%M %p").." - ")
-                else
-                    AppendText(richtext, os.date("%H:%M").." - ")
-                end
-            end
-            local args = { ... }
-            for _,arg in ipairs(args) do
-                if type(arg) == "string" then
-                    if not EasyChat.UseDermaSkin then
-                        richtext:InsertColorChange(255,255,255,255)
-                    end
-                    if EasyChat.IsURL(arg) then
-                        local words = string.Explode(" ",arg)
-                        for k,v in ipairs(words) do
-                            if k > 1 then
-                                AppendText(richtext, " ")
-                            end
-                            if EasyChat.IsURL(v) then
-                                local url = string.gsub(v,"^%s:","")
-                                richtext:InsertClickableTextStart(url)
-                                AppendText(richtext, url)
-                                richtext:InsertClickableTextEnd()
-                            else
-                                AppendText(richtext, v)
-                            end
-                        end
-                    else
-                        AppendText(richtext, arg)
-                    end
-                elseif type(arg) == "Player" then
-                    AppendText(richtext, (EC_USE_ME:GetBool() and arg == LocalPlayer()) and "me" or arg:Nick())
+			AppendText(richtext, "\n")
+			if EC_TIMESTAMPS:GetBool() then
+				if EC_TIMESTAMPS_12:GetBool() then
+					AppendText(richtext, os.date("%I:%M %p").." - ")
+				else
+					AppendText(richtext, os.date("%H:%M").." - ")
+				end
+			end
+			local args = { ... }
+			for _,arg in ipairs(args) do
+				if type(arg) == "string" then
+					if not EasyChat.UseDermaSkin then
+						richtext:InsertColorChange(255,255,255,255)
+					end
+					if EasyChat.IsURL(arg) then
+						local words = string.Explode(" ",arg)
+						for k,v in ipairs(words) do
+							if k > 1 then
+								AppendText(richtext, " ")
+							end
+							if EasyChat.IsURL(v) then
+								local url = string.gsub(v,"^%s:","")
+								richtext:InsertClickableTextStart(url)
+								AppendText(richtext, url)
+								richtext:InsertClickableTextEnd()
+							else
+								AppendText(richtext, v)
+							end
+						end
+					else
+						AppendText(richtext, arg)
+					end
+				elseif type(arg) == "Player" then
+					AppendText(richtext, (EC_USE_ME:GetBool() and arg == LocalPlayer()) and "me" or arg:Nick())
 				elseif type(arg) == "table" then
 					richtext:InsertColorChange(arg.r or 255, arg.g or 255, arg.b or 255, arg.a or 255)
 				end

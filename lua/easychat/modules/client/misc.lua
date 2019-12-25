@@ -1,8 +1,8 @@
 local replaces = {
-    [".iunno"]     = [[¯\_(ツ)_/¯]],
-    [".lenny"]     = [[( ͡° ͜ʖ ͡° )]],
-    [".fliptable"] = [[(╯°□°）╯︵ ┻━┻]],
-    [".unflip "]   = [[┬─┬ ノ( ゜-゜ノ)]],
+		[".iunno"]     = [[¯\_(ツ)_/¯]],
+		[".lenny"]     = [[( ͡° ͜ʖ ͡° )]],
+		[".fliptable"] = [[(╯°□°）╯︵ ┻━┻]],
+		[".unflip "]   = [[┬─┬ ノ( ゜-゜ノ)]],
 }
 
 local EC_EMOTES = CreateConVar("easychat_misc_emotes", "1", FCVAR_ARCHIVE, "Should we try to make sense of input when pressing tab")
@@ -31,12 +31,12 @@ local store = function(ply,txt)
 end
 
 hook.Add("OnPlayerChat","EasyChatModuleMisc",function(ply,txt)
-    if EC_GREENTEXT:GetBool() and string.match(txt,"^>") then
+		if EC_GREENTEXT:GetBool() and string.match(txt,"^>") then
 		chat.AddText(ply,Color(255,255,255),": ",Color(0,255,0),txt)
 		return true
 	end
 
-    if EC_REPLACE:GetBool() and string.match(txt,"^s%/.+%/.+") then
+		if EC_REPLACE:GetBool() and string.match(txt,"^s%/.+%/.+") then
 		local args = string.Explode("/",txt)
 		local toreplace
 		if not args[2] or not args[3] then return end
