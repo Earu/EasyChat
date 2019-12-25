@@ -67,27 +67,27 @@ local expr_env = {
 local blacklist = { "repeat", "until", "function", "end" }
 
 local function compile_expression(str)
-    for _, word in pairs(blacklist) do
-        if string.find(str, "[%p%s]" .. word) or string.find(str, word .. "[%p%s]") then
-            return false, string.format("illegal characters used %q", word)
-        end
-    end
+	for _, word in pairs(blacklist) do
+		if string.find(str, "[%p%s]" .. word) or string.find(str, word .. "[%p%s]") then
+			return false, string.format("illegal characters used %q", word)
+		end
+	end
 
-    local functions = {}
+	local functions = {}
 
-    for k,v in pairs(expr_env) do functions[k] = v end
+	for k,v in pairs(expr_env) do functions[k] = v end
 
-    functions.select = select
-    str = "local IN = select(1, ...) return " .. str
+	functions.select = select
+	str = "local IN = select(1, ...) return " .. str
 
-    local func = CompileString(str, "easychat_expression", false)
+	local func = CompileString(str, "easychat_expression", false)
 
-    if type(func) == "string" then
-        return false, func
-    else
-        setfenv(func, functions)
-        return true, func
-    end
+	if type(func) == "string" then
+		return false, func
+	else
+		setfenv(func, functions)
+		return true, func
+	end
 end
 
 return { Compile = compile_expression }

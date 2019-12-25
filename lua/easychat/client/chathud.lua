@@ -122,7 +122,7 @@ local EC_HUD_TTL = GetConVar("easychat_hud_ttl")
 
 chathud.FadeTime = EC_HUD_TTL:GetInt()
 cvars.AddChangeCallback("easychat_hud_ttl", function(_, _, new)
-    chathud.FadeTime = new
+	chathud.FadeTime = new
 end)
 
 cvars.AddChangeCallback("easychat_hud_follow", function()
