@@ -246,3 +246,5 @@ function carat_color_part:Draw(ctx)
 end
 
 chathud:RegisterPart("caratcol", carat_color_part, "%^(%d%d?)")
+
+return "Extra ChatHUD Tags"
