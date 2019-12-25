@@ -174,6 +174,8 @@ if content then
 	parse_emote_file(content)
 end
 
+local surface_DrawTexturedRect = surface.DrawTexturedRect
+local draw_NoTexture = draw.NoTexture
 --[[-----------------------------------------------------------------------------
 	Steam Emote Component
 
@@ -197,8 +199,8 @@ end
 
 function emote_part:Draw()
 	self.SetEmoteMaterial()
-	surface.DrawTexturedRect(self.Pos.X, self.Pos.Y, self.Size.W, self.Size.H)
-	draw.NoTexture()
+	surface_DrawTexturedRect(self.Pos.X, self.Pos.Y, self.Size.W, self.Size.H)
+	draw_NoTexture()
 end
 
 chathud:RegisterPart("emote", emote_part, "%:([A-Za-z0-9_]+)%:")
