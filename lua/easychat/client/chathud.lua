@@ -24,6 +24,10 @@ local surface_GetLuaFonts = _G.surface.GetLuaFonts
 
 local draw_GetFontHeight = _G.draw.GetFontHeight
 
+--local render_OverrideBlend = _G.render.OverrideBlend
+--local BLEND_ZERO, BLEND_ONE_MINUS_SRC_ALPHA = _G.BLEND_ZERO, _G.BLEND_ONE_MINUS_SRC_ALPHA
+--local BLENDFUNC_ADD, BLENDFUNC_SUBTRACT = _G.BLENDFUNC_ADD, _G.BLENDFUNC_SUBTRACT
+
 local math_max = _G.math.max
 local math_min = _G.math.min
 local math_floor = _G.math.floor
@@ -398,10 +402,12 @@ function text_part:DrawShadow(ctx)
 	surface_SetTextColor(shadow_col)
 	surface_SetFont(self.ShadowFont and self.ShadowFont or chathud.DefaultShadowFont)
 
+	--render_OverrideBlend(true, BLEND_SRC_ALPHA, BLEND_ZERO, BLENDFUNC_REVERSE_SUBTRACT)
 	for _ = 1, 5 do
 		self:SetTextDrawPos(ctx)
 		surface_DrawText(self.Content)
 	end
+	--render_OverrideBlend(false)
 end
 
 function text_part:Draw(ctx)
