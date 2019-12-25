@@ -200,26 +200,6 @@ end
 chathud:RegisterPart("translate", translate_part)
 
 --[[-----------------------------------------------------------------------------
-	Emote Special Component
-
-	Transforms text into an actual emote.
-]]-------------------------------------------------------------------------------
---[[local emote_part = {}
-
-function emote_part:Ctor(name)
-	self:ComputeSize()
-end
-
-function emote_part:ComputeSize()
-	self.Size = { W = 32, H = 32 }
-end
-
-function emote_part:Draw(ctx)
-end
-
-chathud:RegisterPart("emote", emote_part, "%:([A-Za-z0-9%_]+)%:")]]--
-
---[[-----------------------------------------------------------------------------
 	Carat Color Component
 
 	Pre-hard-coded colors ready for use.
