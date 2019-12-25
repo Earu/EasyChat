@@ -19,17 +19,17 @@ function color_hex_part:HexToRGB(hex)
 	local hex = string.Replace(hex, "#","")
 	local function n(input) return tonumber(input) or 255 end
 
-		if string.len(hex) == 3 then
+	if string.len(hex) == 3 then
 		return
 			(n("0x" .. string.sub(hex, 1, 1)) * 17),
 			(n("0x" .. string.sub(hex, 2, 2)) * 17),
 			(n("0x" .. string.sub(hex, 3, 3)) * 17)
-		else
+	else
 		return
 			n("0x" .. string.sub(hex, 1, 2)),
 			n("0x" .. string.sub(hex, 3, 4)),
 			n("0x" .. string.sub(hex, 5, 6))
-		end
+	end
 end
 
 function color_hex_part:Ctor(str)
@@ -134,7 +134,7 @@ function texture_part:Ctor(str)
 	local texture_components = string.Explode(str, "%s*,%s*", true)
 
 	--if self:TextureExists(texture_components[1]) then
-		self.Material = CreateMaterial(string_format("EC_%s", texture_components[1]), "UnlitGeneric", {
+		self.Material = CreateMaterial(string.format("EC_%s", texture_components[1]), "UnlitGeneric", {
 			["$basetexture"] = texture_components[1],
 		})
 	--else
@@ -226,11 +226,14 @@ local carat_colors = {
 local carat_color_part = {}
 
 function carat_color_part:Ctor(num)
-	if carat_colors[num] then
-		self.Color = carat_colors[num]
+	local col = carat_colors[string.Trim(num)]
+	if col then
+		self.Color = col
 	else
 		self.Color = Color(255, 255, 255)
 	end
+
+	return self
 end
 
 function carat_color_part:Draw(ctx)
