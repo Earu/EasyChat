@@ -48,6 +48,7 @@ local string_format = _G.string.format
 local string_lower = _G.string.lower
 local string_find = _G.string.find
 local string_gsub = _G.string.gsub
+local string_match = _G.string.match
 
 local chat_GetPos = chat.GetChatBoxPos
 local chat_GetSize = chat.GetChatBoxSize
@@ -149,7 +150,7 @@ function default_part:Draw() end
 function default_part:PreLinePush() end
 function default_part:PostLinePush() end
 
-function chathud:RegisterPart(name, part, pattern)
+function chathud:RegisterPart(name, part, pattern, exception_patterns)
 	if not name or not part then return end
 	name = string_lower(name)
 
@@ -161,7 +162,10 @@ function chathud:RegisterPart(name, part, pattern)
 	new_part.Type = name
 
 	if pattern then
-		self.SpecialPatterns[name] = pattern
+		self.SpecialPatterns[name] = {
+			Pattern = pattern,
+			ExceptionPatterns = exception_patterns or {}
+		}
 	end
 	
 	self.Parts[name] = new_part
@@ -605,11 +609,23 @@ function chathud:PushText(text, multiline)
 	end
 end
 
+local function is_exception_pattern(str, patterns)
+	for _, pattern in ipairs(patterns) do
+		if string_match(str, pattern) then
+			return true
+		end
+	end
+
+	return false
+end
+
 function chathud:PushString(str, nick)
-	for part_name, pattern in pairs(self.SpecialPatterns) do
-		str = string_gsub(str, pattern, function(...)
-			return string_format("<%s=%s>", part_name, table_concat({ ... }, ","))
-		end)
+	for part_name, part_patterns in pairs(self.SpecialPatterns) do
+		if not is_exception_pattern(str, part_patterns.ExceptionPatterns) then
+			str = string_gsub(str, part_patterns.Pattern, function(...)
+				return string_format("<%s=%s>", part_name, table_concat({ ... }, ","))
+			end)
+		end
 	end
 
 	local str_parts = string_explode(self.TagPattern, str, true)
