@@ -197,6 +197,11 @@ function emote_part:ComputeSize()
 	self.Size = { W = height, H = height }
 end
 
+function emote_part:LineBreak()
+	local new_line = chathud:NewLine()
+	new_line:PushComponent(self)
+end
+
 function emote_part:Draw()
 	self.SetEmoteMaterial()
 	surface_DrawTexturedRect(self.Pos.X, self.Pos.Y, self.Size.W, self.Size.H)
