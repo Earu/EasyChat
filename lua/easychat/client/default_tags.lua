@@ -133,13 +133,13 @@ local default_mat = CreateMaterial("ECDefaultTexture", "UnlitGeneric", {
 function texture_part:Ctor(str)
 	local texture_components = string.Explode(str, "%s*,%s*", true)
 
-	--if self:TextureExists(texture_components[1]) then
+	if self:TextureExists(texture_components[1]) then
 		self.Material = CreateMaterial(string.format("EC_%s", texture_components[1]), "UnlitGeneric", {
 			["$basetexture"] = texture_components[1],
 		})
-	--else
-	--	self.Material = default_mat
-	--end
+	else
+		self.Material = default_mat
+	end
 
 	self.TextureSize = math.Clamp(tonumber(texture_components[2]) or 32, 16, 64)
 
@@ -155,6 +155,11 @@ end
 
 function texture_part:ComputeSize()
 	self.Size = { W = self.TextureSize, H = self.TextureSize }
+end
+
+function texture_part:LineBreak()
+	local new_line = chathud:NewLine()
+	new_line:PushComponent(self)
 end
 
 function texture_part:Draw(ctx)
@@ -205,22 +210,22 @@ chathud:RegisterPart("translate", translate_part)
 	Pre-hard-coded colors ready for use.
 ]]-------------------------------------------------------------------------------
 local carat_colors = {
-    ["0"] = Color(0, 0, 0),
-    ["1"] = Color(128, 128, 128),
-    ["2"] = Color(192, 192, 192),
-    ["3"] = Color(255, 255, 255),
-    ["4"] = Color(0, 0, 128),
-    ["5"] = Color(0, 0, 255),
-    ["6"] = Color(0, 128, 128),
-    ["7"] = Color(0, 255, 255),
-    ["8"] = Color(0, 128, 0),
-    ["9"] = Color(0, 255, 0),
-    ["10"] = Color(128, 128, 0),
-    ["11"] = Color(255, 255, 0),
-    ["12"] = Color(128, 0, 0),
-    ["13"] = Color(255, 0, 0),
-    ["14"] = Color(128, 0, 128),
-    ["15"] = Color(255, 0, 255),
+	["0"] = Color(0, 0, 0),
+	["1"] = Color(128, 128, 128),
+	["2"] = Color(192, 192, 192),
+	["3"] = Color(255, 255, 255),
+	["4"] = Color(0, 0, 128),
+	["5"] = Color(0, 0, 255),
+	["6"] = Color(0, 128, 128),
+	["7"] = Color(0, 255, 255),
+	["8"] = Color(0, 128, 0),
+	["9"] = Color(0, 255, 0),
+	["10"] = Color(128, 128, 0),
+	["11"] = Color(255, 255, 0),
+	["12"] = Color(128, 0, 0),
+	["13"] = Color(255, 0, 0),
+	["14"] = Color(128, 0, 128),
+	["15"] = Color(255, 0, 255),
 }
 
 local carat_color_part = {}

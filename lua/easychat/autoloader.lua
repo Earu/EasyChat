@@ -86,7 +86,7 @@ local LoadModules = function(path)
 end
 
 local GetModules = function()
-    return modules
+	return modules
 end
 
 return LoadModules,GetModules
