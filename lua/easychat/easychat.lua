@@ -672,13 +672,15 @@ if CLIENT then
 			}
 
 			hook.Add("Think", TAG, function()
+				local chathud = EasyChat.ChatHUD
+				if not chathud then return end
 				if EC_HUD_FOLLOW:GetBool() then
 					local x, y, w, h = frame:GetBounds()
-					EasyChat.ChatHUD.Pos = { X = x, Y = y }
-					EasyChat.ChatHUD.Size = { W = w, H = h }
+					chathud.Pos = { X = x, Y = y }
+					chathud.Size = { W = w, H = h }
 				else
-					EasyChat.ChatHUD.Pos = { X = 25, Y = ScrH() - (320 + 150) }
-					EasyChat.ChatHUD.Size = { W = 550, H = 320 }
+					chathud.Pos = { X = 25, Y = ScrH() - (320 + 150) }
+					chathud.Size = { W = 550, H = 320 }
 				end
 			end)
 
