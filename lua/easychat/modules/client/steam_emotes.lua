@@ -210,6 +210,8 @@ function emote_part:Draw()
 	draw_NoTexture()
 end
 
-chathud:RegisterPart("emote", emote_part, "%:([A-Za-z0-9_]+)%:")
+chathud:RegisterPart("emote", emote_part, "%:([A-Za-z0-9_]+)%:", {
+	"STEAM%_%d%:%d%:%d+"
+})
 
 return "Steam Emotes"
