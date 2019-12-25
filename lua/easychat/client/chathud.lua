@@ -601,8 +601,8 @@ end
 
 function chathud:PushString(str, nick)
 	for part_name, pattern in pairs(self.SpecialPatterns) do
-		string_gsub(str, pattern, function(...)
-			return string_format("<%s=%s>", part_name, table_concat({ ... }, ",")
+		str = string_gsub(str, pattern, function(...)
+			return string_format("<%s=%s>", part_name, table_concat({ ... }, ","))
 		end)
 	end
 
