@@ -228,6 +228,11 @@ if CLIENT then
 		return EasyChat.GUI and IsValid(EasyChat.GUI.ChatBox) and EasyChat.GUI.ChatBox:IsVisible()
 	end
 
+	EasyChat.GetDefaultBounds = function()
+		local coef_w, coef_h = (ScrW() / 2560), (ScrH() / 1440)
+		return 50 * coef_w, ScrH() - (320 + (coef_h * 250)), 550, 320
+	end
+
 	local ECOpen = function(isteam)
 		local ok = hook.Run("ECShouldOpen")
 		if ok == false then return end
@@ -267,8 +272,7 @@ if CLIENT then
 	end
 
 	local LoadPosSize = function()
-		local w,h = 550,320
-		local x,y = 25,(ScrH() - 150)
+		local x, y, w, h = EasyChat.GetDefaultBounds()
 		local json = file.Read("easychat/possize.txt","DATA")
 
 		if not json then return x,y,w,h end
@@ -678,8 +682,9 @@ if CLIENT then
 					chathud.Pos = { X = x, Y = y }
 					chathud.Size = { W = w, H = h }
 				else
-					chathud.Pos = { X = 25, Y = ScrH() - (320 + 150) }
-					chathud.Size = { W = 550, H = 320 }
+					local x, y, w, h = EasyChat.GetDefaultBounds()
+					chathud.Pos = { X = x, Y = y }
+					chathud.Size = { W = w, H = h }
 				end
 			end)
 
