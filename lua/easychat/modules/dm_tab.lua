@@ -245,6 +245,12 @@ if CLIENT then
 		dmtab:RemoveChat(ply)
 	end)
 
+	hook.Add("EntityRemoved", "EasyChatModuleDMTab", function(ent)
+		if ent:IsPlayer() and ent ~= LocalPlayer() then
+			dmtab:RemoveChat(ent)
+		end
+	end)
+
 	hook.Add("ECTabChanged","EasyChatModuleDMTab",function(_,tab)
 		if tab == "DM" then
 			local chat = dmtab.ActiveChat
