@@ -709,7 +709,7 @@ function chathud:CreateDrawContext()
 	return table_copy(draw_context)
 end
 
-chathud.DrawContext = self:CreateDrawContext()
+chathud.DrawContext = chathud:CreateDrawContext()
 
 function chathud:Draw()
 	--if hook_run("HUDShouldDraw", "CHudChat") == false then return end
