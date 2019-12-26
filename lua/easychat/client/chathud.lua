@@ -277,7 +277,7 @@ function text_part:PreLinePush(line, last_index)
 		return
 	end
 
-	local line_index = line.Index
+	local line_index = line.Index or 1 -- 1 if line is not part of the chathud
 
 	-- look for last font on the same line
 	local cur_line = chathud.Lines[line_index]
@@ -530,8 +530,12 @@ function base_line:PushComponent(component)
 	component:PostLinePush()
 end
 
+function chathud:CreateLine()
+	return table_copy(base_line)
+end
+
 function chathud:NewLine()
-	local new_line = table_copy(base_line)
+	local new_line = self:CreateLine()
 	new_line.Index = table_insert(self.Lines, new_line)
 
 	-- we never want to display that many lines
@@ -701,13 +705,17 @@ function draw_context:ResetTextOffset()
 	self.TextOffset = { X = 0, Y = 0 }
 end
 
-chathud.DrawContext = draw_context
+function chathud:CreateDrawContext()
+	return table_copy(draw_context)
+end
+
+chathud.DrawContext = self:CreateDrawContext()
 
 function chathud:Draw()
 	--if hook_run("HUDShouldDraw", "CHudChat") == false then return end
 
 	for _, line in ipairs(self.Lines) do
-		line:Draw(draw_context)
+		line:Draw(self.DrawContext)
 	end
 
 	-- this is done here so we can freely draw without odd behaviors
