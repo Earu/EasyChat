@@ -177,6 +177,7 @@ chathud:RegisterPart("texture", texture_part)
 	Translates text from its original position to another.
 ]]-------------------------------------------------------------------------------
 local translate_part = {
+	OkInNicks = false,
 	RunExpression = function() return 0, 0 end,
 	Offset = { X = 0, Y = 0 }
 }
