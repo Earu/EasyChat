@@ -277,12 +277,9 @@ function text_part:PreLinePush(line, last_index)
 		return
 	end
 
-	local line_index = line.Index or 1 -- 1 if line is not part of the chathud
-
 	-- look for last font on the same line
-	local cur_line = chathud.Lines[line_index]
 	for i = last_index, 1, -1 do
-		local component = cur_line.Components[i]
+		local component = line.Components[i]
 		if component.Type == "font" and not component.Invalid then
 			self:SetFont(component.Font)
 			self:CreateShadowFont()
@@ -294,6 +291,8 @@ function text_part:PreLinePush(line, last_index)
 			return
 		end
 	end
+
+	local line_index = line.Index or 1 -- 1 if line is not part of the chathud
 
 	-- this is the last line being displayed, nothing before
 	if line_index == 1 then
