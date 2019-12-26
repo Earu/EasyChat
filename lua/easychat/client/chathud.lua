@@ -87,7 +87,8 @@ engine_fonts_info["dermadefaultbold"] = {
 
 local chathud = {
 	FadeTime = 16,
-	Pos = { X = 25, Y = ScrH() - (320 + 150) },
+	-- default bounds for EasyChat
+	Pos = { X = 50 * (ScrW() / 2560), Y = ScrH() - (320 + ((ScrH() / 1440) * 250)) },
 	Size = { W = 550, H = 320 },
 	Lines = {},
 	Parts = {},
@@ -167,7 +168,7 @@ function chathud:RegisterPart(name, part, pattern, exception_patterns)
 			ExceptionPatterns = exception_patterns or {}
 		}
 	end
-	
+
 	self.Parts[name] = new_part
 end
 
@@ -391,10 +392,10 @@ function text_part:ComputePos()
 end
 
 function text_part:SetTextDrawPos(ctx)
-	local x, y = self.RealPos.X + ctx.TextOffset.X, self.RealPos.Y + ctx.TextOffset.Y 
+	local x, y = self.RealPos.X + ctx.TextOffset.X, self.RealPos.Y + ctx.TextOffset.Y
 
 	if ctx:HasMatrices() then
-		x, y = x - chathud.Pos.X, y - chathud.Pos.Y 
+		x, y = x - chathud.Pos.X, y - chathud.Pos.Y
 	end
 
 	surface_SetTextPos(x, y)
@@ -599,7 +600,7 @@ function chathud:PushText(text, multiline)
 		local text_lines = string_explode("\r?\n", text, true)
 		self:PushPartComponent("text", text_lines[1])
 		table_remove(text_lines, 1)
-	
+
 		for i=1, #text_lines do
 			self:NewLine()
 			self:PushPartComponent("text", text_lines[i])
