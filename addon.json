@@ -8,6 +8,7 @@
     "*.svn*",
     "*.md",
 	".git/*",
-	".gitignore"
+	".gitignore",
+	"workshop_update.bat"
   ]
 }
