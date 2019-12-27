@@ -348,7 +348,15 @@ if CLIENT then
 	end
 
 	EasyChat.Init = function()
-		ECConvars 		 = {} -- reset for reload
+		-- reset for reload
+		EasyChat.TextColor   = Color(255, 255, 255, 255)
+		EasyChat.Mode	     = 0
+		EasyChat.Modes       = {}
+		EasyChat.Expressions = include("easychat/client/expressions.lua")
+		EasyChat.ChatHUD     = include("easychat/client/chathud.lua")
+		EasyChat.ModeCount   = 0
+
+		ECConvars 		 = {}
 		ECAddTextHandles = {}
 
 		EasyChat.RegisterConvar(EC_GLOBAL_ON_OPEN,"Open chatbox in global tab")
@@ -949,7 +957,6 @@ if CLIENT then
 		end)
 
 		hook.Run("ECInitialized")
-
 	end
 
 	net.Receive(NET_BROADCAST_MSG,function()
