@@ -1,7 +1,7 @@
 --[[-----------------------------------------------------------------------------
 	Micro Optimization
 ]]-------------------------------------------------------------------------------
-local ipairs, pairs, tonumber = _G.ipairs, _G.pairs, _G.tonumber
+local ipairs, pairs, tonumber, select = _G.ipairs, _G.pairs, _G.tonumber, _G.select
 local Color, Vector, Matrix = _G.Color, _G.Vector, _G.Matrix
 local type, tostring, RealFrameTime, ScrH, RealTime = _G.type, _G.tostring, _G.RealFrameTime, _G.ScrH, _G.RealTime
 local select, setfenv, CompileString, unpack = _G.select, _G.setfenv, _G.CompileString, _G.unpack
@@ -49,6 +49,9 @@ local string_lower = _G.string.lower
 local string_find = _G.string.find
 local string_gsub = _G.string.gsub
 local string_match = _G.string.match
+local string_byte = _G.string.byte
+
+local utf8_force = utf8.force
 
 local chat_GetPos = chat.GetChatBoxPos
 local chat_GetSize = chat.GetChatBoxSize
@@ -119,6 +122,89 @@ function chathud:UpdateFontSize(size)
 end
 
 chathud:UpdateFontSize(18)
+
+-- taken from https://github.com/notcake/glib/blob/master/lua/glib/unicode/utf8.lua#L15
+local function utf8_byte(char, offset)
+	if char == "" then return -1 end
+	offset = offset or 1
+
+	local byte = string_byte(char, offset)
+	local length = 1
+	if byte >= 128 then
+		-- multi-byte sequence
+		if byte >= 240 then
+			-- 4 byte sequence
+			length = 4
+			if #char < 4 then return -1, length end
+			byte = (byte % 8) * 262144
+			byte = byte + (string_byte(char, offset + 1) % 64) * 4096
+			byte = byte + (string_byte(char, offset + 2) % 64) * 64
+			byte = byte + (string_byte(char, offset + 3) % 64)
+		elseif byte >= 224 then
+			-- 3 byte sequence
+			length = 3
+			if #char < 3 then return -1, length end
+			byte = (byte % 16) * 4096
+			byte = byte + (string_byte(char, offset + 1) % 64) * 64
+			byte = byte + (string_byte(char, offset + 2) % 64)
+		elseif byte >= 192 then
+			-- 2 byte sequence
+			length = 2
+			if #char < 2 then return -1, length end
+			byte = (byte % 32) * 64
+			byte = byte + (string_byte(char, offset + 1) % 64)
+		else
+			-- this is a continuation byte
+			-- invalid sequence
+			byte = -1
+		end
+	else
+		-- single byte sequence
+	end
+	return byte, length
+end
+
+-- taken from https://github.com/notcake/glib/blob/master/lua/glib/unicode/utf8.lua#L182
+local function utf8_len(str)
+	local _, length = string_gsub(str, "[^\128-\191]", "")
+	return length
+end
+
+local function utf8_sub(str, i, j)
+	j = j or -1
+
+	local pos = 1
+	local bytes = #str
+	local length = 0
+
+	-- only set l if i or j is negative
+	local l = (i >= 0 and j >= 0) or utf8_len(str)
+	local start_char = (i >= 0) and i or l + i + 1
+	local end_char   = (j >= 0) and j or l + j + 1
+
+	-- can't have start before end!
+	if start_char > end_char then return "" end
+
+	-- byte offsets to pass to string.sub
+	local start_byte, end_byte = 1, bytes
+
+	while pos <= bytes do
+		length = length + 1
+
+		if length == start_char then
+			start_byte = pos
+		end
+
+		pos = pos + select(2, utf8_byte(str, pos))
+
+		if length == end_char then
+			end_byte = pos - 1
+			break
+		end
+	end
+
+	return string_sub(str, start_byte, end_byte)
+end
 
 local EC_HUD_TTL = GetConVar("easychat_hud_ttl")
 
@@ -260,7 +346,7 @@ local text_part = {
 }
 
 function text_part:Ctor(content)
-	self.Content = content
+	self.Content = utf8_force(content)
 
 	return self
 end
@@ -443,25 +529,25 @@ function text_part:FitWidth()
 	local left_width = chathud.Size.W - last_line.Size.W
 	local text = self.Content
 
-	local len = string_len(text)
+	local len = utf8_len(text)
 	for i=1, len do
-		if self:IsTextWider(string_sub(text, 1, i), left_width) then
-			local sub_str = string_sub(text, i, i)
+		if self:IsTextWider(utf8_sub(text, 1, i), left_width) then
+			local sub_str = utf8_sub(text, i, i)
 
 			-- try n times before hard breaking
 			for j=1, hard_break_treshold do
 				if breaking_chars[sub_str] then
 					-- we found a breaking char, break here
-					self.Content = string_sub(text, 1, i - j)
+					self.Content = utf8_sub(text, 1, i - j)
 					break
 				else
-					sub_str = string_sub(text, i - j, i - j)
+					sub_str = utf8_sub(text, i - j, i - j)
 				end
 			end
 
 			-- check if content is the same, and if it is, hard-break
 			if text == self.Content then
-				self.Content = string_sub(text, 1, i)
+				self.Content = utf8_sub(text, 1, i)
 			end
 
 			break -- we're done getting our first chunk of text to fit for the last line
@@ -471,7 +557,7 @@ function text_part:FitWidth()
 	last_line:PushComponent(self)
 
 	-- send back remaining text
-	return string_sub(text, string_len(self.Content) + 1, len)
+	return utf8_sub(text, utf8_len(self.Content) + 1, len)
 end
 
 function text_part:LineBreak()
@@ -499,6 +585,9 @@ local base_line = {
 }
 
 function base_line:Update()
+	-- dont have fading if you're not used in chathud
+	if not self.Index then return end
+
 	local time = RealFrameTime()
 	self.LifeTime = self.LifeTime + time
 	if self.LifeTime >= chathud.FadeTime then
