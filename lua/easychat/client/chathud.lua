@@ -60,6 +60,8 @@ local chat_GetSize = chat.GetChatBoxSize
 	Base ChatHUD
 ]]-------------------------------------------------------------------------------
 
+local SHADOW_FONT_BLURSIZE = 1
+
 -- this is used later for creating shadow fonts properly
 local engine_fonts_info = {}
 if file.Exists("sourceengine/resource/clientscheme.res", "BASE_PATH") then
@@ -110,6 +112,7 @@ function chathud:UpdateFontSize(size)
 		size = size,
 		weight = 600,
 		shadow = true,
+		read_speed = 100,
 	})
 
 	surface_CreateFont("ECHUDShadowDefault", {
@@ -117,7 +120,9 @@ function chathud:UpdateFontSize(size)
 		extended = true,
 		size = size,
 		weight = 600,
-		blursize = 2,
+		shadow = true,
+		blursize = SHADOW_FONT_BLURSIZE,
+		read_speed = 100,
 	})
 end
 
@@ -233,8 +238,8 @@ end
 -- meant to be overriden
 function default_part:LineBreak() end
 function default_part:ComputeSize() end
-function default_part:Draw() end
-function default_part:PreLinePush() end
+function default_part:Draw(ctx) end
+function default_part:PreLinePush(line, last_index) end
 function default_part:PostLinePush() end
 
 function chathud:RegisterPart(name, part, pattern, exception_patterns)
@@ -272,13 +277,10 @@ local stop_part = {
 }
 
 function stop_part:Draw(ctx)
-	while ctx.MatrixCount > 0 do
-		ctx:PopMatrix()
-	end
-
 	ctx:ResetColors()
 	ctx:ResetFont()
 	ctx:ResetTextOffset()
+	ctx:PopDrawFunctions()
 end
 
 chathud:RegisterPart("stop", stop_part)
@@ -291,7 +293,6 @@ chathud:RegisterPart("stop", stop_part)
 local color_part = {}
 
 function color_part:Ctor(str)
-	self:ComputeSize()
 	local col_components = string_explode("%s*,%s*", str, true)
 	local r, g, b =
 		tonumber(col_components[1]) or 255,
@@ -430,7 +431,7 @@ function text_part:CreateShadowFont()
 				extended = true,
 				size = info.tall,
 				weight = info.weight,
-				blursize = 2,
+				blursize = SHADOW_FONT_BLURSIZE,
 				antialias = tobool(info.antialias),
 				outline = tobool(info.outline),
 			})
@@ -438,7 +439,7 @@ function text_part:CreateShadowFont()
 			info = surface_GetLuaFonts()[string_lower(self.Font)]
 			if info then
 				local font_data = table_copy(info)
-				font_data.blursize = 2
+				font_data.blursize = SHADOW_FONT_BLURSIZE
 				surface_CreateFont(name, font_data)
 			else
 				-- fallback to trying to do something?
@@ -446,7 +447,7 @@ function text_part:CreateShadowFont()
 					font = self.Font,
 					extended = true,
 					size = draw_GetFontHeight(self.Font),
-					blursize = 2,
+					blursize = SHADOW_FONT_BLURSIZE,
 				})
 			end
 		end
@@ -457,7 +458,7 @@ function text_part:CreateShadowFont()
 	self.ShadowFont = name
 end
 
-local smoothing_speed = 1
+local smoothing_speed = 0.2
 function text_part:ComputePos()
 	if self.Pos.X ~= self.Pos.X or self.Pos.Y ~= self.Pos.Y then
 		local factor = smoothing_speed * RealFrameTime()
@@ -476,14 +477,8 @@ function text_part:ComputePos()
 	end
 end
 
-function text_part:SetTextDrawPos(ctx)
-	local x, y = self.RealPos.X + ctx.TextOffset.X, self.RealPos.Y + ctx.TextOffset.Y
-
-	if ctx:HasMatrices() then
-		x, y = x - chathud.Pos.X, y - chathud.Pos.Y
-	end
-
-	surface_SetTextPos(x, y)
+function text_part:GetTextDrawPos(ctx)
+	return self.RealPos.X + ctx.TextOffset.X, self.RealPos.Y + ctx.TextOffset.Y
 end
 
 local shadow_col = Color(0, 0, 0, 255)
@@ -492,22 +487,30 @@ function text_part:DrawShadow(ctx)
 	surface_SetTextColor(shadow_col)
 	surface_SetFont(self.ShadowFont and self.ShadowFont or chathud.DefaultShadowFont)
 
-	--render_OverrideBlend(true, BLEND_SRC_ALPHA, BLEND_ZERO, BLENDFUNC_REVERSE_SUBTRACT)
-	for _ = 1, 5 do
-		self:SetTextDrawPos(ctx)
+	local x, y = self:GetTextDrawPos(ctx)
+	for _ = 1, 6 do
+		surface_SetTextPos(x, y)
 		surface_DrawText(self.Content)
 	end
-	--render_OverrideBlend(false)
 end
 
 function text_part:Draw(ctx)
 	self:ComputePos()
-	self:DrawShadow(ctx)
-	self:SetTextDrawPos(ctx)
 
+	local x, y = self:GetTextDrawPos(ctx)
+
+	-- this is for other components to add shit to our text if necessary
+	ctx:CallPreTextDrawFunctions(x, y, self.Size.W, self.Size.H)
+
+	self:DrawShadow(ctx)
+
+	surface_SetTextPos(x, y)
 	surface_SetTextColor(ctx.Color)
 	surface_SetFont(self.Font)
 	surface_DrawText(self.Content)
+
+	-- same here
+	ctx:CallPostTextDrawFunctions(x, y, self.Size.W, self.Size.H)
 end
 
 function text_part:IsTextWider(text, width)
@@ -716,7 +719,12 @@ function chathud:PushString(str, nick)
 	for part_name, part_patterns in pairs(self.SpecialPatterns) do
 		if not is_exception_pattern(str, part_patterns.ExceptionPatterns) then
 			str = string_gsub(str, part_patterns.Pattern, function(...)
-				return string_format("<%s=%s>", part_name, table_concat({ ... }, ","))
+				local args = { ... }
+				if #args == 0 then
+					return string_format("<%s=>", part_name)
+				else
+					return string_format("<%s=%s>", part_name, table_concat(args, ","))
+				end
 			end)
 		end
 	end
@@ -747,26 +755,11 @@ end
 	Actual ChatHUD drawing here
 ]]-------------------------------------------------------------------------------
 local draw_context = {
-	MatrixCount = 0,
 	Color = chathud.DefaultColor,
-	TextOffset = { X = 0, Y = 0 }
+	TextOffset = { X = 0, Y = 0 },
+	PostTextDrawFunctions = {},
+	PreTextDrawFunctions = {}
 }
-
-function draw_context:PushMatrix(mat)
-	cam_PushModelMatrix(mat)
-	self.MatrixCount = self.MatrixCount + 1
-end
-
-function draw_context:PopMatrix()
-	if self.MatrixCount <= 0 then return end
-
-	cam_PopModelMatrix()
-	self.MatrixCount = self.MatrixCount - 1
-end
-
-function draw_context:HasMatrices()
-	return self.MatrixCount > 0
-end
 
 function draw_context:UpdateColor(col)
 	col.a = self.Alpha
@@ -778,6 +771,33 @@ end
 function draw_context:PushTextOffset(offset)
 	self.TextOffset.X = self.TextOffset.X + offset.X
 	self.TextOffset.Y = self.TextOffset.Y + offset.Y
+end
+
+function draw_context:PushPostTextDraw(component)
+	if not component.PostTextDraw then return end
+	table_insert(self.PostTextDrawFunctions, component)
+end
+
+function draw_context:PushPreTextDraw(component)
+	if not component.PreTextDraw then return end
+	table_insert(self.PreTextDrawFunctions, component)
+end
+
+function draw_context:CallPostTextDrawFunctions(x, y, w, h)
+	for _, component in ipairs(self.PostTextDrawFunctions) do
+		component:PostTextDraw(self, x, y, w, h)
+	end
+end
+
+function draw_context:CallPreTextDrawFunctions(x, y, w, h)
+	for _, component in ipairs(self.PreTextDrawFunctions) do
+		component:PreTextDraw(self, x, y, w, h)
+	end
+end
+
+function draw_context:PopDrawFunctions()
+	self.PreTextDrawFunctions = {}
+	self.PostTextDrawFunctions = {}
 end
 
 function draw_context:ResetColors()
