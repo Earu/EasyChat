@@ -5,8 +5,15 @@ local surface_SetDrawColor = surface.SetDrawColor
 local surface_SetTextColor = surface.SetTextColor
 local surface_SetMaterial = surface.SetMaterial
 local surface_DrawTexturedRect = surface.DrawTexturedRect
+local surface_DrawRect = surface.DrawRect
+local surface_DrawLine = surface.DrawLine
 
 local draw_NoTexture = draw.NoTexture
+
+local cam_PushModelMatrix = cam.PushModelMatrix
+local cam_PopModelMatrix = cam.PopModelMatrix
+
+local math_sin = math.sin
 
 --[[-----------------------------------------------------------------------------
 	Color Component
@@ -84,7 +91,7 @@ chathud:RegisterPart("hsv", hsv_part)
 --[[-----------------------------------------------------------------------------
 	Scale Component
 
-	Scales other components up and down.
+	Scales text components up and down.
 ]]-------------------------------------------------------------------------------
 local scale_part = {
 	OkInNicks = false,
@@ -92,8 +99,6 @@ local scale_part = {
 }
 
 function scale_part:Ctor(expr)
-	self:ComputeSize()
-
 	local succ, ret = compile_expression(expr)
 	if succ then
 		self.RunExpression = ret
@@ -108,17 +113,74 @@ function scale_part:ComputeScale()
 	self.Scale = Vector(n, n, n)
 end
 
-function scale_part:Draw(ctx)
+function scale_part:PreTextDraw(ctx, x, y, w, h)
 	self:ComputeScale()
 
-	local translation = Vector(self.Pos.X, self.Pos.Y)
-	local mat = Matrix()
-	mat:SetTranslation(translation)
-	mat:Scale(self.Scale)
-	ctx:PushMatrix(mat)
+	local tr = Vector(x, y + h / 2)
+	local m = Matrix()
+	m:Translate(tr)
+	m:Scale(self.Scale)
+	m:Translate(-tr)
+	cam_PushModelMatrix(m)
+end
+
+function scale_part:PostTextDraw(ctx, x, y, w, h)
+	cam_PopModelMatrix()
+end
+
+function scale_part:Draw(ctx)
+	ctx:PushPreTextDraw(self)
+	ctx:PushPostTextDraw(self)
 end
 
 chathud:RegisterPart("scale", scale_part)
+
+--[[-----------------------------------------------------------------------------
+	Rotate Component
+
+	Rotates text components.
+]]-------------------------------------------------------------------------------
+local rotate_part = {
+	OkInNicks = false,
+	RunExpression = function() return 1 end
+}
+
+function rotate_part:Ctor(expr)
+	local succ, ret = compile_expression(expr)
+	if succ then
+		self.RunExpression = ret
+	end
+
+	return self
+end
+
+function rotate_part:ComputeAngle()
+	local ret = self.RunExpression()
+	local n = tonumber(ret) or 0
+	self.Angle = Angle(0, n, 0)
+end
+
+function rotate_part:PreTextDraw(ctx, x, y, w, h)
+	self:ComputeAngle()
+
+	local tr = Vector(x + w / 2, y + h / 2)
+	local m = Matrix()
+	m:Translate(tr)
+	m:SetAngles(self.Angle)
+	m:Translate(-tr)
+	cam_PushModelMatrix(m)
+end
+
+function rotate_part:PostTextDraw(ctx, x, y, w, h)
+	cam_PopModelMatrix()
+end
+
+function rotate_part:Draw(ctx)
+	ctx:PushPreTextDraw(self)
+	ctx:PushPostTextDraw(self)
+end
+
+chathud:RegisterPart("rotate", rotate_part)
 
 --[[-----------------------------------------------------------------------------
 	Texture Component
@@ -127,30 +189,31 @@ chathud:RegisterPart("scale", scale_part)
 ]]-------------------------------------------------------------------------------
 local texture_part = {}
 
-local default_mat = CreateMaterial("ECDefaultTexture", "UnlitGeneric", {
-	["$basetexture"] = "vgui/white"
-})
 function texture_part:Ctor(str)
 	local texture_components = string.Explode(str, "%s*,%s*", true)
 
-	if self:TextureExists(texture_components[1]) then
-		self.Material = CreateMaterial(string.format("EC_%s", texture_components[1]), "UnlitGeneric", {
-			["$basetexture"] = texture_components[1],
-		})
+	local path = texture_components[1]
+	local mat = Material(path, (path:EndsWith(".png") and "nocull noclamp" or nil))
+	local shader = mat:GetShader()
+	if shader == "VertexLitGeneric" or shader == "Cable" then
+		local tex_path = mat:GetString("$basetexture")
+		if tex_path then
+			local params = {
+				["$basetexture"] = tex_path,
+				["$vertexcolor"] = 1,
+				["$vertexalpha"] = 1,
+			}
+
+			self.Material = CreateMaterial("ECFixMat_" .. tex_path, "UnlitGeneric", params)
+		end
 	else
-		self.Material = default_mat
+		self.Material = mat
 	end
 
-	self.TextureSize = math.Clamp(tonumber(texture_components[2]) or 32, 16, 64)
+	if not self.Material then self.Invalid = true end
+	self.TextureSize = math.Clamp(tonumber(texture_components[2]) or draw.GetFontHeight(chathud.DefaultFont), 16, 64)
 
 	return self
-end
-
-function texture_part:TextureExists(path)
-	local t = Material(path):GetTexture("$basetexture")
-	if not t then return false end
-
-	return t:IsError()
 end
 
 function texture_part:ComputeSize()
@@ -163,6 +226,8 @@ function texture_part:LineBreak()
 end
 
 function texture_part:Draw(ctx)
+	if self.Invalid then return end
+
 	surface_SetMaterial(self.Material)
 	surface_DrawTexturedRect(self.Pos.X, self.Pos.Y, self.TextureSize, self.TextureSize)
 
@@ -183,8 +248,6 @@ local translate_part = {
 }
 
 function translate_part:Ctor(expr)
-	self:ComputeSize()
-
 	local succ, ret = compile_expression(expr)
 	if succ then
 		self.RunExpression = ret
@@ -247,5 +310,64 @@ function carat_color_part:Draw(ctx)
 end
 
 chathud:RegisterPart("caratcol", carat_color_part, "%^(%d%d?)")
+
+--[[-----------------------------------------------------------------------------
+	Wrong Component
+
+	Marks text as "wrong".
+]]-------------------------------------------------------------------------------
+local wrong_part = {}
+
+function wrong_part:Ctor()
+	return self
+end
+
+local wrong_col = Color(255, 0, 0)
+function wrong_part:PostTextDraw(ctx, x, y, w, h)
+	wrong_col.a = ctx.Alpha
+	surface_SetDrawColor(wrong_col)
+	for i = x, x + w do
+		surface_DrawLine(i, y + h - math_sin(i), i, y + h + math_sin(i))
+	end
+	surface_SetDrawColor(ctx.Color)
+end
+
+function wrong_part:Draw(ctx)
+	ctx:PushPostTextDraw(self)
+end
+
+-- we need the "<wrong>" pattern here because otherwise players need to type "<wrong=>"
+chathud:RegisterPart("wrong", wrong_part, "%<wrong%>")
+
+--[[-----------------------------------------------------------------------------
+	Background Component
+
+	Draws text background a certain color.
+]]-------------------------------------------------------------------------------
+local background_part = {}
+
+function background_part:Ctor(str)
+	local col_components = string.Explode("%s*,%s*", str, true)
+	local r, g, b =
+		tonumber(col_components[1]) or 255,
+		tonumber(col_components[2]) or 255,
+		tonumber(col_components[3]) or 255
+	self.Color = Color(r, g, b)
+
+	return self
+end
+
+function background_part:PreTextDraw(ctx, x, y, w, h)
+	self.Color.a = ctx.Alpha
+	surface_SetDrawColor(self.Color)
+	surface_DrawRect(x, y, w, h)
+	surface_SetDrawColor(ctx.Color)
+end
+
+function background_part:Draw(ctx)
+	ctx:PushPreTextDraw(self)
+end
+
+chathud:RegisterPart("background", background_part)
 
 return "Extra ChatHUD Tags"
