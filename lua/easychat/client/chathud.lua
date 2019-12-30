@@ -93,8 +93,8 @@ engine_fonts_info["dermadefaultbold"] = {
 local chathud = {
 	FadeTime = 16,
 	-- default bounds for EasyChat
-	Pos = { X = 50 * (ScrW() / 2560), Y = ScrH() - (320 + ((ScrH() / 1440) * 250)) },
-	Size = { W = 550, H = 320 },
+	Pos = { X = 0, Y = 0 },
+	Size = { W = 400, H = 0 },
 	Lines = {},
 	Parts = {},
 	SpecialPatterns = {},
@@ -715,7 +715,7 @@ local function is_exception_pattern(str, patterns)
 	return false
 end
 
-function chathud:PushString(str, nick)
+function chathud:NormalizeString(str)
 	for part_name, part_patterns in pairs(self.SpecialPatterns) do
 		if not is_exception_pattern(str, part_patterns.ExceptionPatterns) then
 			str = string_gsub(str, part_patterns.Pattern, function(...)
@@ -729,22 +729,28 @@ function chathud:PushString(str, nick)
 		end
 	end
 
+	return str
+end
+
+function chathud:PushString(str, is_nick)
+	str = self:NormalizeString(str)
+
 	local str_parts = string_explode(self.TagPattern, str, true)
 	local iterator = string_gmatch(str, self.TagPattern)
 	local i = 1
 	for tag, content in iterator do
-		self:PushText(str_parts[i], nick)
+		self:PushText(str_parts[i], is_nick)
 		i = i + 1
 
 		local part = self.Parts[tag]
 		if part and part.Usable then
-			if (nick and part.OkInNicks) or not nick then
+			if (is_nick and part.OkInNicks) or not is_nick then
 				self:PushPartComponent(tag, content)
 			end
 		end
 	end
 
-	self:PushText(str_parts[#str_parts], nick)
+	self:PushText(str_parts[#str_parts], is_nick)
 end
 
 function chathud:Clear()
@@ -838,8 +844,6 @@ function chathud:Draw()
 	end
 end
 
-hook.Add("HUDPaint", "EasyChat", function() chathud:Draw() end)
-
 --[[-----------------------------------------------------------------------------
 	Input into ChatHUD
 ]]-------------------------------------------------------------------------------
@@ -855,38 +859,5 @@ function chathud:InsertColorChange(r, g, b)
 	local expr = ("%d,%d,%d"):format(r, g, b)
 	self:PushPartComponent("color", expr)
 end
-
---[[-------------------------------------------------------------------------------
-	For testing
------------------------------------------------------------------------------------
-local function is_color(c)
-	return c.r and c.g and c.b and c.a
-end
-
-local function color_to_expr(c)
-	return string_replace(tostring(c), " ", ",")
-end
-
-function chathud:AddText(...)
-	local args = { ... }
-	self:NewLine()
-	for _, arg in ipairs(args) do
-		local t = type(arg)
-		if t == "Player" then
-			local team_color = team.GetColor(arg:Team())
-			self:PushPartComponent("color", color_to_expr(team_color))
-			self:PushString(arg:Nick())
-		elseif t == "table" and is_color(arg) then
-			self:PushPartComponent("color", color_to_expr(arg))
-		elseif t == "string" then
-			self:PushString(arg)
-		else
-			self:PushString(tostring(arg))
-		end
-	end
-	self:PushPartComponent("stop")
-	self:InvalidateLayout()
-end
-]]--
 
 return chathud
