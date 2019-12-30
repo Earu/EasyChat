@@ -924,7 +924,7 @@ if CLIENT then
 				end
 			end
 
-			for _,key in ipairs(letters) do
+			for _, key in ipairs(letters) do
 				if input.IsKeyDown(key) then
 					local k = input.GetKeyName(key)
 					return true,((k ~= "TAB" and k ~= "ENTER") and k or "")
@@ -937,7 +937,15 @@ if CLIENT then
 			if hudelement == "CHudChat" then return false end
 		end)
 
-		hook.Add("PreRender",TAG,function()
+		local chathud = EasyChat.ChatHUD
+		local x, y, w, h = EasyChat.GetDefaultBounds()
+		chathud.Pos = { X = x, Y = y }
+		chathud.Size = { W = w, H = h }
+		chathud:InvalidateLayout()
+
+		hook.Add("HUDPaint", TAG, function() chathud:Draw() end)
+
+		hook.Add("PreRender", TAG, function()
 			if EasyChat.IsOpened() then
 				if input.IsKeyDown(KEY_ESCAPE) then
 					EasyChat.GUI.TextEntry:SetText("")
