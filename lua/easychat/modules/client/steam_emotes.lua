@@ -184,13 +184,14 @@ local draw_NoTexture = draw.NoTexture
 	Displays steam emotes.
 ]]-------------------------------------------------------------------------------
 local emote_part = {
-	SetEmoteMaterial = function() draw.NoTexture() end
+	SetEmoteMaterial = function() draw.NoTexture() end,
+	RealPos = { X = 0, Y = 0 s}
 }
 
 function emote_part:Ctor(str)
 	local em_components = string.Explode("%s*,%s*", str, true)
 	local name, size = em_components[1], em_components[2]
-	self.Height = math.Clamp(tonumber(size) or draw.GetFontHeight(chathud.DefaultFont), 16, 128)
+	self.Height = math.Clamp(tonumber(size) or draw.GetFontHeight(chathud.DefaultFont), 16, 64)
 	self.SetEmoteMaterial = steam_emote(name)
 
 	return self
@@ -205,10 +206,39 @@ function emote_part:LineBreak()
 	new_line:PushComponent(self)
 end
 
+local smoothing_speed = 20
+function emote_part:ComputePos()
+    if self.RealPos.Y ~= self.Pos.Y then
+        if self.RealPos.Y > self.Pos.Y then
+            local factor = math.EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 1, 1) * smoothing_speed
+            self.RealPos.Y = math_max(self.RealPos.Y - factor, self.Pos.Y)
+        else
+            local factor = math.EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 1, 1) * smoothing_speed
+            self.RealPos.Y = math_min(self.RealPos.Y + factor, self.Pos.Y)
+        end
+    end
+end
+
+function emote_part:GetDrawPos(ctx)
+	return self.Pos.X + ctx.TextOffset.X, self.RealPos.Y + ctx.TextOffset.Y
+end
+
+function emote_part:PostLinePush()
+    self.RealPos = table.Copy(self.Pos)
+end
+
 function emote_part:Draw()
-	self.SetEmoteMaterial()
-	surface_DrawTexturedRect(self.Pos.X, self.Pos.Y, self.Size.W, self.Size.H)
-	draw_NoTexture()
+    self:ComputePos()
+
+    local x, y = self:GetDrawPos(ctx)
+
+    ctx:CallPreTextDrawFunctions(x, y, self.Size.W, self.Size.H)
+
+    self.SetEmoteMaterial()
+	surface_DrawTexturedRect(x, y, self.Size.W, self.Size.H)
+    draw_NoTexture()
+
+    ctx:CallPostTextDrawFunctions(x, y, self.Size.W, self.Size.H)
 end
 
 chathud:RegisterPart("emote", emote_part, "%:([A-Za-z0-9_]+)%:", {
