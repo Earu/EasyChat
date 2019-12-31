@@ -416,7 +416,7 @@ function text_part:PreLinePush(line, last_index)
 end
 
 function text_part:PostLinePush()
-	self.RealPos = self.Pos
+	self.RealPos = table_copy(self.Pos)
 end
 
 function text_part:ComputeSize()
@@ -463,27 +463,21 @@ function text_part:CreateShadowFont()
 	self.ShadowFont = name
 end
 
-local smoothing_speed = 0.2
+local smoothing_speed = 20
 function text_part:ComputePos()
-	if self.Pos.X ~= self.Pos.X or self.Pos.Y ~= self.Pos.Y then
-		local factor = smoothing_speed * RealFrameTime()
-
-		if self.RealPos.X > self.Pos.X then
-			self.RealPos.X = math_min(self.RealPos.X + factor, self.Pos.X)
-		else
-			self.RealPos.X = math_max(self.RealPos.X - factor, self.Pos.X)
-		end
-
-		if self.RealPos.Y > self.Pos.Y then
-			self.RealPos.Y = math_min(self.RealPos.Y + factor, self.Pos.Y)
-		else
-			self.RealPos.Y = math_max(self.RealPos.Y - factor, self.Pos.Y)
-		end
-	end
+    if self.RealPos.Y ~= self.Pos.Y then
+        if self.RealPos.Y > self.Pos.Y then
+            local factor = math.EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 1, 1) * smoothing_speed
+            self.RealPos.Y = math_max(self.RealPos.Y - factor, self.Pos.Y)
+        else
+            local factor = math.EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 1, 1) * smoothing_speed
+            self.RealPos.Y = math_min(self.RealPos.Y + factor, self.Pos.Y)
+        end
+    end
 end
 
 function text_part:GetTextDrawPos(ctx)
-	return self.RealPos.X + ctx.TextOffset.X, self.RealPos.Y + ctx.TextOffset.Y
+	return self.Pos.X + ctx.TextOffset.X, self.RealPos.Y + ctx.TextOffset.Y
 end
 
 local shadow_col = Color(0, 0, 0, 255)
@@ -493,7 +487,7 @@ function text_part:DrawShadow(ctx)
 	surface_SetFont(self.ShadowFont and self.ShadowFont or chathud.DefaultShadowFont)
 
 	local x, y = self:GetTextDrawPos(ctx)
-	for _ = 1, 6 do
+	for _ = 1, 5 do
 		surface_SetTextPos(x, y)
 		surface_DrawText(self.Content)
 	end
@@ -633,6 +627,7 @@ end
 function chathud:NewLine()
 	local new_line = self:CreateLine()
 	new_line.Index = table_insert(self.Lines, new_line)
+	new_line.Pos = { X = chathud.Pos.X, Y = chathud.Pos.Y + chathud.Size.H }
 
 	-- we never want to display that many lines
 	if #self.Lines > 50 then
@@ -746,18 +741,18 @@ function chathud:PushString(str, is_nick)
 	for tag, content in iterator do
 		local part = self.Parts[tag]
 		if part and part.Usable then
-			self:PushText(str_parts[i], is_nick)
+			self:PushText(str_parts[i], not is_nick)
 			if (is_nick and part.OkInNicks) or not is_nick then
 				self:PushPartComponent(tag, content)
 			end
 		else
-			self:PushText(str_parts[i] .. string_format("<%s=%s>", tag, content), is_nick)
+			self:PushText(str_parts[i] .. string_format("<%s=%s>", tag, content), not is_nick)
 		end
 
 		i = i + 1
 	end
 
-	self:PushText(str_parts[#str_parts], is_nick)
+	self:PushText(str_parts[#str_parts], not is_nick))
 end
 
 function chathud:Clear()
