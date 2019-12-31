@@ -126,7 +126,12 @@ function chathud:UpdateFontSize(size)
 	})
 end
 
-chathud:UpdateFontSize(18)
+-- this is because 16 is way too small on 1440p and above
+if ScrH() <= 1080 then
+	chathud:UpdateFontSize(16)
+else
+	chathud:UpdateFontSize(18)
+end
 
 -- taken from https://github.com/notcake/glib/blob/master/lua/glib/unicode/utf8.lua#L15
 local function utf8_byte(char, offset)
@@ -739,15 +744,17 @@ function chathud:PushString(str, is_nick)
 	local iterator = string_gmatch(str, self.TagPattern)
 	local i = 1
 	for tag, content in iterator do
-		self:PushText(str_parts[i], is_nick)
-		i = i + 1
-
 		local part = self.Parts[tag]
 		if part and part.Usable then
+			self:PushText(str_parts[i], is_nick)
 			if (is_nick and part.OkInNicks) or not is_nick then
 				self:PushPartComponent(tag, content)
 			end
+		else
+			self:PushText(str_parts[i] .. string_format("<%s=%s>", tag, content), is_nick)
 		end
+
+		i = i + 1
 	end
 
 	self:PushText(str_parts[#str_parts], is_nick)

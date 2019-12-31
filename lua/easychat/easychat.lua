@@ -945,6 +945,13 @@ if CLIENT then
 
 		hook.Add("HUDPaint", TAG, function() chathud:Draw() end)
 
+		-- for getting rid of annoying stuff
+		hook.Add("OnPlayerChat", TAG, function(ply, txt)
+			if ply == LocalPlayer() and (txt == "sh" or string.match(txt, "%ssh%s")) then
+				chathud:Clear()
+			end
+		end)
+
 		hook.Add("PreRender", TAG, function()
 			if EasyChat.IsOpened() then
 				if input.IsKeyDown(KEY_ESCAPE) then
