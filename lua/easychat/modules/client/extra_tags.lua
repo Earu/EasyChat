@@ -1,5 +1,6 @@
 local chathud = EasyChat.ChatHUD
 local compile_expression = EasyChat.Expressions.Compile
+local pcall = _G.pcall
 
 local surface_SetDrawColor = surface.SetDrawColor
 local surface_SetTextColor = surface.SetTextColor
@@ -72,11 +73,11 @@ function hsv_part:Ctor(expr)
 end
 
 function hsv_part:ComputeHSV()
-	local h, s, v = self.RunExpression()
+	local succ, h, s, v = pcall(self.RunExpression)
 
-	h = (tonumber(h) or 360) % 360
-	s = math.Clamp(tonumber(s) or 1, 0, 1)
-	v = math.Clamp(tonumber(v) or 1, 0, 1)
+	h = succ and ((tonumber(h) or 360) % 360) or 360
+	s = succ and math.Clamp(tonumber(s) or 1, 0, 1) or 1
+	v = succ and math.Clamp(tonumber(v) or 1, 0, 1) or 1
 
 	self.Color = HSVToColor(h, s, v)
 end
@@ -108,8 +109,8 @@ function scale_part:Ctor(expr)
 end
 
 function scale_part:ComputeScale()
-	local ret = self.RunExpression()
-	local n = tonumber(ret) or 1
+	local succ, ret = pcall(self.RunExpression)
+	local n = math.Clamp(succ and tonumber(ret) or 1, -5, 5)
 	self.Scale = Vector(n, n, n)
 end
 
@@ -155,8 +156,8 @@ function rotate_part:Ctor(expr)
 end
 
 function rotate_part:ComputeAngle()
-	local ret = self.RunExpression()
-	local n = tonumber(ret) or 0
+	local succ, ret = pcall(self.RunExpression)
+	local n = succ and tonumber(ret) or 0
 	self.Angle = Angle(0, n, 0)
 end
 
@@ -257,8 +258,8 @@ function translate_part:Ctor(expr)
 end
 
 function translate_part:ComputeOffset()
-	local x,y = self.RunExpression()
-	self.Offset = { X = tonumber(x) or 0, Y = tonumber(y) or 0 }
+	local succ, x, y = pcall(self.RunExpression)
+	self.Offset = { X = succ and tonumber(x) or 0, Y = succ and tonumber(y) or 0 }
 end
 
 function translate_part:Draw(ctx)
@@ -336,8 +337,9 @@ function wrong_part:Draw(ctx)
 	ctx:PushPostTextDraw(self)
 end
 
+-- disable that its way too laggy for now
 -- we need the "<wrong>" pattern here because otherwise players need to type "<wrong=>"
-chathud:RegisterPart("wrong", wrong_part, "%<wrong%>")
+--chathud:RegisterPart("wrong", wrong_part, "%<wrong%>")
 
 --[[-----------------------------------------------------------------------------
 	Background Component
