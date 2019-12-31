@@ -40,10 +40,10 @@ http.Fetch(EMOTE_URL, function(dat, len, hdr, ret)
 		ErrorNoHalt("steam emoticons update failed\n")
 		return
 	end
-	
+
 	local t = {}
 	dat = util.Decompress(dat)
-	
+
 	file.Write(EMOTES, dat)
 	local count = count(dat, ",")
 	print(("Saved %d emoticons to %s"):format(count, EMOTES))
@@ -65,16 +65,16 @@ local function base64_decode(data)
 	return (data:gsub(".", function(x)
 		if (x == "=") then return "" end
 		local r, f = "", (BASE64:find(x) - 1)
-		for i = 6, 1, -1 do 
-			r = r .. (f % 2^i - f % 2^(i-1) > 0 and "1" or "0") 
+		for i = 6, 1, -1 do
+			r = r .. (f % 2^i - f % 2^(i-1) > 0 and "1" or "0")
 		end
-		
+
 		return r
 	end):gsub("%d%d%d?%d?%d?%d?%d?%d?", function(x)
 		if (#x ~= 8) then return "" end
 		local c = 0
-		for i=1, 8 do 
-			c = c + (x:sub(i, i) == "1" and 2^(8 - i) or 0) 
+		for i=1, 8 do
+			c = c + (x:sub(i, i) == "1" and 2^(8 - i) or 0)
 		end
 
 		return string.char(c)
@@ -153,8 +153,8 @@ local function steam_emote(name)
 		return mat
 	end end
 
-	if mat == false then 
-		return function() end 
+	if mat == false then
+		return function() end
 	end
 
 	return function()
@@ -187,16 +187,17 @@ local emote_part = {
 	SetEmoteMaterial = function() draw.NoTexture() end
 }
 
-function emote_part:Ctor(name)
-	self:ComputeSize()
+function emote_part:Ctor(str)
+	local em_components = string.Explode("%s*,%s*", str, true)
+	local name, size = em_components[1], em_components[2]
+	self.Height = math.Clamp(tonumber(size) or draw.GetFontHeight(chathud.DefaultFont), 16, 128)
 	self.SetEmoteMaterial = steam_emote(name)
 
 	return self
 end
 
 function emote_part:ComputeSize()
-	local height = draw.GetFontHeight(chathud.DefaultFont)
-	self.Size = { W = height, H = height }
+	self.Size = { W = self.Height, H = self.Height }
 end
 
 function emote_part:LineBreak()
