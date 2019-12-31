@@ -247,6 +247,12 @@ function default_part:Draw(ctx) end
 function default_part:PreLinePush(line, last_index) end
 function default_part:PostLinePush() end
 
+local blacklist = {
+	stop = true,
+	text = true,
+	color = true,
+	font = true,
+}
 function chathud:RegisterPart(name, part, pattern, exception_patterns)
 	if not name or not part then return end
 	name = string_lower(name)
@@ -263,6 +269,15 @@ function chathud:RegisterPart(name, part, pattern, exception_patterns)
 			Pattern = pattern,
 			ExceptionPatterns = exception_patterns or {}
 		}
+	end
+
+	if not blacklist[name] then
+		local cvar_name = "easychat_tag_" .. name
+		local cvar = CreateClientConVar(cvar_name, "1", true, false)
+		new_part.Enabled = cvar:GetBool()
+		cvars.AddChangeCallback(cvar_name, function(_, _, new)
+			new_part.Enabled = new
+		end)
 	end
 
 	self.Parts[name] = new_part
@@ -463,14 +478,14 @@ function text_part:CreateShadowFont()
 	self.ShadowFont = name
 end
 
-local smoothing_speed = 20
+local smoothing_speed = 1000
 function text_part:ComputePos()
     if self.RealPos.Y ~= self.Pos.Y then
         if self.RealPos.Y > self.Pos.Y then
-            local factor = math.EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 1, 1) * smoothing_speed
+            local factor = math.EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 1, 1) * smoothing_speed * RealFrameTime()
             self.RealPos.Y = math_max(self.RealPos.Y - factor, self.Pos.Y)
         else
-            local factor = math.EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 1, 1) * smoothing_speed
+            local factor = math.EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 1, 1) * smoothing_speed * RealFrameTime()
             self.RealPos.Y = math_min(self.RealPos.Y + factor, self.Pos.Y)
         end
     end
@@ -740,7 +755,7 @@ function chathud:PushString(str, is_nick)
 	local i = 1
 	for tag, content in iterator do
 		local part = self.Parts[tag]
-		if part and part.Usable then
+		if part and part.Usable and part.Enabled then
 			self:PushText(str_parts[i], not is_nick)
 			if (is_nick and part.OkInNicks) or not is_nick then
 				self:PushPartComponent(tag, content)
@@ -753,6 +768,22 @@ function chathud:PushString(str, is_nick)
 	end
 
 	self:PushText(str_parts[#str_parts], not is_nick))
+end
+
+function chathud:StopComponents()
+	for _, line in ipairs(self.Lines) do
+		for _, component in ipairs(line.Components) do
+			if not blacklist[component.Type] then
+				-- lets try this
+				component.Draw = function() end
+				component.ComputeSize = function(self)
+					self.Size = { W = 0, H = 0 }
+				end
+			end
+		end
+	end
+
+	self:InvalidateLayout()
 end
 
 function chathud:Clear()

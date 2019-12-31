@@ -947,8 +947,8 @@ if CLIENT then
 
 		-- for getting rid of annoying stuff
 		hook.Add("OnPlayerChat", TAG, function(ply, txt)
-			if ply == LocalPlayer() and (txt == "sh" or string.match(txt, "%ssh%s")) then
-				chathud:Clear()
+			if txt == "sh" or string.match(txt, "%ssh%s") then
+				chathud:StopComponents()
 			end
 		end)
 

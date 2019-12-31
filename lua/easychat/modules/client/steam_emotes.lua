@@ -206,14 +206,14 @@ function emote_part:LineBreak()
 	new_line:PushComponent(self)
 end
 
-local smoothing_speed = 20
+local smoothing_speed = 1000
 function emote_part:ComputePos()
     if self.RealPos.Y ~= self.Pos.Y then
         if self.RealPos.Y > self.Pos.Y then
-            local factor = math.EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 1, 1) * smoothing_speed
+            local factor = math.EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 1, 1) * smoothing_speed * RealFrameTime()
             self.RealPos.Y = math_max(self.RealPos.Y - factor, self.Pos.Y)
         else
-            local factor = math.EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 1, 1) * smoothing_speed
+            local factor = math.EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 1, 1) * smoothing_speed * RealFrameTime()
             self.RealPos.Y = math_min(self.RealPos.Y + factor, self.Pos.Y)
         end
     end
