@@ -128,6 +128,7 @@ if CLIENT then
 	local EC_TIMESTAMPS_12  = CreateConVar("easychat_timestamps_12", "0", FCVAR_ARCHIVE, "Display timestamps in 12 hours mode or not")
 	local EC_HISTORY        = CreateConVar("easychat_history", "1", FCVAR_ARCHIVE, "Should the history be shown")
 	local EC_USE_ME         = CreateConVar("easychat_use_me", "0", FCVAR_ARCHIVE, "Should the chat display your name or \"me\"")
+	local EC_HUD_SMOOTH     = CreateClientConVar("easychat_hud_smooth", "1", true, false, "Enables chat smoothing")
 
 	EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
 
@@ -359,15 +360,16 @@ if CLIENT then
 		ECConvars 		 = {}
 		ECAddTextHandles = {}
 
-		EasyChat.RegisterConvar(EC_GLOBAL_ON_OPEN,"Open chatbox in global tab")
-		EasyChat.RegisterConvar(EC_HISTORY,"Enable history")
-		EasyChat.RegisterConvar(EC_TIMESTAMPS,"Display timestamps")
+		EasyChat.RegisterConvar(EC_GLOBAL_ON_OPEN, "Open chatbox in global tab")
+		EasyChat.RegisterConvar(EC_HISTORY, "Enable history")
+		EasyChat.RegisterConvar(EC_TIMESTAMPS, "Display timestamps")
 		EasyChat.RegisterConvar(EC_TIMESTAMPS_12, "12 hours mode timestamps")
-		EasyChat.RegisterConvar(EC_TEAMS,"Display teams")
-		EasyChat.RegisterConvar(EC_TEAMS_COLOR,"Color the team tags")
-		EasyChat.RegisterConvar(EC_PLAYER_COLOR,"Color players in their team color")
-		EasyChat.RegisterConvar(EC_HUD_FOLLOW,"Chathud follows chatbox")
-		EasyChat.RegisterConvar(EC_TICK_SOUND,"Tick sound on new messages")
+		EasyChat.RegisterConvar(EC_TEAMS, "Display teams")
+		EasyChat.RegisterConvar(EC_TEAMS_COLOR, "Color the team tags")
+		EasyChat.RegisterConvar(EC_PLAYER_COLOR, "Color players in their team color")
+		EasyChat.RegisterConvar(EC_HUD_FOLLOW, "Chathud follows chatbox")
+		EasyChat.RegisterConvar(EC_TICK_SOUND, "Tick sound on new messages")
+		EasyChat.RegisterConvar(EC_HUD_SMOOTH, "Smooth chathud")
 
 		EasyChat.AddMode("Team",function(text)
 			net.Start(NET_SEND_MSG)
