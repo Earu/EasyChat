@@ -236,6 +236,7 @@ local default_part = {
 	Size =  { W = 0, H = 0 },
 	Usable = true,
 	OkInNicks = true,
+	Enabled = true,
 }
 
 function default_part:Ctor()
