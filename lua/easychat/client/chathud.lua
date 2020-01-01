@@ -342,6 +342,9 @@ function font_part:Ctor(str)
 	self.Font = succ and str or chathud.DefaultFont
 	if not succ then self.Invalid = true end
 
+	-- lets not have giant ass fonts
+	if draw_GetFontHeight(self.Font) >= 50 then self.Invalid = true end
+
 	return self
 end
 
@@ -773,7 +776,7 @@ function chathud:PushString(str, is_nick)
 		i = i + 1
 	end
 
-	self:PushText(str_parts[#str_parts], not is_nick))
+	self:PushText(str_parts[#str_parts], not is_nick)
 end
 
 function chathud:StopComponents()

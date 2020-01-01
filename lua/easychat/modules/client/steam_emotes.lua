@@ -185,7 +185,7 @@ local draw_NoTexture = draw.NoTexture
 ]]-------------------------------------------------------------------------------
 local emote_part = {
 	SetEmoteMaterial = function() draw.NoTexture() end,
-	RealPos = { X = 0, Y = 0 s}
+	RealPos = { X = 0, Y = 0 }
 }
 
 function emote_part:Ctor(str)
@@ -217,10 +217,10 @@ function emote_part:ComputePos()
     if self.RealPos.Y ~= self.Pos.Y then
         if self.RealPos.Y > self.Pos.Y then
             local factor = math.EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 1, 1) * smoothing_speed * RealFrameTime()
-            self.RealPos.Y = math_max(self.RealPos.Y - factor, self.Pos.Y)
+            self.RealPos.Y = math.max(self.RealPos.Y - factor, self.Pos.Y)
         else
             local factor = math.EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 1, 1) * smoothing_speed * RealFrameTime()
-            self.RealPos.Y = math_min(self.RealPos.Y + factor, self.Pos.Y)
+            self.RealPos.Y = math.min(self.RealPos.Y + factor, self.Pos.Y)
         end
     end
 end
@@ -233,7 +233,7 @@ function emote_part:PostLinePush()
     self.RealPos = table.Copy(self.Pos)
 end
 
-function emote_part:Draw()
+function emote_part:Draw(ctx)
     self:ComputePos()
 
     local x, y = self:GetDrawPos(ctx)
