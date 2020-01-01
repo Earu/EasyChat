@@ -127,8 +127,10 @@ function chathud:UpdateFontSize(size)
 end
 
 -- this is because 16 is way too small on 1440p and above
-if ScrH() <= 1080 then
+if ScrH() < 1080 then
 	chathud:UpdateFontSize(16)
+elseif ScrH() == 1080 then
+	chathud:UpdateFontSize(17)
 else
 	chathud:UpdateFontSize(18)
 end
