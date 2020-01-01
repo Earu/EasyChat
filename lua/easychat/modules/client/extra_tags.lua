@@ -96,7 +96,8 @@ chathud:RegisterPart("hsv", hsv_part)
 ]]-------------------------------------------------------------------------------
 local scale_part = {
 	OkInNicks = false,
-	RunExpression = function() return 1 end
+	RunExpression = function() return 1 end,
+	Enabled = false,
 }
 
 function scale_part:Ctor(expr)
