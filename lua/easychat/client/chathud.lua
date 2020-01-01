@@ -775,8 +775,8 @@ function chathud:StopComponents()
 		for _, component in ipairs(line.Components) do
 			if not blacklist[component.Type] then
 				-- lets try this
-				component.Draw = function() end
-				component.ComputeSize = function(self)
+				function component:Draw() end
+				function component:ComputeSize()
 					self.Size = { W = 0, H = 0 }
 				end
 			end
