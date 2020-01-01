@@ -216,10 +216,10 @@ function emote_part:ComputePos()
 
     if self.RealPos.Y ~= self.Pos.Y then
         if self.RealPos.Y > self.Pos.Y then
-            local factor = math.EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 1, 1) * smoothing_speed * RealFrameTime()
+            local factor = math.EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 0.02, 0.02) * smoothing_speed * RealFrameTime()
             self.RealPos.Y = math.max(self.RealPos.Y - factor, self.Pos.Y)
         else
-            local factor = math.EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 1, 1) * smoothing_speed * RealFrameTime()
+            local factor = math.EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 0.02, 0.02) * smoothing_speed * RealFrameTime()
             self.RealPos.Y = math.min(self.RealPos.Y + factor, self.Pos.Y)
         end
     end
