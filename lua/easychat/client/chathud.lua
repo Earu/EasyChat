@@ -217,6 +217,7 @@ local function utf8_sub(str, i, j)
 end
 
 local EC_HUD_TTL = GetConVar("easychat_hud_ttl")
+local EC_HUD_SMOOTH = GetConVar("easychat_hud_smooth")
 
 chathud.FadeTime = EC_HUD_TTL:GetInt()
 cvars.AddChangeCallback("easychat_hud_ttl", function(_, _, new)
@@ -480,6 +481,11 @@ end
 
 local smoothing_speed = 1000
 function text_part:ComputePos()
+	if not EC_HUD_SMOOTH:GetBool() then
+		self.RealPos.Y = self.Pos.Y
+		return
+	end
+
     if self.RealPos.Y ~= self.Pos.Y then
         if self.RealPos.Y > self.Pos.Y then
             local factor = math.EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 1, 1) * smoothing_speed * RealFrameTime()
