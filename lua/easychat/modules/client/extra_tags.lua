@@ -261,6 +261,14 @@ end
 function translate_part:ComputeOffset()
 	local succ, x, y = pcall(self.RunExpression)
 	self.Offset = { X = succ and tonumber(x) or 0, Y = succ and tonumber(y) or 0 }
+
+	if self.Offset.X + chathud.Pos.X > chathud.Pos.X + chathud.Size.W then
+		self.Offset.X = chathud.Size.W
+	end
+
+	if self.Offset.Y + chathud.Pos.Y + chathud.Size.H < chathud.Pos.Y then
+		self.Offset.Y = -chathud.Size.H
+	end
 end
 
 function translate_part:Draw(ctx)
