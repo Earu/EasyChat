@@ -242,7 +242,8 @@ function emote_part:Draw()
 end
 
 chathud:RegisterPart("emote", emote_part, "%:([A-Za-z0-9_]+)%:", {
-	"STEAM%_%d%:%d%:%d+"
+	"STEAM%_%d%:%d%:%d+", -- steamids
+	"%d%d:%d%d:%d%d" -- timestamps
 })
 
 return "Steam Emotes"
