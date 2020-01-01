@@ -277,7 +277,7 @@ function chathud:RegisterPart(name, part, pattern, exception_patterns)
 
 	if not blacklist[name] then
 		local cvar_name = "easychat_tag_" .. name
-		local cvar = CreateClientConVar(cvar_name, "1", true, false)
+		local cvar = CreateClientConVar(cvar_name, new_part.Enabled and "1" or "0", true, false)
 		new_part.Enabled = cvar:GetBool()
 		cvars.AddChangeCallback(cvar_name, function(_, _, new)
 			new_part.Enabled = new
@@ -494,10 +494,10 @@ function text_part:ComputePos()
 
     if self.RealPos.Y ~= self.Pos.Y then
         if self.RealPos.Y > self.Pos.Y then
-            local factor = math.EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 1, 1) * smoothing_speed * RealFrameTime()
+            local factor = math.EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 0.02, 0.02) * smoothing_speed * RealFrameTime()
             self.RealPos.Y = math_max(self.RealPos.Y - factor, self.Pos.Y)
         else
-            local factor = math.EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 1, 1) * smoothing_speed * RealFrameTime()
+            local factor = math.EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 0.02, 0.02) * smoothing_speed * RealFrameTime()
             self.RealPos.Y = math_min(self.RealPos.Y + factor, self.Pos.Y)
         end
     end
