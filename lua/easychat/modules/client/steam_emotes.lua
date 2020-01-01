@@ -206,8 +206,14 @@ function emote_part:LineBreak()
 	new_line:PushComponent(self)
 end
 
+local EC_HUD_SMOOTH = GetConVar("easychat_hud_smooth")
 local smoothing_speed = 1000
 function emote_part:ComputePos()
+	if not EC_HUD_SMOOTH:GetBool() then
+		self.RealPos.Y = self.Pos.Y
+		return
+	end
+
     if self.RealPos.Y ~= self.Pos.Y then
         if self.RealPos.Y > self.Pos.Y then
             local factor = math.EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 1, 1) * smoothing_speed * RealFrameTime()
