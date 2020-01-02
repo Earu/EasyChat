@@ -255,7 +255,6 @@ local blacklist = {
 	stop = true,
 	text = true,
 	color = true,
-	font = true,
 }
 function chathud:RegisterPart(name, part, pattern, exception_patterns)
 	if not name or not part then return end
@@ -344,9 +343,6 @@ function font_part:Ctor(str)
 	local succ, _ = pcall(surface_SetFont, str) -- only way to check if a font is valid
 	self.Font = succ and str or chathud.DefaultFont
 	if not succ then self.Invalid = true end
-
-	-- lets not have giant ass fonts
-	if draw_GetFontHeight(self.Font) >= 50 then self.Invalid = true end
 
 	return self
 end
