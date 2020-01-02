@@ -15,7 +15,6 @@ local cam_PushModelMatrix = cam.PushModelMatrix
 local cam_PopModelMatrix = cam.PopModelMatrix
 
 local math_sin = math.sin
-
 --[[-----------------------------------------------------------------------------
 	Color Component
 
@@ -90,6 +89,49 @@ end
 chathud:RegisterPart("hsv", hsv_part)
 
 --[[-----------------------------------------------------------------------------
+	BHSV Component
+
+	Color modulation with HSV values on text background.
+]]-------------------------------------------------------------------------------
+local bhsv_part = {
+	RunExpression = function() return 360, 1, 1 end
+}
+
+function bhsv_part:Ctor(expr)
+	local succ, ret = compile_expression(expr)
+	if succ then
+		self.RunExpression = ret
+	end
+
+	return self
+end
+
+function bhsv_part:ComputeHSV()
+	local succ, h, s, v = pcall(self.RunExpression)
+
+	h = succ and ((tonumber(h) or 360) % 360) or 360
+	s = succ and math.Clamp(tonumber(s) or 1, 0, 1) or 1
+	v = succ and math.Clamp(tonumber(v) or 1, 0, 1) or 1
+
+	self.Color = HSVToColor(h, s, v)
+end
+
+function bhsv_part:PreTextDraw(ctx, x, y, w, h)
+	self:ComputeHSV()
+	self.Color.a = ctx.Alpha
+
+	surface_SetDrawColor(self.Color)
+	surface_DrawRect(x, y, w, h)
+	surface_SetDrawColor(ctx.Color)
+end
+
+function bhsv_part:Draw(ctx)
+	ctx:PushPreTextDraw(self)
+end
+
+chathud:RegisterPart("bhsv", bhsv_part)
+
+--[[-----------------------------------------------------------------------------
 	Scale Component
 
 	Scales text components up and down.
@@ -111,7 +153,7 @@ end
 
 function scale_part:ComputeScale()
 	local succ, ret = pcall(self.RunExpression)
-	local n = math.Clamp(succ and tonumber(ret) or 1, -5, 5)
+	local n = math.Clamp(succ and tonumber(ret) or 1, -3, 3)
 	self.Scale = Vector(n, n, n)
 end
 
@@ -183,6 +225,52 @@ function rotate_part:Draw(ctx)
 end
 
 chathud:RegisterPart("rotate", rotate_part)
+
+--[[-----------------------------------------------------------------------------
+	ZRotate Component
+
+	Rotates on yaw and roll axis text components.
+]]-------------------------------------------------------------------------------
+local z_rotate_part = {
+	OkInNicks = false,
+	RunExpression = function() return 1 end
+}
+
+function z_rotate_part:Ctor(expr)
+	local succ, ret = compile_expression(expr)
+	if succ then
+		self.RunExpression = ret
+	end
+
+	return self
+end
+
+function z_rotate_part:ComputeAngle()
+	local succ, roll = pcall(self.RunExpression)
+	self.Angle = Angle(0, 0, succ and tonumber(roll) or 0)
+end
+
+function z_rotate_part:PreTextDraw(ctx, x, y, w, h)
+	self:ComputeAngle()
+
+	local tr = Vector(x + w / 2, y + h / 2)
+	local m = Matrix()
+	m:Translate(tr)
+	m:SetAngles(self.Angle)
+	m:Translate(-tr)
+	cam_PushModelMatrix(m)
+end
+
+function z_rotate_part:PostTextDraw(ctx, x, y, w, h)
+	cam_PopModelMatrix()
+end
+
+function z_rotate_part:Draw(ctx)
+	ctx:PushPreTextDraw(self)
+	ctx:PushPostTextDraw(self)
+end
+
+chathud:RegisterPart("zrotate", z_rotate_part)
 
 --[[-----------------------------------------------------------------------------
 	Texture Component
@@ -319,7 +407,10 @@ function carat_color_part:Draw(ctx)
 	ctx:UpdateColor(self.Color)
 end
 
-chathud:RegisterPart("caratcol", carat_color_part, "%^(%d%d?)")
+chathud:RegisterPart("caratcol", carat_color_part, "%^([1-9][1-5]?)", {
+	"%S+%^[%d|%.]+%s", -- chatsounds modifier in middle of sentence
+	"%S+%^[%d|%.]+$", -- chatsounds modifier in end of sentence
+})
 
 --[[-----------------------------------------------------------------------------
 	Wrong Component
@@ -381,4 +472,4 @@ end
 
 chathud:RegisterPart("background", background_part)
 
-return "Extra ChatHUD Tags"
+return "ChatHUD Extra Tags"
