@@ -733,6 +733,7 @@ if CLIENT then
 
 			-- let the chathud do its own thing
 			chathud:AppendNick(str)
+			chathud:PushPartComponent("stop")
 		end
 
 		local CTRLShortcuts = {}
