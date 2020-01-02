@@ -1,5 +1,8 @@
 local chathud = EasyChat.ChatHUD
 
+--[[-----------------------------------------------------------------------------
+	Fetch Steam emotes
+]]-------------------------------------------------------------------------------
 local function count(a, n)
 	local x = 0
 	local pos = 1
@@ -16,8 +19,7 @@ local function count(a, n)
 	return x
 end
 
-local cache = {}
-
+local STEAM_CACHE = {}
 local EMOTE_URL = "https://g1cf.metastruct.net/opendata/public/emote_lzma.dat"
 local EMOTES = "steam_emoticons.txt"
 local UNCACHED = false
@@ -28,11 +30,11 @@ local function parse_emote_file(data)
 	local start = 1
 	local split_start, split_end = data:find(in_split_pattern, start, true)
 	while split_start do
-		cache[data:sub(start, split_start - 1)] = UNCACHED
+		STEAM_CACHE[data:sub(start, split_start - 1)] = UNCACHED
 		start = split_end + 1
 		split_start, split_end = data:find(in_split_pattern, start, true)
 	end
-	cache[data:sub(start)] = UNCACHED
+	STEAM_CACHE[data:sub(start)] = UNCACHED
 end
 
 http.Fetch(EMOTE_URL, function(dat, len, hdr, ret)
@@ -52,8 +54,8 @@ end, function(err)
 	ErrorNoHalt("[SteamEmots] " .. err .. "\n")
 end, { Referer = "http://steam.tools/emoticons/" })
 
-local FOLDER = "steam_emoticons_big"
-file.CreateDir(FOLDER, "DATA")
+local STEAM_FOLDER = "steam_emoticons_big"
+file.CreateDir(STEAM_FOLDER, "DATA")
 
 local function material_data(mat)
 	return Material("../data/" .. mat)
@@ -82,7 +84,7 @@ local function base64_decode(data)
 end
 
 local function get_steam_emote(name)
-	local c = cache[name]
+	local c = STEAM_CACHE[name]
 	if c then
 		if c == true then return end
 		return c
@@ -91,9 +93,9 @@ local function get_steam_emote(name)
 	end
 
 	-- Otherwise download dat shit
-	cache[name] = PROCESSING
+	STEAM_CACHE[name] = PROCESSING
 
-	local path = FOLDER .. "/" .. name .. ".png"
+	local path = STEAM_FOLDER .. "/" .. name .. ".png"
 
 	local exists = file.Exists(path, "DATA")
 	if exists then
@@ -104,7 +106,7 @@ local function get_steam_emote(name)
 			print("Material found, but is error: ", name, "redownloading")
 		else
 			c = mat
-			cache[name] = c
+			STEAM_CACHE[name] = c
 			return c
 		end
 	end
@@ -140,7 +142,7 @@ local function get_steam_emote(name)
 			return
 		end
 
-		cache[name] = mat
+		STEAM_CACHE[name] = mat
 
 	end, fail)
 end
@@ -176,15 +178,117 @@ if content then
 	parse_emote_file(content)
 end
 
+--[[-----------------------------------------------------------------------------
+	Fetch Twemojis
+]]-------------------------------------------------------------------------------
+
+local TWEMOJI_CACHE = {}
+local TWEMOJIS_FOLDER = "twemojis"
+file.CreateDir(TWEMOJIS_FOLDER, "DATA")
+
+local LOOKUP_TABLE_URL = "https://raw.githubusercontent.com/amio/emoji.json/master/emoji.json"
+local lookup = {}
+http.Fetch(LOOKUP_TABLE_URL, function(body)
+	local tbl = util.JSONToTable(body)
+	for _, v in ipairs(tbl) do
+		lookup[string.Replace(v.name, " ", "_")] = string.Replace(string.lower(v.codes), " ", "_")
+	end
+end)
+
+local function get_twemoji_url(name)
+	return "https://twemoji.maxcdn.com/v/12.1.4/72x72/" .. lookup[name] .. ".png"
+end
+
+local function get_twemoji(name)
+	if not lookup[name] then return false end
+
+	local c = TWEMOJI_CACHE[name]
+	if c then
+		if c == true then return end
+		return c
+	else
+		if c == nil then return false end
+	end
+
+	-- Otherwise download dat shit
+	TWEMOJI_CACHE[name] = PROCESSING
+
+	local path = TWEMOJIS_FOLDER .. "/" .. name .. ".png"
+
+	local exists = file.Exists(path, "DATA")
+	if exists then
+		local mat = MaterialData(path)
+
+		if not mat or mat:IsError() then
+			Msg("[Emoticons] ")
+			print("Material found, but is error: ", name, "redownloading")
+		else
+			c = mat
+			TWEMOJI_CACHE[name] = c
+			return c
+		end
+	end
+
+	local url = get_twemoji_url(name)
+
+	local function fail(err)
+		Msg("[DiscordEmoticons] ")
+		print("Http fetch failed for", url, ": " .. tostring(err))
+	end
+
+	http.Fetch(url, function(data, len, hdr, code)
+		if code ~= 200 or len <= 222 then
+			return fail(code)
+		end
+
+		file.Write(path,data)
+
+		local mat = MaterialData(path)
+
+		if not mat or mat:IsError() then
+			Msg("[Emoticons] ")
+			print("Downloaded material, but is error: ", name)
+			return
+		end
+
+		TWEMOJI_CACHE[name] = mat
+
+	end,fail)
+end
+
+local function twemoji(name)
+	local mat = get_twemoji(name)
+
+	if mat then return function()
+		surface.SetMaterial(mat)
+		return mat
+	end end
+
+	if mat == false then error("invalid emoticon") end
+
+	return function()
+		if not mat then
+			mat = get_twemoji(name)
+			if not mat then
+				surface.SetTexture(0)
+				return
+			end
+		end
+
+		surface.SetMaterial(mat)
+		return mat
+	end
+end
+
 local surface_DrawTexturedRect = surface.DrawTexturedRect
 local draw_NoTexture = draw.NoTexture
 --[[-----------------------------------------------------------------------------
-	Steam Emote Component
+	Emote Component
 
-	Displays steam emotes.
+	Displays emotes.
 ]]-------------------------------------------------------------------------------
 local emote_part = {
-	SetEmoteMaterial = function() draw.NoTexture() end,
+	SetEmoteMaterial = function() draw_NoTexture() end,
 	RealPos = { X = 0, Y = 0 }
 }
 
@@ -192,13 +296,31 @@ function emote_part:Ctor(str)
 	local em_components = string.Explode("%s*,%s*", str, true)
 	local name, size = em_components[1], em_components[2]
 	self.Height = math.Clamp(tonumber(size) or draw.GetFontHeight(chathud.DefaultFont), 16, 64)
-	self.SetEmoteMaterial = steam_emote(name)
+	self:TryGetEmote(name)
 
 	return self
 end
 
+function emote_part:TryGetEmote(name)
+	local ret = get_twemoji(name)
+	if ret ~= false then
+		self.SetEmoteMaterial = twemoji(name)
+	else
+		ret = get_steam_emote(name)
+		if ret ~= false then
+			self.SetEmoteMaterial = steam_emote(name)
+		else
+			self.Invalid = true
+		end
+	end
+end
+
 function emote_part:ComputeSize()
-	self.Size = { W = self.Height, H = self.Height }
+	if self.Invalid then
+		self.Size = { W = 0, H = 0 }
+	else
+		self.Size = { W = self.Height, H = self.Height }
+	end
 end
 
 function emote_part:LineBreak()
@@ -234,6 +356,8 @@ function emote_part:PostLinePush()
 end
 
 function emote_part:Draw(ctx)
+	if self.Invalid then return end
+
     self:ComputePos()
 
     local x, y = self:GetDrawPos(ctx)
@@ -252,4 +376,4 @@ chathud:RegisterPart("emote", emote_part, "%:([A-Za-z0-9_]+)%:", {
 	"%d%d:%d%d:%d%d" -- timestamps
 })
 
-return "Steam Emotes"
+return "Chat Emotes"
