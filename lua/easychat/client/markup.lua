@@ -14,10 +14,14 @@ local smoothed_parts = {
 	emote = true,
 }
 local ec_markup = {}
-function ec_markup.Parse(str, maxwidth, is_ply_nick)
+function ec_markup.Parse(str, maxwidth, is_ply_nick, default_color, default_font, default_shadow_font)
 	local obj = table.Copy(clean_chathud)
 	obj.Size.W = maxwidth or 9999
 	obj.DrawContext = obj:CreateDrawContext()
+
+	obj.DefaultColor = default_color or obj.DefaultColor
+	obj.DefaultFont = default_color or obj.DefaultFont
+	obj.DefaultShadowFont = default_shadow_font or obj.DefaultShadowFont
 
 	local old_CreateComponent = obj.CreateComponent
 	function obj:CreateComponent(name, ...)
