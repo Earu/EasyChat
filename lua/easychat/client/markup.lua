@@ -56,7 +56,7 @@ function ec_markup.Parse(str, maxwidth, is_ply_nick)
 
 		return w
 	end
-	bj.GetWidth = obj.GetWide
+	obj.GetWidth = obj.GetWide
 
 	function obj:GetTall()
 		local h = 0
