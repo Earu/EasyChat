@@ -870,6 +870,7 @@ end
 
 function chathud:CreateDrawContext()
 	local ctx = table_copy(draw_context)
+	ctx.Color = self.DefaultColor
 	ctx.HUD = self
 
 	return ctx
