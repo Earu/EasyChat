@@ -301,7 +301,7 @@ function texture_part:Ctor(str)
 	end
 
 	if not self.Material then self.Invalid = true end
-	self.TextureSize = math.Clamp(tonumber(texture_components[2]) or draw.GetFontHeight(chathud.DefaultFont), 16, 64)
+	self.TextureSize = math.Clamp(tonumber(texture_components[2]) or draw.GetFontHeight(self.HUD.DefaultFont), 16, 64)
 
 	return self
 end
@@ -311,7 +311,7 @@ function texture_part:ComputeSize()
 end
 
 function texture_part:LineBreak()
-	local new_line = chathud:NewLine()
+	local new_line = self.HUD:NewLine()
 	new_line:PushComponent(self)
 end
 
@@ -350,12 +350,12 @@ function translate_part:ComputeOffset()
 	local succ, x, y = pcall(self.RunExpression)
 	self.Offset = { X = succ and tonumber(x) or 0, Y = succ and tonumber(y) or 0 }
 
-	if self.Offset.X + chathud.Pos.X > chathud.Pos.X + chathud.Size.W then
-		self.Offset.X = chathud.Size.W
+	if self.Offset.X + self.HUD.Pos.X > self.HUD.Pos.X + self.HUD.Size.W then
+		self.Offset.X = self.HUD.Size.W
 	end
 
-	if self.Offset.Y + chathud.Pos.Y + chathud.Size.H < chathud.Pos.Y then
-		self.Offset.Y = -chathud.Size.H
+	if self.Offset.Y + self.HUD.Pos.Y + self.HUD.Size.H < self.HUD.Pos.Y then
+		self.Offset.Y = -self.HUD.Size.H
 	end
 end
 
@@ -485,16 +485,12 @@ local emote_part = {
 function emote_part:Ctor(str)
 	local em_components = string.Explode("%s*,%s*", str, true)
 	local name, size = em_components[1], em_components[2]
-	self.Height = math.Clamp(tonumber(size) or draw.GetFontHeight(chathud.DefaultFont), 16, 64)
+	self.Height = math.Clamp(tonumber(size) or draw.GetFontHeight(self.HUD.DefaultFont), 16, 64)
 	self:TryGetEmote(name)
 
 	return self
 end
 
-local providers = {
-	get_twemoji,
-	get_steam_emote,
-}
 local emote_priority = {
 	"twemojis",
 	"steam",
@@ -572,7 +568,7 @@ function emote_part:ComputeSize()
 end
 
 function emote_part:LineBreak()
-	local new_line = chathud:NewLine()
+	local new_line = self.HUD:NewLine()
 	new_line:PushComponent(self)
 end
 
