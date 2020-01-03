@@ -607,11 +607,13 @@ local base_line = {
 	Size = { W = 0, H = 0 },
 	LifeTime = 0,
 	Alpha = 255,
+	Fading = true,
 }
 
 function base_line:Update()
 	-- dont have fading if you're not used in chathud
 	if not self.Index then return end
+	if not self.Fading then return end
 
 	local time = RealFrameTime()
 	self.LifeTime = self.LifeTime + time
