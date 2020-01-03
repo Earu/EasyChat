@@ -194,6 +194,8 @@ if CLIENT then
 	EasyChat.ChatHUD     = include("easychat/client/chathud.lua")
 	EasyChat.ModeCount   = 0
 
+	include("easychat/client/markup.lua")
+
 	local ECTabs 	  = {}
 	local LocalPlayer = _G.LocalPlayer
 	local surface 	  = _G.surface
@@ -356,6 +358,8 @@ if CLIENT then
 		EasyChat.Expressions = include("easychat/client/expressions.lua")
 		EasyChat.ChatHUD     = include("easychat/client/chathud.lua")
 		EasyChat.ModeCount   = 0
+
+		include("easychat/client/markup.lua")
 
 		ECConvars 		 = {}
 		ECAddTextHandles = {}

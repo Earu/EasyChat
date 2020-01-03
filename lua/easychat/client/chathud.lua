@@ -341,7 +341,7 @@ local font_part = {}
 
 function font_part:Ctor(str)
 	local succ, _ = pcall(surface_SetFont, str) -- only way to check if a font is valid
-	self.Font = succ and str or chathud.DefaultFont
+	self.Font = succ and str or self.HUD.DefaultFont
 	if not succ then self.Invalid = true end
 
 	return self
@@ -382,7 +382,7 @@ end
 function text_part:PreLinePush(line, last_index)
 	-- dont waste time trying to find something that does not exist
 	if not line.HasFontTags then
-		self:SetFont(chathud.DefaultFont)
+		self:SetFont(self.HUD.DefaultFont)
 		self:ComputeSize()
 		return
 	end
@@ -396,7 +396,7 @@ function text_part:PreLinePush(line, last_index)
 			self:ComputeSize()
 			return
 		elseif component.Type == "stop" then
-			self:SetFont(chathud.DefaultFont)
+			self:SetFont(self.HUD.DefaultFont)
 			self:ComputeSize()
 			return
 		end
@@ -406,14 +406,14 @@ function text_part:PreLinePush(line, last_index)
 
 	-- this is the last line being displayed, nothing before
 	if line_index == 1 then
-		self:SetFont(chathud.DefaultFont)
+		self:SetFont(self.HUD.DefaultFont)
 		self:ComputeSize()
 		return
 	end
 
 	-- not found, then look for previous lines
 	for i = line_index - 1, 1, -1 do
-		local line = chathud.Lines[i]
+		local line = self.HUD.Lines[i]
 		for j = #line.Components, 1, -1 do
 			local component = line.Components[j]
 			if component.Type == "font" and not component.Invalid then
@@ -422,14 +422,14 @@ function text_part:PreLinePush(line, last_index)
 				self:ComputeSize()
 				return
 			elseif component.Type == "stop" then
-				self:SetFont(chathud.DefaultFont)
+				self:SetFont(self.HUD.DefaultFont)
 				self:ComputeSize()
 				return
 			end
 		end
 	end
 
-	self:SetFont(chathud.DefaultFont)
+	self:SetFont(self.HUD.DefaultFont)
 	self:ComputeSize()
 end
 
@@ -507,7 +507,7 @@ local shadow_col = Color(0, 0, 0, 255)
 function text_part:DrawShadow(ctx)
 	shadow_col.a = ctx.Alpha
 	surface_SetTextColor(shadow_col)
-	surface_SetFont(self.ShadowFont and self.ShadowFont or chathud.DefaultShadowFont)
+	surface_SetFont(self.ShadowFont and self.ShadowFont or self.HUD.DefaultShadowFont)
 
 	local x, y = self:GetTextDrawPos(ctx)
 	for _ = 1, 5 do
@@ -550,8 +550,8 @@ local breaking_chars = {
 }
 
 function text_part:FitWidth()
-	local last_line = chathud:LastLine()
-	local left_width = chathud.Size.W - last_line.Size.W
+	local last_line = self.HUD:LastLine()
+	local left_width = self.HUD.Size.W - last_line.Size.W
 	local text = self.Content
 
 	local len = utf8_len(text)
@@ -588,8 +588,8 @@ end
 function text_part:LineBreak()
 	local remaining_text = self:FitWidth()
 	repeat
-		local new_line = chathud:NewLine()
-		local component = chathud:CreateComponent("text", remaining_text)
+		local new_line = self.HUD:NewLine()
+		local component = self.HUD:CreateComponent("text", remaining_text)
 		component.Font = self.Font
 		component.ShadowFont = self.ShadowFont
 		remaining_text = component:FitWidth()
@@ -615,11 +615,11 @@ function base_line:Update()
 
 	local time = RealFrameTime()
 	self.LifeTime = self.LifeTime + time
-	if self.LifeTime >= chathud.FadeTime then
+	if self.LifeTime >= self.HUD.FadeTime then
 		self.Alpha = math_floor(math_max(self.Alpha - (time * 10), 0))
 		if self.Alpha == 0 then
 			self.ShouldRemove = true
-			chathud.ShouldClean = true
+			self.HUD.ShouldClean = true
 		end
 	end
 end
@@ -644,13 +644,16 @@ function base_line:PushComponent(component)
 end
 
 function chathud:CreateLine()
-	return table_copy(base_line)
+	local line = table_copy(base_line)
+	line.HUD = self
+
+	return line
 end
 
 function chathud:NewLine()
 	local new_line = self:CreateLine()
 	new_line.Index = table_insert(self.Lines, new_line)
-	new_line.Pos = { X = chathud.Pos.X, Y = chathud.Pos.Y + chathud.Size.H }
+	new_line.Pos = { X = self.Pos.X, Y = self.Pos.Y + self.Size.H }
 
 	-- we never want to display that many lines
 	if #self.Lines > 50 then
@@ -675,7 +678,7 @@ function chathud:InvalidateLayout()
 		for _, component in ipairs(line.Components) do
 			component:ComputeSize()
 
-			component.Pos.X = chathud.Pos.X + line.Size.W
+			component.Pos.X = self.Pos.X + line.Size.W
 			line.Size.W = line.Size.W + component.Size.W
 
 			-- update line height to the tallest possible
@@ -685,7 +688,7 @@ function chathud:InvalidateLayout()
 		end
 
 		total_height = total_height + line.Size.H
-		line.Pos = { X = chathud.Pos.X, Y = chathud.Pos.Y + chathud.Size.H - total_height }
+		line.Pos = { X = self.Pos.X, Y = self.Pos.Y + self.Size.H - total_height }
 
 		for _, component in ipairs(line.Components) do
 			component.Pos.Y = line.Pos.Y
@@ -697,7 +700,9 @@ function chathud:CreateComponent(name, ...)
 	local part = self.Parts[name]
 	if not part then return end
 
-	return table_copy(part):Ctor(...)
+	local copy = table_copy(part)
+	copy.HUD = self
+	return copy:Ctor(...)
 end
 
 function chathud:PushPartComponent(name, ...)
@@ -848,12 +853,13 @@ function draw_context:PopDrawFunctions()
 end
 
 function draw_context:ResetColors()
-	surface_SetDrawColor(chathud.DefaultColor)
+	surface_SetDrawColor(self.HUD.DefaultColor)
 	surface_SetTextColor(chathud.DefaultColor)
+	self.Color = self.HUD.DefaultColor
 end
 
 function draw_context:ResetFont()
-	surface_SetFont(chathud.DefaultFont)
+	surface_SetFont(self.HUD.DefaultFont)
 end
 
 function draw_context:ResetTextOffset()
@@ -861,7 +867,10 @@ function draw_context:ResetTextOffset()
 end
 
 function chathud:CreateDrawContext()
-	return table_copy(draw_context)
+	local ctx = table_copy(draw_context)
+	ctx.HUD = self
+
+	return ctx
 end
 
 chathud.DrawContext = chathud:CreateDrawContext()
