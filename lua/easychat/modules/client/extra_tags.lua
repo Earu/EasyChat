@@ -407,7 +407,7 @@ function carat_color_part:Draw(ctx)
 	ctx:UpdateColor(self.Color)
 end
 
-chathud:RegisterPart("caratcol", carat_color_part, "%^([1-9][1-5]?)", {
+chathud:RegisterPart("caratcol", carat_color_part, "%^([0-9][1-5]?)", {
 	"%S+%^[%d|%.]+%s", -- chatsounds modifier in middle of sentence
 	"%S+%^[%d|%.]+$", -- chatsounds modifier in end of sentence
 })
