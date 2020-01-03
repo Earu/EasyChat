@@ -32,22 +32,17 @@ function ec_markup.Parse(str, maxwidth, is_ply_nick)
 		return component
 	end
 
-	function obj:NewLine()
-		local new_line = self:CreateLine()
-
-		-- disable alpha fading
-		function new_line:Update() end
-
-    	new_line.Index = table.insert(self.Lines, new_line)
-    	new_line.Pos = { X = self.Pos.X, Y = self.Pos.Y + self.Size.H }
-
-		return new_line
+	local old_CreateLine = obj.CreateLine
+	function obj:CreateLine()
+		local line = old_CreateLine(self)
+		line.Fading = false
+		return line
 	end
 
 	function obj:SetPos(x, y)
 		if self.Pos.X == x and self.Pos.Y == y then return end
 
-		self.Pos = { X = x, Y = y }
+		self.Pos = { X = x, Y = y + self:GetTall() }
 		self:InvalidateLayout()
 	end
 
@@ -61,6 +56,7 @@ function ec_markup.Parse(str, maxwidth, is_ply_nick)
 
 		return w
 	end
+	bj.GetWidth = obj.GetWide
 
 	function obj:GetTall()
 		local h = 0
@@ -69,6 +65,21 @@ function ec_markup.Parse(str, maxwidth, is_ply_nick)
 		end
 
 		return h
+	end
+	obj.GetHeight = obj.GetTall
+
+	obj.Size = setmetatable(obj.Size, {
+		__call = function()
+			return obj:GetWide(), obj:GetTall()
+		end
+	})
+
+	local old_Draw = obj.Draw
+	function obj:Draw(x, y)
+		if x and y then
+			self:SetPos(x, y)
+		end
+		old_Draw(self)
 	end
 
 	obj:NewLine()
