@@ -294,10 +294,7 @@ end
 	This guarantees all matrixes and generally every change made
 	to the drawing context is set back to a "default" state.
 ]]-------------------------------------------------------------------------------
-local stop_part = {
-	Usable = false,
-	OkInNicks = false,
-}
+local stop_part = {}
 
 function stop_part:Draw(ctx)
 	ctx:ResetColors()
@@ -306,7 +303,7 @@ function stop_part:Draw(ctx)
 	ctx:PopDrawFunctions()
 end
 
-chathud:RegisterPart("stop", stop_part)
+chathud:RegisterPart("stop", stop_part, "%<(stop)%>")
 
 --[[-----------------------------------------------------------------------------
 	Color Component
