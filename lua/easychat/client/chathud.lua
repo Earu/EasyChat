@@ -626,11 +626,6 @@ function base_line:Draw(ctx)
 	ctx.Alpha = self.Alpha
 	for _, component in ipairs(self.Components) do
 		component:Draw(ctx)
-
-		-- now that players can use stop, we still want the fade of the line to happen afterward
-		if component.Type == "stop" then
-			ctx.Alpha = self.Alpha
-		end
 	end
 end
 
@@ -856,9 +851,10 @@ function draw_context:PopDrawFunctions()
 end
 
 function draw_context:ResetColors()
-	surface_SetDrawColor(self.HUD.DefaultColor)
-	surface_SetTextColor(chathud.DefaultColor)
-	self.Color = self.HUD.DefaultColor
+	local default_col = self.HUD.DefaultColor
+	surface_SetDrawColor(default_col)
+	surface_SetTextColor(default_col)
+	self.Color = Color(default_col.r, default_col.g, default_col.b, self.Alpha)
 end
 
 function draw_context:ResetFont()
