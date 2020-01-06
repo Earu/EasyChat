@@ -612,10 +612,8 @@ function base_line:Update()
 	if not self.Index then return end
 	if not self.Fading then return end
 
-	local time = RealFrameTime()
-	self.LifeTime = self.LifeTime + time
-	if self.LifeTime >= self.HUD.FadeTime then
-		self.Alpha = math_floor(math_max(self.Alpha - (time * 10), 0))
+	if self.LifeTime < RealTime() then
+		self.Alpha = math_floor(math_max(self.Alpha - (RealFrameTime() * 100), 0))
 		if self.Alpha == 0 then
 			self.ShouldRemove = true
 			self.HUD.ShouldClean = true
@@ -628,6 +626,11 @@ function base_line:Draw(ctx)
 	ctx.Alpha = self.Alpha
 	for _, component in ipairs(self.Components) do
 		component:Draw(ctx)
+
+		-- now that players can use stop, we still want the fade of the line to happen afterward
+		if component.Type == "stop" then
+			ctx.Alpha = self.Alpha
+		end
 	end
 end
 
@@ -644,6 +647,7 @@ end
 
 function chathud:CreateLine()
 	local line = table_copy(base_line)
+	line.LifeTime = RealTime() + self.FadeTime
 	line.HUD = self
 
 	return line
