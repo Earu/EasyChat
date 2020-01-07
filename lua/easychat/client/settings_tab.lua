@@ -54,6 +54,7 @@ local SETTINGS_TAB = {
 		self.BtnReloadChat          = self:Add("DButton")
 		self.BtnUseDermaSkin        = self:Add("DButton")
 		self.BtnClearHistory        = self:Add("DButton")
+		self.BtnHUDFontEditor       = self:Add("DButton")
 		self.BtnDisableEC           = self:Add("DButton")
 
 		self.TBoxOutlayColor:SetText("Outlay Color")
@@ -287,6 +288,16 @@ local SETTINGS_TAB = {
 		end
 		ypos = ypos + self.BtnClearHistory:GetTall() + 10
 
+		self.BtnHUDFontEditor:SetPos(170,ypos)
+		self.BtnHUDFontEditor:SetText("HUD Font Editor")
+		self.BtnHUDFontEditor:SetFont("ECSettingsFont")
+		self.BtnHUDFontEditor:SetSize(100,25)
+		self.BtnHUDFontEditor.DoClick = function()
+			local editor = vgui.Create("ECChatHUDFontEditor")
+			editor:MakePopup()
+		end
+		ypos = ypos + self.BtnHUDFontEditor:GetTall() + 10
+
 		self.BtnDisableEC:SetPos(170,ypos)
 		self.BtnDisableEC:SetText("Disable EC")
 		self.BtnDisableEC:SetFont("ECSettingsFont")
@@ -308,6 +319,7 @@ local SETTINGS_TAB = {
 			self.BtnReloadChat:SetTextColor(EasyChat.TextColor)
 			self.BtnUseDermaSkin:SetTextColor(EasyChat.TextColor)
 			self.BtnClearHistory:SetTextColor(EasyChat.TextColor)
+			self.BtnHUDFontEditor:SetTextColor(EasyChat.TextColor)
 			self.BtnDisableEC:SetTextColor(EasyChat.TextColor)
 
 			local ECButtonPaint = function(self,w,h)
@@ -323,18 +335,19 @@ local SETTINGS_TAB = {
 				surface.DrawOutlinedRect(0,0,w,h)
 			end
 
-			self.BtnUseDermaSkin.Paint = ECButtonPaint
-			self.BtnApplyColors.Paint  = ECButtonPaint
-			self.BtnResetColors.Paint  = ECButtonPaint
-			self.BtnApplyFont.Paint    = ECButtonPaint
-			self.BtnFontReset.Paint    = ECButtonPaint
-			self.BtnApplyTTL.Paint     = ECButtonPaint
-			self.BtnResetTTL.Paint     = ECButtonPaint
-			self.BtnResetOptions.Paint = ECButtonPaint
-			self.BtnResetAll.Paint     = ECButtonPaint
-			self.BtnReloadChat.Paint   = ECButtonPaint
-			self.BtnClearHistory.Paint = ECButtonPaint
-			self.BtnDisableEC.Paint    = ECButtonPaint
+			self.BtnUseDermaSkin.Paint  = ECButtonPaint
+			self.BtnApplyColors.Paint   = ECButtonPaint
+			self.BtnResetColors.Paint   = ECButtonPaint
+			self.BtnApplyFont.Paint     = ECButtonPaint
+			self.BtnFontReset.Paint     = ECButtonPaint
+			self.BtnApplyTTL.Paint      = ECButtonPaint
+			self.BtnResetTTL.Paint      = ECButtonPaint
+			self.BtnResetOptions.Paint  = ECButtonPaint
+			self.BtnResetAll.Paint      = ECButtonPaint
+			self.BtnReloadChat.Paint    = ECButtonPaint
+			self.BtnClearHistory.Paint  = ECButtonPaint
+			self.BtnHUDFontEditor.Paint = ECButtonPaint
+			self.BtnDisableEC.Paint     = ECButtonPaint
 		end
 
 	end,
