@@ -14,14 +14,23 @@ local smoothed_parts = {
 	emote = true,
 }
 local ec_markup = {}
-function ec_markup.Parse(str, maxwidth, is_ply_nick, default_color, default_font, default_shadow_font)
+function ec_markup.AdvancedParse(str, data)
+	local is_ply_nick = data.nick or false
 	local obj = table.Copy(clean_chathud)
-	obj.Size.W = maxwidth or 9999
+	obj.Size = { W = data.maxwidth or 9999, H = 0 }
 	obj.DrawContext = obj:CreateDrawContext()
 
-	obj.DefaultColor = default_color or obj.DefaultColor
-	obj.DefaultFont = default_color or obj.DefaultFont
-	obj.DefaultShadowFont = default_shadow_font or obj.DefaultShadowFont
+	obj.DefaultColor = data.default_color or obj.DefaultColor
+
+	if data.default_font then
+		if data.default_shadow_font then
+			obj.DefaultFont = data.default_font
+			obj.DefaultShadowFont = data.default_shadow_font
+		else
+			-- let the chathud create the shadow
+			str = string.format("<font=%s>", data.default_font) .. str
+		end
+	end
 
 	local old_CreateComponent = obj.CreateComponent
 	function obj:CreateComponent(name, ...)
@@ -30,6 +39,33 @@ function ec_markup.Parse(str, maxwidth, is_ply_nick, default_color, default_font
 			-- disable smoothing of some parts
 			function component:ComputePos()
 				self.RealPos.Y = self.Pos.Y
+			end
+		end
+
+		if data.no_shadow then
+			if name == "text" then
+				component.DrawShadow = function() end
+			end
+		else
+			if data.shadow_intensity then
+				data.shadow_intensity = math.max(1, data.shadow_intensity)
+
+				local shadow_col = Color(0, 0, 0, 255)
+				local surface_SetTextColor = surface.SetTextColor
+				local surface_SetFont = surface.SetFont
+				local surface_SetTextPos = surface.SetTextPos
+				local surface_DrawText = surface.DrawText
+
+				function component:DrawShadow(ctx)
+					surface_SetTextColor(shadow_col)
+					surface_SetFont(self.ShadowFont and self.ShadowFont or self.HUD.DefaultShadowFont)
+
+					local x, y = self:GetTextDrawPos(ctx)
+					for _ = 1, data.shadow_intensity do
+						surface_SetTextPos(x, y)
+						surface_DrawText(self.Content)
+					end
+				end
 			end
 		end
 
@@ -86,6 +122,19 @@ function ec_markup.Parse(str, maxwidth, is_ply_nick, default_color, default_font
 		old_Draw(self)
 	end
 
+	function obj:GetText()
+		local text = ""
+		for _, line in ipairs(self.Lines) do
+			for _, component in ipairs(line.Components) do
+				if component.Type == "text" then
+					text = text .. component.Content
+				end
+			end
+		end
+
+		return text
+	end
+
 	obj:NewLine()
 	if is_ply_nick then
 		obj:AppendNick(str)
@@ -98,5 +147,15 @@ function ec_markup.Parse(str, maxwidth, is_ply_nick, default_color, default_font
 	return obj
 end
 
-_G.ECMarkup = markup.Parse
+function ec_markup.Parse(str, maxwidth, is_ply_nick, default_color, default_font, default_shadow_font)
+	return ec_markup.AdvancedParse(str, {
+		maxwidth = maxwidth,
+		nick = is_ply_nick,
+		default_color = default_color,
+		default_font = default_font,
+		default_shadow_font = default_shadow_font,
+	})
+end
+
+_G.ECMarkup = ec_markup.Parse
 _G.ec_markup = ec_markup
