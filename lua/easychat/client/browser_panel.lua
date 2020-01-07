@@ -116,16 +116,16 @@ local BROWSER = {
 			self.Next:SetTextColor(EasyChat.TextColor)
 			self.Refresh:SetTextColor(EasyChat.TextColor)
 
-			local ECTabPaint = function(_,w,h)
+			local ECBtnPaint = function(_,w,h)
 				surface.SetDrawColor(EasyChat.TabColor)
 				surface.DrawRect(0,0,w,h)
 				surface.SetDrawColor(EasyChat.TabOutlineColor)
 				surface.DrawOutlinedRect(0,0,w,h)
 			end
 
-			self.Previous.Paint = ECTabPaint
-			self.Next.Paint     = ECTabPaint
-			self.Refresh.Paint  = ECTabPaint
+			self.Previous.Paint = ECBtnPaint
+			self.Next.Paint     = ECBtnPaint
+			self.Refresh.Paint  = ECBtnPaint
 
 			self.BtnClose.Paint = function(self,w,h)
 				draw.RoundedBoxEx(3,0,0,w,h,EasyChat.OutlayOutlineColor,false,true,false,true)
