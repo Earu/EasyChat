@@ -876,7 +876,8 @@ if CLIENT then
 			end
 		end
 
-		hook.Add("PlayerBindPress", TAG, function(ply, bind, status)
+		hook.Add("PlayerBindPress", TAG, function(ply, bind, pressed)
+			if not pressed then return end
 			if bind == "messagemode" then
 				ECOpen(false)
 				return true
