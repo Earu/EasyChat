@@ -127,6 +127,7 @@ if CLIENT then
 	local EC_HISTORY        = CreateConVar("easychat_history", "1", FCVAR_ARCHIVE, "Should the history be shown")
 	local EC_USE_ME         = CreateConVar("easychat_use_me", "0", FCVAR_ARCHIVE, 'Should the chat display your name or "me"')
 	local EC_HUD_SMOOTH     = CreateClientConVar("easychat_hud_smooth", "1", true, false, "Enables chat smoothing")
+	local EC_PLAYER_PASTEL  = CreateClientConVar("easychat_pastel", "0", true, false, "Should players have pastelized colors instead of their team color")
 
 	EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
 
@@ -420,9 +421,36 @@ if CLIENT then
 			end
 		end)
 
+		local function string_hash(text)
+			local counter = 1
+			local len = string.len(text)
+			for i = 1, len, 3 do
+				counter =
+					math.fmod(counter * 8161, 4294967279) + -- 2^32 - 17: Prime!
+					(string.byte(text, i) * 16776193) +
+					((string.byte(text, i + 1) or (len - i + 256)) * 8372226) +
+					((string.byte(text, i + 2) or (len - i + 256)) * 3932164)
+			end
+
+			return math.fmod(counter, 4294967291) -- 2^32 - 5: Prime (and different from the prime in the loop)
+		end
+
+		local function pastelize_nick(nick, small_seed)
+			local h = string_hash(nick) + (small_seed or 0)
+			local lightcol = h % 3 == 0
+			local dark = h % 127 == 0
+			return HSVToColor(h % 180 * 2, lightcol and 0.3 or 0.6, dark and 0.6 or 1)
+		end
+
 		EasyChat.SetAddTextTypeHandle("Player", function(ply)
-			local col = EC_PLAYER_COLOR:GetBool() and team.GetColor(ply:Team()) or Color(255, 255, 255)
-			EasyChat.InsertColorChange(col.r, col.g, col.b, 255)
+			local team_color = EC_PLAYER_COLOR:GetBool() and team.GetColor(ply:Team()) or Color(255, 255, 255)
+			EasyChat.InsertColorChange(team_color.r, team_color.g, team_color.b, 255)
+
+			if EC_PLAYER_PASTEL:GetBool() and ec_markup then
+				local nick = ec_markup.Parse(ply:Nick(), nil, true):GetText()
+				local pastel_color = pastelize_nick(nick)
+				EasyChat.InsertColorChange(pastel_color.r, pastel_color.g, pastel_color.b, 255)
+			end
 
 			local lp = LocalPlayer()
 			if IsValid(lp) and lp == ply and EC_USE_ME:GetBool() then
