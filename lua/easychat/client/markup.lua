@@ -18,9 +18,9 @@ function ec_markup.AdvancedParse(str, data)
 	local is_ply_nick = data.nick or false
 	local obj = table.Copy(clean_chathud)
 	obj.Size = { W = data.maxwidth or 9999, H = 0 }
-	obj.DrawContext = obj:CreateDrawContext()
 
 	obj.DefaultColor = data.default_color or obj.DefaultColor
+	obj.DrawContext = obj:CreateDrawContext()
 
 	if data.default_font then
 		if data.default_shadow_font then
