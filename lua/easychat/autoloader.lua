@@ -1,92 +1,87 @@
 EC_MODULE_PATH = "easychat/modules/"
 
 local modules = {}
-local colgood = Color(0,160,220)
-local colbad  = Color(255,127,127)
-local coldef  = Color(244,167,66)
 
-local IsProperReturn = function(arg)
-	if type(arg) == "string" then
-		return arg
-	else
-		return nil
-	end
+local color_good = Color(0, 160, 220)
+local color_bad = Color(255, 127, 127)
+local color_default = Color(244, 167, 66)
+
+local function is_string_return(arg)
+	return type(arg) == "string" and arg or nil
 end
 
-local BeautifyName = function(str)
-	local str = string.gsub(str,".lua","")
-	str = string.SetChar(str,1,string.upper(str[1]))
-	return str
+local function prettify_name(str)
+	return str:gsub(".lua", ""):SetChar(1, str[1]:upper())
 end
 
-local AddModule = function(name,filename,callback,where)
-	local properfilename = BeautifyName(filename)
-	local name = IsProperReturn(name) or properfilename,
-	table.insert(modules,{
+local function add_module(name, file_name, callback, where)
+	local pretty_file_name = prettify_name(file_name)
+	local name = is_string_return(name) or pretty_file_name
+	table.insert(modules, {
 		Name = name,
-		File = properfilename,
-		Callback = callback,
+		File = pretty_file_name,
+		Callback = callback
 	})
-	local toprint = IsProperReturn(name) or properfilename
-	MsgC(coldef,"[ECModule - "..where.."] ⮞ ",colgood,toprint.." loaded\n")
+
+	local to_print = is_string_return(name) or pretty_file_name
+	MsgC(color_default, "[ECModule - " .. where .. "] ⮞ ", color_good, to_print .. " loaded\n")
 end
 
-local IssueModule = function(filename,err,where)
-	MsgC(coldef,"[ECModule - "..where.."] ⮞ ",colbad,"Couldn't load "..filename.."\n "..err.."\n")
+local function module_error(file_name, err, where)
+	MsgC(color_default, "[ECModule - " .. where .. "] ⮞ ", color_bad, "Couldn't load " .. file_name .. "\n " .. err .. "\n")
 end
 
-local LoadModules = function(path)
-	local path    = path or EC_MODULE_PATH
-	local pline   = "-----------------------------------------------\n"
+local function load_modules(path)
+	local path = path or EC_MODULE_PATH
+	local log_separator = "-----------------------------------------------\n"
 
-	MsgC(coldef,"- EasyChat -\n")
-	MsgC(coldef,pline)
+	MsgC(color_default, "- EasyChat -\n")
+	MsgC(color_default, log_separator)
 
-	for _,filename in pairs((file.Find(path.."*.lua","LUA"))) do
-		AddCSLuaFile(path..filename)
-		local module = CompileFile(path..filename)
-		local succ,err = pcall(module)
+	for _, file_name in pairs((file.Find(path .. "*.lua", "LUA"))) do
+		AddCSLuaFile(path .. file_name)
+		local module = CompileFile(path .. file_name)
+		local succ, err = pcall(module)
 		if succ then
-			AddModule(err,filename,module,"SH")
+			add_module(err, file_name, module, "SH")
 		else
-			IssueModule(filename,err,"SH")
+			module_error(file_name, err, "SH")
 		end
 	end
 
 	if SERVER then
-		for _,filename in pairs((file.Find(path.."server/*.lua","LUA"))) do
-			local module = CompileFile(path.."server/"..filename)
-			local succ,err = pcall(module)
+		for _, file_name in pairs((file.Find(path .. "server/*.lua", "LUA"))) do
+			local module = CompileFile(path .. "server/" .. file_name)
+			local succ, err = pcall(module)
 			if succ then
-				AddModule(err,filename,module,"SV")
+				add_module(err, file_name, module, "SV")
 			else
-				IssueModule(filename,err,"SV")
+				module_error(file_name, err, "SV")
 			end
 		end
 
-		for _,filename in pairs((file.Find(path.."client/*.lua","LUA"))) do
-			AddCSLuaFile(path.."client/"..filename)
+		for _, file_name in pairs((file.Find(path .. "client/*.lua", "LUA"))) do
+			AddCSLuaFile(path .. "client/" .. file_name)
 		end
 	end
 
 	if CLIENT then
-		for _,filename in pairs((file.Find(path.."client/*.lua","LUA"))) do
-			local module = CompileFile(path.."client/"..filename)
-			local succ,err = pcall(module)
+		for _, file_name in pairs((file.Find(path .. "client/*.lua", "LUA"))) do
+			local module = CompileFile(path .. "client/" .. file_name)
+			local succ, err = pcall(module)
 			if succ then
-				AddModule(err,filename,module,"CL")
+				add_module(err, file_name, module, "CL")
 			else
-				IssueModule(filename,err,"CL")
+				module_error(file_name, err, "CL")
 			end
 		end
 	end
 
-	MsgC(coldef,pline)
-
+	MsgC(color_default, log_separator)
 end
 
-local GetModules = function()
+local get_modules = function()
 	return modules
 end
 
-return LoadModules,GetModules
+return load_modules, get_modules
