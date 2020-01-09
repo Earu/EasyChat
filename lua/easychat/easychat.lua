@@ -436,10 +436,9 @@ if CLIENT then
 		end
 
 		local function pastelize_nick(nick, small_seed)
-			local h = string_hash(nick) + (small_seed or 0)
-			local lightcol = h % 3 == 0
-			local dark = h % 127 == 0
-			return HSVToColor(h % 180 * 2, lightcol and 0.3 or 0.6, dark and 0.6 or 1)
+			local hue = string_hash(nick) + (small_seed or 0)
+			local saturation, value = hue % 3 == 0, hue % 127 == 0
+			return HSVToColor(hue % 180 * 2, saturation and 0.3 or 0.6, value and 0.6 or 1)
 		end
 
 		EasyChat.SetAddTextTypeHandle("Player", function(ply)
