@@ -20,6 +20,12 @@ local props = {
 	outline = false,
 }
 
+for prop_name, prop_default in pairs(props) do
+	if default_font_data[prop_name] == nil then
+		default_font_data[prop_name] = prop_default
+	end
+end
+
 local EDITOR = {
 	Init = function(self)
 		self:LoadFontData()
