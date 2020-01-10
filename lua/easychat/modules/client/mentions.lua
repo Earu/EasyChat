@@ -1,29 +1,32 @@
-local EC_MENTION = CreateConVar("easychat_mentions","1",FCVAR_ARCHIVE,"Highlights messages containing your name")
+local EC_MENTION = CreateConVar("easychat_mentions", "1", FCVAR_ARCHIVE, "Highlights messages containing your name")
 
-local Mention = function(arg,txt)
+local function undecorate_nick(nick)
+	return nick:gsub("<.->", ""):lower()
+end
+
+local function mention(ply, txt)
 	if not EC_MENTION:GetBool() then return end
+
+	-- could be run too early
 	if not LocalPlayer().Nick then return end
-	local str = string.lower(txt)
-	local lname = string.lower(string.gsub(LocalPlayer():Nick(),"<.->",""))
-	if not string.match(str,"^[%!|%.|%/]") and string.match(str,string.PatternSafe(lname)) then
+
+	txt = txt:lower()
+	local undec_nick = undecorate_nick(LocalPlayer():Nick())
+	if not str:match("^[%!|%.|%/]") and str:match(undec_nick:PatternSafe()) then
 		if not system.HasFocus() then
 			system.FlashWindow()
 		end
+
 		EasyChat.FlashTab("Global")
-		if type(arg) == "string" then
-			if string.TrimLeft(arg) == "" or string.lower(arg) == lname then return end
-			chat.AddText(Color(114,137,218),"[Discord] "..arg,Color(255,255,255),": "..txt)
-			return false --hide discord message
-		else
-			if not IsValid(arg) then return end
-			if lname == string.lower(string.gsub(arg:Nick(),"<.->","")) then return end
-			chat.AddText(arg,Color(255,255,255),": ",Color(244, 167, 66),txt)
-			return true -- hide chat message
-		end
+
+		if not IsValid(ply) then return end
+		if ply == LocalPlayer() then return end
+
+		chat.AddText(ply, Color(255, 255, 255), ": ", Color(244, 167, 66), txt)
+		return true -- hide chat message
 	end
 end
 
-hook.Add("OnPlayerChat","EasyChatModuleMention",Mention)
-hook.Add("OnDiscordMessage","EasyChatModuleMention",Mention)
+hook.Add("OnPlayerChat", "EasyChatModuleMention", mention)
 
 return "Mentions"
