@@ -12,7 +12,7 @@ local function mention(ply, txt)
 
 	txt = txt:lower()
 	local undec_nick = undecorate_nick(LocalPlayer():Nick())
-	if not str:match("^[%!|%.|%/]") and str:match(undec_nick:PatternSafe()) then
+	if not txt:match("^[%!|%.|%/]") and txt:match(undec_nick:PatternSafe()) then
 		if not system.HasFocus() then
 			system.FlashWindow()
 		end
