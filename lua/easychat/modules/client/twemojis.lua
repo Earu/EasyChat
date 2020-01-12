@@ -10,13 +10,13 @@ local cache = {}
 local FOLDER = "twemojis"
 file.CreateDir(FOLDER, "DATA")
 
-local LOOKUP_TABLE_URL = "https://raw.githubusercontent.com/amio/emoji.json/master/emoji.json"
+local LOOKUP_TABLE_URL = "https://gist.githubusercontent.com/Cynosphere/6aa8c1f37870e96796608a4ffc9d1ccb/raw/1ac67bc24a794d319011b712014f8ba6e4f26055/emojis.json"
 local lookup = {}
 http.Fetch(LOOKUP_TABLE_URL, function(body)
 	local tbl = util.JSONToTable(body)
 	for _, v in ipairs(tbl) do
-		local name = v.name:Replace(" ", "_")
-		lookup[name] = v.codes:lower():Replace(" ", "_")
+		local name = v.name
+		lookup[name] = v.codes:lower():Replace(" ", "-")
 		cache[name] = UNCACHED
 	end
 end, function(err)
@@ -28,16 +28,7 @@ local function get_twemoji_url(name)
 	return "https://twemoji.maxcdn.com/v/12.1.4/72x72/" .. lookup[name] .. ".png"
 end
 
-local shortcuts = {
-	confused = "confused_face",
-	thinking = "thinking_face"
-}
-
 local function get_twemoji(name)
-	if shortcuts[name] then
-		name = shortcuts[name]
-	end
-
 	if not lookup[name] then
 		return false
 	end
