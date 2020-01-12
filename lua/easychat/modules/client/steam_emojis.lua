@@ -170,6 +170,6 @@ if content then
 	parse_emote_file(content)
 end
 
-list.Set("EasyChatEmoticonProviders", "steam", get_steam_emote)
+EasyChat.ChatHUD:RegisterEmoteProvider("steam", get_steam_emote)
 
 return "Steam Emojis"
