@@ -28,7 +28,16 @@ local function get_twemoji_url(name)
 	return "https://twemoji.maxcdn.com/v/12.1.4/72x72/" .. lookup[name] .. ".png"
 end
 
+local shortcuts = {
+	confused = "confused_face",
+	thinking = "thinking_face"
+}
+
 local function get_twemoji(name)
+	if shortcuts[name] then
+		name = shortcuts[name]
+	end
+
 	if not lookup[name] then
 		return false
 	end
@@ -90,6 +99,6 @@ local function get_twemoji(name)
 	end, fail)
 end
 
-list.Set("EasyChatEmoticonProviders", "twemojis", get_twemoji)
+EasyChat.ChatHUD:RegisterEmoteProvider("twemojis", get_twemoji, 1)
 
 return "Twemojis"

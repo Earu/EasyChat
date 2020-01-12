@@ -21,8 +21,11 @@ local surface_SetTextPos = _G.surface.SetTextPos
 local surface_DrawText = _G.surface.DrawText
 local surface_CreateFont = _G.surface.CreateFont
 local surface_GetLuaFonts = _G.surface.GetLuaFonts
+local surface_SetMaterial = _G.surface.SetMaterial
+local surface_DrawTexturedRect = _G.surface.DrawTexturedRect
 
 local draw_GetFontHeight = _G.draw.GetFontHeight
+local draw_NoTexture = _G.draw.NoTexture
 
 --local render_OverrideBlend = _G.render.OverrideBlend
 --local BLEND_ZERO, BLEND_ONE_MINUS_SRC_ALPHA = _G.BLEND_ZERO, _G.BLEND_ONE_MINUS_SRC_ALPHA
@@ -32,6 +35,7 @@ local math_max = _G.math.max
 local math_min = _G.math.min
 local math_floor = _G.math.floor
 local math_clamp = _G.math.Clamp
+local math_EaseInOut = _G.math.EaseInOut
 
 local cam_PopModelMatrix = _G.cam.PopModelMatrix
 local cam_PushModelMatrix = _G.cam.PushModelMatrix
@@ -61,6 +65,7 @@ local chat_GetSize = chat.GetChatBoxSize
 ]]-------------------------------------------------------------------------------
 
 local SHADOW_FONT_BLURSIZE = 1
+local SMOOTHING_SPEED = 1000
 
 -- this is used later for creating shadow fonts properly
 local engine_fonts_info = {}
@@ -98,6 +103,7 @@ local chathud = {
 	Lines = {},
 	Parts = {},
 	SpecialPatterns = {},
+	EmotePriorities = {},
 	TagPattern = "<(.-)=%[?(.-)%]?>",
 	ShouldClean = false,
 	DefaultColor = Color(255, 255, 255),
@@ -478,7 +484,6 @@ function text_part:CreateShadowFont()
 	self.ShadowFont = name
 end
 
-local smoothing_speed = 1000
 function text_part:ComputePos()
 	if not EC_HUD_SMOOTH:GetBool() then
 		self.RealPos.Y = self.Pos.Y
@@ -487,10 +492,10 @@ function text_part:ComputePos()
 
     if self.RealPos.Y ~= self.Pos.Y then
         if self.RealPos.Y > self.Pos.Y then
-            local factor = math.EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 0.02, 0.02) * smoothing_speed * RealFrameTime()
+            local factor = math_EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
             self.RealPos.Y = math_max(self.RealPos.Y - factor, self.Pos.Y)
         else
-            local factor = math.EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 0.02, 0.02) * smoothing_speed * RealFrameTime()
+            local factor = math_EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
             self.RealPos.Y = math_min(self.RealPos.Y + factor, self.Pos.Y)
         end
     end
@@ -594,6 +599,130 @@ function text_part:LineBreak()
 end
 
 chathud:RegisterPart("text", text_part)
+
+--[[-----------------------------------------------------------------------------
+	Emote Component
+
+	Displays emotes.
+]]-------------------------------------------------------------------------------
+local emote_part = {
+	SetEmoteMaterial = function() draw_NoTexture() end,
+	RealPos = { X = 0, Y = 0 }
+}
+
+function emote_part:Ctor(str)
+	local em_components = string.Explode("%s*,%s*", str, true)
+	local name, size = em_components[1], em_components[2]
+	self.Height = math.Clamp(tonumber(size) or draw.GetFontHeight(self.HUD.DefaultFont), 16, 64)
+	self:TryGetEmote(name)
+
+	return self
+end
+
+-- the closest the priority is to 1 the more chances it has to display over other matches
+function chathud:RegisterEmoteProvider(provider_name, provider_func, priority)
+	if type(priority) == "number" and priority > 0 then
+		table.insert(self.EmotePriorities, priority, provider_name)
+	else
+		table.insert(self.EmotePriorities, provider_name)
+	end
+
+	list.Set("EasyChatEmoticonProviders", provider_name, provider_func)
+end
+
+function emote_part:TryGetEmote(name)
+	local providers = list.Get("EasyChatEmoticonProviders")
+	local found = false
+
+	-- look for providers with a priority set
+	for _, provider in ipairs(self.HUD.EmotePriorities) do
+		if providers[provider] then
+			local succ, emote = pcall(function() return providers[provider](name) end)
+			-- false indicates that the emote name does not exist for the provider
+			if succ and emote ~= false then
+				-- material was cached
+				if type(emote) == "IMaterial" then
+					self.SetEmoteMaterial = function() surface_SetMaterial(emote) end
+
+					found = true
+					break
+				-- we're still requesting
+				elseif emote == nil then
+					self.SetEmoteMaterial = function()
+						local mat = providers[provider](name)
+						if mat then
+							surface_SetMaterial(mat)
+						end
+					end
+
+					found = true
+					break
+				end
+			end
+		end
+	end
+
+	if not found then self.Invalid = true end
+end
+
+function emote_part:ComputeSize()
+	if self.Invalid then
+		self.Size = { W = 0, H = 0 }
+	else
+		self.Size = { W = self.Height, H = self.Height }
+	end
+end
+
+function emote_part:LineBreak()
+	local new_line = self.HUD:NewLine()
+	new_line:PushComponent(self)
+end
+
+function emote_part:ComputePos()
+	if not EC_HUD_SMOOTH:GetBool() then
+		self.RealPos.Y = self.Pos.Y
+		return
+	end
+
+    if self.RealPos.Y ~= self.Pos.Y then
+        if self.RealPos.Y > self.Pos.Y then
+            local factor = math_EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
+            self.RealPos.Y = math_max(self.RealPos.Y - factor, self.Pos.Y)
+        else
+            local factor = math_EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
+            self.RealPos.Y = math_min(self.RealPos.Y + factor, self.Pos.Y)
+        end
+    end
+end
+
+function emote_part:GetDrawPos(ctx)
+	return self.Pos.X + ctx.TextOffset.X, self.RealPos.Y + ctx.TextOffset.Y
+end
+
+function emote_part:PostLinePush()
+    self.RealPos = table.Copy(self.Pos)
+end
+
+function emote_part:Draw(ctx)
+	if self.Invalid then return end
+
+    self:ComputePos()
+
+    local x, y = self:GetDrawPos(ctx)
+
+    ctx:CallPreTextDrawFunctions(x, y, self.Size.W, self.Size.H)
+
+    self.SetEmoteMaterial()
+	surface_DrawTexturedRect(x, y, self.Size.W, self.Size.H)
+    draw_NoTexture()
+
+    ctx:CallPostTextDrawFunctions(x, y, self.Size.W, self.Size.H)
+end
+
+chathud:RegisterPart("emote", emote_part, "%:([A-Za-z0-9_]+)%:", {
+	"STEAM%_%d%:%d%:%d+", -- steamids
+	"%d%d:%d%d:%d%d" -- timestamps
+})
 
 --[[-----------------------------------------------------------------------------
 	ChatHUD layouting

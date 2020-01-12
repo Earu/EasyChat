@@ -265,6 +265,25 @@ if CLIENT then
 			end)
 
 			editor:OpenURL("metastruct.github.io/lua_editor/")
+			-- editor:OpenURL("metastruct.github.io/gmod-monaco/")
+			--[[ editor:QueueJavascript([[
+				window.onload = () => {
+					let editor = document.getElementsByClassName('monaco-editor')[0];
+					let model = editor.getModel();
+					console.log(editor, model);
+
+					let previousValue = "";
+					model.onDidChangeContent = (_) => {
+						let curValue = model.getValue();
+						if (previousValue != curValue) {
+							gmodinterface.OnCode(curValue);
+							previousValue = curValue;
+						}
+					};
+
+					gmodinterface.OnReady();
+				};
+			]]--)
 
 			self.CodeTabs:SetActiveTab(tab)
 			local tab_w = tab:GetWide()
