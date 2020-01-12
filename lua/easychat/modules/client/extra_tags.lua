@@ -427,9 +427,7 @@ local wrong_col = Color(255, 0, 0)
 function wrong_part:PostTextDraw(ctx, x, y, w, h)
 	wrong_col.a = ctx.Alpha
 	surface_SetDrawColor(wrong_col)
-	for i = x, x + w do
-		surface_DrawLine(i, y + h - math_sin(i), i, y + h + math_sin(i))
-	end
+	surface_DrawLine(x, y + h, x + w, y + h)
 	surface_SetDrawColor(ctx.Color)
 end
 
@@ -437,9 +435,8 @@ function wrong_part:Draw(ctx)
 	ctx:PushPostTextDraw(self)
 end
 
--- disable that its way too laggy for now
 -- we need the "<wrong>" pattern here because otherwise players need to type "<wrong=>"
---chathud:RegisterPart("wrong", wrong_part, "%<wrong%>")
+chathud:RegisterPart("wrong", wrong_part, "%<(wrong)%>")
 
 --[[-----------------------------------------------------------------------------
 	Background Component
