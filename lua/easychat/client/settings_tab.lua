@@ -400,6 +400,12 @@ local SETTINGS_TAB = {
 		RunConsoleCommand("easychat_font_size","15")
 	end,
 
+	ResetChatHUDFont = function(self)
+		local hud_font_editor = vgui.Create("ECChatHUDFontEditor")
+		hud_font_editor:ResetFontData()
+		hud_font_editor:Remove()
+	end,
+
 	ResetOptions = function(self)
 		for _,v in pairs(EasyChat.GetRegisteredConvars()) do
 			local cvar = v.Convar
@@ -410,6 +416,7 @@ local SETTINGS_TAB = {
 	ResetAll = function(self)
 		self:ResetColors()
 		self:ResetFont()
+		self:ResetChatHUDFont()
 		self:ResetTTL()
 		self:ResetOptions()
 	end,

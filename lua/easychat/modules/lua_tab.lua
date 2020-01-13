@@ -84,6 +84,7 @@ end
 
 if CLIENT then
 	local blue_color = Color(0, 122, 204)
+	local green_color = Color(141, 210, 138)
 	local last_session_path = "easychat/lua_tab/last_session"
 
 	local valid_branches = {
@@ -97,12 +98,28 @@ if CLIENT then
 		return valid_branches[BRANCH] or false
 	end
 
+	local lua_callbacks = {
+		["self"] = function(self, code)
+			lua.RunOnSelf(code, LocalPlayer())
+		end,
+		["clients"] = function(self, code)
+			lua.RunOnClients(code, LocalPlayer())
+		end,
+		["shared"] = function(self, code)
+			lua.RunOnShared(code, LocalPlayer())
+		end,
+		["server"] = function(self, code)
+			lua.RunOnServer(code, LocalPlayer())
+		end,
+	}
+
 	local LUA_TAB = {
 		LastAction = {
 			Script = "",
 			Type = "",
 			Time = ""
 		},
+		Env = "self",
 		Init = function(self)
 			local frame = self
 
@@ -128,38 +145,25 @@ if CLIENT then
 			--self.MenuFile:AddSpacer()
 			--table.insert(options, self.MenuFile:AddOption("Settings"))
 
-			self.MenuRun = self.MenuBar:AddMenu("Run")
-			table.insert(options, self.MenuRun:AddOption("On Self", function()
-				local code = self:GetCode():Trim()
-				if code == "" then return end
+			self.EnvSelector = self.MenuBar:Add("DComboBox")
+			self.EnvSelector:SetSize(100, 20)
+			self.EnvSelector:SetPos(200, 5)
+			self.EnvSelector:SetTextColor(EasyChat.TextColor)
+			self.EnvSelector:AddChoice("self")
+			self.EnvSelector:AddChoice("clients")
+			self.EnvSelector:AddChoice("shared")
+			self.EnvSelector:AddChoice("server")
+			self.EnvSelector:SetValue("self")
+			self.EnvSelector.OnSelect = function(_, _, value)
+				self.Env = value
+			end
 
-				lua.RunOnSelf(code, LocalPlayer())
-				self:RegisterAction("self")
-			end))
-
-			table.insert(options, self.MenuRun:AddOption("On Clients", function()
-				local code = self:GetCode():Trim()
-				if code == "" then return end
-
-				lua.RunOnClients(code, LocalPlayer())
-				self:RegisterAction("clients")
-			end))
-
-			table.insert(options, self.MenuRun:AddOption("Shared", function()
-				local code = self:GetCode():Trim()
-				if code == "" then return end
-
-				lua.RunOnShared(code, LocalPlayer())
-				self:RegisterAction("shared")
-			end))
-
-			table.insert(options, self.MenuRun:AddOption("Server-side", function()
-				local code = self:GetCode():Trim()
-				if code == "" then return end
-
-				lua.RunOnServer(code, LocalPlayer())
-				self:RegisterAction("server")
-			end))
+			self.RunButton = self.MenuBar:Add("DButton")
+			self.RunButton:SetText("")
+			self.RunButton:SetTextColor(EasyChat.TextColor)
+			self.RunButton:SetSize(40, 10)
+			self.RunButton:SetPos(300, 5)
+			self.RunButton.DoClick = function() self:RunCode() end
 
 			local function MenuPaint(self, w, h)
 				surface.SetDrawColor(EasyChat.OutlayColor)
@@ -181,17 +185,50 @@ if CLIENT then
 			end
 
 			self.MenuFile.Paint = MenuPaint
-			self.MenuRun.Paint = MenuPaint
+			self.EnvSelector.Paint = MenuPaint
+			self.EnvSelector.Think = function(self)
+				if self:IsMenuOpen() and not self.Menu.CustomPainted then
+					self.Menu.Paint = MenuPaint
+					for i=1, self.Menu:ChildCount() do
+						local option = self.Menu:GetChild(i)
+						option:SetTextColor(EasyChat.TextColor)
+						option.Paint = OptionPaint
+					end
+					self.Menu.CustomPainted = true
+				end
+			end
+
 			for _, option in ipairs(options) do
 				option:SetTextColor(EasyChat.TextColor)
 				option.Paint = OptionPaint
 			end
 
 			-- menu bar buttons changes
-			for _, btn in pairs(self.MenuBar:GetChildren()) do
-				btn:SetTextColor(EasyChat.TextColor)
-				btn:SetSize(50, 25)
-				btn.Paint = MenuButtonPaint
+			for _, panel in pairs(self.MenuBar:GetChildren()) do
+				if panel.ClassName == "DButton" then
+					panel:SetTextColor(EasyChat.TextColor)
+					panel:SetSize(50, 25)
+					panel.Paint = MenuButtonPaint
+				end
+			end
+
+			local run_triangle = {
+				{ x = 10, y = 15 },
+				{ x = 10, y = 5 },
+				{ x = 20, y = 10 }
+
+			}
+			self.RunButton.Paint = function(self, w_, h)
+				surface.SetDrawColor(EasyChat.OutlayColor)
+				if self:IsHovered() then
+					surface.DrawRect(0, 0, 30, h - 5)
+				else
+					surface.DrawOutlinedRect(0, 0, 30, h - 5)
+				end
+
+				surface.SetDrawColor(green_color)
+				draw.NoTexture()
+				surface.DrawPoly(run_triangle)
 			end
 
 			self.CodeTabs = self:Add("DPropertySheet")
@@ -215,8 +252,6 @@ if CLIENT then
 				surface.SetDrawColor(blue_color)
 				surface.DrawRect(0, 0, w, h)
 			end
-
-			self:LoadLastSession()
 		end,
 		Shortcuts = {
 			{
@@ -226,6 +261,10 @@ if CLIENT then
 			{
 				Trigger = { KEY_LCONTROL, KEY_W },
 				Callback = function(self) self:CloseCurrentTab() end,
+			},
+			{
+				Trigger = { KEY_LCONTROL, KEY_R },
+				Callback = function(self) self:RunCode() end,
 			}
 		},
 		Think = function(self)
@@ -250,6 +289,15 @@ if CLIENT then
 				end
 			end
 		end,
+		RunCode = function(self)
+			local code = self:GetCode():Trim()
+			if code == "" then return end
+
+			if lua_callbacks[self.Env] then
+				lua_callbacks[self.Env](self, code)
+				self:RegisterAction(self.Env)
+			end
+		end,
 		CloseCurrentTab = function(self)
 			if #self.CodeTabs:GetItems() > 1 then
 				local tab = self.CodeTabs:GetActiveTab()
@@ -261,7 +309,7 @@ if CLIENT then
 			end
 		end,
 		NewTab = function(self, code)
-			code = (code or ""):JavascriptSafe()
+			code = code or ""
 
 			local editor = vgui.Create("DHTML")
 			local tab_name = ("Untitled%s"):format((" "):rep(5))
@@ -275,21 +323,20 @@ if CLIENT then
 			end)
 
 			editor:AddFunction("gmodinterface", "OnReady", function()
+				local safe_code = code:JavascriptSafe()
+				if is_valid_branch() then
+					editor:QueueJavascript([[gmodinterface.SetCode(`]] .. safe_code .. [[`);]])
+				else
+					editor:QueueJavascript([[SetContent("]] .. safe_code .. [[");]])
+				end
+
 				if tab == self.CodeTabs:GetActiveTab() then
 					editor:RequestFocus()
-					if is_valid_branch() then
-						editor:QueueJavascript([[gmodinterface.SetCode(`]] .. code .. [[`);]])
-					else
-						editor:QueueJavascript([[SetContent("]] .. code .. [[");]])
-					end
 				end
 			end)
 
-			if is_valid_branch() then
-				editor:OpenURL("metastruct.github.io/gmod-monaco/")
-			else
-				editor:OpenURL("metastruct.github.io/lua_editor/")
-			end
+			local url = ("metastruct.github.io/%s/"):format(is_valid_branch() and "gmod-monaco" or "lua_editor")
+			editor:OpenURL(url)
 
 			self.CodeTabs:SetActiveTab(tab)
 			local tab_w = tab:GetWide()
@@ -367,6 +414,7 @@ if CLIENT then
 				local path = ("%s/%s"):format(last_session_path, f)
 				local contents = file.Read(path, "DATA")
 				self:NewTab(contents)
+				file.Delete(path)
 			end
 		end,
 		GetCode = function(self)
@@ -396,6 +444,7 @@ if CLIENT then
 		local lua_tab = vgui.Create("ECLuaTab")
 		EasyChat.AddTab("Lua", lua_tab)
 
+		lua_tab:LoadLastSession()
 		local function save_hook() lua_tab:SaveSession() end
 		hook.Add("ShutDown", "EasyChatModuleLuaTab", save_hook)
 		hook.Add("ECPreDestroy", "EasyChatModuleLuaTab", save_hook)
