@@ -138,7 +138,7 @@ if ScrH() < 1080 then
 elseif ScrH() == 1080 then
 	chathud:UpdateFontSize(18)
 else
-	chathud:UpdateFontSize(19)
+	chathud:UpdateFontSize(20)
 end
 
 -- taken from https://github.com/notcake/glib/blob/master/lua/glib/unicode/utf8.lua#L15
