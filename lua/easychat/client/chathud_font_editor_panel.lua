@@ -13,7 +13,7 @@ if ScrH() < 1080 then
 elseif ScrH() == 1080 then
 	default_font_data.size = 18
 else
-	default_font_data.size = 19
+	default_font_data.size = 20
 end
 
 local props = {
