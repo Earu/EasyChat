@@ -383,7 +383,7 @@ if CLIENT then
 		hook.Add("ECPreDestroy", "EasyChatModuleLuaTab", save_hook)
 
 		-- in case of crashes, have auto-saving
-		timer.Create("EasyChatModuleLuaTabAutoSave", 300, save_hook)
+		timer.Create("EasyChatModuleLuaTabAutoSave", 300, 0, save_hook)
 	end
 end
 
