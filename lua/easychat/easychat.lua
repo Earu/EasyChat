@@ -109,7 +109,7 @@ if CLIENT then
 	local JSON_COLS = file.Read("easychat/colors.txt", "DATA")
 
 	local EC_GLOBAL_ON_OPEN = CreateConVar("easychat_global_on_open", "1", FCVAR_ARCHIVE, "Set the chat to always open global chat tab on open")
-	local EC_FONT           = CreateConVar("easychat_font", (system.IsWindows() and "Verdana" or "Tahoma"), FCVAR_ARCHIVE, "Set the font to use for the chat")
+	local EC_FONT           = CreateConVar("easychat_font", "Roboto", FCVAR_ARCHIVE, "Set the font to use for the chat")
 	local EC_FONT_SIZE      = CreateConVar("easychat_font_size", "15", FCVAR_ARCHIVE, "Set the font size for chatbox")
 	local EC_TIMESTAMPS     = CreateConVar("easychat_timestamps", "0", FCVAR_ARCHIVE, "Display timestamp in front of messages or not")
 	local EC_TEAMS          = CreateConVar("easychat_teams", "0", FCVAR_ARCHIVE, "Display team in front of messages or not")

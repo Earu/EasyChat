@@ -113,19 +113,19 @@ local chathud = {
 
 function chathud:UpdateFontSize(size)
 	surface_CreateFont("ECHUDDefault", {
-		font = "Verdana",
+		font = "Roboto",
 		extended = true,
 		size = size,
-		weight = 600,
+		weight = 500,
 		shadow = true,
 		read_speed = 100,
 	})
 
 	surface_CreateFont("ECHUDShadowDefault", {
-		font = "Verdana",
+		font = "Roboto",
 		extended = true,
 		size = size,
-		weight = 600,
+		weight = 500,
 		shadow = true,
 		blursize = SHADOW_FONT_BLURSIZE,
 		read_speed = 100,
@@ -134,11 +134,11 @@ end
 
 -- this is because 16 is way too small on 1440p and above
 if ScrH() < 1080 then
-	chathud:UpdateFontSize(16)
-elseif ScrH() == 1080 then
 	chathud:UpdateFontSize(17)
-else
+elseif ScrH() == 1080 then
 	chathud:UpdateFontSize(18)
+else
+	chathud:UpdateFontSize(19)
 end
 
 -- taken from https://github.com/notcake/glib/blob/master/lua/glib/unicode/utf8.lua#L15
