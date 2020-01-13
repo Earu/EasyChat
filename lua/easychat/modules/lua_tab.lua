@@ -84,6 +84,7 @@ end
 
 if CLIENT then
 	local blue_color = Color(0, 122, 204)
+	local last_session_path = "easychat/lua_tab/last_session"
 
 	local LUA_TAB = {
 		LastAction = {
@@ -203,6 +204,8 @@ if CLIENT then
 				surface.SetDrawColor(blue_color)
 				surface.DrawRect(0, 0, w, h)
 			end
+
+			self:LoadLastSession()
 		end,
 		Shortcuts = {
 			{
@@ -246,44 +249,29 @@ if CLIENT then
 				tab.m_pPanel:RequestFocus()
 			end
 		end,
-		NewTab = function(self)
+		NewTab = function(self, code)
+			code = code or ""
+
 			local editor = vgui.Create("DHTML")
 			local tab_name = ("Untitled%s"):format((" "):rep(5))
 			local sheet = self.CodeTabs:AddSheet(tab_name, editor)
 			local tab = sheet.Tab
-			tab.Code = ""
+			tab.Code = code
 			tab.Name = tab_name:Trim()
 
-			editor:AddFunction("gmodinterface", "OnCode", function(code)
-				tab.Code = code
+			editor:AddFunction("gmodinterface", "OnCode", function(new_code)
+				tab.Code = new_code
 			end)
 
 			editor:AddFunction("gmodinterface", "OnReady", function()
 				if tab == self.CodeTabs:GetActiveTab() then
 					editor:RequestFocus()
+					editor:QueueJavascript("gmodinterface.SetCode(`" .. code .. "`);")
 				end
 			end)
 
-			editor:OpenURL("metastruct.github.io/lua_editor/")
-			-- editor:OpenURL("metastruct.github.io/gmod-monaco/")
-			--[[ editor:QueueJavascript([[
-				window.onload = () => {
-					let editor = document.getElementsByClassName('monaco-editor')[0];
-					let model = editor.getModel();
-					console.log(editor, model);
-
-					let previousValue = "";
-					model.onDidChangeContent = (_) => {
-						let curValue = model.getValue();
-						if (previousValue != curValue) {
-							gmodinterface.OnCode(curValue);
-							previousValue = curValue;
-						}
-					};
-
-					gmodinterface.OnReady();
-				};
-			]]--)
+			--editor:OpenURL("metastruct.github.io/lua_editor/")
+			editor:OpenURL("metastruct.github.io/gmod-monaco/")
 
 			self.CodeTabs:SetActiveTab(tab)
 			local tab_w = tab:GetWide()
@@ -330,6 +318,39 @@ if CLIENT then
 			if text == "" then text = ("%sReady"):format(spacing) end
 			self.LblRunStatus:SetText(text)
 		end,
+		SaveSession = function(self)
+			if not file.Exists("easychat/lua_tab", "DATA") then
+				file.CreateDir("easychat/lua_tab")
+			end
+
+			if not file.Exists(last_session_path, "DATA") then
+				file.CreateDir(last_session_path)
+			end
+
+			-- get rid of existing files
+			local existing_files, _ = file.Find(last_session_path .. "/*", "DATA")
+			for _, f in pairs(existing_files) do
+				local path = ("%s/%s"):format(last_session_path, f)
+				file.Delete(path)
+			end
+
+			-- save current tabs code
+			for i, item in pairs(self.CodeTabs:GetItems()) do
+				local tab = item.Tab
+				if tab.Code:Trim() ~= "" then
+					local path = ("%s/%d.txt"):format(last_session_path, i)
+					file.Write(path, tab.Code)
+				end
+			end
+		end,
+		LoadLastSession = function(self)
+			local existing_files, _ = file.Find(last_session_path .. "/*", "DATA")
+			for _, f in pairs(existing_files) do
+				local path = ("%s/%s"):format(last_session_path, f)
+				local contents = file.Read(path, "DATA")
+				self:NewTab(contents)
+			end
+		end,
 		GetCode = function(self)
 			local tab = self.CodeTabs:GetActiveTab()
 			if IsValid(tab) and tab.Code then
@@ -356,6 +377,13 @@ if CLIENT then
 	if EC_LUA_TAB:GetBool() then
 		local lua_tab = vgui.Create("ECLuaTab")
 		EasyChat.AddTab("Lua", lua_tab)
+
+		local function save_hook() lua_tab:SaveSession() end
+		hook.Add("ShutDown", "EasyChatModuleLuaTab", save_hook)
+		hook.Add("ECPreDestroy", "EasyChatModuleLuaTab", save_hook)
+
+		-- in case of crashes, have auto-saving
+		timer.Create("EasyChatModuleLuaTabAutoSave", 300, save_hook)
 	end
 end
 
