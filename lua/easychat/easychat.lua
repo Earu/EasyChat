@@ -1094,6 +1094,8 @@ if CLIENT then
 end
 
 function EasyChat.Destroy()
+	hook.Run("ECPreDestroy")
+
 	if CLIENT then
 		hook.Remove("PreRender", TAG)
 		hook.Remove("Think", TAG)
