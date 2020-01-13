@@ -89,7 +89,10 @@ if CLIENT then
 	local valid_branches = {
 		["chromium"] = true,
 		["x86-64"] = true,
+		["prerelease"] = true,
+		["dev"] = true,
 	}
+	-- until we finally get chromium on stable branch
 	local function is_valid_branch()
 		return valid_branches[BRANCH] or false
 	end
