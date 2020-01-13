@@ -1,12 +1,20 @@
 local file_path = "easychat/chud_font_settings.txt"
 local default_font_data = {
-	font = "Verdana",
+	font = "Roboto",
 	extended = true,
 	size = 17,
-	weight = 600,
+	weight = 500,
 	shadow = true,
 	read_speed = 100,
 }
+
+if ScrH() < 1080 then
+	default_font_data.size = 17
+elseif ScrH() == 1080 then
+	default_font_data.size = 18
+else
+	default_font_data.size = 19
+end
 
 local props = {
 	antialias = true,
