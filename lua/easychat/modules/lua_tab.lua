@@ -86,6 +86,14 @@ if CLIENT then
 	local blue_color = Color(0, 122, 204)
 	local last_session_path = "easychat/lua_tab/last_session"
 
+	local valid_branches = {
+		["chromium"] = true,
+		["x86-64"] = true,
+	}
+	local function is_valid_branch()
+		return valid_branches[BRANCH] or false
+	end
+
 	local LUA_TAB = {
 		LastAction = {
 			Script = "",
@@ -250,7 +258,7 @@ if CLIENT then
 			end
 		end,
 		NewTab = function(self, code)
-			code = code or ""
+			code = (code or ""):JavascriptSafe()
 
 			local editor = vgui.Create("DHTML")
 			local tab_name = ("Untitled%s"):format((" "):rep(5))
@@ -266,12 +274,19 @@ if CLIENT then
 			editor:AddFunction("gmodinterface", "OnReady", function()
 				if tab == self.CodeTabs:GetActiveTab() then
 					editor:RequestFocus()
-					editor:QueueJavascript("gmodinterface.SetCode(`" .. code .. "`);")
+					if is_valid_branch() then
+						editor:QueueJavascript([[gmodinterface.SetCode(`]] .. code .. [[`);]])
+					else
+						editor:QueueJavascript([[SetContent("]] .. code .. [[");]])
+					end
 				end
 			end)
 
-			--editor:OpenURL("metastruct.github.io/lua_editor/")
-			editor:OpenURL("metastruct.github.io/gmod-monaco/")
+			if is_valid_branch() then
+				editor:OpenURL("metastruct.github.io/gmod-monaco/")
+			else
+				editor:OpenURL("metastruct.github.io/lua_editor/")
+			end
 
 			self.CodeTabs:SetActiveTab(tab)
 			local tab_w = tab:GetWide()
