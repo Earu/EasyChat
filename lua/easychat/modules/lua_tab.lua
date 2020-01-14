@@ -98,6 +98,52 @@ if CLIENT then
 		return valid_branches[BRANCH] or false
 	end
 
+	local function ask_for_input(title, callback)
+		local frame = vgui.Create("DFrame")
+		frame:SetTitle(title)
+		frame:SetSize(200,110)
+		frame:Center()
+		frame.Paint = function(self, w, h)
+			Derma_DrawBackgroundBlur(self, 0)
+
+			surface.SetDrawColor(EasyChat.OutlayColor)
+			surface.DrawRect(0, 0, w, h)
+
+			surface.SetDrawColor(EasyChat.TabColor)
+			surface.DrawRect(0, 0, w, 25)
+		end
+
+		local text_entry = frame:Add("DTextEntry")
+		text_entry:SetSize(180, 25)
+		text_entry:SetPos(10, 40)
+		text_entry.OnEnter = function(self)
+			callback(self:GetText())
+			frame:Close()
+		end
+
+		local btn = frame:Add("DButton")
+		btn:SetText("Ok")
+		btn:SetTextColor(EasyChat.TextColor)
+		btn:SetSize(100, 25)
+		btn:SetPos(50, 75)
+		btn.DoClick = function()
+			callback(text_entry:GetText())
+			frame:Close()
+		end
+		btn.Paint = function(self, w, h)
+			if self:IsHovered() then
+				surface.SetDrawColor(blue_color)
+			else
+				surface.SetDrawColor(EasyChat.TabColor)
+			end
+
+			surface.DrawRect(0, 0, w, h)
+		end
+
+		frame:MakePopup()
+		text_entry:RequestFocus()
+	end
+
 	local lua_callbacks = {
 		["self"] = function(self, code)
 			lua.RunOnSelf(code, LocalPlayer())
@@ -139,21 +185,30 @@ if CLIENT then
 			self.MenuFile = self.MenuBar:AddMenu("File")
 			table.insert(options, self.MenuFile:AddOption("New (Ctrl + N)", function() self:NewTab() end))
 			table.insert(options, self.MenuFile:AddOption("Close Current (Ctrl + W)", function() self:CloseCurrentTab() end))
+
+			self.MenuEdit = self.MenuBar:AddMenu("Edit")
+			table.insert(options, self.MenuEdit:AddOption("Rename Current (F2)", function() self:RenameCurrentTab() end))
 			--table.insert(options, self.MenuFile:AddOption("Load File (Ctrl + O)"))
 			--table.insert(options, self.MenuFile:AddOption("Save (Ctrl + S)"))
 			--table.insert(options, self.MenuFile:AddOption("Save As... (Ctrl + Shift + S)"))
 			--self.MenuFile:AddSpacer()
 			--table.insert(options, self.MenuFile:AddOption("Settings"))
 
+			local function build_env_icon(mat_path)
+				local img = vgui.Create("DImage")
+				img:SetMaterial(Material(mat_path))
+
+				return img
+			end
+
 			self.EnvSelector = self.MenuBar:Add("DComboBox")
 			self.EnvSelector:SetSize(100, 20)
 			self.EnvSelector:SetPos(200, 5)
 			self.EnvSelector:SetTextColor(EasyChat.TextColor)
-			self.EnvSelector:AddChoice("self")
-			self.EnvSelector:AddChoice("clients")
-			self.EnvSelector:AddChoice("shared")
-			self.EnvSelector:AddChoice("server")
-			self.EnvSelector:SetValue("self")
+			self.EnvSelector:AddChoice("self", nil, true, "icon16/cog_go.png")
+			self.EnvSelector:AddChoice("clients", nil, false, "icon16/user.png")
+			self.EnvSelector:AddChoice("shared", nil, false, "icon16/world.png")
+			self.EnvSelector:AddChoice("server", nil, false, "icon16/server.png")
 			self.EnvSelector.OnSelect = function(_, _, value)
 				self.Env = value
 			end
@@ -185,6 +240,7 @@ if CLIENT then
 			end
 
 			self.MenuFile.Paint = MenuPaint
+			self.MenuEdit.Paint = MenuPaint
 			self.EnvSelector.Paint = MenuPaint
 			self.EnvSelector.Think = function(self)
 				if self:IsMenuOpen() and not self.Menu.CustomPainted then
@@ -265,6 +321,10 @@ if CLIENT then
 			{
 				Trigger = { KEY_LCONTROL, KEY_R },
 				Callback = function(self) self:RunCode() end,
+			},
+			{
+				Trigger = { KEY_F2 },
+				Callback = function(self) self:RenameCurrentTab() end,
 			}
 		},
 		Think = function(self)
@@ -289,6 +349,10 @@ if CLIENT then
 				end
 			end
 		end,
+		RenameCurrentTab = function(self)
+			local tab = self.CodeTabs:GetActiveTab()
+			if IsValid(tab) then tab:DoDoubleClick() end
+		end,
 		RunCode = function(self)
 			local code = self:GetCode():Trim()
 			if code == "" then return end
@@ -312,7 +376,7 @@ if CLIENT then
 			code = code or ""
 
 			local editor = vgui.Create("DHTML")
-			local tab_name = ("Untitled%s"):format((" "):rep(5))
+			local tab_name = ("Untitled%s"):format((" "):rep(20))
 			local sheet = self.CodeTabs:AddSheet(tab_name, editor)
 			local tab = sheet.Tab
 			tab.Code = code
@@ -353,17 +417,39 @@ if CLIENT then
 				end
 			end
 
+			tab.DoDoubleClick = function(self)
+				ask_for_input("Rename File", function(input)
+					input = input:Trim()
+					self.Name = input
+
+					-- this is so we stay at the same tab size
+					local new_len, old_len = #input, #self:GetText()
+					if new_len ~= old_len then
+						if new_len > old_len then
+							self:SetText(input:sub(1, old_len - 3) .. "...")
+						else
+							local diff = old_len - new_len
+							self:SetText(input .. (" "):rep(diff))
+						end
+					end
+				end)
+			end
 			tab.Paint = function(tab, w, h)
 				if tab == self.CodeTabs:GetActiveTab() then
 					surface.SetDrawColor(blue_color)
 					surface.DrawRect(0, 0, w, 20)
-
-					surface.DisableClipping(true)
-						local panel_x, _, panel_w, _ = sheet.Panel:GetBounds()
-						local x, _ = tab:GetPos()
-						surface.DrawRect(panel_x - x - 3, 18, panel_w - 1, 2)
-					surface.DisableClipping(false)
 				end
+			end
+			local old_editor_paint = editor.Paint
+			editor.Paint = function(editor, w, h)
+				if not tab == self.CodeTabs:GetActiveTab() then return end
+
+				surface.DisableClipping(true)
+				surface.SetDrawColor(blue_color)
+				surface.DrawRect(0, -2, w, 2)
+				surface.DisableClipping(false)
+
+				old_editor_paint(editor, w, h)
 			end
 
 			tab.Panel:RequestFocus()
