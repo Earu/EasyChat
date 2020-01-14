@@ -615,6 +615,7 @@ function emote_part:Ctor(str)
 	local name, size = em_components[1], em_components[2]
 	self.Height = math.Clamp(tonumber(size) or draw.GetFontHeight(self.HUD.DefaultFont), 16, 64)
 	self:TryGetEmote(name)
+	self:ComputeSize()
 
 	return self
 end
