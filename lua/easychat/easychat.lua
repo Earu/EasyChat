@@ -157,7 +157,7 @@ if CLIENT then
 			font = fontname,
 			extended = true,
 			size = size,
-			weight = 500,
+			weight = 530,
 			shadow = false,
 			additive = false
 		})
