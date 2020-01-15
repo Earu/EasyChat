@@ -14,7 +14,7 @@ local UpdateSettingsFont = function(name,size)
 		font      = fontname,
 		extended  = true,
 		size      = size,
-		weight    = 500,
+		weight    = 530,
 		shadow	  = false,
 		additive  = false,
 	})
@@ -396,7 +396,7 @@ local SETTINGS_TAB = {
 	end,
 
 	ResetFont = function(self)
-		RunConsoleCommand("easychat_font",(system.IsWindows() and "Verdana" or "Tahoma"))
+		RunConsoleCommand("easychat_font", "Roboto")
 		RunConsoleCommand("easychat_font_size","15")
 	end,
 
