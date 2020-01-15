@@ -87,6 +87,8 @@ function ec_markup.AdvancedParse(str, data)
 	end
 
 	function obj:GetWide()
+		if self.ComputedWidth then return self.ComputedWidth end
+
 		local w = 0
 		for _, line in ipairs(self.Lines) do
 			if line.Size.W > w then
@@ -94,19 +96,31 @@ function ec_markup.AdvancedParse(str, data)
 			end
 		end
 
+		self.ComputedWidth = w
 		return w
 	end
 	obj.GetWidth = obj.GetWide
 
 	function obj:GetTall()
+		if self.ComputedHeight then return self.ComputedHeight end
+
 		local h = 0
 		for _, line in ipairs(self.Lines) do
 			h = h + line.Size.H
 		end
 
+		self.ComputedHeight = h
 		return h
 	end
 	obj.GetHeight = obj.GetTall
+
+	local old_InvalidateLayout = obj.InvalidateLayout
+	function obj:InvalidateLayout()
+		old_InvalidateLayout(self)
+
+		self.ComputedWidth = nil
+		self.ComputedHeight = nil
+	end
 
 	obj.Size = setmetatable(obj.Size, {
 		__call = function()

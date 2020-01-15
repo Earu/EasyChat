@@ -10,10 +10,25 @@ function panel:Think()
 	self:SetPos(x + w, y)
 end
 
+local nick_cache = {}
+local function cache_nick(ply)
+	local nick, team_color = ply:Nick(), team.GetColor(ply:Team())
+	local cache = nick_cache[nick]
+	if cache and cache.DefaultColor == team_color then
+		return cache
+	end
+
+	local mk = ec_markup.Parse(nick, nil, true, team_color, "EasyChatFont")
+	nick_cache[nick] = mk
+
+	return mk
+end
+
 panel:SetWide(150)
 panel.old_paint = panel.Paint
 function panel:Paint(w, h)
-	if EasyChat.IsOpened() and EasyChat.Modes[EasyChat.Mode] and EasyChat.Modes[EasyChat.Mode].Name == "Local" then
+	local cur_mode = EasyChat.Modes[EasyChat.Mode]
+	if EasyChat.IsOpened() and cur_mode and cur_mode.Name == "Local" then
 		if EasyChat.UseDermaSkin then
 			self:old_paint(w, h)
 		else
@@ -26,22 +41,18 @@ function panel:Paint(w, h)
 		surface.SetFont("EasyChatFont")
 		surface.SetTextPos(15, 5)
 		surface.SetTextColor(EasyChat.TextColor)
-		surface.DrawText("Message receivers")
+		surface.DrawText("Message Receivers")
 
 		local i = 1
 		for _, ply in pairs(player.GetAll()) do
 			if ply ~= LocalPlayer()
 				and ply:GetPos():Distance(LocalPlayer():GetPos()) <= GetConVar("easychat_local_msg_distance"):GetInt()
 			then
-				local team_color = team.GetColor(ply:Team())
+				self:SetTall(5 + (20 * (i + 1)))
 
-				surface.SetTextPos(15, 25 * i)
-				surface.SetTextColor(team_color.r, team_color.g, team_color.g, 255)
+				local mk = cache_nick(ply)
+				mk:Draw(15, 5 + (20 * i))
 
-				local x, y = surface.GetTextSize(ply:GetName())
-				self:SetTall((25 * i) + y + 10)
-
-				surface.DrawText(string.gsub(ply:Nick(), "<.->", ""))
 				i = i + 1
 			end
 		end
@@ -49,5 +60,9 @@ function panel:Paint(w, h)
 end
 
 EasyChat.GUI.LocalPanel = panel
+
+hook.Add("ECDestroyed", "EasyChatModuleLocalUI", function()
+	if IsValid(panel) then panel:Remove() end
+end)
 
 return "Local Message UI"
