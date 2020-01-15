@@ -3,7 +3,7 @@ local default_font_data = {
 	font = "Roboto",
 	extended = true,
 	size = 17,
-	weight = 500,
+	weight = 530,
 	shadow = true,
 	read_speed = 100,
 }
@@ -61,6 +61,7 @@ local EDITOR = {
 		self.FontSize:SetSize(width, 20)
 		self.FontSize:SetPos(x, total_height)
 		self.FontSize:SetText("Font size")
+		self.FontSize:SetDecimals(0)
 		self.FontSize:SetMax(254)
 		self.FontSize:SetMin(5)
 		self.FontSize:SetValue(self.FontData.size)
@@ -69,6 +70,7 @@ local EDITOR = {
 		self.FontWeight:SetSize(width, 20)
 		self.FontWeight:SetPos(x, total_height)
 		self.FontWeight:SetText("Font weight")
+		self.FontWeight:SetDecimals(0)
 		self.FontWeight:SetMax(1000)
 		self.FontWeight:SetMin(200)
 		self.FontWeight:SetValue(self.FontData.weight)
@@ -77,6 +79,7 @@ local EDITOR = {
 		self.FontScanlines:SetSize(width, 20)
 		self.FontScanlines:SetPos(x, total_height)
 		self.FontScanlines:SetText("Font scanlines")
+		self.FontScanlines:SetDecimals(0)
 		self.FontScanlines:SetMin(0)
 		self.FontScanlines:SetMax(10)
 		self.FontScanlines:SetValue(self.FontData.scanlines)

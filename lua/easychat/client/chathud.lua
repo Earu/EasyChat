@@ -116,7 +116,7 @@ function chathud:UpdateFontSize(size)
 		font = "Roboto",
 		extended = true,
 		size = size,
-		weight = 500,
+		weight = 530,
 		shadow = true,
 		read_speed = 100,
 	})
@@ -125,7 +125,7 @@ function chathud:UpdateFontSize(size)
 		font = "Roboto",
 		extended = true,
 		size = size,
-		weight = 500,
+		weight = 530,
 		shadow = true,
 		blursize = SHADOW_FONT_BLURSIZE,
 		read_speed = 100,
