@@ -92,18 +92,21 @@ local CHATBOX = {
 				surface.DrawOutlinedRect(6, 0, w - 13, h - 5)
 			end
 
+			local gray_color = Color(225, 225, 225)
 			self.BtnMaxim.Paint = function(self,w,h)
-				surface.SetDrawColor(Color(225,225,225))
+				surface.SetDrawColor(gray_color)
 				surface.DrawRect(0, 0, w, h)
 			end
 
+			local red_color = Color(246, 40, 40)
 			self.BtnClose.Paint = function(self,w,h)
-				surface.SetDrawColor(Color(246,40,40))
+				surface.SetDrawColor(red_color)
 				surface.DrawRect(0, 0, w - 1, h)
 			end
 
+			local no_color = Color(0, 0, 0, 0)
 			self.Tabs.Paint = function(self,w,h)
-				surface.SetDrawColor(0,0,0,0)
+				surface.SetDrawColor(no_color)
 				surface.DrawRect(0, 0, w, h)
 			end
 		end
