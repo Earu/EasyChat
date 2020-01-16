@@ -106,6 +106,7 @@ end
 
 if CLIENT then
 	local MAX_CHARS = 3000
+	local NO_COLOR = Color(0, 0, 0, 0)
 	local JSON_COLS = file.Read("easychat/colors.txt", "DATA")
 
 	local EC_GLOBAL_ON_OPEN = CreateConVar("easychat_global_on_open", "1", FCVAR_ARCHIVE, "Set the chat to always open global chat tab on open")
@@ -659,7 +660,7 @@ if CLIENT then
 									255
 								)
 							else
-								surface.SetDrawColor(Color(0, 0, 0, 0))
+								surface.SetDrawColor(NO_COLOR)
 							end
 						end
 
