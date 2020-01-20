@@ -607,25 +607,73 @@ chathud:RegisterPart("text", text_part)
 ]]-------------------------------------------------------------------------------
 local emote_part = {
 	SetEmoteMaterial = function() draw_NoTexture() end,
-	RealPos = { X = 0, Y = 0 }
+	RealPos = { X = 0, Y = 0 },
+	Height = 32,
+	HasSetHeight = false,
 }
 
 function emote_part:Ctor(str)
 	local em_components = string.Explode("%s*,%s*", str, true)
-	local name, size = em_components[1], em_components[2]
-	self.Height = math.Clamp(tonumber(size) or draw.GetFontHeight(self.HUD.DefaultFont), 16, 64)
+	local name, size = em_components[1], tonumber(em_components[2])
+	if size then
+		size = math_clamp(size, 16, 64)
+		self.Height = size
+		self.HasSetHeight = true
+	else
+		self.Height = draw_GetFontHeight(self.HUD.DefaultFont)
+	end
+
 	self:TryGetEmote(name)
 	self:ComputeSize()
 
 	return self
 end
 
+function emote_part:PreLinePush(line, last_index)
+	-- if we have a set valid height by the user dont bother
+	if self.HasSetHeight then return end
+
+	-- dont waste time trying to find something that does not exist
+	if not line.HasFontTags then return end
+
+	-- look for last font on the same line
+	for i = last_index, 1, -1 do
+		local component = line.Components[i]
+		if component.Type == "font" and not component.Invalid then
+			self.Height = draw_GetFontHeight(component.Font)
+			self:ComputeSize()
+			return
+		elseif component.Type == "stop" then return end
+	end
+
+	local line_index = line.Index or 1 -- 1 if line is not part of the chathud
+
+	-- this is the last line being displayed, nothing before
+	if line_index == 1 then return end
+
+	-- not found, then look for previous lines
+	for i = line_index - 1, 1, -1 do
+		local line = self.HUD.Lines[i]
+		for j = #line.Components, 1, -1 do
+			local component = line.Components[j]
+			if component.Type == "font" and not component.Invalid then
+				self.Height = draw_GetFontHeight(component.Font)
+				self:ComputeSize()
+				return
+			elseif component.Type == "stop" then return end
+		end
+	end
+
+	self.Height = draw_GetFontHeight(self.HUD.DefaultFont)
+	self:ComputeSize()
+end
+
 -- the closest the priority is to 1 the more chances it has to display over other matches
 function chathud:RegisterEmoteProvider(provider_name, provider_func, priority)
 	if type(priority) == "number" and priority > 0 then
-		table.insert(self.EmotePriorities, priority, provider_name)
+		table_insert(self.EmotePriorities, priority, provider_name)
 	else
-		table.insert(self.EmotePriorities, provider_name)
+		table_insert(self.EmotePriorities, provider_name)
 	end
 
 	list.Set("EasyChatEmoticonProviders", provider_name, provider_func)
@@ -701,7 +749,7 @@ function emote_part:GetDrawPos(ctx)
 end
 
 function emote_part:PostLinePush()
-    self.RealPos = table.Copy(self.Pos)
+    self.RealPos = table_copy(self.Pos)
 end
 
 function emote_part:Draw(ctx)
