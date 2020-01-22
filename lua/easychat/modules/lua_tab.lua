@@ -55,6 +55,11 @@ if CLIENT then
 end
 
 if SERVER then
+	-- add luacheck to clients
+	for _, file_name in ipairs(file.Find("lua/includes/modules/luacheck*", "GAME")) do
+		AddCSLuaFile("includes/modules/" .. file_name)
+	end
+
 	util.AddNetworkString(NET_LUA_CLIENTS)
 	util.AddNetworkString(NET_LUA_SV)
 
@@ -83,20 +88,13 @@ if SERVER then
 end
 
 if CLIENT then
+	require("luacheck")
+
 	local blue_color = Color(0, 122, 204)
 	local green_color = Color(141, 210, 138)
+	local red_color = Color(255, 0, 0)
+	local orange_color = Color(255, 165, 0)
 	local last_session_path = "easychat/lua_tab/last_session"
-
-	local valid_branches = {
-		["chromium"] = true,
-		["x86-64"] = true,
-		["prerelease"] = true,
-		["dev"] = true,
-	}
-	-- until we finally get chromium on stable branch
-	local function is_valid_branch()
-		return valid_branches[BRANCH] or false
-	end
 
 	local function ask_for_input(title, callback)
 		local frame = vgui.Create("DFrame")
@@ -288,15 +286,13 @@ if CLIENT then
 			end
 
 			self.CodeTabs = self:Add("DPropertySheet")
-			self.CodeTabs:SetPos(0, 25)
+			self.CodeTabs:SetPos(0, 35)
 			self.CodeTabs:SetPadding(0)
 			self.CodeTabs.Paint = function() end -- remove ugly grey background when no tab is opened
 			self.CodeTabs.tabScroller.Paint = function() end
-			self.CodeTabs.Think = function(code_tabs)
-				code_tabs:SetSize(self:GetWide(), self:GetTall() - 50)
-			end
 			self.CodeTabs.OnActiveTabChanged = function(_, _, new_tab)
 				new_tab.m_pPanel:RequestFocus()
+				self:AnalyzeTab(new_tab, new_tab.m_pPanel)
 			end
 
 			self.LblRunStatus = self:Add("DLabel")
@@ -307,6 +303,72 @@ if CLIENT then
 			self.LblRunStatus.Paint = function(self, w, h)
 				surface.SetDrawColor(blue_color)
 				surface.DrawRect(0, 0, w, h)
+			end
+
+			self.ErrorList = self:Add("DCollapsibleCategory")
+			self.ErrorList:Dock(BOTTOM)
+			self.ErrorList:SetSize(self:GetWide(), 50)
+			self.ErrorList:SetLabel("Error List")
+			self.ErrorList.Paint = function(self, w, h)
+				surface.SetDrawColor(blue_color)
+				surface.DrawRect(0, 0, w, h)
+			end
+
+			local old_ErrorListPerformLayout = self.ErrorList.PerformLayout
+			self.ErrorList.PerformLayout = function(self)
+				old_ErrorListPerformLayout(self)
+				if self:GetExpanded() then
+					self:SetTall(150)
+				end
+			end
+
+			local error_list = vgui.Create("DListView")
+			error_list:SetMultiSelect(false)
+			error_list.Paint = function(self, w, h)
+				surface.SetDrawColor(EasyChat.TabColor)
+				surface.DrawRect(0, 0, w, h)
+			end
+
+			local code_column = error_list:AddColumn("Code")
+			code_column:SetFixedWidth(50)
+			code_column.Header:SetTextColor(EasyChat.TextColor)
+			code_column.Header.Paint = function(self, w, h)
+				surface.SetDrawColor(EasyChat.OutlayColor)
+				surface.DrawRect(0, 0, w, h)
+
+				surface.SetDrawColor(EasyChat.TextColor)
+				surface.DrawLine(0, h - 1, w, h - 1)
+				surface.DrawLine(w - 1, 0, w - 1, h)
+			end
+
+			local desc_column = error_list:AddColumn("Description")
+			desc_column.Header:SetTextColor(EasyChat.TextColor)
+			desc_column.Header.Paint = function(self, w, h)
+				surface.SetDrawColor(EasyChat.OutlayColor)
+				surface.DrawRect(0, 0, w, h)
+
+				surface.SetDrawColor(EasyChat.TextColor)
+				surface.DrawLine(0, h - 1, w, h - 1)
+			end
+
+			local line_column = error_list:AddColumn("Line")
+			line_column:SetFixedWidth(50)
+			line_column.Header:SetTextColor(EasyChat.TextColor)
+			line_column.Header.Paint = function(self, w, h)
+				surface.SetDrawColor(EasyChat.OutlayColor)
+				surface.DrawRect(0, 0, w, h)
+
+				surface.SetDrawColor(EasyChat.TextColor)
+				surface.DrawLine(0, h - 1, w, h - 1)
+				surface.DrawLine(0, 0, 0, h)
+			end
+
+			self.ErrorList:SetContents(error_list)
+			self.ErrorList:SetExpanded(true)
+			self.ErrorList.List = error_list
+
+			self.CodeTabs.Think = function(code_tabs)
+				code_tabs:SetSize(self:GetWide(), self:GetTall() - (60 + self.ErrorList:GetTall()))
 			end
 		end,
 		Shortcuts = {
@@ -372,6 +434,35 @@ if CLIENT then
 				tab.m_pPanel:RequestFocus()
 			end
 		end,
+		AnalyzeTab = function(self, tab, editor)
+			timer.Create("EasyChatLuaCheck", 1, 1, function()
+				if not tab.Code or tab.Code:Trim() == "" then return end
+				if tab ~= self.CodeTabs:GetActiveTab() then return end
+
+				local report = luacheck.get_report(tab.Code)
+				local js_objects = {}
+				local error_list = self.ErrorList.List
+				error_list:Clear()
+				for _, event in ipairs(report.events) do
+					local is_error = tostring(event.code)[1] == "0"
+					local msg = luacheck.get_message(event)
+					local line, start_column, end_column = event.line, event.column, event.end_column + 1
+
+					local js_object = ([[{ message: `%s`, isError: %s, line: %d, startColumn: %d, endColumn: %d }]]):format(msg, tostring(is_error), line, start_column, end_column)
+					table.insert(js_objects, js_object)
+
+					local line_panel = error_list:AddLine(tostring(event.code), msg, line + 1)
+					for _, column in pairs(line_panel.Columns) do
+						column:SetTextColor(is_error and red_color or orange_color)
+					end
+				end
+
+				local error_count = #report.events
+				error_list:GetParent():SetLabel(error_count > 0 and ("Error List (%d)"):format(error_count) or "Error List")
+				error_list:InvalidateParent(true)
+				editor:QueueJavascript([[gmodinterface.SubmitLuaReport({ events: [ ]] .. table.concat(js_objects, ",")  .. [[ ]});]])
+			end)
+		end,
 		NewTab = function(self, code)
 			code = code or ""
 
@@ -381,25 +472,25 @@ if CLIENT then
 			local tab = sheet.Tab
 			tab.Code = code
 			tab.Name = tab_name:Trim()
+			self.LblRunStatus:SetText(("%sLoading..."):format((" "):rep(3)))
 
 			editor:AddFunction("gmodinterface", "OnCode", function(new_code)
 				tab.Code = new_code
+				self:AnalyzeTab(tab, editor)
 			end)
 
 			editor:AddFunction("gmodinterface", "OnReady", function()
+				self.LblRunStatus:SetText(("%sReady"):format((" "):rep(3)))
 				local safe_code = code:JavascriptSafe()
-				if is_valid_branch() then
-					editor:QueueJavascript([[gmodinterface.SetCode(`]] .. safe_code .. [[`);]])
-				else
-					editor:QueueJavascript([[SetContent("]] .. safe_code .. [[");]])
-				end
+				editor:QueueJavascript([[gmodinterface.SetCode(`]] .. safe_code .. [[`);]])
 
 				if tab == self.CodeTabs:GetActiveTab() then
 					editor:RequestFocus()
+					self:AnalyzeTab(tab, editor)
 				end
 			end)
 
-			local url = ("metastruct.github.io/%s/"):format(is_valid_branch() and "gmod-monaco" or "lua_editor")
+			local url = "metastruct.github.io/gmod-monaco"
 			editor:OpenURL(url)
 
 			self.CodeTabs:SetActiveTab(tab)
