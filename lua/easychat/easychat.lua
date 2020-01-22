@@ -460,6 +460,7 @@ if CLIENT then
 			end
 		end)
 
+		local history_file_handles = {}
 		function EasyChat.SaveToHistory(name, content)
 			if not name or not content then return end
 			if content:Trim() == "" then return end
@@ -468,23 +469,41 @@ if CLIENT then
 				file.CreateDir("easychat")
 			end
 
-			local filename = "easychat/" .. name:lower() .. "_history.txt"
-			if not file.Exists(filename, "DATA") then
-				file.Write(filename, content)
-			else
-				file.Append(filename, content)
+			local file_name = "easychat/" .. name:lower() .. "_history.txt"
+			local file_handles = history_file_handles[name]
+			if not file_handles then
+				file_handles = {
+					input = file.Open(file_name, "w", "DATA"),
+					output = file.Open(file_name, "r", "DATA"),
+				}
+				history_file_handles[name] = file_handles
 			end
+
+			-- another process is using the file, discard
+			if not file_handles.input or not file_handles.output then return end
+
+			local pre_content = file_handles.output:Size() >= 10000
+				and file_handles.output:Read(10000 - #content)
+				or file_handles.output:Read(10000)
+			file_handles.input:Write(pre_content .. content)
+			file_handles.input:Flush()
 		end
 
 		function EasyChat.ReadFromHistory(name)
 			if not name then return "" end
 
-			local filename = "easychat/" .. name:lower() .. "_history.txt"
-			if not file.Exists(filename, "DATA") then
-				return ""
-			end
+			local file_name = "easychat/" .. name:lower() .. "_history.txt"
+			if not file.Exists(file_name, "DATA") then return "" end
 
-			return file.Read(filename, "DATA")
+			local history_file = file.Open(file_name, "r", "DATA")
+
+			-- another process is using the file, return an empty string
+			if not history_file then return "" end
+
+			local contents = history_file:Read(10000)
+			history_file:Close()
+
+			return contents
 		end
 
 		local function append_text(richtext, txt)
