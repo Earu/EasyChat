@@ -1095,7 +1095,7 @@ if CLIENT then
 end
 
 function EasyChat.Destroy()
-	hook.Run("ECPreDestroy")
+	pcall(hook.Run, "ECPreDestroy") -- dont fuck destroying if your addon is bad
 
 	if CLIENT then
 		hook.Remove("PreRender", TAG)
