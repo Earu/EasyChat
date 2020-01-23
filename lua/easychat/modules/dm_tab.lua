@@ -154,7 +154,7 @@ if CLIENT then
 					EasyChat.AddText(self, richtext, "This is the beginning of your conversation!\n\n")
 				else
 					richtext:AppendText(history) -- so we do not log twice
-					EasyChat.AddText(self, richtext, "\n^^^^^ Last Session History ^^^^^\n\n")
+					richtext:AppendText("\n^^^^^ Last Session History ^^^^^\n\n")
 				end
 			else
 				EasyChat.AddText(self, richtext, "This is the beginning of your conversation!\n\n")
