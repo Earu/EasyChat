@@ -485,7 +485,7 @@ if CLIENT then
 			local pre_content = file_handles.output:Size() >= 10000
 				and file_handles.output:Read(10000 - #content)
 				or file_handles.output:Read(10000)
-			file_handles.input:Write(pre_content .. content)
+			file_handles.input:Write(pre_content and pre_content .. content or content)
 			file_handles.input:Flush()
 		end
 
