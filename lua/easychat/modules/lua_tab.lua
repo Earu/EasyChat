@@ -458,9 +458,13 @@ if CLIENT then
 				if not tab.Code or tab.Code:Trim() == "" then return end
 				if tab ~= self.CodeTabs:GetActiveTab() then return end
 
-				local report = luacheck.get_report(tab.Code)
-				local events = luacheck.filter.filter({ report })[1]
+				-- luacheck can sometime error out
+				local succ, ret = pcall(function()
+					local report = luacheck.get_report(tab.Code)
+					return luacheck.filter.filter({ report })
+				end)
 
+				local events = succ and ret[1] or {}
 				local js_objects = {}
 				local error_list = self.ErrorList.List
 				error_list:Clear()

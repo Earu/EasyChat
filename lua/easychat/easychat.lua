@@ -151,7 +151,7 @@ if CLIENT then
 	EasyChat.FontName = EC_FONT:GetString()
 	EasyChat.FontSize = EC_FONT_SIZE:GetInt()
 
-	local function UpdateChatBoxFont(fontname, size)
+	local function update_chatbox_font(fontname, size)
 		EasyChat.FontName = fontname
 		EasyChat.FontSize = size
 		surface.CreateFont("EasyChatFont",{
@@ -164,14 +164,14 @@ if CLIENT then
 		})
 	end
 
-	UpdateChatBoxFont(EasyChat.FontName, EasyChat.FontSize)
+	update_chatbox_font(EasyChat.FontName, EasyChat.FontSize)
 
 	cvars.AddChangeCallback("easychat_font", function(name, old, new)
-		UpdateChatBoxFont(new, EasyChat.FontSize)
+		update_chatbox_font(new, EasyChat.FontSize)
 	end)
 
 	cvars.AddChangeCallback("easychat_font_size", function(name, old, new)
-		UpdateChatBoxFont(EasyChat.FontName, tonumber(new))
+		update_chatbox_font(EasyChat.FontName, tonumber(new))
 	end)
 
 	if JSON_COLS then
@@ -201,7 +201,6 @@ if CLIENT then
 
 	-- after easychat var declarations [necessary]
 	include("easychat/client/chatbox_panel.lua")
-	include("easychat/client/browser_panel.lua")
 	include("easychat/client/chat_tab.lua")
 	include("easychat/client/settings_tab.lua")
 	include("easychat/client/chathud_font_editor_panel.lua")
@@ -245,6 +244,9 @@ if CLIENT then
 		if EC_GLOBAL_ON_OPEN:GetBool() then
 			EasyChat.GUI.TabControl:SetActiveTab(EasyChat.GUI.TabControl.Items[1].Tab)
 			EasyChat.GUI.TextEntry:RequestFocus()
+			timer.Simple(0, function()
+				EasyChat.GUI.RichText:GotoTextEnd()
+			end)
 		end
 
 		EasyChat.GUI.TextEntry:SetText("")
@@ -330,17 +332,10 @@ if CLIENT then
 	end
 
 	function EasyChat.OpenURL(url)
-		if not EC_ENABLEBROWSER:GetBool() then
-			gui.OpenURL(url)
-			return
-		end
-
 		local ok = hook.Run("ECOpenURL", url)
 		if ok == false then return end
 
-		local browser = vgui.Create("ECBrowser")
-		browser:MakePopup()
-		browser:OpenURL(url or "www.google.com")
+		gui.OpenURL(url)
 	end
 
 	local ec_addtext_handles = {}
@@ -482,9 +477,13 @@ if CLIENT then
 			-- another process is using the file, discard
 			if not file_handles.input or not file_handles.output then return end
 
+			file_handles.input:Seek(0)
+			file_handles.output:Seek(0)
+
 			local pre_content = file_handles.output:Size() >= 10000
-				and file_handles.output:Read(10000 - #content)
+				and "...\n" .. file_handles.output:Read(10000 - #content)
 				or file_handles.output:Read(10000)
+
 			file_handles.input:Write(pre_content and pre_content .. content or content)
 			file_handles.input:Flush()
 		end
@@ -738,8 +737,6 @@ if CLIENT then
 					global_tab.RichText:AppendText(history)
 					local historynotice = "\n^^^^^ Last Session History ^^^^^\n\n"
 					global_tab.RichText:AppendText(historynotice)
-					EasyChat.SaveToHistory("global", historynotice)
-					global_tab.RichText:GotoTextEnd()
 				end
 			end
 
