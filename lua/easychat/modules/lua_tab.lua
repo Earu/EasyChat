@@ -329,6 +329,18 @@ if CLIENT then
 				surface.DrawRect(0, 0, w, h)
 			end
 
+			local line_column = error_list:AddColumn("Line")
+			line_column:SetFixedWidth(50)
+			line_column.Header:SetTextColor(EasyChat.TextColor)
+			line_column.Header.Paint = function(self, w, h)
+				surface.SetDrawColor(EasyChat.OutlayColor)
+				surface.DrawRect(0, 0, w, h)
+
+				surface.SetDrawColor(EasyChat.TextColor)
+				surface.DrawLine(0, h - 1, w, h - 1)
+				surface.DrawLine(w - 1, 0, w - 1, h)
+			end
+
 			local code_column = error_list:AddColumn("Code")
 			code_column:SetFixedWidth(50)
 			code_column.Header:SetTextColor(EasyChat.TextColor)
@@ -349,18 +361,6 @@ if CLIENT then
 
 				surface.SetDrawColor(EasyChat.TextColor)
 				surface.DrawLine(0, h - 1, w, h - 1)
-			end
-
-			local line_column = error_list:AddColumn("Line")
-			line_column:SetFixedWidth(50)
-			line_column.Header:SetTextColor(EasyChat.TextColor)
-			line_column.Header.Paint = function(self, w, h)
-				surface.SetDrawColor(EasyChat.OutlayColor)
-				surface.DrawRect(0, 0, w, h)
-
-				surface.SetDrawColor(EasyChat.TextColor)
-				surface.DrawLine(0, h - 1, w, h - 1)
-				surface.DrawLine(0, 0, 0, h)
 			end
 
 			self.ErrorList:SetContents(error_list)
@@ -434,30 +434,56 @@ if CLIENT then
 				tab.m_pPanel:RequestFocus()
 			end
 		end,
+		--[[ServerDump = util.JSONToTable(file.Read("server_global_dump.json", "DATA")),
+		IsOKServerIndex = function(self, indexing)
+			local lookup = self.ServerDump
+			for _, index in ipairs(indexing) do
+				local value = lookup[index]
+				if not value then
+					return false
+				else
+					if value ~= true then
+						-- continue indexing at a greater depth
+						lookup = value
+					else
+						return true
+					end
+				end
+			end
+
+			return false
+		end,]]--
 		AnalyzeTab = function(self, tab, editor)
 			timer.Create("EasyChatLuaCheck", 1, 1, function()
 				if not tab.Code or tab.Code:Trim() == "" then return end
 				if tab ~= self.CodeTabs:GetActiveTab() then return end
 
 				local report = luacheck.get_report(tab.Code)
+				local events = luacheck.filter.filter({ report })[1]
+
 				local js_objects = {}
 				local error_list = self.ErrorList.List
 				error_list:Clear()
-				for _, event in ipairs(report.events) do
-					local is_error = tostring(event.code)[1] == "0"
-					local msg = luacheck.get_message(event)
-					local line, start_column, end_column = event.line, event.column, event.end_column + 1
+				for _, event in ipairs(events) do
+					local code = tostring(event.code)
+					--local ignore = (code == "113" or code == "143") and self:IsOKServerIndex(event.indexing)
+					--if not ignore then
+						local is_error = code[1] == "0"
+						local msg = luacheck.get_message(event)
+						local line, start_column, end_column = event.line, event.column, event.end_column + 1
 
-					local js_object = ([[{ message: `%s`, isError: %s, line: %d, startColumn: %d, endColumn: %d }]]):format(msg, tostring(is_error), line, start_column, end_column)
-					table.insert(js_objects, js_object)
+						local js_object = ([[{ message: `%s`, isError: %s, line: %d, startColumn: %d, endColumn: %d }]]):format(msg, tostring(is_error), line, start_column, end_column)
+						table.insert(js_objects, js_object)
 
-					local line_panel = error_list:AddLine(tostring(event.code), msg, line + 1)
-					for _, column in pairs(line_panel.Columns) do
-						column:SetTextColor(is_error and red_color or orange_color)
-					end
+						local line_panel = error_list:AddLine(code, line + 1, msg)
+						PrintTable(line_panel:GetTable())
+						for _, column in pairs(line_panel.Columns) do
+							column:SetTextColor(is_error and red_color or orange_color)
+						end
+					--end
 				end
 
-				local error_count = #report.events
+				local error_count = #events
 				error_list:GetParent():SetLabel(error_count > 0 and ("Error List (%d)"):format(error_count) or "Error List")
 				error_list:InvalidateParent(true)
 				editor:QueueJavascript([[gmodinterface.SubmitLuaReport({ events: [ ]] .. table.concat(js_objects, ",")  .. [[ ]});]])
@@ -622,6 +648,7 @@ if CLIENT then
 		EasyChat.AddTab("Lua", lua_tab)
 
 		lua_tab:LoadLastSession()
+
 		local function save_hook() lua_tab:SaveSession() end
 		hook.Add("ShutDown", "EasyChatModuleLuaTab", save_hook)
 		hook.Add("ECPreDestroy", "EasyChatModuleLuaTab", save_hook)
