@@ -186,11 +186,11 @@ if CLIENT then
 
 			self.MenuEdit = self.MenuBar:AddMenu("Edit")
 			table.insert(options, self.MenuEdit:AddOption("Rename Current (F2)", function() self:RenameCurrentTab() end))
-			--table.insert(options, self.MenuFile:AddOption("Load File (Ctrl + O)"))
-			--table.insert(options, self.MenuFile:AddOption("Save (Ctrl + S)"))
-			--table.insert(options, self.MenuFile:AddOption("Save As... (Ctrl + Shift + S)"))
-			--self.MenuFile:AddSpacer()
-			--table.insert(options, self.MenuFile:AddOption("Settings"))
+			-- table.insert(options, self.MenuFile:AddOption("Load File (Ctrl + O)"))
+			-- table.insert(options, self.MenuFile:AddOption("Save (Ctrl + S)"))
+			-- table.insert(options, self.MenuFile:AddOption("Save As... (Ctrl + Shift + S)"))
+			-- self.MenuFile:AddSpacer()
+			-- table.insert(options, self.MenuFile:AddOption("Settings"))
 
 			local function build_env_icon(mat_path)
 				local img = vgui.Create("DImage")
@@ -475,8 +475,12 @@ if CLIENT then
 						local js_object = ([[{ message: `%s`, isError: %s, line: %d, startColumn: %d, endColumn: %d }]]):format(msg, tostring(is_error), line, start_column, end_column)
 						table.insert(js_objects, js_object)
 
-						local line_panel = error_list:AddLine(code, line + 1, msg)
-						PrintTable(line_panel:GetTable())
+						local line_panel = error_list:AddLine(line + 1, code, msg)
+						line_panel.OnSelect = function(self)
+							editor:QueueJavascript([[gmodinterface.GotoLine(]] .. line .. [[);]])
+						end
+
+						--PrintTable(line_panel:GetTable())
 						for _, column in pairs(line_panel.Columns) do
 							column:SetTextColor(is_error and red_color or orange_color)
 						end
