@@ -1,7 +1,10 @@
 local NET_LUA_CLIENTS = "EASY_CHAT_MODULE_LUA_CLIENTS"
 local NET_LUA_SV = "EASY_CHAT_MODULE_LUA_SV"
-local lua = {}
 
+--[[----------------------------------------------------
+	LuaDev Compat + Fallbacks
+]]------------------------------------------------------
+local lua = {}
 if CLIENT then
 	function lua.RunOnClients(code, ply)
 		net.Start(NET_LUA_SV)
@@ -87,6 +90,9 @@ if SERVER then
 	end)
 end
 
+--[[----------------------------------------------------
+	Actual Lua Tab Code
+]]------------------------------------------------------
 if CLIENT then
 	require("luacheck")
 
@@ -314,6 +320,7 @@ if CLIENT then
 				surface.DrawRect(0, 0, w, h)
 			end
 
+			-- hack to always keep the expanded state at the same height
 			local old_ErrorListPerformLayout = self.ErrorList.PerformLayout
 			self.ErrorList.PerformLayout = function(self)
 				old_ErrorListPerformLayout(self)
@@ -327,6 +334,24 @@ if CLIENT then
 			error_list.Paint = function(self, w, h)
 				surface.SetDrawColor(EasyChat.TabColor)
 				surface.DrawRect(0, 0, w, h)
+			end
+
+			-- hack to paint the scrollbar
+			local old_error_list_scrollbar_appear = error_list.OnScrollbarAppear
+			error_list.OnScrollbarAppear = function(self)
+				old_error_list_scrollbar_appear(self)
+				self.VBar:SetHideButtons(true)
+				self.VBar.Paint = function(self, w, h)
+					surface.SetDrawColor(EasyChat.OutlayColor)
+					surface.DrawLine(0, 0, 0, h)
+				end
+
+				local grip_color = table.Copy(EasyChat.OutlayColor)
+				green_color.a = 150
+				self.VBar.btnGrip.Paint = function(self, w, h)
+					surface.SetDrawColor(grip_color)
+					surface.DrawRect(0, 0, w, h)
+				end
 			end
 
 			local line_column = error_list:AddColumn("Line")
@@ -366,6 +391,7 @@ if CLIENT then
 			self.ErrorList:SetContents(error_list)
 			self.ErrorList:SetExpanded(true)
 			self.ErrorList.List = error_list
+			self.ErrorList.Header:SetFont("DermaDefault")
 
 			self.CodeTabs.Think = function(code_tabs)
 				code_tabs:SetSize(self:GetWide(), self:GetTall() - (60 + self.ErrorList:GetTall()))
