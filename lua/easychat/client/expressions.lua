@@ -67,6 +67,8 @@ local expr_env = {
 local blacklist = { "repeat", "until", "function", "end" }
 
 local function compile_expression(str)
+	if not str or str:Trim() == "" then return false, "nil or empty expression" end
+
 	for _, word in pairs(blacklist) do
 		if string.find(str, "[%p%s]" .. word) or string.find(str, word .. "[%p%s]") then
 			return false, string.format("illegal characters used %q", word)
@@ -80,7 +82,10 @@ local function compile_expression(str)
 	functions.select = select
 	str = "local IN = select(1, ...) return " .. str
 
-	local func = CompileString(str, "easychat_expression", false)
+	local compiled, func = pcall(CompileString, str, "easychat_expression", false)
+	if not compiled then
+		return false, func
+	end
 
 	if type(func) == "string" then
 		return false, func

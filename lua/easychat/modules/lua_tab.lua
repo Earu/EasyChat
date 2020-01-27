@@ -502,7 +502,7 @@ if CLIENT then
 						local msg = luacheck.get_message(event)
 						local line, start_column, end_column = event.line, event.column, event.end_column + 1
 
-						local js_object = ([[{ message: `%s`, isError: %s, line: %d, startColumn: %d, endColumn: %d }]]):format(msg, tostring(is_error), line, start_column, end_column)
+						local js_object = ([[{ message: `%s`, isError: %s, line: %d, startColumn: %d, endColumn: %d, luacheckCode: `%s` }]]):format(msg, tostring(is_error), line, start_column, end_column, code)
 						table.insert(js_objects, js_object)
 
 						local line_panel = error_list:AddLine(line + 1, code, msg)
