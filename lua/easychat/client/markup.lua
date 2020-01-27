@@ -15,6 +15,8 @@ local smoothed_parts = {
 }
 local ec_markup = {}
 function ec_markup.AdvancedParse(str, data)
+	str = str or ""
+
 	local is_ply_nick = data.nick or false
 	local obj = table.Copy(clean_chathud)
 	obj.Size = { W = data.maxwidth or 9999, H = 0 }
