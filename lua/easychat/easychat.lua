@@ -268,7 +268,10 @@ if CLIENT then
 		}
 
 		local json = util.TableToJSON(tab, true)
-		file.CreateDir("easychat")
+		if not file.Exists("easychat", "DATA") then
+			file.CreateDir("easychat")
+		end
+
 		file.Write("easychat/possize.txt", json)
 	end
 
@@ -464,7 +467,7 @@ if CLIENT then
 				file.CreateDir("easychat")
 			end
 
-			local file_name = "easychat/" .. name:lower() .. "_history.txt"
+			local file_name = ("easychat/%s_history.txt"):format(name:lower())
 			local file_handles = history_file_handles[name]
 			if not file_handles then
 				file_handles = {
@@ -491,7 +494,7 @@ if CLIENT then
 		function EasyChat.ReadFromHistory(name)
 			if not name then return "" end
 
-			local file_name = "easychat/" .. name:lower() .. "_history.txt"
+			local file_name = ("easychat/%s_history.txt"):format(name:lower())
 			if not file.Exists(file_name, "DATA") then return "" end
 
 			local history_file = file.Open(file_name, "r", "DATA")
