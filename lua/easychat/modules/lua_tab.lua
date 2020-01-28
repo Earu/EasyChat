@@ -413,6 +413,7 @@ if CLIENT then
 			{
 				Trigger = { KEY_F2 },
 				Callback = function(self) self:RenameCurrentTab() end,
+				Cooldown = 0.5,
 			}
 		},
 		Think = function(self)
@@ -432,7 +433,7 @@ if CLIENT then
 
 					if should_trigger then
 						shortcut.Callback(self)
-						shortcut.Next = CurTime() + 0.1
+						shortcut.Next = CurTime() + (shortcut.Cooldown or 0.1)
 					end
 				end
 			end
