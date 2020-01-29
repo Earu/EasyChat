@@ -87,6 +87,14 @@ if CLIENT then
 			end
 
 			if not EasyChat.UseDermaSkin then
+				local black_color = Color(0, 0, 0)
+				self.TextEntry.Paint = function(self, w, h)
+					surface.SetDrawColor(color_white)
+					surface.DrawRect(0, 0, w, h)
+
+					self:DrawTextEntryText(black_color, EasyChat.OutlayColor, black_color)
+				end
+
 				self.DMList.Paint = function(self,w,h)
 					surface.SetDrawColor(EasyChat.OutlayColor)
 					surface.DrawRect(0, 0, w,h)
@@ -97,8 +105,10 @@ if CLIENT then
 				local header = self.DMList.Columns[1].Header
 				header:SetTextColor(Color(255,255,255))
 				header.Paint = function(self,w,h)
-					surface.SetDrawColor(EasyChat.OutlayColor)
+					surface.SetDrawColor(EasyChat.TabColor)
 					surface.DrawRect(0, 0, w,h)
+					surface.SetDrawColor(EasyChat.OutlayColor)
+					surface.DrawLine(w - 1, 0, w - 1, h)
 					surface.SetDrawColor(EasyChat.OutlayOutlineColor)
 					surface.DrawOutlinedRect(0, 0, w,h)
 				end

@@ -308,6 +308,26 @@ local SETTINGS_TAB = {
 		ypos = ypos + self.BtnDisableEC:GetTall() + 10
 
 		if not EasyChat.UseDermaSkin then
+			local black_color = Color(0, 0, 0)
+			self.TxtFontName.Paint = function(self, w, h)
+				surface.SetDrawColor(color_white)
+				surface.DrawRect(0, 0, w, h)
+
+				self:DrawTextEntryText(black_color, EasyChat.OutlayColor, black_color)
+			end
+			self.NbrWFontSize.Paint = function(self, w, h)
+				surface.SetDrawColor(color_white)
+				surface.DrawRect(0, 0, w, h)
+
+				self:DrawTextEntryText(black_color, EasyChat.OutlayColor, black_color)
+			end
+			self.NbrWHUDTTL.Paint = function(self, w, h)
+				surface.SetDrawColor(color_white)
+				surface.DrawRect(0, 0, w, h)
+
+				self:DrawTextEntryText(black_color, EasyChat.OutlayColor, black_color)
+			end
+
 			self.BtnApplyColors:SetTextColor(EasyChat.TextColor)
 			self.BtnResetColors:SetTextColor(EasyChat.TextColor)
 			self.BtnApplyFont:SetTextColor(EasyChat.TextColor)
