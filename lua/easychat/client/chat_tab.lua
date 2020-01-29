@@ -45,6 +45,14 @@ local MAIN_TAB = {
 		self.TextEntry:SetZPos(10)
 
 		if not EasyChat.UseDermaSkin then
+			local black_color = Color(0, 0, 0)
+			self.TextEntry.Paint = function(self, w, h)
+				surface.SetDrawColor(color_white)
+				surface.DrawRect(0, 0, w, h)
+
+				self:DrawTextEntryText(black_color, EasyChat.OutlayColor, black_color)
+			end
+
 			self.BtnSwitch:SetTextColor(EasyChat.TextColor)
 			self.BtnSwitch.Paint = function(self,w,h)
 				local col1,col2 = EasyChat.OutlayColor, EasyChat.TabOutlineColor
