@@ -100,6 +100,7 @@ if CLIENT then
 	local green_color = Color(141, 210, 138)
 	local red_color = Color(255, 0, 0)
 	local orange_color = Color(255, 165, 0)
+	local gray_color = Color(75, 75, 75)
 	local last_session_path = "easychat/lua_tab/last_session"
 
 	local function ask_for_input(title, callback)
@@ -225,7 +226,7 @@ if CLIENT then
 			self.RunButton.DoClick = function() self:RunCode() end
 
 			local function MenuPaint(self, w, h)
-				surface.SetDrawColor(EasyChat.OutlayColor)
+				surface.SetDrawColor(gray_color)
 				surface.DrawRect(0, 0, w, h)
 			end
 
@@ -238,7 +239,7 @@ if CLIENT then
 
 			local function MenuButtonPaint(self, w, h)
 				if self:IsHovered() then
-					surface.SetDrawColor(EasyChat.OutlayColor)
+					surface.SetDrawColor(gray_color)
 					surface.DrawRect(0, 0, w, h)
 				end
 			end
@@ -279,7 +280,7 @@ if CLIENT then
 
 			}
 			self.RunButton.Paint = function(self, w_, h)
-				surface.SetDrawColor(EasyChat.OutlayColor)
+				surface.SetDrawColor(gray_color)
 				if self:IsHovered() then
 					surface.DrawRect(0, 0, 30, h - 5)
 				else
@@ -342,11 +343,11 @@ if CLIENT then
 				old_error_list_scrollbar_appear(self)
 				self.VBar:SetHideButtons(true)
 				self.VBar.Paint = function(self, w, h)
-					surface.SetDrawColor(EasyChat.OutlayColor)
+					surface.SetDrawColor(gray_color)
 					surface.DrawLine(0, 0, 0, h)
 				end
 
-				local grip_color = table.Copy(EasyChat.OutlayColor)
+				local grip_color = table.Copy(gray_color)
 				green_color.a = 150
 				self.VBar.btnGrip.Paint = function(self, w, h)
 					surface.SetDrawColor(grip_color)
@@ -358,10 +359,10 @@ if CLIENT then
 			line_column:SetFixedWidth(50)
 			line_column.Header:SetTextColor(EasyChat.TextColor)
 			line_column.Header.Paint = function(self, w, h)
-				surface.SetDrawColor(EasyChat.OutlayColor)
+				surface.SetDrawColor(EasyChat.TabColor)
 				surface.DrawRect(0, 0, w, h)
 
-				surface.SetDrawColor(EasyChat.TextColor)
+				surface.SetDrawColor(gray_color)
 				surface.DrawLine(0, h - 1, w, h - 1)
 				surface.DrawLine(w - 1, 0, w - 1, h)
 			end
@@ -370,10 +371,10 @@ if CLIENT then
 			code_column:SetFixedWidth(50)
 			code_column.Header:SetTextColor(EasyChat.TextColor)
 			code_column.Header.Paint = function(self, w, h)
-				surface.SetDrawColor(EasyChat.OutlayColor)
+				surface.SetDrawColor(EasyChat.TabColor)
 				surface.DrawRect(0, 0, w, h)
 
-				surface.SetDrawColor(EasyChat.TextColor)
+				surface.SetDrawColor(gray_color)
 				surface.DrawLine(0, h - 1, w, h - 1)
 				surface.DrawLine(w - 1, 0, w - 1, h)
 			end
@@ -381,10 +382,10 @@ if CLIENT then
 			local desc_column = error_list:AddColumn("Description")
 			desc_column.Header:SetTextColor(EasyChat.TextColor)
 			desc_column.Header.Paint = function(self, w, h)
-				surface.SetDrawColor(EasyChat.OutlayColor)
+				surface.SetDrawColor(EasyChat.TabColor)
 				surface.DrawRect(0, 0, w, h)
 
-				surface.SetDrawColor(EasyChat.TextColor)
+				surface.SetDrawColor(gray_color)
 				surface.DrawLine(0, h - 1, w, h - 1)
 			end
 
@@ -482,6 +483,7 @@ if CLIENT then
 		end,]]--
 		AnalyzeTab = function(self, tab, editor)
 			timer.Create("EasyChatLuaCheck", 1, 1, function()
+				if not IsValid(tab) or not IsValid(editor) then return end -- this can happen upon reload / disabling
 				if not tab.Code or tab.Code:Trim() == "" then return end
 				if tab ~= self.CodeTabs:GetActiveTab() then return end
 
@@ -507,6 +509,11 @@ if CLIENT then
 						table.insert(js_objects, js_object)
 
 						local line_panel = error_list:AddLine(line + 1, code, msg)
+						line_panel.Paint = function(self, w, h)
+							if not self:IsHovered() then return end
+							surface.SetDrawColor(is_error and red_color or orange_color)
+							surface.DrawOutlinedRect(0, 0, w, h)
+						end
 						line_panel.OnSelect = function(self)
 							editor:QueueJavascript([[gmodinterface.GotoLine(]] .. line .. [[);]])
 						end
@@ -544,6 +551,7 @@ if CLIENT then
 				self.LblRunStatus:SetText(("%sReady"):format((" "):rep(3)))
 				local safe_code = code:JavascriptSafe()
 				editor:QueueJavascript([[gmodinterface.SetCode(`]] .. safe_code .. [[`);]])
+				--editor:QueueJavascript([[gmodinterface.SetTheme(`chromedevtools`);]])
 
 				if tab == self.CodeTabs:GetActiveTab() then
 					editor:RequestFocus()
@@ -556,6 +564,7 @@ if CLIENT then
 
 			self.CodeTabs:SetActiveTab(tab)
 			local tab_w = tab:GetWide()
+			tab:SetTextColor(EasyChat.TextColor)
 
 			local close_btn = tab:Add("DButton")
 			close_btn:SetPos(tab_w - 20, 0)
