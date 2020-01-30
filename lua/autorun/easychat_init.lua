@@ -8,6 +8,7 @@ AddCSLuaFile("easychat/client/chat_tab.lua")
 AddCSLuaFile("easychat/client/settings_tab.lua")
 AddCSLuaFile("easychat/client/chathud.lua")
 AddCSLuaFile("easychat/client/markup.lua")
+AddCSLuaFile("easychat/client/macro_processor.lua")
 AddCSLuaFile("easychat/client/chathud_font_editor_panel.lua")
 
 include("easychat/client/font_extensions.lua")
