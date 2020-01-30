@@ -250,6 +250,10 @@ function default_part:Ctor()
 	return self
 end
 
+function default_part:ToString()
+	return ("<%s=%s>"):format(self.Type, self.TextInput)
+end
+
 -- meant to be overriden
 function default_part:LineBreak() end
 function default_part:ComputeSize() end
@@ -376,6 +380,10 @@ function text_part:Ctor(content)
 	self.Content = utf8_force(content)
 
 	return self
+end
+
+function text_part:ToString()
+	return self.Content
 end
 
 function text_part:SetFont(font)
@@ -878,6 +886,7 @@ function chathud:CreateComponent(name, ...)
 
 	local copy = table_copy(part)
 	copy.HUD = self
+	copy.TextInput = table_concat({ ... }, ",")
 	return copy:Ctor(...)
 end
 

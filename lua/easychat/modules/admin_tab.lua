@@ -27,6 +27,26 @@ if CLIENT then
 	local PLY_COL = Color(255,127,127)
 	local EC_HISTORY = GetConVar("easychat_history")
 
+	local nick_cache = {}
+	local function cache_nick(ply, maxwidth)
+		local nick, team_color = ply:Nick(), team.GetColor(ply:Team())
+		local cache = nick_cache[nick]
+		if cache and cache.DefaultColor == team_color then
+			return cache
+		end
+
+		local mk = ec_markup.AdvancedParse(nick, {
+			default_font = "EasyChatFont",
+			default_color = team_color,
+			nick = true,
+			no_shadow = true,
+			maxwidth = maxwidth,
+		})
+		nick_cache[nick] = mk
+
+		return mk
+	end
+
 	local ADMIN_TAB = {
 		NewMessages = 0,
 		Init = function(self)
@@ -59,16 +79,12 @@ if CLIENT then
 					surface.SetDrawColor(EasyChat.OutlayOutlineColor)
 					surface.DrawOutlinedRect(0, 0, w,h)
 
-					for i,ply in ipairs(player.GetAll()) do
+					local cur_y = 20
+					for _,ply in ipairs(player.GetAll()) do
 						if ply:IsAdmin() then
-							local tcol = team.GetColor(ply:Team())
-							surface.SetFont("EasyChatFont")
-							surface.SetTextPos(10,  20 * i)
-							surface.SetTextColor(0,255,0,255)
-							surface.DrawText("•")
-							surface.SetTextPos(20,  20 * i)
-							surface.SetTextColor(tcol.r,tcol.g,tcol.b,tcol.a)
-							surface.DrawText(ply:Nick())
+							local mk = cache_nick(ply, self:GetWide() - 20)
+							mk:Draw(10,  cur_y)
+							cur_y = cur_y + mk:GetTall() + 5
 						end
 					end
 				end
@@ -87,16 +103,12 @@ if CLIENT then
 				local old_Paint = self.AdminList.Paint
 				self.AdminList.Paint = function(self,w,h)
 					old_Paint(self,w,h)
-					for i,ply in ipairs(player.GetAll()) do
+					local cur_y = 20
+					for _,ply in ipairs(player.GetAll()) do
 						if ply:IsAdmin() then
-							local tcol = team.GetColor(ply:Team())
-							surface.SetFont("EasyChatFont")
-							surface.SetTextPos(10,  20 * i)
-							surface.SetTextColor(0,255,0,255)
-							surface.DrawText("•")
-							surface.SetTextPos(20,  20 * i)
-							surface.SetTextColor(tcol.r,tcol.g,tcol.b,tcol.a)
-							surface.DrawText(ply:Nick())
+							local mk = cache_nick(ply, self:GetWide() - 20)
+							mk:Draw(10,  cur_y)
+							cur_y = cur_y + mk:GetTall() + 5
 						end
 					end
 				end

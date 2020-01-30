@@ -151,6 +151,17 @@ function ec_markup.AdvancedParse(str, data)
 		return text
 	end
 
+	function obj:GetString()
+		local str = ""
+		for _, line in ipairs(self.Lines) do
+			for _, component in ipairs(line.Components) do
+				str = str .. component:ToString()
+			end
+		end
+
+		return str
+	end
+
 	obj:NewLine()
 	if is_ply_nick then
 		obj:AppendNick(str)
