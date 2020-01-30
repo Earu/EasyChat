@@ -140,7 +140,7 @@ if CLIENT then
 
 			local chat = {
 				Player = ply,
-				Name = ply:Nick(),
+				Name = ec_markup and ec_markup.Parse(ply:Nick()):GetText() or ply:Nick(),
 				RichText = richtext,
 				NewMessages = 0,
 			}
