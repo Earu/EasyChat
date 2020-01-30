@@ -192,6 +192,7 @@ if CLIENT then
 	EasyChat.Modes = {}
 	EasyChat.Expressions = include("easychat/client/expressions.lua")
 	EasyChat.ChatHUD = include("easychat/client/chathud.lua")
+	EasyChat.MacroProcessor = include("easychat/client/macro_processor.lua")
 	EasyChat.ModeCount = 0
 
 	include("easychat/client/markup.lua")
@@ -357,6 +358,7 @@ if CLIENT then
 		EasyChat.Modes = {}
 		EasyChat.Expressions = include("easychat/client/expressions.lua")
 		EasyChat.ChatHUD = include("easychat/client/chathud.lua")
+		EasyChat.MacroProcessor = include("easychat/client/macro_processor.lua")
 		EasyChat.ModeCount = 0
 
 		include("easychat/client/markup.lua")
@@ -375,20 +377,22 @@ if CLIENT then
 		EasyChat.RegisterConvar(EC_TICK_SOUND, "Tick sound on new messages")
 		EasyChat.RegisterConvar(EC_HUD_SMOOTH, "Smooth chathud")
 
-		EasyChat.AddMode("Team", function(text)
+		function EasyChat.SendGlobalMessage(msg, is_team, is_local)
+			msg = EasyChat.MacroProcessor:ProcessString(msg:sub(1, MAX_CHARS))
+
 			net.Start(NET_SEND_MSG)
-			net.WriteString(text:sub(1, MAX_CHARS))
-			net.WriteBool(true)
-			net.WriteBool(false)
+			net.WriteString(msg)
+			net.WriteBool(is_team)
+			net.WriteBool(is_local)
 			net.SendToServer()
+		end
+
+		EasyChat.AddMode("Team", function(text)
+			EasyChat.SendGlobalMessage(text, true, false)
 		end)
 
 		EasyChat.AddMode("Local", function(text)
-			net.Start(NET_SEND_MSG)
-			net.WriteString(text:sub(1, MAX_CHARS))
-			net.WriteBool(false)
-			net.WriteBool(true)
-			net.SendToServer()
+			EasyChat.SendGlobalMessage(text, false, true)
 		end)
 
 		EasyChat.AddMode("Console", function(text)
@@ -561,7 +565,17 @@ if CLIENT then
 						append_text(richtext, arg)
 					end
 				elseif type(arg) == "Player" then
-					append_text(richtext, (EC_USE_ME:GetBool() and arg == LocalPlayer()) and "me" or arg:Nick())
+					if EC_USE_ME:GetBool() and arg == LocalPlayer() then
+						append_text(richtext, "me")
+					else
+						-- this can happen if the function is ran early
+						if ec_markup then
+							local ply_nick = ec_markup.Parse(arg:Nick()):GetText()
+							append_text(richtext, ply_nick)
+						else
+							append_text(richtext, arg:Nick())
+						end
+					end
 				elseif type(arg) == "table" then
 					richtext:InsertColorChange(arg.r or 255, arg.g or 255, arg.b or 255, arg.a or 255)
 				end
@@ -893,11 +907,7 @@ if CLIENT then
 				self:SetText(self:GetText():Replace("╚​", ""))
 				if self:GetText():Trim() ~= "" then
 					if EasyChat.Mode == 0 then
-						net.Start(NET_SEND_MSG)
-						net.WriteString(self:GetText():sub(1, MAX_CHARS))
-						net.WriteBool(false)
-						net.WriteBool(false)
-						net.SendToServer()
+						EasyChat.SendGlobalMessage(self:GetText(), false, false)
 					else
 						local mode = EasyChat.Modes[EasyChat.Mode]
 						mode.Callback(self:GetText())
