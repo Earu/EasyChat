@@ -103,52 +103,6 @@ if CLIENT then
 	local gray_color = Color(75, 75, 75)
 	local last_session_path = "easychat/lua_tab/last_session"
 
-	local function ask_for_input(title, callback)
-		local frame = vgui.Create("DFrame")
-		frame:SetTitle(title)
-		frame:SetSize(200,110)
-		frame:Center()
-		frame.Paint = function(self, w, h)
-			Derma_DrawBackgroundBlur(self, 0)
-
-			surface.SetDrawColor(EasyChat.OutlayColor)
-			surface.DrawRect(0, 0, w, h)
-
-			surface.SetDrawColor(EasyChat.TabColor)
-			surface.DrawRect(0, 0, w, 25)
-		end
-
-		local text_entry = frame:Add("DTextEntry")
-		text_entry:SetSize(180, 25)
-		text_entry:SetPos(10, 40)
-		text_entry.OnEnter = function(self)
-			callback(self:GetText())
-			frame:Close()
-		end
-
-		local btn = frame:Add("DButton")
-		btn:SetText("Ok")
-		btn:SetTextColor(EasyChat.TextColor)
-		btn:SetSize(100, 25)
-		btn:SetPos(50, 75)
-		btn.DoClick = function()
-			callback(text_entry:GetText())
-			frame:Close()
-		end
-		btn.Paint = function(self, w, h)
-			if self:IsHovered() then
-				surface.SetDrawColor(blue_color)
-			else
-				surface.SetDrawColor(EasyChat.TabColor)
-			end
-
-			surface.DrawRect(0, 0, w, h)
-		end
-
-		frame:MakePopup()
-		text_entry:RequestFocus()
-	end
-
 	local lua_callbacks = {
 		["self"] = function(self, code)
 			lua.RunOnSelf(code, LocalPlayer())
@@ -177,9 +131,6 @@ if CLIENT then
 			self.MenuBar = self:Add("DMenuBar")
 			self.MenuBar:Dock(NODOCK)
 			self.MenuBar:DockPadding(5, 0, 0, 0)
-			self.MenuBar.Think = function(self)
-				self:SetSize(frame:GetWide(), 25)
-			end
 			self.MenuBar.Paint = function(self, w, h)
 				surface.SetDrawColor(EasyChat.TabColor)
 				surface.DrawRect(0, 0, w, h)
@@ -348,7 +299,7 @@ if CLIENT then
 				end
 
 				local grip_color = table.Copy(gray_color)
-				green_color.a = 150
+				grip_color.a = 150
 				self.VBar.btnGrip.Paint = function(self, w, h)
 					surface.SetDrawColor(grip_color)
 					surface.DrawRect(0, 0, w, h)
@@ -393,10 +344,6 @@ if CLIENT then
 			self.ErrorList:SetExpanded(true)
 			self.ErrorList.List = error_list
 			self.ErrorList.Header:SetFont("DermaDefault")
-
-			self.CodeTabs.Think = function(code_tabs)
-				code_tabs:SetSize(self:GetWide(), self:GetTall() - (60 + self.ErrorList:GetTall()))
-			end
 		end,
 		Shortcuts = {
 			{
@@ -438,6 +385,10 @@ if CLIENT then
 					end
 				end
 			end
+		end,
+		PerformLayout = function(self, w, h)
+			self.MenuBar:SetSize(w, 25)
+			self.CodeTabs:SetSize(w, h - (60 + self.ErrorList:GetTall()))
 		end,
 		RenameCurrentTab = function(self)
 			local tab = self.CodeTabs:GetActiveTab()
@@ -579,7 +530,7 @@ if CLIENT then
 			end
 
 			tab.DoDoubleClick = function(self)
-				ask_for_input("Rename File", function(input)
+				EasyChat.AskForInput("Rename File", function(input)
 					input = input:Trim()
 					self.Name = input
 
