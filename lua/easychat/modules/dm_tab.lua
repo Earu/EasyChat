@@ -161,13 +161,13 @@ if CLIENT then
 			if EC_HISTORY:GetBool() then
 				local history = EasyChat.ReadFromHistory(id64)
 				if history == "" then
-					EasyChat.AddText(self, richtext, "This is the beginning of your conversation!\n\n")
+					EasyChat.AddText(richtext, "This is the beginning of your conversation!\n\n")
 				else
 					richtext:AppendText(history) -- so we do not log twice
 					richtext:AppendText("\n^^^^^ Last Session History ^^^^^\n\n")
 				end
 			else
-				EasyChat.AddText(self, richtext, "This is the beginning of your conversation!\n\n")
+				EasyChat.AddText(richtext, "This is the beginning of your conversation!\n\n")
 			end
 
 			return chat
@@ -198,13 +198,13 @@ if CLIENT then
 			local ply = line.Player
 			if IsValid(ply) then
 				local chat = self.Chats[ply]
-				EasyChat.AddText(self,chat.RichText,PLY_COL,LocalPlayer(),": " .. message)
+				EasyChat.AddText(chat.RichText,PLY_COL,LocalPlayer(),": " .. message)
 				net.Start(EASYCHAT_DM)
 				net.WriteEntity(chat.Player)
 				net.WriteString(message)
 				net.SendToServer()
 			else
-				EasyChat.AddText(self,chat.RichText,"The player you are trying to message is not on the server anymore!")
+				EasyChat.AddText(chat.RichText,"The player you are trying to message is not on the server anymore!")
 			end
 
 			self.TextEntry:SetText("")
@@ -239,7 +239,7 @@ if CLIENT then
 		if not chat then
 			chat = dmtab:CreateChat(sender)
 		end
-		EasyChat.AddText(dmtab, chat.RichText,PLY_COL,sender,": " .. message)
+		EasyChat.AddText(chat.RichText,PLY_COL,sender,": " .. message)
 		if not EasyChat.IsOpened() then
 			dmtab:Notify(chat,message)
 		else

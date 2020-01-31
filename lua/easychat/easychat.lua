@@ -399,8 +399,59 @@ if CLIENT then
 			LocalPlayer():ConCommand(text)
 		end)
 
+		local function append_text(richtext, txt)
+			if richtext.HistoryName then
+				richtext.Log = richtext.Log and richtext.Log .. txt or txt
+			end
+
+			richtext:AppendText(txt)
+		end
+
+		local function save_text(richtext)
+			if not richtext.HistoryName then return end
+
+			EasyChat.SaveToHistory(richtext.HistoryName, richtext.Log)
+			richtext.Log = ""
+		end
+
+		local function global_append_text(text)
+			EasyChat.ChatHUD:AppendText(text)
+			append_text(EasyChat.GUI.RichText, text)
+		end
+
+		local function global_append_nick(str)
+			if not ec_markup then
+				append_text(EasyChat.GUI.RichText, str)
+			else
+				-- use markup to get text and colors out of nicks
+				local mk = ec_markup.Parse(str, nil, true)
+				for _, line in ipairs(mk.Lines) do
+					for _, component in ipairs(line.Components) do
+						if component.Color then
+							local c = component.Color
+							EasyChat.GUI.RichText:InsertColorChange(c.r, c.g, c.b, 255)
+						elseif component.Type == "text" then
+							append_text(EasyChat.GUI.RichText, component.Content)
+						end
+					end
+				end
+			end
+
+			EasyChat.GUI.RichText:InsertColorChange(255, 255, 255, 255)
+
+			-- let the chathud do its own thing
+			local chathud = EasyChat.ChatHUD
+			chathud:AppendNick(str)
+			chathud:PushPartComponent("stop")
+		end
+
+		local function global_insert_color_change(r, g, b, a)
+			EasyChat.GUI.RichText:InsertColorChange(r, g, b, a)
+			EasyChat.ChatHUD:InsertColorChange(r, g, b)
+		end
+
 		EasyChat.SetAddTextTypeHandle("table", function(col)
-			EasyChat.InsertColorChange(col.r or 255, col.g or 255, col.b or 255, col.a or 255)
+			global_insert_color_change(col.r or 255, col.g or 255, col.b or 255, col.a or 255)
 		end)
 
 		EasyChat.SetAddTextTypeHandle("string", function(str)
@@ -408,19 +459,19 @@ if CLIENT then
 				local words = (" "):Explode(str)
 				for k, v in ipairs(words) do
 					if k > 1 then
-						EasyChat.AppendText(" ")
+						global_append_text(" ")
 					end
 					if EasyChat.IsURL(v) then
 						local url = v:gsub("^%s:", "")
 						EasyChat.GUI.RichText:InsertClickableTextStart(url)
-						EasyChat.AppendText(url)
+						global_append_text(url)
 						EasyChat.GUI.RichText:InsertClickableTextEnd()
 					else
-						EasyChat.AppendText(v)
+						global_append_text(v)
 					end
 				end
 			else
-				EasyChat.AppendText(str)
+				global_append_text(str)
 			end
 		end)
 
@@ -446,32 +497,33 @@ if CLIENT then
 
 		EasyChat.SetAddTextTypeHandle("Player", function(ply)
 			local team_color = EC_PLAYER_COLOR:GetBool() and team.GetColor(ply:Team()) or Color(255, 255, 255)
-			EasyChat.InsertColorChange(team_color.r, team_color.g, team_color.b, 255)
+			global_insert_color_change(team_color.r, team_color.g, team_color.b, 255)
 
 			if EC_PLAYER_PASTEL:GetBool() and ec_markup then
 				local nick = ec_markup.Parse(ply:Nick(), nil, true):GetText()
 				local pastel_color = pastelize_nick(nick)
-				EasyChat.InsertColorChange(pastel_color.r, pastel_color.g, pastel_color.b, 255)
+				global_insert_color_change(pastel_color.r, pastel_color.g, pastel_color.b, 255)
 			end
 
 			local lp = LocalPlayer()
 			if IsValid(lp) and lp == ply and EC_USE_ME:GetBool() then
-				EasyChat.AppendText("me")
+				global_append_text("me")
 			else
-				EasyChat.AppendNick(ply:Nick())
+				global_append_nick(ply:Nick())
 			end
 		end)
 
 		local history_file_handles = {}
+		local HISTORY_DIRECTORY = "easychat/history"
 		function EasyChat.SaveToHistory(name, content)
 			if not name or not content then return end
 			if content:Trim() == "" then return end
 
-			if not file.Exists("easychat", "DATA") then
-				file.CreateDir("easychat")
+			if not file.Exists(HISTORY_DIRECTORY, "DATA") then
+				file.CreateDir(HISTORY_DIRECTORY)
 			end
 
-			local file_name = ("easychat/%s_history.txt"):format(name:lower())
+			local file_name = ("%s/%s_history.txt"):format(HISTORY_DIRECTORY, name:lower())
 			local file_handles = history_file_handles[name]
 			if not file_handles then
 				file_handles = {
@@ -498,7 +550,7 @@ if CLIENT then
 		function EasyChat.ReadFromHistory(name)
 			if not name then return "" end
 
-			local file_name = ("easychat/%s_history.txt"):format(name:lower())
+			local file_name = ("%s/%s_history.txt"):format(HISTORY_DIRECTORY, name:lower())
 			if not file.Exists(file_name, "DATA") then return "" end
 
 			local history_file = file.Open(file_name, "r", "DATA")
@@ -512,22 +564,7 @@ if CLIENT then
 			return contents
 		end
 
-		local function append_text(richtext, txt)
-			if richtext.HistoryName then
-				richtext.Log = richtext.Log and richtext.Log .. txt or txt
-			end
-
-			richtext:AppendText(txt)
-		end
-
-		local function save_text(richtext)
-			if not richtext.HistoryName then return end
-
-			EasyChat.SaveToHistory(richtext.HistoryName, richtext.Log)
-			richtext.Log = ""
-		end
-
-		function EasyChat.AddText(tab, richtext, ...)
+		function EasyChat.AddText(richtext, ...)
 			append_text(richtext, "\n")
 
 			if EC_TIMESTAMPS:GetBool() then
@@ -594,14 +631,14 @@ if CLIENT then
 			function chat.AddText(...)
 				EasyChat.ChatHUD:NewLine()
 				append_text(EasyChat.GUI.RichText, "\n")
-				EasyChat.InsertColorChange(255, 255, 255, 255)
+				global_insert_color_change(255, 255, 255, 255)
 
 				if EC_ENABLE:GetBool() then
 					if EC_TIMESTAMPS:GetBool() then
 						if EC_TIMESTAMPS_12:GetBool() then
-							EasyChat.AppendText(os.date("%I:%M %p") .. " - ")
+							global_append_text(os.date("%I:%M %p") .. " - ")
 						else
-							EasyChat.AppendText(os.date("%H:%M") .. " - ")
+							global_append_text(os.date("%H:%M") .. " - ")
 						end
 					end
 				end
@@ -613,7 +650,7 @@ if CLIENT then
 						pcall(callback, arg)
 					else
 						local str = tostring(arg)
-						EasyChat.AppendText(str)
+						global_append_text(str)
 					end
 				end
 
@@ -781,42 +818,6 @@ if CLIENT then
 			end)
 
 			close_chatbox()
-		end
-
-		function EasyChat.InsertColorChange(r, g, b, a)
-			EasyChat.GUI.RichText:InsertColorChange(r, g, b, a)
-			EasyChat.ChatHUD:InsertColorChange(r, g, b)
-		end
-
-		function EasyChat.AppendText(text)
-			EasyChat.ChatHUD:AppendText(text)
-			append_text(EasyChat.GUI.RichText, text)
-		end
-
-		function EasyChat.AppendNick(str)
-			if not ec_markup then
-				append_text(EasyChat.GUI.RichText, str)
-			else
-				-- use markup to get text and colors out of nicks
-				local mk = ec_markup.Parse(str, nil, true)
-				for _, line in ipairs(mk.Lines) do
-					for _, component in ipairs(line.Components) do
-						if component.Color then
-							local c = component.Color
-							EasyChat.GUI.RichText:InsertColorChange(c.r, c.g, c.b, 255)
-						elseif component.Type == "text" then
-							append_text(EasyChat.GUI.RichText, component.Content)
-						end
-					end
-				end
-			end
-
-			EasyChat.GUI.RichText:InsertColorChange(255, 255, 255, 255)
-
-			-- let the chathud do its own thing
-			local chathud = EasyChat.ChatHUD
-			chathud:AppendNick(str)
-			chathud:PushPartComponent("stop")
 		end
 
 		local ctrl_shortcuts = {}
@@ -1124,7 +1125,11 @@ if CLIENT then
 end
 
 function EasyChat.Destroy()
-	pcall(hook.Run, "ECPreDestroy") -- dont fuck destroying if your addon is bad
+	-- dont fuck destroying if your addon is bad
+	local succ, err = pcall(hook.Run, "ECPreDestroy")
+	if not succ then
+		ErrorNoHalt(err)
+	end
 
 	if CLIENT then
 		hook.Remove("PreRender", TAG)
