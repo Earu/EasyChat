@@ -166,6 +166,19 @@ function macro_processor:RegisterMacro(macro_name, macro)
 	}, true)
 	file.Write(("%s/%s.txt"):format(self.Directory, macro_name), to_save)
 	self.Macros[macro_name] = macro
+
+	hook.Run("ECMacroRegistered", macro_name, macro)
+end
+
+function macro_processor:DeleteMacro(macro_name)
+	local macro_path = ("%s/%s.txt"):format(self.Directory, macro_name)
+	if file.Exists(macro_path, "DATA") then
+		file.Delete(macro_path)
+	end
+
+	self.Macros[macro_name] = nil
+
+	hook.Run("ECMacroDeleted", macro_name)
 end
 
 function macro_processor:LoadSavedMacros()
@@ -179,35 +192,5 @@ function macro_processor:LoadSavedMacros()
 end
 
 macro_processor:LoadSavedMacros()
-
--- Test macros
-
-macro_processor:RegisterMacro("reee", {
-	PerCharacter = false,
-	Value = "<translate=rand(-5,5), rand(-5,5)>",
-})
-
-macro_processor:RegisterMacro("rainbow", {
-	PerCharacter = true,
-	Value = "<hsv=rand(0,255)>"
-})
-
-macro_processor:RegisterMacro("drop", {
-	IsLua = true,
-	Value = [[
-		-- MACRO_INPUT: string, the input passed to the macro
-		-- ^ this does not exclude other macros, tags, whatsoever, youll have to do it yourself
-
-		local chars = MACRO_INPUT:Split("")
-		for i=1, #chars do
-			chars[i] = "<stop><translate=0," .. i * 10 .. ">" .. chars[i]
-		end
-
-		-- returning here "applies" your changes
-		return table.concat(chars)
-	]]
-})
-
---SetClipboardText(macro_processor:ProcessString("<drop>hello world"))
 
 return macro_processor
