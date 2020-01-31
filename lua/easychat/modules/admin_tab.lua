@@ -153,14 +153,14 @@ if CLIENT then
 			if EC_HISTORY:GetBool() then
 				local history = EasyChat.ReadFromHistory("admin")
 				if string.Trim(history) == "" then
-					EasyChat.AddText(self, self.RichText, "Welcome to the admin chat!")
+					EasyChat.AddText(self.RichText, "Welcome to the admin chat!")
 				else
 					self.RichText:AppendText(history) -- so we do not log twice
 					self.RichText:AppendText("\n^^^^^ Last Session History ^^^^^\n\n")
 					self.RichText:GotoTextEnd()
 				end
 			else
-				EasyChat.AddText(self, self.RichText, "Welcome to the admin chat!")
+				EasyChat.AddText(self.RichText, "Welcome to the admin chat!")
 			end
 		end,
 		Notify = function(self,ply,message)
@@ -186,7 +186,7 @@ if CLIENT then
 		local msg = net.ReadString()
 		if not IsValid(sender) then return end
 
-		EasyChat.AddText(admintab, admintab.RichText, team.GetColor(sender:Team()), sender,": " .. msg)
+		EasyChat.AddText(admintab.RichText, team.GetColor(sender:Team()), sender,": " .. msg)
 		if not EasyChat.IsOpened() then
 			admintab:Notify(sender, msg)
 		else
@@ -202,7 +202,7 @@ if CLIENT then
 			admintab.NewMessages = 0
 			admintab.RichText:GotoTextEnd()
 			if not LocalPlayer():IsAdmin() then
-				EasyChat.AddText(self, self.RichText, "You cannot see the content of this channel because you are not an admin")
+				EasyChat.AddText(self.RichText, "You cannot see the content of this channel because you are not an admin")
 			end
 		end
 	end)

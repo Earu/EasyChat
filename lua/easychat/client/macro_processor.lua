@@ -1,6 +1,7 @@
 local macro_processor = {
 	Macros = {},
 	Pattern = "%<([A-Za-z0-9]+)%>",
+	Directory = "easychat/macros",
 }
 
 function macro_processor:ProcessPerCharacter(value, str)
@@ -36,7 +37,7 @@ end
 function macro_processor:ProcessMacro(macro, str)
 	if macro.IsLua then
 		macro.Env.MACRO_INPUT = str
-		local succ, ret = pcall(macro.Value)
+		local succ, ret = pcall(macro.Run)
 		return succ and ret or str
 	end
 
@@ -135,7 +136,7 @@ function macro_processor:CompileLuaMacro(macro)
 	if type(func) == "string" then return false end
 
 	setfenv(func, macro.Env)
-	macro.Value = func
+	macro.Run = func
 	return true
 end
 
@@ -150,12 +151,34 @@ end
 function macro_processor:RegisterMacro(macro_name, macro)
 	if not self:IsValidMacro(macro_name, macro) then return end
 
+	macro.PerCharacter = macro.PerCharacter or false
 	macro.IsLua = macro.IsLua or false
 	if macro.IsLua and not self:CompileLuaMacro(macro) then return end
 
+	if not file.Exists(self.Directory, "DATA") then
+		file.CreateDir(self.Directory)
+	end
+
+	local to_save = util.TableToJSON({
+		PerCharacter = macro.PerCharacter,
+		IsLua = macro.IsLua,
+		Value = macro.Value,
+	}, true)
+	file.Write(("%s/%s.txt"):format(self.Directory, macro_name), to_save)
 	self.Macros[macro_name] = macro
 end
 
+function macro_processor:LoadSavedMacros()
+	local files = (file.Find(self.Directory .. "/*.txt", "DATA"))
+	for _, f in pairs(files) do
+		local path = ("%s/%s"):format(self.Directory, f)
+		local macro_name = f:Replace(".txt", "")
+		local json = file.Read(path, "DATA")
+		self.Macros[macro_name] = util.JSONToTable(json)
+	end
+end
+
+macro_processor:LoadSavedMacros()
 
 -- Test macros
 
