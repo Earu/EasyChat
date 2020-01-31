@@ -368,8 +368,21 @@ local SETTINGS_TAB = {
 			self.BtnClearHistory.Paint  = ECButtonPaint
 			self.BtnHUDFontEditor.Paint = ECButtonPaint
 			self.BtnDisableEC.Paint     = ECButtonPaint
-		end
 
+			local scrollbar = self:GetVBar()
+			scrollbar:SetHideButtons(true)
+			scrollbar.Paint = function(self, w, h)
+				surface.SetDrawColor(EasyChat.OutlayColor)
+				surface.DrawLine(0, 0, 0, h)
+			end
+
+			local grip_color = table.Copy(EasyChat.OutlayColor)
+			grip_color.a = 150
+			scrollbar.btnGrip.Paint = function(self, w, h)
+				surface.SetDrawColor(grip_color)
+				surface.DrawRect(0, 0, w, h)
+			end
+		end
 	end,
 
 	ResetColors = function(self)

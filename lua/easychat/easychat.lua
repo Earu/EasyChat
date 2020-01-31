@@ -342,6 +342,56 @@ if CLIENT then
 		gui.OpenURL(url)
 	end
 
+	function EasyChat.AskForInput(title, callback)
+		local frame = vgui.Create("DFrame")
+		frame:SetTitle(title)
+		frame:SetSize(200,110)
+		frame:Center()
+		frame.Paint = function(self, w, h)
+			Derma_DrawBackgroundBlur(self, 0)
+
+			surface.SetDrawColor(EasyChat.OutlayColor)
+			surface.DrawRect(0, 0, w, h)
+
+			surface.SetDrawColor(EasyChat.TabColor)
+			surface.DrawRect(0, 0, w, 25)
+		end
+
+		local text_entry = frame:Add("DTextEntry")
+		text_entry:SetSize(180, 25)
+		text_entry:SetPos(10, 40)
+		text_entry.OnEnter = function(self)
+			if self:GetText():Trim() == "" then return end
+
+			callback(self:GetText())
+			frame:Close()
+		end
+
+		local btn = frame:Add("DButton")
+		btn:SetText("Ok")
+		btn:SetTextColor(EasyChat.TextColor)
+		btn:SetSize(100, 25)
+		btn:SetPos(50, 75)
+		btn.DoClick = function()
+			if text_entry:GetText():Trim() == "" then return end
+
+			callback(text_entry:GetText())
+			frame:Close()
+		end
+		btn.Paint = function(self, w, h)
+			surface.SetDrawColor(EasyChat.TabColor)
+			surface.DrawRect(0, 0, w, h)
+
+			if self:IsHovered() then
+				surface.SetDrawColor(color_white)
+				surface.DrawOutlinedRect(0, 0, w, h)
+			end
+		end
+
+		frame:MakePopup()
+		text_entry:RequestFocus()
+	end
+
 	local ec_addtext_handles = {}
 	function EasyChat.SetAddTextTypeHandle(type, callback)
 		ec_addtext_handles[type] = callback
@@ -725,10 +775,11 @@ if CLIENT then
 							surface.SetDrawColor(EasyChat.TabColor)
 						else
 							if self.Flashed then
+								local sin = math.sin(CurTime() * 3)
 								surface.SetDrawColor(
-									math.abs(math.sin(CurTime() * 3) * 244),
-									math.abs(math.sin(CurTime() * 3) * 167),
-									math.abs(math.sin(CurTime() * 3) * 66),
+									math.abs(sin * 244),
+									math.abs(sin * 3 * 167),
+									math.abs(sin * 3 * 66),
 									255
 								)
 							else
