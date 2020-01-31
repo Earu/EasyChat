@@ -187,7 +187,10 @@ function macro_processor:LoadSavedMacros()
 		local path = ("%s/%s"):format(self.Directory, f)
 		local macro_name = f:Replace(".txt", "")
 		local json = file.Read(path, "DATA")
-		self.Macros[macro_name] = util.JSONToTable(json)
+
+		local macro = util.JSONToTable(json)
+		if macro.IsLua and not self:CompileLuaMacro(macro) then return end
+		self.Macros[macro_name] = macro
 	end
 end
 
