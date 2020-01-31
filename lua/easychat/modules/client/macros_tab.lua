@@ -12,8 +12,21 @@ local MACRO_PANEL = {
 
 		self.Value = self:Add("DTextEntry")
 		self.Value:SetPos(10, 25)
-		self.Value:SetSize(self:GetWide() - 20, 100)
+		self.Value:SetSize(self:GetWide() - 160, 25)
 		self.Value:SetMultiline(true)
+		self.Value:SetVerticalScrollbarEnabled(true)
+
+		self.Canvas = self:Add("DPanel")
+		self.Canvas:SetPos(20 + self.Value:GetWide(), 100)
+		self.Canvas:SetSize(130, 100)
+		self.Canvas.Paint = function(_, w, h)
+			surface.SetDrawColor(black_color)
+			surface.DrawRect(0, 0, w, h)
+
+			if self.Markup then
+				self.Markup:Draw(w / 2 - self.Markup:GetWide() / 2, h / 2 - self.Markup:GetTall() / 2)
+			end
+		end
 
 		self.PerChar = self:Add("DCheckBoxLabel")
 		self.PerChar:SetText("Per Character")
@@ -22,6 +35,9 @@ local MACRO_PANEL = {
 		self.IsLua = self:Add("DCheckBoxLabel")
 		self.IsLua:SetText("Lua Macro")
 		self.IsLua:SetPos(110, 135)
+		self.IsLua.OnChange = function(_, is_lua)
+			self.PerChar:SetDisabled(is_lua)
+		end
 
 		self.Delete = self:Add("DButton")
 		self.Delete:SetText("Delete")
@@ -51,6 +67,7 @@ local MACRO_PANEL = {
 			end
 			self.Value.OnChange = function()
 				self.Title:SetText(("<%s> (unsaved)"):format(self.MacroName))
+				self:CacheMarkup()
 			end
 
 			local function checkbox_paint(self, w, h)
@@ -86,6 +103,31 @@ local MACRO_PANEL = {
 			self.Save.Paint = button_paint
 		end
 	end,
+	CacheMarkup = function(self)
+		if self.IsLua:GetChecked() then
+			local macro = {
+				IsLua = true,
+				Value = self.Value:GetText(),
+			}
+			if macro_processor:CompileLuaMacro(macro) then
+				macro_processor.Macros[self.MacroName] = macro
+			end
+		else
+			local macro = {
+				PerCharacter = self.PerChar:GetChecked(),
+				Value = self.Value:GetText(),
+			}
+			macro_processor.Macros[self.MacroName] = macro
+		end
+
+		local str = ("<%s>Hello World!"):format(self.MacroName)
+		str = macro_processor:ProcessString(str)
+
+		self.Markup = ec_markup.AdvancedParse(str, {
+			no_shadow = true,
+			default_color = color_white,
+		})
+	end,
 	SetMacro = function(self, macro_name, macro)
 		self.MacroName = macro_name
 		self.Title:SetText(("<%s>"):format(macro_name))
@@ -96,6 +138,8 @@ local MACRO_PANEL = {
 		if macro.IsLua then
 			self.PerChar:SetDisabled(true)
 		end
+
+		self:CacheMarkup()
 	end,
 	SaveMacro = function(self)
 		self.Title:SetText(("<%s>"):format(self.MacroName))
@@ -111,7 +155,8 @@ local MACRO_PANEL = {
 	PerformLayout = function(self, w)
 		self:SetWide(w)
 		self.Title:SetWide(w)
-		self.Value:SetSize(w - 20, 100)
+		self.Value:SetSize(w - 160, 100)
+		self.Canvas:SetPos(20 + self.Value:GetWide(), 25)
 		self.Delete:SetPos(w - 165, 130)
 		self.Save:SetPos(w - 85, 130)
 	end,
@@ -244,7 +289,7 @@ if not cookie.GetNumber("EasyChatExampleMacros") then
 
 			local chars = MACRO_INPUT:Split("")
 			for i=1, #chars do
-				chars[i] = "<translate=0," .. i * 10 .. ">" .. chars[i]
+				chars[i] = ("<translate=0,%d>%s"):format(i, chars[i])
 			end
 
 			-- returning here "applies" your changes
