@@ -321,14 +321,16 @@ if CLIENT then
 
 	function EasyChat.IsURL(str)
 		local patterns = {
-			'https?://[^%s%"]+',
-			'ftp://[^%s%"]+',
-			'steam://[^%s%"]+',
+			"https?://[^%s%\"%>%<]+",
+			"ftp://[^%s%\"%>%<]+",
+			"steam://[^%s%\"%>%<]+",
+			"www%.[^%s%\"]+%.[^%s%\"]+"
 		}
 
-		for index, pattern in ipairs(patterns) do
-			if str:match(pattern) then
-				return true
+		for _, pattern in ipairs(patterns) do
+			local start_pos, end_pos = str:find(pattern, 1, false)
+			if start_pos then
+				return start_pos, end_pos
 			end
 		end
 
@@ -336,6 +338,11 @@ if CLIENT then
 	end
 
 	function EasyChat.OpenURL(url)
+		local has_protocol = url:find("^%w-://")
+		if not has_protocol then
+			url = ("http://%s"):format(url)
+		end
+
 		local ok = hook.Run("ECOpenURL", url)
 		if ok == false then return end
 
@@ -449,12 +456,28 @@ if CLIENT then
 			LocalPlayer():ConCommand(text)
 		end)
 
-		local function append_text(richtext, txt)
+		local function append_text(richtext, text)
 			if richtext.HistoryName then
-				richtext.Log = richtext.Log and richtext.Log .. txt or txt
+				richtext.Log = richtext.Log and richtext.Log .. text or text
 			end
 
-			richtext:AppendText(txt)
+			richtext:AppendText(text)
+		end
+
+		local function append_text_url(richtext, text)
+			local start_pos, end_pos = EasyChat.IsURL(text)
+			if not start_pos then
+				append_text(richtext, text)
+			else
+				local url = text:sub(start_pos, end_pos)
+				append_text(richtext, text:sub(1, start_pos - 1))
+				richtext:InsertClickableTextStart(url)
+				append_text(richtext, url)
+				richtext:InsertClickableTextEnd()
+
+				-- recurse for possible other urls after this one
+				append_text_url(richtext, text:sub(end_pos + 1))
+			end
 		end
 
 		local function save_text(richtext)
@@ -467,6 +490,22 @@ if CLIENT then
 		local function global_append_text(text)
 			EasyChat.ChatHUD:AppendText(text)
 			append_text(EasyChat.GUI.RichText, text)
+		end
+
+		local function global_append_text_url(text)
+			local start_pos, end_pos = EasyChat.IsURL(text)
+			if not start_pos then
+				global_append_text(text)
+			else
+				local url = text:sub(start_pos, end_pos)
+				global_append_text(text:sub(1, start_pos - 1))
+				EasyChat.GUI.RichText:InsertClickableTextStart(url)
+				global_append_text(url)
+				EasyChat.GUI.RichText:InsertClickableTextEnd()
+
+				-- recurse for possible other urls after this one
+				global_append_text_url(text:sub(end_pos + 1))
+			end
 		end
 
 		local function global_append_nick(str)
@@ -504,26 +543,7 @@ if CLIENT then
 			global_insert_color_change(col.r or 255, col.g or 255, col.b or 255, col.a or 255)
 		end)
 
-		EasyChat.SetAddTextTypeHandle("string", function(str)
-			if EasyChat.IsURL(str) then
-				local words = (" "):Explode(str)
-				for k, v in ipairs(words) do
-					if k > 1 then
-						global_append_text(" ")
-					end
-					if EasyChat.IsURL(v) then
-						local url = v:gsub("^%s:", "")
-						EasyChat.GUI.RichText:InsertClickableTextStart(url)
-						global_append_text(url)
-						EasyChat.GUI.RichText:InsertClickableTextEnd()
-					else
-						global_append_text(v)
-					end
-				end
-			else
-				global_append_text(str)
-			end
-		end)
+		EasyChat.SetAddTextTypeHandle("string", global_append_text_url)
 
 		local function string_hash(text)
 			local counter = 1
@@ -616,6 +636,9 @@ if CLIENT then
 
 		function EasyChat.AddText(richtext, ...)
 			append_text(richtext, "\n")
+			if not EasyChat.UseDermaSkin then
+				richtext:InsertColorChange(255, 255, 255, 255)
+			end
 
 			if EC_TIMESTAMPS:GetBool() then
 				if EC_TIMESTAMPS_12:GetBool() then
@@ -628,29 +651,7 @@ if CLIENT then
 			local args = {...}
 			for _, arg in ipairs(args) do
 				if type(arg) == "string" then
-					if not EasyChat.UseDermaSkin then
-						richtext:InsertColorChange(255, 255, 255, 255)
-					end
-
-					if EasyChat.IsURL(arg) then
-						local words = (" "):Explode(arg)
-						for k, v in ipairs(words) do
-							if k > 1 then
-								append_text(richtext, " ")
-							end
-
-							if EasyChat.IsURL(v) then
-								local url = v:gsub("^%s:", "")
-								richtext:InsertClickableTextStart(url)
-								append_text(richtext, url)
-								richtext:InsertClickableTextEnd()
-							else
-								append_text(richtext, v)
-							end
-						end
-					else
-						append_text(richtext, arg)
-					end
+					append_text_url(richtext, arg)
 				elseif type(arg) == "Player" then
 					if EC_USE_ME:GetBool() and arg == LocalPlayer() then
 						append_text(richtext, "me")
@@ -1075,8 +1076,8 @@ if CLIENT then
 		end)
 
 		-- for getting rid of annoying stuff
-		hook.Add("OnPlayerChat", TAG, function(ply, txt)
-			if txt == "sh" or txt:match("%ssh%s") then
+		hook.Add("OnPlayerChat", TAG, function(ply, text)
+			if text == "sh" or text:match("%ssh%s") then
 				chathud:StopComponents()
 			end
 		end)

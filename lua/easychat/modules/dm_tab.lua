@@ -198,7 +198,7 @@ if CLIENT then
 			local ply = line.Player
 			if IsValid(ply) then
 				local chat = self.Chats[ply]
-				EasyChat.AddText(chat.RichText,PLY_COL,LocalPlayer(),": " .. message)
+				EasyChat.AddText(chat.RichText, PLY_COL, LocalPlayer(), color_white, ": " .. message)
 				net.Start(EASYCHAT_DM)
 				net.WriteEntity(chat.Player)
 				net.WriteString(message)
@@ -212,7 +212,7 @@ if CLIENT then
 		Notify = function(self,chat,message)
 			chat.NewMessages = chat.NewMessages + 1
 			EasyChat.FlashTab("DM")
-			_G.chat.AddText(Color(255,255,255),"[DM | ",PLY_COL,chat.Player,Color(255,255,255),"] " .. message)
+			_G.chat.AddText(color_white, "[DM | ", PLY_COL, chat.Player, color_white, "] " .. message)
 		end,
 		Think = function(self)
 			for _,chat in pairs(self.Chats) do
@@ -239,7 +239,7 @@ if CLIENT then
 		if not chat then
 			chat = dmtab:CreateChat(sender)
 		end
-		EasyChat.AddText(chat.RichText,PLY_COL,sender,": " .. message)
+		EasyChat.AddText(chat.RichText, PLY_COL, sender, color_white, ": " .. message)
 		if not EasyChat.IsOpened() then
 			dmtab:Notify(chat,message)
 		else
