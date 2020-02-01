@@ -8,7 +8,7 @@ local PROCESSING = true
 local cache = {}
 local framerate_cache = {}
 
-local FOLDER = "bttv"
+local FOLDER = "easychat/emojis/bttv"
 file.CreateDir(FOLDER, "DATA")
 
 local LOOKUP_TABLE_URL = "https://api.betterttv.net/2/emotes"

@@ -25,11 +25,6 @@ local CHATBOX = {
 		self.BtnClose:SetFont("DermaDefaultBold")
 		self.BtnClose:SetText("X")
 
-		self.BtnClose.Think = function(self)
-			local x,y,w,h = frame:GetBounds()
-			self:SetPos(w-self:GetWide()-6,-2)
-		end
-
 		self.BtnMaxim:SetSize(35,23)
 		self.BtnMaxim:SetZPos(10)
 		if not EasyChat.UseDermaSkin then
@@ -56,13 +51,8 @@ local CHATBOX = {
 				self.IsFullScreen = false
 			end
 		end
-		self.BtnMaxim.Think = function(self)
-			local x,y,w,h = frame:GetBounds()
-			self:SetPos(w-self:GetWide()-50,-7)
-		end
 
 		self.Tabs:SetPos(6,6)
-
 		self.Tabs.old_performlayout = self.Tabs.PerformLayout
 		self.Tabs.PerformLayout = function(self)
 			self.old_performlayout(self)
@@ -70,8 +60,6 @@ local CHATBOX = {
 		end
 
 		self.Tabs.Think = function(self)
-			local x,y,w,h = frame:GetBounds()
-			self:SetSize(w-13,h-11)
 			local current = self:GetActiveTab()
 			if current ~= frame.OldTab then
 				hook.Run("ECTabChanged",frame.OldTab.Name,current.Name)
@@ -110,6 +98,11 @@ local CHATBOX = {
 				surface.DrawRect(0, 0, w, h)
 			end
 		end
+	end,
+	PerformLayout = function(self, w, h)
+		self.Tabs:SetSize(w - 13, h - 11)
+		self.BtnMaxim:SetPos(w - self.BtnMaxim:GetWide() - 50, -7)
+		self.BtnClose:SetPos(w - self.BtnClose:GetWide() - 6, -2)
 	end,
 }
 

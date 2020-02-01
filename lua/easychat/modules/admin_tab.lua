@@ -186,7 +186,7 @@ if CLIENT then
 		local msg = net.ReadString()
 		if not IsValid(sender) then return end
 
-		EasyChat.AddText(admintab.RichText, team.GetColor(sender:Team()), sender,": " .. msg)
+		EasyChat.AddText(admintab.RichText, team.GetColor(sender:Team()), sender, color_white, ": " .. msg)
 		if not EasyChat.IsOpened() then
 			admintab:Notify(sender, msg)
 		else
