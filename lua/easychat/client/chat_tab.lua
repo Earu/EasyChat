@@ -7,10 +7,6 @@ local MAIN_TAB = {
 		self.TextEntry = self:Add("DTextEntry")
 
 		self.RichText:SetVerticalScrollbarEnabled(true)
-		self.RichText.Think = function(self)
-			local x,y,w,h = frame:GetBounds()
-			self:SetSize(w,h-20)
-		end
 		self.RichText.PerformLayout = function(self)
 			self:SetFontInternal("EasyChatFont")
 			self:SetFGColor(EasyChat.UseDermaSkin and EasyChat.TextColor or Color(0,0,0,255))
@@ -21,8 +17,6 @@ local MAIN_TAB = {
 		self.BtnSwitch:SetSize(65,20)
 		self.BtnSwitch:SetZPos(10)
 		self.BtnSwitch.Think = function(self)
-			local x,y,w,h = frame:GetBounds()
-			self:SetPos(0,h-self:GetTall())
 			if EasyChat.Mode == 0 then
 				self:SetText("Say")
 			else
@@ -34,11 +28,6 @@ local MAIN_TAB = {
 			EasyChat.Mode = modeplus > EasyChat.ModeCount and 0 or modeplus
 		end
 
-		self.TextEntry.Think = function(self)
-			local x,y,w,h = frame:GetBounds()
-			self:SetSize(w-frame.BtnSwitch:GetWide(),20)
-			self:SetPos(frame.BtnSwitch:GetWide(),h-20)
-		end
 		self.TextEntry:SetHistoryEnabled(true)
 		self.TextEntry.HistoryPos = 0
 		self.TextEntry:SetUpdateOnType(true)
@@ -67,6 +56,12 @@ local MAIN_TAB = {
 				surface.DrawOutlinedRect(0,0,w,h)
 			end
 		end
+	end,
+	PerformLayout = function(self, w, h)
+		self.RichText:SetSize(w, h - 20)
+		self.BtnSwitch:SetPos(0, h - self.BtnSwitch:GetTall())
+		self.TextEntry:SetSize(w - self.BtnSwitch:GetWide(), 20)
+		self.TextEntry:SetPos(self.BtnSwitch:GetWide(), h - 20)
 	end,
 }
 
