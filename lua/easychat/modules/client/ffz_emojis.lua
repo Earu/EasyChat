@@ -7,7 +7,7 @@ local PROCESSING = true
 
 local cache = {}
 
-local FOLDER = "ffz"
+local FOLDER = "easychat/emojis/ffz"
 file.CreateDir(FOLDER, "DATA")
 
 local LOOKUP_TABLE_URL = "https://api.frankerfacez.com/v1/set/global"
