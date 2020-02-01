@@ -5,14 +5,15 @@ if SERVER then
 
 	net.Receive(EASYCHAT_ADMIN, function(_, ply)
 		if not ply:IsAdmin() then return end
+
 		local msg = net.ReadString()
 		msg = msg:Trim()
 		if msg == "" then return end
 
 		local admins = {}
-		for _,p in ipairs(player.GetAll()) do
+		for _, p in ipairs(player.GetAll()) do
 			if p:IsAdmin() then
-				table.insert(admins,p)
+				table.insert(admins, p)
 			end
 		end
 
@@ -24,7 +25,7 @@ if SERVER then
 end
 
 if CLIENT then
-	local PLY_COL = Color(255,127,127)
+	local PLY_COL = Color(255, 127, 127)
 	local EC_HISTORY = GetConVar("easychat_history")
 
 	local nick_cache = {}
@@ -40,7 +41,7 @@ if CLIENT then
 			default_color = team_color,
 			nick = true,
 			no_shadow = true,
-			maxwidth = maxwidth,
+			maxwidth = maxwidth
 		})
 		nick_cache[nick] = mk
 
@@ -73,41 +74,41 @@ if CLIENT then
 					self:DrawTextEntryText(black_color, EasyChat.OutlayColor, black_color)
 				end
 
-				self.AdminList.Paint = function(self,w,h)
+				self.AdminList.Paint = function(self, w, h)
 					surface.SetDrawColor(EasyChat.OutlayColor)
-					surface.DrawRect(0, 0, w,h)
+					surface.DrawRect(0, 0, w, h)
 					surface.SetDrawColor(EasyChat.OutlayOutlineColor)
-					surface.DrawOutlinedRect(0, 0, w,h)
+					surface.DrawOutlinedRect(0, 0, w, h)
 
 					local cur_y = 20
-					for _,ply in ipairs(player.GetAll()) do
+					for _, ply in ipairs(player.GetAll()) do
 						if ply:IsAdmin() then
 							local mk = cache_nick(ply, self:GetWide() - 20)
-							mk:Draw(10,  cur_y)
+							mk:Draw(10, cur_y)
 							cur_y = cur_y + mk:GetTall() + 5
 						end
 					end
 				end
 
 				local header = self.AdminList.Columns[1].Header
-				header:SetTextColor(Color(255,255,255))
-				header.Paint = function(self,w,h)
+				header:SetTextColor(Color(255, 255, 255))
+				header.Paint = function(self, w, h)
 					surface.SetDrawColor(EasyChat.TabColor)
-					surface.DrawRect(0, 0, w,h)
+					surface.DrawRect(0, 0, w, h)
 					surface.SetDrawColor(EasyChat.OutlayColor)
 					surface.DrawLine(w - 1, 0, w - 1, h)
 					surface.SetDrawColor(EasyChat.OutlayOutlineColor)
-					surface.DrawOutlinedRect(0, 0, w,h)
+					surface.DrawOutlinedRect(0, 0, w, h)
 				end
 			else
 				local old_Paint = self.AdminList.Paint
-				self.AdminList.Paint = function(self,w,h)
-					old_Paint(self,w,h)
+				self.AdminList.Paint = function(self, w, h)
+					old_Paint(self, w, h)
 					local cur_y = 20
-					for _,ply in ipairs(player.GetAll()) do
+					for _, ply in ipairs(player.GetAll()) do
 						if ply:IsAdmin() then
 							local mk = cache_nick(ply, self:GetWide() - 20)
-							mk:Draw(10,  cur_y)
+							mk:Draw(10, cur_y)
 							cur_y = cur_y + mk:GetTall() + 5
 						end
 					end
@@ -117,7 +118,7 @@ if CLIENT then
 			self.RichText = self:Add("RichText")
 			self.RichText.HistoryName = "admin"
 			if not EasyChat.UseDermaSkin then
-				self.RichText:InsertColorChange(255,255,255,255)
+				self.RichText:InsertColorChange(255, 255, 255, 255)
 			end
 			self.RichText.PerformLayout = function(self)
 				self:SetFontInternal("EasyChatFont")
@@ -125,7 +126,7 @@ if CLIENT then
 					self:SetFGColor(EasyChat.TextColor)
 				end
 			end
-			self.RichText.ActionSignal = function(self,name,value)
+			self.RichText.ActionSignal = function(self, name, value)
 				if name == "TextClicked" then
 					EasyChat.OpenURL(value)
 				end
@@ -133,17 +134,17 @@ if CLIENT then
 			self.RichText:Dock(FILL)
 
 			local lastkey = KEY_ENTER
-			self.TextEntry.OnKeyCodeTyped = function(self,code)
-				EasyChat.SetupHistory(self,code)
-				EasyChat.UseRegisteredShortcuts(self,lastkey,code)
+			self.TextEntry.OnKeyCodeTyped = function(self, code)
+				EasyChat.SetupHistory(self, code)
+				EasyChat.UseRegisteredShortcuts(self, lastkey, code)
 
 				if code == KEY_ESCAPE then
 					chat.Close()
 					gui.HideGameUI()
 				elseif code == KEY_ENTER or code == KEY_PAD_ENTER then
-					self:SetText(string.Replace(self:GetText(),"╚​",""))
+					self:SetText(string.Replace(self:GetText(), "╚​", ""))
 					if string.Trim(self:GetText()) ~= "" then
-						frame:SendMessage(string.sub(self:GetText(),1,3000))
+						frame:SendMessage(string.sub(self:GetText(), 1, 3000))
 					end
 				end
 
@@ -163,25 +164,25 @@ if CLIENT then
 				EasyChat.AddText(self.RichText, "Welcome to the admin chat!")
 			end
 		end,
-		Notify = function(self,ply,message)
+		Notify = function(self, ply, message)
 			if ply ~= LocalPlayer() then
 				self.NewMessages = self.NewMessages + 1
 				EasyChat.FlashTab("Admin")
 			end
-			_G.chat.AddText(Color(255,255,255),"[Admin Chat | ",Color(255,127,127),ply,Color(255,255,255),"] " .. message)
+			_G.chat.AddText(color_white, "[Admin Chat | ", Color(255, 127, 127), ply, color_white, "] " .. message)
 		end,
 		SendMessage = function(self, msg)
 			net.Start(EASYCHAT_ADMIN)
 			net.WriteString(msg)
 			net.SendToServer()
 			self.TextEntry:SetText("")
-		end,
+		end
 	}
 
 	vgui.Register("ECAdminTab", ADMIN_TAB, "DPanel")
 	local admintab = vgui.Create("ECAdminTab")
 
-	net.Receive(EASYCHAT_ADMIN,function()
+	net.Receive(EASYCHAT_ADMIN, function()
 		local sender = net.ReadEntity()
 		local msg = net.ReadString()
 		if not IsValid(sender) then return end
@@ -197,7 +198,7 @@ if CLIENT then
 		end
 	end)
 
-	hook.Add("ECTabChanged","EasyChatModuleDMTab",function(_,tab)
+	hook.Add("ECTabChanged", "EasyChatModuleDMTab", function(_, tab)
 		if tab == "Admin" then
 			admintab.NewMessages = 0
 			admintab.RichText:GotoTextEnd()
@@ -210,6 +211,7 @@ if CLIENT then
 	EasyChat.AddMode("Admin", function(text)
 		admintab:SendMessage(text)
 	end)
+
 	EasyChat.AddTab("Admin", admintab)
 	EasyChat.SetFocusForOn("Admin", admintab.TextEntry)
 end
