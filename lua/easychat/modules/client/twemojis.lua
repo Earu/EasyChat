@@ -7,7 +7,7 @@ local PROCESSING = true
 
 local cache = {}
 
-local FOLDER = "twemojis"
+local FOLDER = "easychat/emojis/twemojis"
 file.CreateDir(FOLDER, "DATA")
 
 local LOOKUP_TABLE_URL = "https://gist.githubusercontent.com/Cynosphere/6aa8c1f37870e96796608a4ffc9d1ccb/raw/1ac67bc24a794d319011b712014f8ba6e4f26055/emojis.json"

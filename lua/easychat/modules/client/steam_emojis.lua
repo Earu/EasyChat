@@ -36,7 +36,10 @@ local function base64_decode(data)
 	end))
 end
 
-local EMOTS = "steam_emoticons.txt"
+local FOLDER = "easychat/emojis/steam"
+file.CreateDir(FOLDER, "DATA")
+
+local EMOTS = FOLDER .. "/steam_emoticons.txt"
 local function parse_emote_file() end
 
 local url =	"http://g1.metastruct.net:20080/opendata/public/emote_lzma.dat"
@@ -58,9 +61,6 @@ end, function(err)
 end, {
 	Referer = "http://steam.tools/emoticons/"
 })
-
-local FOLDER = "steam_emoticons_big"
-file.CreateDir(FOLDER, "DATA")
 
 local function material_data(mat)
 	local ret = Material("../data/" .. mat)
