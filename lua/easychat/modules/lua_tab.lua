@@ -626,6 +626,10 @@ if CLIENT then
 		Paint = function(self, w, h)
 			surface.SetDrawColor(EasyChat.TabColor)
 			surface.DrawRect(0, 0, w, h)
+		end,
+		PaintOver = function(self, w, h)
+			surface.SetDrawColor(EasyChat.TabOutlineColor)
+			surface.DrawOutlinedRect(0, 0, w, h)
 		end
 	}
 

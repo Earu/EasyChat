@@ -77,7 +77,7 @@ if CLIENT then
 				self.AdminList.Paint = function(self, w, h)
 					surface.SetDrawColor(EasyChat.OutlayColor)
 					surface.DrawRect(0, 0, w, h)
-					surface.SetDrawColor(EasyChat.OutlayOutlineColor)
+					surface.SetDrawColor(EasyChat.TabOutlineColor)
 					surface.DrawOutlinedRect(0, 0, w, h)
 
 					local cur_y = 20
@@ -97,7 +97,7 @@ if CLIENT then
 					surface.DrawRect(0, 0, w, h)
 					surface.SetDrawColor(EasyChat.OutlayColor)
 					surface.DrawLine(w - 1, 0, w - 1, h)
-					surface.SetDrawColor(EasyChat.OutlayOutlineColor)
+					surface.SetDrawColor(EasyChat.TabOutlineColor)
 					surface.DrawOutlinedRect(0, 0, w, h)
 				end
 			else
@@ -176,6 +176,10 @@ if CLIENT then
 			net.WriteString(msg)
 			net.SendToServer()
 			self.TextEntry:SetText("")
+		end,
+		PaintOver = function(self, w, h)
+			surface.SetDrawColor(EasyChat.TabOutlineColor)
+			surface.DrawOutlinedRect(0, 0, w, h)
 		end
 	}
 
