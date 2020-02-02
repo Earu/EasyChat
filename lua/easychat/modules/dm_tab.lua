@@ -99,7 +99,7 @@ if CLIENT then
 				self.DMList.Paint = function(self, w, h)
 					surface.SetDrawColor(EasyChat.OutlayColor)
 					surface.DrawRect(0, 0, w, h)
-					surface.SetDrawColor(EasyChat.OutlayOutlineColor)
+					surface.SetDrawColor(EasyChat.TabOutlineColor)
 					surface.DrawOutlinedRect(0, 0, w, h)
 				end
 
@@ -110,7 +110,7 @@ if CLIENT then
 					surface.DrawRect(0, 0, w, h)
 					surface.SetDrawColor(EasyChat.OutlayColor)
 					surface.DrawLine(w - 1, 0, w - 1, h)
-					surface.SetDrawColor(EasyChat.OutlayOutlineColor)
+					surface.SetDrawColor(EasyChat.TabOutlineColor)
 					surface.DrawOutlinedRect(0, 0, w, h)
 				end
 			end
@@ -226,6 +226,10 @@ if CLIENT then
 					line:SetColumnText(1, chat.Player:Nick())
 				end
 			end
+		end,
+		PaintOver = function(self, w, h)
+			surface.SetDrawColor(EasyChat.TabOutlineColor)
+			surface.DrawOutlinedRect(0, 0, w, h)
 		end
 	}
 
