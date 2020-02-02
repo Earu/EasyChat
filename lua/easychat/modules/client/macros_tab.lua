@@ -10,6 +10,24 @@ local MACRO_PANEL = {
 		self.Title:SetWide(self:GetWide())
 		self.Title:SetPos(10, 0)
 
+		self.TitleEdit = self:Add("DButton")
+		self.TitleEdit:SetText("")
+		self.TitleEdit:SetWide(self:GetWide())
+		self.TitleEdit:SetPos(10, 0)
+		self.TitleEdit.Paint = function() end
+		self.TitleEdit.DoClick = function()
+			EasyChat.AskForInput("New Macro Name", function(macro_name)
+				self.Title:SetText(("<%s>"):format(macro_name))
+				macro_processor:RegisterMacro(macro_name, {
+					IsLua = self.IsLua:GetChecked(),
+					PerCharacter = not self.IsLua:GetChecked() and self.PerChar:GetChecked() or false,
+					Value = self.Value:GetText(),
+				})
+
+				self:DeleteMacro()
+			end)
+		end
+
 		self.Value = self:Add("DTextEntry")
 		self.Value:SetPos(10, 25)
 		self.Value:SetSize(self:GetWide() - 160, 25)
@@ -165,6 +183,7 @@ local MACRO_PANEL = {
 	PerformLayout = function(self, w)
 		self:SetWide(w)
 		self.Title:SetWide(w)
+		self.TitleEdit:SetWide(w)
 		self.Value:SetSize(w - 160, 100)
 		self.Canvas:SetPos(20 + self.Value:GetWide(), 25)
 		self.Delete:SetPos(w - 165, 130)
