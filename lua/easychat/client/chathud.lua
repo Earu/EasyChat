@@ -66,6 +66,7 @@ local chat_GetSize = chat.GetChatBoxSize
 
 local SHADOW_FONT_BLURSIZE = 1
 local SMOOTHING_SPEED = 1000
+local MAX_TEXT_OFFSET = 400
 
 -- this is used later for creating shadow fonts properly
 local engine_fonts_info = {}
@@ -510,7 +511,10 @@ function text_part:ComputePos()
 end
 
 function text_part:GetTextDrawPos(ctx)
-	return self.Pos.X + ctx.TextOffset.X, self.RealPos.Y + ctx.TextOffset.Y
+	local offsex_x, offset_y =
+		math_clamp(ctx.TextOffset.X, -MAX_TEXT_OFFSET, MAX_TEXT_OFFSET),
+		math_clamp(ctx.TextOffset.Y, -MAX_TEXT_OFFSET, MAX_TEXT_OFFSET)
+	return self.Pos.X + offsex_x, self.RealPos.Y + offset_y
 end
 
 local shadow_col = Color(0, 0, 0, 255)
@@ -753,7 +757,10 @@ function emote_part:ComputePos()
 end
 
 function emote_part:GetDrawPos(ctx)
-	return self.Pos.X + ctx.TextOffset.X, self.RealPos.Y + ctx.TextOffset.Y
+	local offsex_x, offset_y =
+		math_clamp(ctx.TextOffset.X, -MAX_TEXT_OFFSET, MAX_TEXT_OFFSET),
+		math_clamp(ctx.TextOffset.Y, -MAX_TEXT_OFFSET, MAX_TEXT_OFFSET)
+	return self.Pos.X + offsex_x, self.RealPos.Y + offset_y
 end
 
 function emote_part:PostLinePush()
@@ -812,6 +819,11 @@ function base_line:Draw(ctx)
 	ctx.Alpha = self.Alpha
 	for _, component in ipairs(self.Components) do
 		component:Draw(ctx)
+
+		if RealTime() - ctx.DrawStart > 0.25 then
+			ctx.ShouldDraw = false
+			break
+		end
 	end
 end
 
@@ -992,6 +1004,7 @@ end
 	Actual ChatHUD drawing here
 ]]-------------------------------------------------------------------------------
 local draw_context = {
+	ShouldDraw = true,
 	Color = chathud.DefaultColor,
 	TextOffset = { X = 0, Y = 0 },
 	PostTextDrawFunctions = {},
@@ -1065,8 +1078,17 @@ chathud.DrawContext = chathud:CreateDrawContext()
 function chathud:Draw()
 	--if hook_run("HUDShouldDraw", "CHudChat") == false then return end
 
+	self.DrawContext.DrawStart = RealTime()
 	for _, line in ipairs(self.Lines) do
 		line:Draw(self.DrawContext)
+
+		-- mitigation for very slow rendering
+		if not self.DrawContext.ShouldDraw then
+			self:Clear()
+			print("[EasyChat]: /!\\Laggy chathud, emergency clear/!\\")
+			self.DrawContext.ShouldDraw = true
+			break
+		end
 	end
 
 	-- this is done here so we can freely draw without odd behaviors
