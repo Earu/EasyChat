@@ -35,12 +35,18 @@ local MACRO_PANEL = {
 		self.PerChar = self:Add("DCheckBoxLabel")
 		self.PerChar:SetText("Per Character")
 		self.PerChar:SetPos(10, 135)
+		self.PerChar.OnChange = function()
+			self.Title:SetText(("<%s> (unsaved)"):format(self.MacroName))
+			self:CacheMarkup()
+		end
 
 		self.IsLua = self:Add("DCheckBoxLabel")
 		self.IsLua:SetText("Lua Macro")
 		self.IsLua:SetPos(110, 135)
 		self.IsLua.OnChange = function(_, is_lua)
 			self.PerChar:SetDisabled(is_lua)
+			self.Title:SetText(("<%s> (unsaved)"):format(self.MacroName))
+			self:CacheMarkup()
 		end
 
 		self.Delete = self:Add("DButton")
