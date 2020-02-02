@@ -302,21 +302,25 @@ if CLIENT then
 	end
 
 	local function close_chatbox()
-		if EasyChat.IsOpened() then
-			EasyChat.GUI.ChatBox:SetMouseInputEnabled(false)
-			EasyChat.GUI.ChatBox:SetKeyboardInputEnabled(false)
-			gui.EnableScreenClicker(false)
-			EasyChat.GUI.TextEntry:SetText("")
-			chat.old_Close()
-			gamemode.Call("ChatTextChanged", "")
-			gamemode.Call("FinishChat")
-			save_chatbox_bounds()
-			EasyChat.GUI.ChatBox:Hide()
-			hook.Run("ECClosed", LocalPlayer())
-			net.Start(NET_SET_TYPING)
-			net.WriteBool(false)
-			net.SendToServer()
-		end
+		if not EasyChat.IsOpened() then return end
+
+		EasyChat.GUI.ChatBox:SetMouseInputEnabled(false)
+		EasyChat.GUI.ChatBox:SetKeyboardInputEnabled(false)
+		EasyChat.GUI.TextEntry:SetText("")
+
+		gui.EnableScreenClicker(false)
+		chat.old_Close()
+		gamemode.Call("ChatTextChanged", "")
+		gamemode.Call("FinishChat")
+
+		save_chatbox_bounds()
+		EasyChat.GUI.ChatBox:Hide()
+
+		hook.Run("ECClosed", LocalPlayer())
+
+		net.Start(NET_SET_TYPING)
+		net.WriteBool(false)
+		net.SendToServer()
 	end
 
 	function EasyChat.IsURL(str)
