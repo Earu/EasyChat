@@ -15,6 +15,10 @@ local MACRO_PANEL = {
 		self.Value:SetSize(self:GetWide() - 160, 25)
 		self.Value:SetMultiline(true)
 		self.Value:SetVerticalScrollbarEnabled(true)
+		self.Value.OnChange = function()
+			self.Title:SetText(("<%s> (unsaved)"):format(self.MacroName))
+			self:CacheMarkup()
+		end
 
 		self.Canvas = self:Add("DPanel")
 		self.Canvas:SetPos(20 + self.Value:GetWide(), 100)
@@ -55,6 +59,8 @@ local MACRO_PANEL = {
 			self.Paint = function(self, w, h)
 				surface.SetDrawColor(EasyChat.OutlayColor)
 				surface.DrawRect(0, 0, w, h)
+				surface.SetDrawColor(EasyChat.TabOutlineColor)
+				surface.DrawOutlinedRect(0, 0, w, h)
 			end
 
 			self.Title:SetTextColor(EasyChat.TextColor)
@@ -64,10 +70,6 @@ local MACRO_PANEL = {
 				surface.DrawRect(0, 0, w, h)
 
 				self:DrawTextEntryText(black_color, EasyChat.OutlayColor, black_color)
-			end
-			self.Value.OnChange = function()
-				self.Title:SetText(("<%s> (unsaved)"):format(self.MacroName))
-				self:CacheMarkup()
 			end
 
 			local function checkbox_paint(self, w, h)
@@ -85,6 +87,8 @@ local MACRO_PANEL = {
 			local function button_paint(self, w, h)
 				surface.SetDrawColor(EasyChat.TabColor)
 				surface.DrawRect(0, 0, w, h)
+				surface.SetDrawColor(EasyChat.TabOutlineColor)
+				surface.DrawOutlinedRect(0, 0, w, h)
 
 				if self:IsHovered() then
 					surface.SetDrawColor(EasyChat.TextColor)
@@ -208,6 +212,8 @@ local MACRO_TAB = {
 			self.AddMacro.Paint = function(self, w, h)
 				surface.SetDrawColor(EasyChat.OutlayColor)
 				surface.DrawRect(0, 0, w, h)
+				surface.SetDrawColor(EasyChat.TabOutlineColor)
+				surface.DrawOutlinedRect(0, 0, w, h)
 
 				if self:IsHovered() then
 					surface.SetDrawColor(EasyChat.TextColor)
