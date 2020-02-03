@@ -68,17 +68,10 @@ function PANEL:Init()
 		self:OnTab()
 	end)
 
-	self:AddInternalCallback("Debug", PrintTable)
+	self:AddInternalCallback("Debug", print)
 
 	self:QueueJavascript([[
 		const TEXT_ENTRY = document.getElementById("text-entry");
-		TEXT_ENTRY.addEventListener("keyup", (ev) => {
-			if (ev.which === 13) {
-				TextEntryX.OnEnter();
-			}
-
-			TextEntryX.OnChange(ev.target.value);
-		});
 		TEXT_ENTRY.addEventListener("paste", (ev) => {
 			let items = (ev.clipboardData || window.clipboardData).items;
 			if (!items) return;
@@ -97,22 +90,38 @@ function PANEL:Init()
 				}
 			}
 		});
+		TEXT_ENTRY.addEventListener("keyup", (ev) => {
+			if (ev.ctrlKey && ev.key === "v") {
+				let value = ev.target.value;
+				TextEntryX.OnChange(value.substring(0, value.length - 1));
+			}
+		});
 		TEXT_ENTRY.addEventListener("keydown", (ev) => {
-			if (ev.which === 9) {
-				ev.preventDefault();
-				TextEntryX.OnTab();
-
-				return false;
-			} else if (ev.which === 38) {
-				ev.preventDefault();
-				TextEntryX.OnArrowUp();
-
-				return false;
-			} else if (ev.which == 40) {
-				ev.preventDefault();
-				TextEntryX.OnArrowDown();
-
-				return false;
+			switch (ev.which) {
+				case 8:
+					let value = ev.target.value;
+					TextEntryX.OnChange(value.substring(0, value.length - 1));
+					break;
+				case 9:
+					ev.preventDefault();
+					TextEntryX.OnTab();
+					return false;
+				case 13:
+					TextEntryX.OnEnter();
+					break;
+				case 38:
+					ev.preventDefault();
+					TextEntryX.OnArrowUp();
+					return false;
+				case 40:
+					ev.preventDefault();
+					TextEntryX.OnArrowDown();
+					return false;
+				default:
+					if (ev.key.length === 1) {
+						TextEntryX.OnChange(ev.target.value + ev.key);
+					}
+					break;
 			}
 		});
 		TEXT_ENTRY.click();
