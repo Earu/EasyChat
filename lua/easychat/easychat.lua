@@ -911,6 +911,11 @@ if CLIENT then
 			end
 		end
 
+		--[[
+			/!\ Not used for the main chat text entry
+			Its because the chat text entry is a DHTML
+			panel that does not fire OnKeyCode* callbacks
+		]]--
 		function EasyChat.UseRegisteredShortcuts(text_entry, last_key, key)
 			if is_base_shortcut_key(last_key) then
 				local pos = text_entry:GetCaretPos()
@@ -931,6 +936,11 @@ if CLIENT then
 			end
 		end
 
+		--[[
+			/!\ Not used for the main chat text entry
+			Its because the chat text entry is a DHTML
+			panel that does not fire OnKeyCode* callbacks
+		]]--
 		function EasyChat.SetupHistory(text_entry, key)
 			if key == KEY_ENTER or key == KEY_PAD_ENTER then
 				text_entry:AddHistory(text_entry:GetText())
@@ -952,45 +962,31 @@ if CLIENT then
 			end
 		end
 
-		local last_key = KEY_ENTER
-		function EasyChat.GUI.TextEntry:OnKeyCodeTyped(code)
-			EasyChat.SetupHistory(self, code)
-			EasyChat.UseRegisteredShortcuts(self, last_key, code)
-
-			if code == KEY_ESCAPE then
-				close_chatbox()
-				gui.HideGameUI()
-			elseif code == KEY_ENTER or code == KEY_PAD_ENTER then
-				self:SetText(self:GetText():Replace("╚​", ""))
-				if self:GetText():Trim() ~= "" then
-					if EasyChat.Mode == 0 then
-						EasyChat.SendGlobalMessage(self:GetText(), false, false)
-					else
-						local mode = EasyChat.Modes[EasyChat.Mode]
-						mode.Callback(self:GetText())
-					end
-				end
-
-				close_chatbox()
+		function EasyChat.GUI.TextEntry:OnTab()
+			if self:GetText() ~= "" then
+				local autocompletion_text = gamemode.Call("OnChatTab", self:GetText())
+				self:SetText(autocompletion_text)
+				timer.Simple(0, function()
+					self:RequestFocus()
+				end)
+			else
+				local next_mode = EasyChat.Mode + 1
+				EasyChat.Mode = next_mode > EasyChat.ModeCount and 0 or next_mode
 			end
+		end
 
-			last_key = code
-
-			if code == KEY_TAB then
-				if self:GetText() ~= "" then
-					local autocompletion_text = gamemode.Call("OnChatTab", self:GetText())
-					self:SetText(autocompletion_text)
-					timer.Simple(0, function()
-						self:RequestFocus()
-						self:SetCaretPos(#self:GetText())
-					end)
+		function EasyChat.GUI.TextEntry:OnEnter()
+			self:SetText(self:GetText():Replace("╚​", ""))
+			if self:GetText():Trim() ~= "" then
+				if EasyChat.Mode == 0 then
+					EasyChat.SendGlobalMessage(self:GetText(), false, false)
 				else
-					local next_mode = EasyChat.Mode + 1
-					EasyChat.Mode = next_mode > EasyChat.ModeCount and 0 or next_mode
+					local mode = EasyChat.Modes[EasyChat.Mode]
+					mode.Callback(self:GetText())
 				end
-
-				return true
 			end
+
+			close_chatbox()
 		end
 
 		function EasyChat.GUI.TextEntry:OnValueChange(text)
