@@ -1,5 +1,7 @@
 local PANEL = {
 	CurrentValue = "",
+	History = {},
+	HistoryPos = 0,
 }
 
 function PANEL:Init()
@@ -34,25 +36,49 @@ function PANEL:Init()
 		</body>
 	</html>]])
 
-	self:AddFunction("TextEntryX", "OnChange", function(value)
+	self:AddInternalCallback("OnChange", function(value)
 		self.CurrentValue = value
+
 		self:OnChange()
-		self:OnValueChange()
+		self:OnValueChange(value)
 	end)
 
-	self:AddFunction("TextEntryX", "OnImagePaste", function(name, base64)
+	self:AddInternalCallback("OnArrowUp", function()
+		self.HistoryPos = self.HistoryPos - 1
+		self:UpdateFromHistory()
+	end)
+
+	self:AddInternalCallback("OnArrowDown", function()
+		self.HistoryPos = self.HistoryPos + 1
+		self:UpdateFromHistory()
+	end)
+
+	self:AddInternalCallback("OnImagePaste", function(name, base64)
 		self:OnImagePaste(name, base64)
 	end)
 
-	self:AddFunction("TextEntryX", "OnEnter", function()
+	self:AddInternalCallback("OnEnter", function()
+		self:AddHistory(self:GetText())
+		self.HistoryPos = 0
+
 		self:OnEnter()
 	end)
 
-	self:AddFunction("TextEntryX", "Debug", PrintTable)
+	self:AddInternalCallback("OnTab", function()
+		self:OnTab()
+	end)
+
+	self:AddInternalCallback("Debug", PrintTable)
 
 	self:QueueJavascript([[
-		var TEXT_ENTRY = document.getElementById("text-entry");
-		TEXT_ENTRY.addEventListener("keyup", (ev) => TextEntryX.OnChange(ev.target.value));
+		const TEXT_ENTRY = document.getElementById("text-entry");
+		TEXT_ENTRY.addEventListener("keyup", (ev) => {
+			if (ev.which === 13) {
+				TextEntryX.OnEnter();
+			}
+
+			TextEntryX.OnChange(ev.target.value);
+		});
 		TEXT_ENTRY.addEventListener("paste", (ev) => {
 			let items = (ev.clipboardData || window.clipboardData).items;
 			if (!items) return;
@@ -74,12 +100,19 @@ function PANEL:Init()
 		TEXT_ENTRY.addEventListener("keydown", (ev) => {
 			if (ev.which === 9) {
 				ev.preventDefault();
+				TextEntryX.OnTab();
+
 				return false;
-			}
-		});
-		TEXT_ENTRY.addEventListener("keypress", (ev) => {
-			if (ev.which === 13) {
-				TextEntryX.OnEnter();
+			} else if (ev.which === 38) {
+				ev.preventDefault();
+				TextEntryX.OnArrowUp();
+
+				return false;
+			} else if (ev.which == 40) {
+				ev.preventDefault();
+				TextEntryX.OnArrowDown();
+
+				return false;
 			}
 		});
 		TEXT_ENTRY.click();
@@ -89,8 +122,33 @@ function PANEL:Init()
 	local skin = self:GetSkin()
 	self:SetBackgroundColor(skin.colTextEntryBG)
 	self:SetTextColor(skin.colTextEntryText)
-	self.BorderColor = skin.colTextEntryBorder
-	self.ActiveColor = skin.control_color_active
+	self:SetBorderColor(skin.colTextEntryBorder)
+end
+
+function PANEL:AddInternalCallback(name, callback)
+	self:AddFunction("TextEntryX", name, callback)
+end
+
+function PANEL:UpdateFromHistory()
+	local pos = self.HistoryPos
+	-- is the Pos within bounds?
+	if pos < 0 then pos = #self.History end
+	if pos > #self.History then pos = 0 end
+
+	local text = self.History[pos]
+	text = text or ""
+
+	self:SetText(text)
+	self:OnChange()
+	self:OnValueChange(text)
+	self.HistoryPos = pos
+end
+
+function PANEL:AddHistory(text)
+	if not text or text == "" then return end
+
+	table.RemoveByValue(self.History, text)
+	table.insert(self.History, text)
 end
 
 function PANEL:GetText()
@@ -125,16 +183,20 @@ function PANEL:GetBackgroundColor()
 	return self.BackgroundColor
 end
 
+function PANEL:SetBorderColor(col)
+	self.BorderColor = col
+end
+
+function PANEL:GetBorderColor()
+	return self.BorderColor
+end
+
 function PANEL:PaintOver(w, h)
 	surface.SetDrawColor(self.BorderColor)
 	surface.DrawOutlinedRect(0, 0, w, h)
 end
 
--- /!\ TODO: Find out how to receive key codes
-function PANEL:OnKeyCodeReleased(keyCode)
-	print(keyCode)
-end
-
+function PANEL:OnTab() end
 function PANEL:OnEnter() end
 function PANEL:OnChange() end
 function PANEL:OnValueChange(value) end
@@ -157,5 +219,5 @@ local function test(class, x, y)
 	end)
 end
 
-test("TextEntryX", 200, 200)
+--test("TextEntryX", 200, 200)
 --test("DTextEntry", 200, 300)
