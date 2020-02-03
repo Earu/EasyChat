@@ -1,10 +1,12 @@
+include("easychat/client/textentryx.lua")
+
 local MAIN_TAB = {
 	Init = function(self)
 		local frame = self
 
 		self.RichText = self:Add("RichText")
 		self.BtnSwitch = self:Add("DButton")
-		self.TextEntry = self:Add("DTextEntry")
+		self.TextEntry = self:Add("TextEntryX")
 
 		self.RichText:SetVerticalScrollbarEnabled(true)
 		self.RichText.PerformLayout = function(self)
@@ -28,19 +30,13 @@ local MAIN_TAB = {
 			EasyChat.Mode = modeplus > EasyChat.ModeCount and 0 or modeplus
 		end
 
-		self.TextEntry:SetHistoryEnabled(true)
-		self.TextEntry.HistoryPos = 0
-		self.TextEntry:SetUpdateOnType(true)
 		self.TextEntry:SetZPos(10)
 
 		if not EasyChat.UseDermaSkin then
 			local black_color = Color(0, 0, 0)
-			self.TextEntry.Paint = function(self, w, h)
-				surface.SetDrawColor(color_white)
-				surface.DrawRect(0, 0, w, h)
-
-				self:DrawTextEntryText(black_color, EasyChat.OutlayColor, black_color)
-			end
+			self.TextEntry:SetBackgroundColor(color_white)
+			self.TextEntry:SetBorderColor(color_white)
+			self.TextEntry:SetTextColor(black_color)
 
 			self.BtnSwitch:SetTextColor(EasyChat.TextColor)
 			self.BtnSwitch.Paint = function(self, w, h)
