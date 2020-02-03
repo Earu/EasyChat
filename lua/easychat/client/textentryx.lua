@@ -90,18 +90,9 @@ function PANEL:Init()
 				}
 			}
 		});
-		TEXT_ENTRY.addEventListener("keyup", (ev) => {
-			if (ev.ctrlKey && ev.key === "v") {
-				let value = ev.target.value;
-				TextEntryX.OnChange(value.substring(0, value.length - 1));
-			}
-		});
+		TEXT_ENTRY.addEventListener("keyup", (ev) => TextEntryX.OnChange(ev.target.value));
 		TEXT_ENTRY.addEventListener("keydown", (ev) => {
 			switch (ev.which) {
-				case 8:
-					let value = ev.target.value;
-					TextEntryX.OnChange(value.substring(0, value.length - 1));
-					break;
 				case 9:
 					ev.preventDefault();
 					TextEntryX.OnTab();
@@ -118,9 +109,8 @@ function PANEL:Init()
 					TextEntryX.OnArrowDown();
 					return false;
 				default:
-					if (ev.key.length === 1) {
-						TextEntryX.OnChange(ev.target.value + ev.key);
-					}
+					// right now is too early
+					setTimeout(() => TextEntryX.OnChange(ev.target.value), 1);
 					break;
 			}
 		});
