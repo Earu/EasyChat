@@ -1,11 +1,11 @@
 local EasyChat = _G.EasyChat or {}
 _G.EasyChat = EasyChat
 
-local print  = _G._print or _G.print --epoe compat
+local print = _G._print or _G.print --epoe compat
 
 local NET_BROADCAST_MSG = "EASY_CHAT_BROADCAST_MSG"
-local NET_SEND_MSG      = "EASY_CHAT_RECEIVE_MSG"
-local NET_SET_TYPING    = "EASY_CHAT_START_CHAT"
+local NET_SEND_MSG = "EASY_CHAT_RECEIVE_MSG"
+local NET_SET_TYPING = "EASY_CHAT_START_CHAT"
 
 local PLY = FindMetaTable("Player")
 local TAG = "EasyChat"
@@ -41,7 +41,7 @@ if SERVER then
 
 		local filter = {}
 		local broken_count = 1
-		local add_to_filter = function(ply)
+		local function add_to_filter(ply)
 			local id = ply:AccountID()
 			if not id then
 				filter[broken_count] = ply
