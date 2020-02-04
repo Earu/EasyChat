@@ -201,10 +201,10 @@ if CLIENT then
 	local ec_convars = {}
 
 	-- after easychat var declarations [necessary]
-	include("easychat/client/chatbox_panel.lua")
-	include("easychat/client/chat_tab.lua")
-	include("easychat/client/settings_tab.lua")
-	include("easychat/client/chathud_font_editor_panel.lua")
+	include("easychat/client/vgui/chatbox_panel.lua")
+	include("easychat/client/vgui/chat_tab.lua")
+	include("easychat/client/vgui/settings_tab.lua")
+	include("easychat/client/vgui/chathud_font_editor_panel.lua")
 
 	function EasyChat.RegisterConvar(convar, desc)
 		table.insert(ec_convars, {
@@ -353,7 +353,7 @@ if CLIENT then
 		gui.OpenURL(url)
 	end
 
-	function EasyChat.AskForInput(title, callback)
+	function EasyChat.AskForInput(title, callback, can_be_empty)
 		local frame = vgui.Create("DFrame")
 		frame:SetTitle(title)
 		frame:SetSize(200,110)
@@ -372,7 +372,7 @@ if CLIENT then
 		text_entry:SetSize(180, 25)
 		text_entry:SetPos(10, 40)
 		text_entry.OnEnter = function(self)
-			if self:GetText():Trim() == "" then return end
+			if not can_be_empty and self:GetText():Trim() == "" then return end
 
 			callback(self:GetText())
 			frame:Close()
@@ -384,7 +384,7 @@ if CLIENT then
 		btn:SetSize(100, 25)
 		btn:SetPos(50, 75)
 		btn.DoClick = function()
-			if text_entry:GetText():Trim() == "" then return end
+			if not can_be_empty and text_entry:GetText():Trim() == "" then return end
 
 			callback(text_entry:GetText())
 			frame:Close()
@@ -401,6 +401,28 @@ if CLIENT then
 
 		frame:MakePopup()
 		text_entry:RequestFocus()
+	end
+
+	local BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+	function EasyChat.DecodeBase64(base64)
+		base64 = string.gsub(base64, "[^" .. BASE64 .. "=]", "")
+		return (base64:gsub(".", function(x)
+			if (x == "=") then return "" end
+			local r, f = "", (BASE64:find(x) - 1)
+			for i = 6, 1, -1 do
+				r = r .. (f % 2^i - f % 2^(i - 1) > 0 and "1" or "0")
+			end
+
+			return r
+		end):gsub("%d%d%d?%d?%d?%d?%d?%d?", function(x)
+			if (#x ~= 8) then return "" end
+			local c = 0
+			for i=1, 8 do
+				c = c + (x:sub(i, i) == "1" and 2^(8 - i) or 0)
+			end
+
+			return string.char(c)
+		end))
 	end
 
 	local ec_addtext_handles = {}
@@ -987,6 +1009,13 @@ if CLIENT then
 			end
 
 			close_chatbox()
+		end
+
+		function EasyChat.GUI.TextEntry:OnImagePaste(name, base64)
+			--EasyChat.AskForInput("Add a comment", function(text)
+			local data = EasyChat.DecodeBase64(base64)
+			EasyChat.SendGlobalMessage(("I pasted an image of len: %db"):format(#data))
+			--end, true)
 		end
 
 		function EasyChat.GUI.TextEntry:OnValueChange(text)
