@@ -266,7 +266,7 @@ local MACRO_TAB = {
 		local macro_panel = vgui.Create("EasyChatMacroPanel", self.List)
 		macro_panel:SetMacro(macro_name, macro)
 		macro_panel:Dock(TOP)
-		macro_panel:DockMargin(10, 5, 10, 0)
+		macro_panel:DockMargin(10, 0, 10, 10)
 
 		if is_new then
 			macro_panel.Title:SetText(("<%s> (unsaved)"):format(macro_name))

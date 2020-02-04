@@ -1,4 +1,4 @@
-include("easychat/client/textentryx.lua")
+include("easychat/client/vgui/textentryx.lua")
 
 local MAIN_TAB = {
 	Init = function(self)
