@@ -35,6 +35,7 @@ local math_max = _G.math.max
 local math_min = _G.math.min
 local math_floor = _G.math.floor
 local math_clamp = _G.math.Clamp
+local math_abs = _G.math.abs
 local math_EaseInOut = _G.math.EaseInOut
 
 local cam_PopModelMatrix = _G.cam.PopModelMatrix
@@ -502,10 +503,10 @@ function text_part:ComputePos()
     if self.RealPos.Y ~= self.Pos.Y then
         if self.RealPos.Y > self.Pos.Y then
             local factor = math_EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
-            self.RealPos.Y = math_max(self.RealPos.Y - factor, self.Pos.Y)
+            self.RealPos.Y = math_max(self.RealPos.Y - math_max(math_abs(factor), 0.15), self.Pos.Y)
         else
             local factor = math_EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
-            self.RealPos.Y = math_min(self.RealPos.Y + factor, self.Pos.Y)
+            self.RealPos.Y = math_min(self.RealPos.Y + math_max(math_abs(factor), 0.15), self.Pos.Y)
         end
     end
 end
@@ -748,10 +749,10 @@ function emote_part:ComputePos()
     if self.RealPos.Y ~= self.Pos.Y then
         if self.RealPos.Y > self.Pos.Y then
             local factor = math_EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
-            self.RealPos.Y = math_max(self.RealPos.Y - factor, self.Pos.Y)
+            self.RealPos.Y = math_max(self.RealPos.Y - math_max(math_abs(factor), 0.15), self.Pos.Y)
         else
             local factor = math_EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
-            self.RealPos.Y = math_min(self.RealPos.Y + factor, self.Pos.Y)
+            self.RealPos.Y = math_min(self.RealPos.Y + math_max(math_abs(factor), 0.15), self.Pos.Y)
         end
     end
 end
