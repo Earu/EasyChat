@@ -1,3 +1,5 @@
+if SERVER then return end
+
 local OLD_PATH = "easychat"
 local NEW_PATH = "easychat/history"
 
