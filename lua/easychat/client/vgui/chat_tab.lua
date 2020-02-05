@@ -2,8 +2,6 @@ include("easychat/client/vgui/textentryx.lua")
 
 local MAIN_TAB = {
 	Init = function(self)
-		local frame = self
-
 		self.RichText = self:Add("RichText")
 		self.BtnSwitch = self:Add("DButton")
 		self.TextEntry = self:Add("TextEntryX")
@@ -17,7 +15,6 @@ local MAIN_TAB = {
 		self.BtnSwitch:SetText("Say")
 		self.BtnSwitch:SetFont("EasyChatFont")
 		self.BtnSwitch:SetSize(65, 20)
-		self.BtnSwitch:SetZPos(10)
 		self.BtnSwitch.Think = function(self)
 			if EasyChat.Mode == 0 then
 				self:SetText("Say")
@@ -29,8 +26,6 @@ local MAIN_TAB = {
 			local modeplus = EasyChat.Mode + 1
 			EasyChat.Mode = modeplus > EasyChat.ModeCount and 0 or modeplus
 		end
-
-		self.TextEntry:SetZPos(10)
 
 		if not EasyChat.UseDermaSkin then
 			local black_color = Color(0, 0, 0)

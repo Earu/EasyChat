@@ -1,6 +1,7 @@
 local CHATBOX = {
 	Init = function(self)
 		local frame = self
+
 		self:ShowCloseButton(true)
 		self:SetDraggable(true)
 		self:SetSizable(true)
@@ -56,21 +57,42 @@ local CHATBOX = {
 		self.Tabs.old_performlayout = self.Tabs.PerformLayout
 		self.Tabs.PerformLayout = function(self)
 			self.old_performlayout(self)
-			frame.Scroller:SetTall(20)
+			frame.Scroller:SetTall(22)
 		end
 
-		self.Tabs.Think = function(self)
-			local current = self:GetActiveTab()
-			if current ~= frame.OldTab then
-				hook.Run("ECTabChanged", frame.OldTab.Name, current.Name)
-				frame.OldTab = current
+		self.Scroller.m_iOverlap = -2
+		self.Scroller:SetDragParent(self)
+
+		function self.Scroller:OnMousePressed()
+			if self:IsHovered() then
+				self.Dragging = { gui.MouseX() - frame.x, gui.MouseY() - frame.y }
+				self:MouseCapture(true)
 			end
 		end
 
-		self.Scroller:SetParent(self.Tabs)
-		self.Scroller:Dock(TOP)
-		self.Scroller:SetSize(0, 20)
-		self.Scroller.m_iOverlap = -2
+		function self.Scroller:OnMouseReleased()
+			self.Dragging = nil
+			self:MouseCapture(false)
+		end
+
+		function self.Scroller:Think()
+			local mouse_x = math.Clamp(gui.MouseX(), 1, ScrW() - 1)
+			local mouse_y = math.Clamp(gui.MouseY(), 1, ScrH() - 1)
+
+			if self.Dragging then
+				local x = mouse_x - self.Dragging[1]
+				local y = mouse_y - self.Dragging[2]
+
+				if frame:GetScreenLock() then
+					x = math.Clamp(x, 0, ScrW() - self:GetWide())
+					y = math.Clamp(y, 0, ScrH() - self:GetTall())
+				end
+
+				frame:SetPos(x, y)
+			end
+
+			self:SetCursor(self:IsHovered() and "sizeall" or "arrow")
+		end
 
 		if not EasyChat.UseDermaSkin then
 			self.Paint = function(self, w, h)
