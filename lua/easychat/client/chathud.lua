@@ -790,6 +790,144 @@ chathud:RegisterPart("emote", emote_part, "%:([A-Za-z0-9_]+)%:", {
 })
 
 --[[-----------------------------------------------------------------------------
+	Image URL Component
+
+	Displays images from urls.
+]]-------------------------------------------------------------------------------
+local image_part = {
+	Usable = false,
+	OkInNicks = false,
+	ImgWidth = 100,
+	ImgHeight = 100,
+	Material = nil,
+}
+
+local img_cache_directory = "easychat/img_cache"
+local image_types = {
+	["image/jpeg"] = "jpg",
+	["image/jpg"] = "jpg",
+	["image/png"] = "png"
+}
+function image_part:Ctor(url)
+	print("got " .. url)
+
+	local succ, file_path = self:TryGetCached(url)
+	if not succ then
+		http.Fetch(url, function(body, len, headers)
+			local content_type = headers["Content-Type"]
+			local ext = image_types[content_type]
+			if not ext then return end
+			--if len >= 80000000 then return end -- too big
+
+			if not file.Exists(img_cache_directory, "DATA") then
+				file.CreateDir(img_cache_directory)
+			end
+
+			local hash = util.CRC(url)
+			file_path = ("%s/%s.%s"):format(img_cache_directory, hash, ext)
+			file.Write(file_path, body)
+			self:SetImage(file_path)
+			self.HUD:InvalidateLayout()
+		end)
+	else
+		self:SetImage(file_path)
+	end
+
+	return self
+end
+
+function image_part:SetImage(file_path)
+	local f = file.Open(file_path, "r", "DATA")
+	if not f then return end
+	local ext = file_path:GetExtensionFromFilename()
+	if ext == "png" then
+		f:Seek(16)
+		self.ImgWidth = f:ReadULong()
+		self.ImgHeight = f:ReadULong()
+	else
+		f:Seek(163)
+		local data = f:Read(2)
+		self.ImgHeight = bit.lshift(tonumber(data[1]), 8) + tonumber(data[2])
+		data = f:Read(2)
+		self.ImgWidth = bit.lshift(tonumber(data[1]), 8) + tonumber(data[2])
+	end
+
+	f:Close()
+
+	print(self.ImgWidth, self.ImgHeight)
+	local perc = self.ImgWidth / self.HUD.Size.W
+	if perc > 1 then -- rescale if larger than chathud size
+		self.ImgWidth = self.ImgWidth / perc
+		self.ImgHeight = self.ImgHeight / perc
+	end
+
+	self.Material = Material(("../data/%s"):format(file_path), "noclamp smooth")
+	self:ComputeSize()
+end
+
+function image_part:ComputeSize()
+	self.Size = { W = self.ImgWidth, H = self.ImgHeight }
+end
+
+local valid_image_extensions = { "jpg", "png" }
+function image_part:TryGetCached(url)
+	local hash = util.CRC(url)
+	local file_path = ("%s/%s."):format(img_cache_directory, hash)
+	for _, ext in ipairs(valid_image_extensions) do
+		local complete_path = file_path .. ext
+		if file.Exists(complete_path, "DATA") then
+			return true, complete_path
+		end
+	end
+
+	return false
+end
+
+function image_part:LineBreak()
+	local new_line = self.HUD:NewLine()
+	new_line:PushComponent(self)
+end
+
+function image_part:GetDrawPos()
+	return self.Pos.X, self.RealPos.Y
+end
+
+function image_part:PostLinePush()
+    self.RealPos = table_copy(self.Pos)
+end
+
+function image_part:ComputePos()
+	if not EC_HUD_SMOOTH:GetBool() then
+		self.RealPos.Y = self.Pos.Y
+		return
+	end
+
+    if self.RealPos.Y ~= self.Pos.Y then
+        if self.RealPos.Y > self.Pos.Y then
+            local factor = math_EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
+            self.RealPos.Y = math_max(self.RealPos.Y - math_max(math_abs(factor), 0.15), self.Pos.Y)
+        else
+            local factor = math_EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
+            self.RealPos.Y = math_min(self.RealPos.Y + math_max(math_abs(factor), 0.15), self.Pos.Y)
+        end
+    end
+end
+
+function image_part:Draw(ctx)
+	if not self.Material then return end
+
+	self:ComputePos()
+	local x, y = self:GetDrawPos()
+
+	surface_SetMaterial(self.Material)
+	surface_SetDrawColor(ctx.Color)
+	surface_DrawTexturedRect(x, y, self.ImgWidth, self.ImgHeight)
+	draw_NoTexture()
+end
+
+chathud:RegisterPart("image", image_part)
+
+--[[-----------------------------------------------------------------------------
 	ChatHUD layouting
 ]]-------------------------------------------------------------------------------
 local base_line = {
@@ -1086,7 +1224,7 @@ function chathud:Draw()
 		-- mitigation for very slow rendering
 		if not self.DrawContext.ShouldDraw then
 			self:Clear()
-			print("[EasyChat]: /!\\Laggy chathud, emergency clear/!\\")
+			EasyChat.Print("/!\\Laggy chathud, emergency clear/!\\")
 			self.DrawContext.ShouldDraw = true
 			break
 		end
@@ -1113,6 +1251,10 @@ end
 
 function chathud:AppendNick(nick)
 	self:PushString(nick, true)
+end
+
+function chathud:AppendImageURL(url)
+	self:PushPartComponent("image", url)
 end
 
 function chathud:InsertColorChange(r, g, b)
