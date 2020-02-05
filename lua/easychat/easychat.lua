@@ -10,6 +10,16 @@ local NET_SET_TYPING = "EASY_CHAT_START_CHAT"
 local PLY = FindMetaTable("Player")
 local TAG = "EasyChat"
 
+local color_print_head = Color(244, 167, 66)
+local color_print_good = Color(0, 160, 220)
+local color_print_bad = Color(255, 127, 127)
+function EasyChat.Print(is_err, ...)
+	local body_color = is_err and color_print_bad or color_print_good
+	local args = { ... }
+	for k, v in ipairs(args) do args[k] = tostring(v) end
+	MsgC(color_print_head, "[EasyChat] ⮞ ", body_color, table.concat(args), "\n")
+end
+
 local load_modules, get_modules = include("easychat/autoloader.lua")
 EasyChat.GetModules = get_modules -- maybe useful for modules?
 
@@ -423,6 +433,66 @@ if CLIENT then
 
 			return string.char(c)
 		end))
+	end
+
+	local function on_imgur_failure(err)
+		EasyChat.Print(true, ("imgur upload failed: %s"):format(tostring(err)))
+	end
+
+	local function on_imgur_success(code, body, headers)
+		if code ~= 200 then
+			on_imgur_failure(("error code: %d"):format(code))
+			return
+		end
+
+		local decoded_body = util.JSONToTable(body)
+		if not decoded_body then
+			on_imgur_failure("could not json decode body")
+			return
+		end
+
+		if not decoded_body.success then
+			on_imgur_failure(("%s: %s"):format(
+				decoded_body.status or "unknown status?",
+				decoded_body.data and decoded_body.data.error or "unknown error"
+			))
+			return
+		end
+
+		local url = decoded_body.data and decoded_body.data.link
+		if not url then
+			on_imgur_failure("success but link wasn't found?")
+			return
+		end
+
+		EasyChat.Print(false, ("imgur uploaded: %s"):format(tostring(url)))
+		return url
+	end
+
+	function EasyChat.UploadToImgur(img_base64, callback)
+		local ply_nick, ply_steamid = LocalPlayer():Nick(), LocalPlayer():SteamID()
+		local params = {
+			image = img_base64,
+			type = "base64",
+			name = tostring(os.time()),
+			title = ("%s - %s"):format(ply_nick, ply_steamid),
+			description = ("%s (%s) on %s"):format(ply_nick, ply_steamid, os.date("%d/%m/%Y at %H:%M")),
+		}
+
+		local headers = {}
+		headers["Authorization"] = "Client-ID 62f1e31985e240b"
+
+		local http_data = {
+			failed = function(...) on_imgur_failure(...) on_finished(nil) end,
+			success = function(...) local url = on_imgur_success(...) callback(url) end,
+			method = "post",
+			url = "https://api.imgur.com/3/image.json",
+			parameters = params,
+			headers = headers,
+		}
+
+		HTTP(http_data)
+		EasyChat.Print(false, ("sent picture (%s) to imgur"):format(string.NiceSize(#img_base64)))
 	end
 
 	local ec_addtext_handles = {}
@@ -1011,7 +1081,27 @@ if CLIENT then
 			close_chatbox()
 		end
 
+		local UPLOADING_TEXT = "[uploading image...]"
 		function EasyChat.GUI.TextEntry:OnImagePaste(name, base64)
+			self:SetText(self:GetText() .. UPLOADING_TEXT)
+			EasyChat.UploadToImgur(base64, function(url)
+				if not url then
+					local cur_text = self:GetText():Trim()
+					if cur_text:match(UPLOADING_TEXT) then
+						self:SetText(cur_text:Replace(UPLOADING_TEXT, ""))
+					end
+
+					notification.AddLegacy("Image upload failed, check your console", NOTIFY_ERROR, 3)
+					surface.PlaySound("buttons/button11.wav")
+				else
+					local cur_text = self:GetText():Trim()
+					if cur_text:match(UPLOADING_TEXT) then
+						self:SetText(cur_text:Replace(UPLOADING_TEXT, url))
+					else
+						self:SetText(("%s %s"):format(cur_text, url):Trim())
+					end
+				end
+			end)
 		end
 
 		function EasyChat.GUI.TextEntry:OnValueChange(text)
