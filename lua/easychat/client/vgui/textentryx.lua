@@ -156,6 +156,8 @@ end
 PANEL.GetValue = PANEL.GetText
 
 function PANEL:SetText(text)
+	text = text or ""
+
 	self.CurrentValue = text
 	local js = ([[TEXT_ENTRY.value = `%s`;]]):format(text:JavascriptSafe())
 	self:QueueJavascript(js)
