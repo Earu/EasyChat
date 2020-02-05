@@ -253,7 +253,7 @@ if CLIENT then
 		EasyChat.Mode = is_team and 1 or 0
 
 		if EC_GLOBAL_ON_OPEN:GetBool() then
-			EasyChat.GUI.TabControl:SetActiveTab(EasyChat.GUI.TabControl.Items[1].Tab)
+			EasyChat.OpenTab("Global")
 			EasyChat.GUI.TextEntry:RequestFocus()
 			timer.Simple(0, function()
 				EasyChat.GUI.RichText:GotoTextEnd()
@@ -846,8 +846,8 @@ if CLIENT then
 			chatbox_frame:SetPos(cx, cy)
 			chatbox_frame.BtnClose.DoClick = close_chatbox
 
-			chatbox_frame.Tabs.OnActiveTabChanged = function(oldtab, newtab)
-				hook.Run("ECTabChanged", oldtab.Name, newtab.Name)
+			function chatbox_frame.Tabs:OnActiveTabChanged(old_tab, new_tab)
+				hook.Run("ECTabChanged", old_tab.Name, new_tab.Name)
 			end
 
 			function EasyChat.AddTab(name, panel)
@@ -897,6 +897,10 @@ if CLIENT then
 						end
 					end
 				end
+			end
+
+			function EasyChat.OpenTab(name)
+				chatbox_frame.Tabs:SwitchToName(name)
 			end
 
 			function EasyChat.GetTab(name)
@@ -1082,25 +1086,32 @@ if CLIENT then
 		end
 
 		local UPLOADING_TEXT = "[uploading image...]"
+		local uploading = false
 		function EasyChat.GUI.TextEntry:OnImagePaste(name, base64)
-			self:SetText(self:GetText() .. UPLOADING_TEXT)
-			EasyChat.UploadToImgur(base64, function(url)
-				if not url then
-					local cur_text = self:GetText():Trim()
-					if cur_text:match(UPLOADING_TEXT) then
-						self:SetText(cur_text:Replace(UPLOADING_TEXT, ""))
-					end
+			if uploading then return end
 
-					notification.AddLegacy("Image upload failed, check your console", NOTIFY_ERROR, 3)
-					surface.PlaySound("buttons/button11.wav")
-				else
-					local cur_text = self:GetText():Trim()
-					if cur_text:match(UPLOADING_TEXT) then
-						self:SetText(cur_text:Replace(UPLOADING_TEXT, url))
+			self:SetText(self:GetText() .. UPLOADING_TEXT)
+			uploading = true
+
+			EasyChat.UploadToImgur(base64, function(url)
+				if EasyChat.IsOpened() and EasyChat.GetActiveTab().Tab.Name == "Global" then
+					if not url then
+						local cur_text = self:GetText():Trim()
+						if cur_text:match(UPLOADING_TEXT) then
+							self:SetText(cur_text:Replace(UPLOADING_TEXT, ""))
+						end
+
+						notification.AddLegacy("Image upload failed, check your console", NOTIFY_ERROR, 3)
+						surface.PlaySound("buttons/button11.wav")
 					else
-						self:SetText(("%s %s"):format(cur_text, url):Trim())
+						local cur_text = self:GetText():Trim()
+						if cur_text:match(UPLOADING_TEXT) then
+							self:SetText(cur_text:Replace(UPLOADING_TEXT, url))
+						end
 					end
 				end
+
+				uploading = false
 			end)
 		end
 
