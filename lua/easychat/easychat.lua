@@ -1012,10 +1012,6 @@ if CLIENT then
 		end
 
 		function EasyChat.GUI.TextEntry:OnImagePaste(name, base64)
-			--EasyChat.AskForInput("Add a comment", function(text)
-			local data = EasyChat.DecodeBase64(base64)
-			EasyChat.SendGlobalMessage(("I pasted an image of len: %db"):format(#data))
-			--end, true)
 		end
 
 		function EasyChat.GUI.TextEntry:OnValueChange(text)
