@@ -9,7 +9,7 @@ local MAIN_TAB = {
 			self.TextEntry = self:Add("TextEntryX")
 		else
 			self.TextEntry = self:Add("DTextEntry")
-			self.OnTab = function() end
+			self.TextEntry.OnTab = function() end
 			self.TextEntry.OnKeyCodeTyped = function(self, key_code)
 				if key_code == KEY_TAB then
 					self:OnTab()
