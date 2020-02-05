@@ -20,17 +20,11 @@ local CHATBOX = {
 
 		self.BtnClose:SetSize(45, 18)
 		self.BtnClose:SetZPos(10)
-		if not EasyChat.UseDermaSkin then
-			self.BtnClose:SetTextColor(Color(200, 20, 20))
-		end
 		self.BtnClose:SetFont("DermaDefaultBold")
 		self.BtnClose:SetText("X")
 
 		self.BtnMaxim:SetSize(35, 23)
 		self.BtnMaxim:SetZPos(10)
-		if not EasyChat.UseDermaSkin then
-			self.BtnMaxim:SetTextColor(Color(125, 125, 125))
-		end
 		self.BtnMaxim:SetFont("DermaLarge")
 		self.BtnMaxim:SetText("▭")
 		self.BtnMaxim.IsFullScreen = false
@@ -62,20 +56,19 @@ local CHATBOX = {
 
 		self.Scroller.m_iOverlap = -2
 		self.Scroller:SetDragParent(self)
-
-		function self.Scroller:OnMousePressed()
+		self.Scroller.OnMousePressed = function(self)
 			if self:IsHovered() then
 				self.Dragging = { gui.MouseX() - frame.x, gui.MouseY() - frame.y }
 				self:MouseCapture(true)
 			end
 		end
 
-		function self.Scroller:OnMouseReleased()
+		self.Scroller.OnMouseReleased = function(self)
 			self.Dragging = nil
 			self:MouseCapture(false)
 		end
 
-		function self.Scroller:Think()
+		self.Scroller.Think = function(self)
 			local mouse_x = math.Clamp(gui.MouseX(), 1, ScrW() - 1)
 			local mouse_y = math.Clamp(gui.MouseY(), 1, ScrH() - 1)
 
@@ -95,6 +88,9 @@ local CHATBOX = {
 		end
 
 		if not EasyChat.UseDermaSkin then
+			self.BtnClose:SetTextColor(Color(200, 20, 20))
+			self.BtnMaxim:SetTextColor(Color(125, 125, 125))
+
 			self.Paint = function(self, w, h)
 				surface.SetDrawColor(EasyChat.OutlayColor)
 				surface.DrawRect(6, 0, w - 13, h - 5)
