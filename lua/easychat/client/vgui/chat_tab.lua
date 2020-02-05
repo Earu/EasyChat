@@ -1,10 +1,23 @@
 include("easychat/client/vgui/textentryx.lua")
 
+local HAS_CHROMIUM = BRANCH ~= "dev" and BRANCH ~= "unknown"
 local MAIN_TAB = {
 	Init = function(self)
 		self.RichText = self:Add("RichText")
 		self.BtnSwitch = self:Add("DButton")
-		self.TextEntry = self:Add("TextEntryX")
+		if HAS_CHROMIUM then
+			self.TextEntry = self:Add("TextEntryX")
+		else
+			self.TextEntry = self:Add("DTextEntry")
+			self.OnTab = function() end
+			self.TextEntry.OnKeyCodeTyped = function(self, key_code)
+				if key_code == KEY_TAB then
+					self:OnTab()
+				elseif key_code == KEY_ENTER or key_code == KEY_PAD_ENTER then
+					self:OnEnter()
+				end
+			end
+		end
 
 		self.RichText:SetVerticalScrollbarEnabled(true)
 		self.RichText.PerformLayout = function(self)
@@ -29,9 +42,18 @@ local MAIN_TAB = {
 
 		if not EasyChat.UseDermaSkin then
 			local black_color = Color(0, 0, 0)
-			self.TextEntry:SetBackgroundColor(color_white)
-			self.TextEntry:SetBorderColor(color_white)
-			self.TextEntry:SetTextColor(black_color)
+			if HAS_CHROMIUM then
+				self.TextEntry:SetBackgroundColor(color_white)
+				self.TextEntry:SetBorderColor(color_white)
+				self.TextEntry:SetTextColor(black_color)
+			else
+				self.TextEntry.Paint = function(self, w, h)
+					surface.SetDrawColor(color_white)
+					surface.DrawRect(0, 0, w, h)
+
+					self:DrawTextEntryText(black_color, EasyChat.OutlayColor, black_color)
+				end
+			end
 
 			self.BtnSwitch:SetTextColor(EasyChat.TextColor)
 			self.BtnSwitch.Paint = function(self, w, h)
