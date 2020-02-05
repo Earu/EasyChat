@@ -78,14 +78,14 @@ function PANEL:Init()
 
 			for (let item of items) {
 				if (item.type.match("^image/")) {
-					let blob = item.getAsFile();
+					let file = item.getAsFile();
 					let reader = new FileReader();
 					reader.onload = () => {
-						let b64 = reader.result.replace(/^data:.+;base64,/, "");
-						TextEntryX.OnImagePaste(blob.name, b64);
+						let b64 = btoa(reader.result);
+						TextEntryX.OnImagePaste(file.name, b64);
 					};
 
-					reader.readAsDataURL(blob);
+					reader.readAsBinaryString(file);
 					break;
 				}
 			}
