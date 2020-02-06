@@ -132,6 +132,7 @@ if CLIENT then
 				end
 			end
 			self.RichText:Dock(FILL)
+			self.RichText:DockMargin(0, 0, 0, 5)
 
 			local lastkey = KEY_ENTER
 			self.TextEntry.OnKeyCodeTyped = function(self, code)
@@ -142,9 +143,9 @@ if CLIENT then
 					chat.Close()
 					gui.HideGameUI()
 				elseif code == KEY_ENTER or code == KEY_PAD_ENTER then
-					self:SetText(string.Replace(self:GetText(), "╚​", ""))
-					if string.Trim(self:GetText()) ~= "" then
-						frame:SendMessage(string.sub(self:GetText(), 1, 3000))
+					self:SetText(self:GetText():Replace("╚​", ""))
+					if self:GetText():Trim() ~= "" then
+						frame:SendMessage(self:GetText():sub(1, 3000))
 					end
 				end
 
@@ -153,7 +154,7 @@ if CLIENT then
 
 			if EC_HISTORY:GetBool() then
 				local history = EasyChat.ReadFromHistory("admin")
-				if string.Trim(history) == "" then
+				if history:Trim() == "" then
 					EasyChat.AddText(self.RichText, "Welcome to the admin chat!")
 				else
 					self.RichText:AppendText(history) -- so we do not log twice
