@@ -19,7 +19,6 @@ local MAIN_TAB = {
 			end
 		end
 
-		self.RichText:SetVerticalScrollbarEnabled(true)
 		self.RichText.PerformLayout = function(self)
 			self:SetFontInternal("EasyChatFont")
 			self:SetFGColor(EasyChat.UseDermaSkin and EasyChat.TextColor or Color(0, 0, 0, 255))
@@ -71,7 +70,7 @@ local MAIN_TAB = {
 		end
 	end,
 	PerformLayout = function(self, w, h)
-		self.RichText:SetSize(w, h - 20)
+		self.RichText:SetSize(w, h - 25)
 		self.BtnSwitch:SetPos(0, h - self.BtnSwitch:GetTall())
 		self.TextEntry:SetSize(w - self.BtnSwitch:GetWide(), 20)
 		self.TextEntry:SetPos(self.BtnSwitch:GetWide(), h - 20)

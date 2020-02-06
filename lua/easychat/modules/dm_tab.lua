@@ -137,6 +137,7 @@ if CLIENT then
 				end
 			end
 			richtext:Dock(FILL)
+			richtext:DockMargin(0, 0, 0, 5)
 			richtext:Hide()
 
 			local chat = {
