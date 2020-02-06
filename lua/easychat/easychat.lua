@@ -118,6 +118,7 @@ if CLIENT then
 	local MAX_CHARS = 3000
 	local NO_COLOR = Color(0, 0, 0, 0)
 	local JSON_COLS = file.Read("easychat/colors.txt", "DATA")
+	local UPLOADING_TEXT = "[uploading image...]"
 
 	local EC_GLOBAL_ON_OPEN = CreateConVar("easychat_global_on_open", "1", FCVAR_ARCHIVE, "Set the chat to always open global chat tab on open")
 	local EC_FONT           = CreateConVar("easychat_font", "Roboto", FCVAR_ARCHIVE, "Set the font to use for the chat")
@@ -209,6 +210,7 @@ if CLIENT then
 
 	local ec_tabs = {}
 	local ec_convars = {}
+	local uploading = false
 
 	-- after easychat var declarations [necessary]
 	include("easychat/client/vgui/chatbox_panel.lua")
@@ -518,6 +520,7 @@ if CLIENT then
 
 		ec_convars = {}
 		ec_addtext_handles = {}
+		uploading = false
 
 		EasyChat.RegisterConvar(EC_GLOBAL_ON_OPEN, "Open chatbox in global tab")
 		EasyChat.RegisterConvar(EC_HISTORY, "Enable history")
@@ -1085,8 +1088,6 @@ if CLIENT then
 			close_chatbox()
 		end
 
-		local UPLOADING_TEXT = "[uploading image...]"
-		local uploading = false
 		function EasyChat.GUI.TextEntry:OnImagePaste(name, base64)
 			if uploading then return end
 
@@ -1094,20 +1095,18 @@ if CLIENT then
 			uploading = true
 
 			EasyChat.UploadToImgur(base64, function(url)
-				if EasyChat.IsOpened() and EasyChat.GetActiveTab().Tab.Name == "Global" then
-					if not url then
-						local cur_text = self:GetText():Trim()
-						if cur_text:match(UPLOADING_TEXT) then
-							self:SetText(cur_text:Replace(UPLOADING_TEXT, ""))
-						end
+				if not url then
+					local cur_text = self:GetText():Trim()
+					if cur_text:match(UPLOADING_TEXT) then
+						self:SetText(cur_text:Replace(UPLOADING_TEXT, ""))
+					end
 
-						notification.AddLegacy("Image upload failed, check your console", NOTIFY_ERROR, 3)
-						surface.PlaySound("buttons/button11.wav")
-					else
-						local cur_text = self:GetText():Trim()
-						if cur_text:match(UPLOADING_TEXT) then
-							self:SetText(cur_text:Replace(UPLOADING_TEXT, url))
-						end
+					notification.AddLegacy("Image upload failed, check your console", NOTIFY_ERROR, 3)
+					surface.PlaySound("buttons/button11.wav")
+				else
+					local cur_text = self:GetText():Trim()
+					if cur_text:match(UPLOADING_TEXT) then
+						self:SetText(cur_text:Replace(UPLOADING_TEXT, url))
 					end
 				end
 
@@ -1211,7 +1210,6 @@ if CLIENT then
 		hook.Add("PreRender", TAG, function()
 			if EasyChat.IsOpened() then
 				if input.IsKeyDown(KEY_ESCAPE) then
-					EasyChat.GUI.TextEntry:SetText("")
 					close_chatbox()
 					gui.HideGameUI()
 				end
