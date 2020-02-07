@@ -797,8 +797,8 @@ chathud:RegisterPart("emote", emote_part, "%:([A-Za-z0-9_]+)%:", {
 local image_part = {
 	Usable = false,
 	OkInNicks = false,
-	ImgWidth = 100,
-	ImgHeight = 100,
+	ImgWidth = 0,
+	ImgHeight = 0,
 	Material = nil,
 }
 
@@ -808,27 +808,38 @@ local image_types = {
 	["image/jpg"] = "jpg",
 	["image/png"] = "png"
 }
-function image_part:Ctor(url)
-	print("got " .. url)
 
+function image_part:Ctor(url)
 	local succ, file_path = self:TryGetCached(url)
 	if not succ then
-		http.Fetch(url, function(body, len, headers)
-			local content_type = headers["Content-Type"]
-			local ext = image_types[content_type]
-			if not ext then return end
-			--if len >= 80000000 then return end -- too big
+		HTTP({
+			url = url,
+			method = "GET",
+			failed = print,
+			success = function(code, body, headers)
+				if code ~= 200 then return end
+				local content_type = headers["Content-Type"]
+				local ext = image_types[content_type]
+				if not ext then return end
 
-			if not file.Exists(img_cache_directory, "DATA") then
-				file.CreateDir(img_cache_directory)
-			end
+				if not file.Exists(img_cache_directory, "DATA") then
+					file.CreateDir(img_cache_directory)
+				end
 
-			local hash = util.CRC(url)
-			file_path = ("%s/%s.%s"):format(img_cache_directory, hash, ext)
-			file.Write(file_path, body)
-			self:SetImage(file_path)
-			self.HUD:InvalidateLayout()
-		end)
+				local hash = util.CRC(url)
+				file_path = ("%s/%s.%s"):format(img_cache_directory, hash, ext)
+				file.Write(file_path, body)
+				self:SetImage(file_path)
+				self.HUD:InvalidateLayout()
+			end,
+			headers = {
+				["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36 Edge/18.18362",
+				["Accept"]= "text/html, application/xhtml+xml, application/xml; q=0.9, */*; q=0.8",
+				["Cookie"] = ("__cfduid=%s"):format(self:FakeUID()), -- cloudflare
+				["DNT"] = "1",
+				["Cache-Control"] = "no-cache",
+			},
+		})
 	else
 		self:SetImage(file_path)
 	end
@@ -836,32 +847,30 @@ function image_part:Ctor(url)
 	return self
 end
 
-function image_part:SetImage(file_path)
-	local f = file.Open(file_path, "r", "DATA")
-	if not f then return end
-	local ext = file_path:GetExtensionFromFilename()
-	if ext == "png" then
-		f:Seek(16)
-		self.ImgWidth = f:ReadULong()
-		self.ImgHeight = f:ReadULong()
-	else
-		f:Seek(163)
-		local data = f:Read(2)
-		self.ImgHeight = bit.lshift(tonumber(data[1]), 8) + tonumber(data[2])
-		data = f:Read(2)
-		self.ImgWidth = bit.lshift(tonumber(data[1]), 8) + tonumber(data[2])
+local uid_base = "abcdef0123456789"
+function image_part:FakeUID()
+	local uid = ""
+	for _ = 1,43 do
+		uid = uid .. uid_base[math.random(#uid_base)]
 	end
 
-	f:Close()
+	print(uid, uid:len())
 
-	print(self.ImgWidth, self.ImgHeight)
-	local perc = self.ImgWidth / self.HUD.Size.W
-	if perc > 1 then -- rescale if larger than chathud size
+	return uid
+end
+
+function image_part:SetImage(file_path)
+	local mat = Material(("../data/%s"):format(file_path), "noclamp mips")
+	self.ImgWidth = mat:Width()
+	self.ImgHeight = mat:Height()
+
+	local perc = self.ImgWidth / 400
+	if perc > 1 then -- rescale
 		self.ImgWidth = self.ImgWidth / perc
 		self.ImgHeight = self.ImgHeight / perc
 	end
 
-	self.Material = Material(("../data/%s"):format(file_path), "noclamp smooth")
+	self.Material = mat
 	self:ComputeSize()
 end
 
