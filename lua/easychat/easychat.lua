@@ -591,6 +591,28 @@ if CLIENT then
 			append_text(EasyChat.GUI.RichText, text)
 		end
 
+		local image_url_patterns = {
+			"^https://steamuserimages-a.akamaihd.net/ugc/%d+/%d+/",
+			"^https://pbs.twimg.com/media/",
+		}
+		local function is_image_url(url)
+			-- we're blocked from discord apparently so
+			--if url:match("^https://cdn.discordapp.com/attachments/") then
+			--	return false
+			--end
+
+			local simple_url = url:gsub("%?[^/]+", "") -- remove url args
+			if simple_url:match(".png$") or simple_url:match(".jpg$") then
+				return true
+			end
+
+			for _, pattern in ipairs(image_url_patterns) do
+				if url:match(pattern) then return true end
+			end
+
+			return false
+		end
+
 		local function global_append_text_url(text)
 			local start_pos, end_pos = EasyChat.IsURL(text)
 			if not start_pos then
@@ -598,9 +620,17 @@ if CLIENT then
 			else
 				local url = text:sub(start_pos, end_pos)
 				global_append_text(text:sub(1, start_pos - 1))
-				EasyChat.GUI.RichText:InsertClickableTextStart(url)
-				global_append_text(url)
-				EasyChat.GUI.RichText:InsertClickableTextEnd()
+
+				if is_image_url(url) then
+					EasyChat.ChatHUD:AppendImageURL(url)
+					EasyChat.GUI.RichText:InsertClickableTextStart(url)
+					append_text(EasyChat.GUI.RichText, url)
+					EasyChat.GUI.RichText:InsertClickableTextEnd()
+				else
+					EasyChat.GUI.RichText:InsertClickableTextStart(url)
+					global_append_text(url)
+					EasyChat.GUI.RichText:InsertClickableTextEnd()
+				end
 
 				-- recurse for possible other urls after this one
 				global_append_text_url(text:sub(end_pos + 1))
