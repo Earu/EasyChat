@@ -193,7 +193,7 @@ if CLIENT then
 		if not IsValid(sender) then return end
 
 		EasyChat.AddText(admintab.RichText, team.GetColor(sender:Team()), sender, color_white, ": " .. msg)
-		if not EasyChat.IsOpened() then
+		if not IsValid(EasyChat.GUI.ChatBox) then -- maybe this fix gmod crashes??
 			admintab:Notify(sender, msg)
 		else
 			local activetabname = EasyChat.GetActiveTab().Tab.Name
