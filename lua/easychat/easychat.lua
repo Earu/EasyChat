@@ -592,18 +592,17 @@ if CLIENT then
 		end
 
 		local image_url_patterns = {
-			"^https://steamuserimages-a.akamaihd.net/ugc/%d+/%d+/",
-			"^https://pbs.twimg.com/media/",
+			"^https?://steamuserimages%-a%.akamaihd%.net/ugc/[0-9]+/[A-Z0-9]+/",
+			"^https?://pbs%.twimg%.com/media/",
+		}
+		local image_url_exts = {
+			"png", "jpg", "gif", "gifv", "webp"
 		}
 		local function is_image_url(url)
-			-- we're blocked from discord apparently so
-			--if url:match("^https://cdn.discordapp.com/attachments/") then
-			--	return false
-			--end
-
 			local simple_url = url:gsub("%?[^/]+", "") -- remove url args
-			if simple_url:match(".png$") or simple_url:match(".jpg$") then
-				return true
+			for _, url_ext in ipairs(image_url_exts) do
+				local pattern = (".%s$"):format(url_ext)
+				if simple_url:match(pattern) then return true end
 			end
 
 			for _, pattern in ipairs(image_url_patterns) do
