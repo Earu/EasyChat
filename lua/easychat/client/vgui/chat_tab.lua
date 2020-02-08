@@ -10,12 +10,19 @@ local MAIN_TAB = {
 		else
 			self.TextEntry = self:Add("DTextEntry")
 			self.TextEntry.OnTab = function() end
+
+			local last_key = KEY_ENTER
 			self.TextEntry.OnKeyCodeTyped = function(self, key_code)
+				EasyChat.SetupHistory(self, key_code)
+				EasyChat.UseRegisteredShortcuts(self, last_key, code)
+
 				if key_code == KEY_TAB then
 					self:OnTab()
 				elseif key_code == KEY_ENTER or key_code == KEY_PAD_ENTER then
 					self:OnEnter()
 				end
+
+				last_key = key_code
 			end
 		end
 
