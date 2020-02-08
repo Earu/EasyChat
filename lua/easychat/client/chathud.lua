@@ -277,6 +277,8 @@ function default_part:ComputeSize() end
 function default_part:Draw(ctx) end
 function default_part:PreLinePush(line, last_index) end
 function default_part:PostLinePush() end
+function default_part:OnStop() end
+function default_part:OnRemove() end
 
 local blacklist = {
 	stop = true,
@@ -812,111 +814,45 @@ chathud:RegisterPart("emote", emote_part, "%:([A-Za-z0-9_]+)%:", {
 local image_part = {
 	Usable = false,
 	OkInNicks = false,
-	ImgWidth = 0,
+	ImgWidth = 400,
 	ImgHeight = 0,
-	Material = nil,
 }
 
-local img_cache_directory = "easychat/img_cache"
 function image_part:Ctor(url)
-	local succ, file_path = self:TryGetCached(url)
-	if not succ then
-		self:RequestImage(url, function(base64)
-			if not base64 then return end
+	local browser = vgui.Create("DHTML")
+	browser:OpenURL(url)
+	browser:SetAllowLua(true)
+	browser:SetSize(0, 0)
+	browser:AddFunction("Img", "Size", function(w, h)
+		self.ImgWidth = w
+		self.ImgHeight = h
 
-			if not file.Exists(img_cache_directory, "DATA") then
-				file.CreateDir(img_cache_directory)
-			end
+		local perc = self.ImgWidth / 400
+		if perc > 1 then -- rescale
+			self.ImgWidth = self.ImgWidth / perc
+			self.ImgHeight = self.ImgHeight / perc
+		end
 
-			local img_data = EasyChat.DecodeBase64(base64)
-			if #img_data > 6e6 then return end -- 6MB, too big, annoying freezes
+		self.HUD:InvalidateLayout()
+	end)
 
-			local hash = util.CRC(url)
-			file_path = ("%s/%s.png"):format(img_cache_directory, hash)
-			file.Write(file_path, img_data)
-
-			self:SetImage(file_path)
-			self.HUD:InvalidateLayout()
-		end)
-	else
-		self:SetImage(file_path)
+	function browser:OnDocumentReady()
+		self:QueueJavascript([[
+			var img = document.body.getElementsByTagName("img")[0];
+			Img.Size(img.naturalWidth, img.naturalHeight);
+		]])
 	end
+
+	function browser:Paint() end
+
+	self.Browser = browser
+	self:ComputeSize()
 
 	return self
 end
 
-function image_part:RequestImage(url, callback)
-	local html = vgui.Create("DHTML")
-	html:SetPos(-1000, -1000)
-	html:SetAllowLua(true)
-
-	local function finish(val)
-		local succ, err = pcall(callback, val)
-		if not succ then
-			ErrorNoHalt(err)
-		end
-
-		html:Remove()
-	end
-
-    html:AddFunction("ImgReq", "OnFinished", finish)
-
-    function html:OnDocumentReady(ready_url)
-		if ready_url ~= url then
-			finish(false)
-			return
-		end
-
-        self:QueueJavascript([[
-			try {
-				var img = document.body.getElementsByTagName("img")[0];
-				var canvas = document.createElement("canvas");
-				var ctx = canvas.getContext("2d");
-
-				canvas.height = img.naturalHeight;
-				canvas.width = img.naturalWidth;
-				ctx.drawImage(img, 0, 0);
-
-				var uri = canvas.toDataURL('image/png');
-				var	b64 = uri.replace(/^data:image.+;base64,/, "");
-
-				ImgReq.OnFinished(b64);
-			} catch (_) {
-				ImgReq.OnFinished(false);
-			}
-        ]])
-    end
-
-    html:OpenURL(url)
-end
-
-function image_part:SetImage(file_path)
-	local mat = Material(("../data/%s"):format(file_path), "noclamp mips")
-	self.ImgWidth = mat:Width()
-	self.ImgHeight = mat:Height()
-
-	local perc = self.ImgWidth / 400
-	if perc > 1 then -- rescale
-		self.ImgWidth = self.ImgWidth / perc
-		self.ImgHeight = self.ImgHeight / perc
-	end
-
-	self.Material = mat
-	self:ComputeSize()
-end
-
 function image_part:ComputeSize()
 	self.Size = { W = self.ImgWidth, H = self.ImgHeight }
-end
-
-function image_part:TryGetCached(url)
-	local hash = util.CRC(url)
-	local file_path = ("%s/%s.png"):format(img_cache_directory, hash)
-	if file.Exists(file_path, "DATA") then
-		return true, file_path
-	end
-
-	return false
 end
 
 function image_part:LineBreak()
@@ -931,6 +867,12 @@ end
 function image_part:PostLinePush()
     self.RealPos = table_copy(self.Pos)
 end
+
+function image_part:OnStop()
+	if not IsValid(self.Browser) then return end
+	self.Browser:Remove()
+end
+image_part.OnRemove = image_part.OnStop
 
 function image_part:ComputePos()
 	if not EC_HUD_SMOOTH:GetBool() then
@@ -950,23 +892,19 @@ function image_part:ComputePos()
 end
 
 function image_part:Draw(ctx)
-	if not self.Material then return end
-
 	self:ComputePos()
-
-	surface_SetMaterial(self.Material)
-	surface_SetDrawColor(ctx.Color)
+	self.Browser:SetAlpha(ctx.Alpha)
 
 	if self:IsHovered() then
 		local w, h = self.ImgWidth * 2, self.ImgHeight * 2
 		local x, y = self:GetDrawPos()
-		surface_DrawTexturedRect(x, y - self.ImgHeight, w, h)
+		self.Browser:SetSize(w, h)
+		self.Browser:SetPos(x, y - self.ImgHeight)
 	else
 		local x, y = self:GetDrawPos()
-		surface_DrawTexturedRect(x, y, self.ImgWidth, self.ImgHeight)
+		self.Browser:SetSize(self.ImgWidth, self.ImgHeight)
+		self.Browser:SetPos(x, y)
 	end
-
-	draw_NoTexture()
 end
 
 chathud:RegisterPart("image", image_part)
@@ -989,7 +927,9 @@ function base_line:Update()
 	if not self.Fading then return end
 
 	if self.LifeTime < RealTime() then
-		self.Alpha = math_floor(math_max(self.Alpha - (RealFrameTime() * 100), 0))
+		self.Alpha = self.ShouldRemove and 0
+			or math_floor(math_max(self.Alpha - (RealFrameTime() * 100), 0))
+
 		if self.Alpha == 0 then
 			self.ShouldRemove = true
 			self.HUD.ShouldClean = true
@@ -1172,6 +1112,8 @@ function chathud:StopComponents()
 				function component:ComputeSize()
 					self.Size = { W = 0, H = 0 }
 				end
+
+				component:OnStop()
 			end
 		end
 	end
@@ -1278,6 +1220,10 @@ function chathud:Draw()
 	if self.ShouldClean then
 		for i, line in ipairs(self.Lines) do
 			if line.ShouldRemove then
+				for _, component in ipairs(line.Components) do
+					component:OnRemove()
+				end
+
 				table_remove(self.Lines, i)
 			end
 		end
