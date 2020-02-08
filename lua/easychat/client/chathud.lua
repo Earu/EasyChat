@@ -803,43 +803,23 @@ local image_part = {
 }
 
 local img_cache_directory = "easychat/img_cache"
-local image_types = {
-	["image/jpeg"] = "jpg",
-	["image/jpg"] = "jpg",
-	["image/png"] = "png"
-}
-
 function image_part:Ctor(url)
 	local succ, file_path = self:TryGetCached(url)
 	if not succ then
-		HTTP({
-			url = url,
-			method = "GET",
-			failed = print,
-			success = function(code, body, headers)
-				if code ~= 200 then return end
-				local content_type = headers["Content-Type"]
-				local ext = image_types[content_type]
-				if not ext then return end
+		self:RequestImage(url, function(base64)
+			if not base64 then return end
 
-				if not file.Exists(img_cache_directory, "DATA") then
-					file.CreateDir(img_cache_directory)
-				end
+			if not file.Exists(img_cache_directory, "DATA") then
+				file.CreateDir(img_cache_directory)
+			end
 
-				local hash = util.CRC(url)
-				file_path = ("%s/%s.%s"):format(img_cache_directory, hash, ext)
-				file.Write(file_path, body)
-				self:SetImage(file_path)
-				self.HUD:InvalidateLayout()
-			end,
-			headers = {
-				["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36 Edge/18.18362",
-				["Accept"]= "text/html, application/xhtml+xml, application/xml; q=0.9, */*; q=0.8",
-				["Cookie"] = ("__cfduid=%s"):format(self:FakeUID()), -- cloudflare
-				["DNT"] = "1",
-				["Cache-Control"] = "no-cache",
-			},
-		})
+			local hash = util.CRC(url)
+			local img_data = EasyChat.DecodeBase64(base64)
+			file_path = ("%s/%s.png"):format(img_cache_directory, hash)
+			file.Write(file_path, img_data)
+			self:SetImage(file_path)
+			self.HUD:InvalidateLayout()
+		end)
 	else
 		self:SetImage(file_path)
 	end
@@ -847,16 +827,51 @@ function image_part:Ctor(url)
 	return self
 end
 
-local uid_base = "abcdef0123456789"
-function image_part:FakeUID()
-	local uid = ""
-	for _ = 1,43 do
-		uid = uid .. uid_base[math.random(#uid_base)]
+function image_part:RequestImage(url, callback)
+	local html = vgui.Create("DHTML")
+	html:SetPos(-1000, -1000)
+	html:SetAllowLua(true)
+
+	local function finish(val)
+		local succ, err = pcall(callback, val)
+		if not succ then
+			ErrorNoHalt(err)
+		end
+
+		html:Remove()
 	end
 
-	print(uid, uid:len())
+    html:AddFunction("ImgReq", "OnFinished", finish)
 
-	return uid
+    function html:OnDocumentReady(ready_url)
+		if ready_url ~= url then
+			finish(false)
+			return
+		end
+
+        self:QueueJavascript([[
+			try {
+				let img = document.body.getElementsByTagName("img")[0];
+				let canvas = document.createElement('canvas'),
+					ctx = canvas.getContext('2d');
+
+				canvas.height = img.naturalHeight;
+				canvas.width = img.naturalWidth;
+				ctx.drawImage(img, 0, 0);
+
+				// Unfortunately, we cannot keep the original image type, so all images will be converted to PNG
+				// For this reason, we cannot get the original Base64 string
+				let uri = canvas.toDataURL('image/png'),
+					b64 = uri.replace(/^data:image.+;base64,/, '');
+
+				ImgReq.OnFinished(b64);
+			} catch {
+				ImgReq.OnFinished(false);
+			}
+        ]])
+    end
+
+    html:OpenURL(url)
 end
 
 function image_part:SetImage(file_path)
@@ -878,15 +893,11 @@ function image_part:ComputeSize()
 	self.Size = { W = self.ImgWidth, H = self.ImgHeight }
 end
 
-local valid_image_extensions = { "jpg", "png" }
 function image_part:TryGetCached(url)
 	local hash = util.CRC(url)
-	local file_path = ("%s/%s."):format(img_cache_directory, hash)
-	for _, ext in ipairs(valid_image_extensions) do
-		local complete_path = file_path .. ext
-		if file.Exists(complete_path, "DATA") then
-			return true, complete_path
-		end
+	local file_path = ("%s/%s.png"):format(img_cache_directory, hash)
+	if file.Exists(file_path, "DATA") then
+		return true, file_path
 	end
 
 	return false
