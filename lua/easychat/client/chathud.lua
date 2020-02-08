@@ -1298,7 +1298,11 @@ function chathud:AppendNick(nick)
 end
 
 function chathud:AppendImageURL(url)
-	self:PushPartComponent("image", url)
+	if chathud.Parts.image.Enabled then
+		self:PushPartComponent("image", url)
+	else
+		self:PushString(url, false)
+	end
 end
 
 function chathud:InsertColorChange(r, g, b)
