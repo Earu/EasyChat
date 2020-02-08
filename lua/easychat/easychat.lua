@@ -234,10 +234,6 @@ if CLIENT then
 		EasyChat.ModeCount = #EasyChat.Modes
 	end
 
-	function EasyChat.IsOpened()
-		return EasyChat.GUI and IsValid(EasyChat.GUI.ChatBox) and EasyChat.GUI.ChatBox:IsVisible()
-	end
-
 	function EasyChat.GetDefaultBounds()
 		local coef_w, coef_h = (ScrW() / 2560), (ScrH() / 1440)
 		return 50 * coef_w, ScrH() - (320 + (coef_h * 250)), 550, 320
