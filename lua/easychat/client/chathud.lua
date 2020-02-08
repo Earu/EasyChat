@@ -27,6 +27,9 @@ local surface_DrawTexturedRect = _G.surface.DrawTexturedRect
 local draw_GetFontHeight = _G.draw.GetFontHeight
 local draw_NoTexture = _G.draw.NoTexture
 
+local gui_mousex = _G.gui.MouseX
+local gui_mousey = _G.gui.MouseY
+
 --local render_OverrideBlend = _G.render.OverrideBlend
 --local BLEND_ZERO, BLEND_ONE_MINUS_SRC_ALPHA = _G.BLEND_ZERO, _G.BLEND_ONE_MINUS_SRC_ALPHA
 --local BLENDFUNC_ADD, BLENDFUNC_SUBTRACT = _G.BLENDFUNC_ADD, _G.BLENDFUNC_SUBTRACT
@@ -254,6 +257,18 @@ end
 
 function default_part:ToString()
 	return ("<%s=%s>"):format(self.Type, self.TextInput)
+end
+
+function default_part:IsHovered()
+	local mx = gui_mousex()
+	if mx >= self.Pos.X and mx <= self.Pos.X + self.Size.W then
+		local my = gui_mousey()
+		if my >= self.Pos.Y and my <= self.Pos.Y + self.Size.H then
+			return true
+		end
+	end
+
+	return false
 end
 
 -- meant to be overriden
@@ -813,10 +828,13 @@ function image_part:Ctor(url)
 				file.CreateDir(img_cache_directory)
 			end
 
-			local hash = util.CRC(url)
 			local img_data = EasyChat.DecodeBase64(base64)
+			if #img_data > 6e6 then return end -- 6MB, too big, annoying freezes
+
+			local hash = util.CRC(url)
 			file_path = ("%s/%s.png"):format(img_cache_directory, hash)
 			file.Write(file_path, img_data)
+
 			self:SetImage(file_path)
 			self.HUD:InvalidateLayout()
 		end)
@@ -851,21 +869,19 @@ function image_part:RequestImage(url, callback)
 
         self:QueueJavascript([[
 			try {
-				let img = document.body.getElementsByTagName("img")[0];
-				let canvas = document.createElement('canvas'),
-					ctx = canvas.getContext('2d');
+				var img = document.body.getElementsByTagName("img")[0];
+				var canvas = document.createElement("canvas");
+				var ctx = canvas.getContext("2d");
 
 				canvas.height = img.naturalHeight;
 				canvas.width = img.naturalWidth;
 				ctx.drawImage(img, 0, 0);
 
-				// Unfortunately, we cannot keep the original image type, so all images will be converted to PNG
-				// For this reason, we cannot get the original Base64 string
-				let uri = canvas.toDataURL('image/png'),
-					b64 = uri.replace(/^data:image.+;base64,/, '');
+				var uri = canvas.toDataURL('image/png');
+				var	b64 = uri.replace(/^data:image.+;base64,/, "");
 
 				ImgReq.OnFinished(b64);
-			} catch {
+			} catch (_) {
 				ImgReq.OnFinished(false);
 			}
         ]])
@@ -937,11 +953,19 @@ function image_part:Draw(ctx)
 	if not self.Material then return end
 
 	self:ComputePos()
-	local x, y = self:GetDrawPos()
 
 	surface_SetMaterial(self.Material)
 	surface_SetDrawColor(ctx.Color)
-	surface_DrawTexturedRect(x, y, self.ImgWidth, self.ImgHeight)
+
+	if self:IsHovered() then
+		local w, h = self.ImgWidth * 2, self.ImgHeight * 2
+		local x, y = self:GetDrawPos()
+		surface_DrawTexturedRect(x, y - self.ImgHeight, w, h)
+	else
+		local x, y = self:GetDrawPos()
+		surface_DrawTexturedRect(x, y, self.ImgWidth, self.ImgHeight)
+	end
+
 	draw_NoTexture()
 end
 
