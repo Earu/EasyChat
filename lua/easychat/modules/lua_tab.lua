@@ -365,7 +365,7 @@ if CLIENT then
 			}
 		},
 		Think = function(self)
-			if not IsValid(EasyChat.GUI.ChatBox) then return end  -- maybe this fix gmod crashes??
+			if not IsValid(EasyChat.GUI.ChatBox) then return end  -- maybe this fix gmod crashes???
 			local tab = EasyChat.GetActiveTab()
 			if tab.Panel ~= self then return end
 
