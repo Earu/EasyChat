@@ -247,7 +247,7 @@ if CLIENT then
 			chat = dmtab:CreateChat(sender)
 		end
 		EasyChat.AddText(chat.RichText, PLY_COL, sender, color_white, ": " .. message)
-		if not EasyChat.IsOpened() then
+		if not IsValid(EasyChat.GUI.ChatBox) then -- maybe this fix gmod crashes??
 			dmtab:Notify(chat, message)
 		else
 			local activetabname = EasyChat.GetActiveTab().Tab.Name
