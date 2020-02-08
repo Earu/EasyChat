@@ -836,6 +836,11 @@ function image_part:Ctor(url)
 		self.HUD:InvalidateLayout()
 	end)
 
+	-- last measure in case its not called somehow?
+	timer.Simple(self.HUD.FadeTime, function()
+		self:OnRemove()
+	end)
+
 	function browser:OnDocumentReady()
 		self:QueueJavascript([[
 			var img = document.body.getElementsByTagName("img")[0];
