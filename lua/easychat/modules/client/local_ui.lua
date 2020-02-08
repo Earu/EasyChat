@@ -28,7 +28,7 @@ panel:SetWide(150)
 panel.old_paint = panel.Paint
 function panel:Paint(w, h)
 	local cur_mode = EasyChat.Modes[EasyChat.Mode]
-	if EasyChat.IsOpened() and cur_mode and cur_mode.Name == "Local" then
+	if IsValid(EasyChat.GUI.ChatBox) and cur_mode and cur_mode.Name == "Local" then
 		if EasyChat.UseDermaSkin then
 			self:old_paint(w, h)
 		else
