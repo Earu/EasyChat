@@ -71,6 +71,7 @@ local chat_GetSize = chat.GetChatBoxSize
 local SHADOW_FONT_BLURSIZE = 1
 local SMOOTHING_SPEED = 1000
 local MAX_TEXT_OFFSET = 400
+local MAX_IMAGE_WIDTH = 250
 
 -- this is used later for creating shadow fonts properly
 local engine_fonts_info = {}
@@ -814,7 +815,7 @@ chathud:RegisterPart("emote", emote_part, "%:([A-Za-z0-9_]+)%:", {
 local image_part = {
 	Usable = false,
 	OkInNicks = false,
-	ImgWidth = 400,
+	ImgWidth = MAX_IMAGE_WIDTH,
 	ImgHeight = 0,
 }
 
@@ -827,7 +828,7 @@ function image_part:Ctor(url)
 		self.ImgWidth = w
 		self.ImgHeight = h
 
-		local perc = self.ImgWidth / 400
+		local perc = self.ImgWidth / MAX_IMAGE_WIDTH
 		if perc > 1 then -- rescale
 			self.ImgWidth = self.ImgWidth / perc
 			self.ImgHeight = self.ImgHeight / perc
@@ -837,7 +838,7 @@ function image_part:Ctor(url)
 	end)
 
 	-- last measure in case its not called somehow?
-	timer.Simple(self.HUD.FadeTime, function()
+	timer.Simple(self.HUD.FadeTime + 4, function()
 		self:OnRemove()
 	end)
 
@@ -898,6 +899,8 @@ end
 
 function image_part:Draw(ctx)
 	self:ComputePos()
+
+	if not IsValid(self.Browser) then return end
 	self.Browser:SetAlpha(ctx.Alpha)
 
 	if self:IsHovered() then
