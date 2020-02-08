@@ -314,7 +314,7 @@ if CLIENT then
 	end
 
 	local function close_chatbox()
-		if not EasyChat.IsOpened() then return end
+		if not EasyChat.GUI.ChatBox:IsVisible() then return end -- maybe this fix gmod crashes??
 
 		EasyChat.GUI.ChatBox:SetMouseInputEnabled(false)
 		EasyChat.GUI.ChatBox:SetKeyboardInputEnabled(false)
@@ -1238,8 +1238,8 @@ if CLIENT then
 		end)
 
 		hook.Add("PreRender", TAG, function()
-			if EasyChat.IsOpened() then
-				if input.IsKeyDown(KEY_ESCAPE) then
+			if not EasyChat.GUI.ChatBox:IsVisible() then return end -- maybe this fix gmod crashes??
+				if input.IsKeyDown(KEY_ESCAPE) then 
 					close_chatbox()
 					gui.HideGameUI()
 				end
@@ -1253,7 +1253,6 @@ if CLIENT then
 						tab.FocusOn:SetCaretPos(#tab.FocusOn:GetText())
 					end
 				end
-			end
 		end)
 
 		hook.Run("ECInitialized")
@@ -1355,7 +1354,7 @@ function EasyChat.Destroy()
 		EasyChat.Mode = 0
 		EasyChat.Modes = {}
 
-		if EasyChat.GUI and IsValid(EasyChat.GUI.ChatBox) then
+		if IsValid(EasyChat.GUI.ChatBox) then  -- maybe this fix gmod crashes??
 			EasyChat.GUI.ChatBox:Remove()
 		end
 
