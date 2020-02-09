@@ -837,19 +837,32 @@ function image_part:Ctor(url)
 		self.HUD:InvalidateLayout()
 	end)
 
-	-- last measure in case its not called somehow?
-	timer.Simple(self.HUD.FadeTime + 4, function()
+	browser:AddFunction("Img", "Remove", function()
 		self:OnRemove()
 	end)
 
 	function browser:OnDocumentReady()
 		self:QueueJavascript([[
-			var img = document.body.getElementsByTagName("img")[0];
-			Img.Size(img.naturalWidth, img.naturalHeight);
+			if (!document.rootElement) {
+				var img = document.body.getElementsByTagName("img")[0];
+				img.style.width = "100%";
+				if (img) {
+					Img.Size(img.naturalWidth, img.naturalHeight);
+				} else {
+					Img.Remove();
+				}
+			} else {
+				Img.Remove();
+			}
 		]])
 	end
 
 	function browser:Paint() end
+
+	-- last measure in case its not called somehow?
+	timer.Simple(self.HUD.FadeTime + 4, function()
+		self:OnRemove()
+	end)
 
 	self.Browser = browser
 	self:ComputeSize()
