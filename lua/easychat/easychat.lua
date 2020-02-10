@@ -16,6 +16,7 @@ local color_print_bad = Color(255, 127, 127)
 function EasyChat.Print(is_err, ...)
 	local body_color = is_err and color_print_bad or color_print_good
 	local args = { ... }
+	if isstring(is_err) then table.insert(args, 1, is_err) end
 	for k, v in ipairs(args) do args[k] = tostring(v) end
 	MsgC(color_print_head, "[EasyChat] ⮞ ", body_color, table.concat(args), "\n")
 end
@@ -595,11 +596,9 @@ if CLIENT then
 			"^https?://steamuserimages%-a%.akamaihd%.net/ugc/[0-9]+/[A-Z0-9]+/",
 			"^https?://pbs%.twimg%.com/media/",
 		}
-		local image_url_exts = {
-			"png", "jpg", "gif", "gifv", "webp"
-		}
+		local image_url_exts = { "png", "jpg", "jpeg", "gif", "gifv", "webp" }
 		local function is_image_url(url)
-			local simple_url = url:gsub("%?[^/]+", "") -- remove url args
+			local simple_url = url:gsub("%?[^/]+", ""):lower() -- remove url args, lower for exts like JPG, PNG
 			for _, url_ext in ipairs(image_url_exts) do
 				local pattern = (".%s$"):format(url_ext)
 				if simple_url:match(pattern) then return true end
