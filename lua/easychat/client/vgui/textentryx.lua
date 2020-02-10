@@ -90,7 +90,7 @@ function PANEL:Init()
 				}
 			}
 		});
-		TEXT_ENTRY.addEventListener("keyup", (ev) => TextEntryX.OnChange(ev.target.value));
+		TEXT_ENTRY.addEventListener("input", (ev) => TextEntryX.OnChange(ev.target.value));
 		TEXT_ENTRY.addEventListener("keydown", (ev) => {
 			switch (ev.which) {
 				case 9:
@@ -109,8 +109,6 @@ function PANEL:Init()
 					TextEntryX.OnArrowDown();
 					return false;
 				default:
-					// right now is too early
-					setTimeout(() => TextEntryX.OnChange(ev.target.value), 1);
 					break;
 			}
 		});
