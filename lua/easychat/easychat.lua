@@ -1147,8 +1147,38 @@ if CLIENT then
 		end
 
 		function EasyChat.GUI.RichText:ActionSignal(name, value)
-			if name == "TextClicked" then
-				EasyChat.OpenURL(value)
+			if name ~= "TextClicked" then return end
+			EasyChat.OpenURL(value)
+		end
+
+		local invalid_chat_keys = {
+			[KEY_LCONTROL] = true, [KEY_LALT] = true,
+			[KEY_RCONTROL] = true, [KEY_RALT] = true,
+		}
+		local function is_chat_key_pressed(key_code)
+			if invalid_chat_keys[key_code] then return false end
+			-- above 0 so we dont include KEY_NONE/KEY_FIRSt, under 67 because above are control keys
+			if key_code > 0 and key_code <= 67 then return true end
+
+			return false
+		end
+
+		function EasyChat.GUI.ChatBox:OnKeyCodePressed(key_code)
+			if not EasyChat.IsOpened() then return end
+
+			local tab = EasyChat.GUI.TabControl:GetActiveTab()
+			if tab.FocusOn and not tab.FocusOn:HasFocus() then
+				if is_chat_key_pressed(key_code) then
+					local key_name = input.GetKeyName(key_code)
+					if key_name == "ENTER" or key_name == "TAB" then
+						key_name = ""
+					end
+
+					local cur_text = tab.FocusOn:GetText()
+					tab.FocusOn:RequestFocus()
+					tab.FocusOn:SetText(cur_text .. key_name)
+					tab.FocusOn:SetCaretPos(#tab.FocusOn:GetText())
+				end
 			end
 		end
 
@@ -1162,6 +1192,14 @@ if CLIENT then
 				open_chatbox(true)
 				return true
 			end
+		end)
+
+		hook.Add("PreRender", TAG, function()
+			if not EasyChat.IsOpened() then return end
+			if not input.IsKeyDown(KEY_ESCAPE) then return end
+
+			close_chatbox()
+			gui.HideGameUI()
 		end)
 
 		if not EC_NO_MODULES:GetBool() then
@@ -1182,35 +1220,10 @@ if CLIENT then
 			--chat = true,       -- deprecated
 		}
 		hook.Add("ChatText", TAG, function(index, name, text, type)
-			if chat_text_types[type] then
-				chat.AddText(text)
-			end
+			if not chat_text_types[type] then return end
+
+			chat.AddText(text)
 		end)
-
-		local function is_chat_key_pressed()
-			local invalid_keys = { KEY_LCONTROL, KEY_LALT, KEY_RCONTROL, KEY_RALT }
-			local letters = {
-				KEY_A, KEY_B, KEY_C, KEY_D, KEY_E, KEY_F, KEY_G, KEY_H, KEY_I,
-				KEY_J, KEY_K, KEY_L, KEY_M, KEY_N, KEY_O, KEY_P, KEY_Q, KEY_R,
-				KEY_S, KEY_T, KEY_U, KEY_V, KEY_W, KEY_X, KEY_Y, KEY_Z, KEY_ENTER,
-				KEY_TAB, KEY_SPACE, KEY_BACKSPACE
-			}
-
-			for _, key in ipairs(invalid_keys) do
-				if input.IsKeyDown(key) then
-					return false
-				end
-			end
-
-			for _, key in ipairs(letters) do
-				if input.IsKeyDown(key) then
-					local key_name = input.GetKeyName(key)
-					return true, ((key_name ~= "TAB" and key_name ~= "ENTER") and key_name or "")
-				end
-			end
-
-			return false
-		end
 
 		hook.Add("HUDShouldDraw", TAG, function(hud_element)
 			if hud_element == "CHudChat" then
@@ -1224,33 +1237,12 @@ if CLIENT then
 		chathud.Size = {W = w, H = h}
 		chathud:InvalidateLayout()
 
-		hook.Add("HUDPaint", TAG, function()
-			chathud:Draw()
-		end)
+		hook.Add("HUDPaint", TAG, function() chathud:Draw() end)
 
-		-- for getting rid of annoying stuff
+		-- for getting rid of chathud related annoying stuff
 		hook.Add("OnPlayerChat", TAG, function(ply, text)
 			if text == "sh" or text:match("%ssh%s") then
 				chathud:StopComponents()
-			end
-		end)
-
-		hook.Add("PreRender", TAG, function()
-			if EasyChat.IsOpened() then
-				if input.IsKeyDown(KEY_ESCAPE) then
-					close_chatbox()
-					gui.HideGameUI()
-				end
-
-				local tab = EasyChat.GUI.TabControl:GetActiveTab()
-				if tab.FocusOn and not tab.FocusOn:HasFocus() then
-					local pressed, key = is_chat_key_pressed()
-					if pressed then
-						tab.FocusOn:RequestFocus()
-						tab.FocusOn:SetText(key)
-						tab.FocusOn:SetCaretPos(#tab.FocusOn:GetText())
-					end
-				end
 			end
 		end)
 
