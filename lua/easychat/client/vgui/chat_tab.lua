@@ -42,8 +42,8 @@ local MAIN_TAB = {
 			end
 		end
 		self.BtnSwitch.DoClick = function()
-			local modeplus = EasyChat.Mode + 1
-			EasyChat.Mode = modeplus > EasyChat.ModeCount and 0 or modeplus
+			local next_mode = EasyChat.Mode + 1
+			EasyChat.Mode = next_mode > EasyChat.ModeCount and 0 or next_mode
 		end
 
 		if not EasyChat.UseDermaSkin then
