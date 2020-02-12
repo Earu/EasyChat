@@ -1089,7 +1089,12 @@ local function is_exception_pattern(str, patterns)
 	return false
 end
 
-function chathud:NormalizeString(str)
+function chathud:NormalizeString(str, is_nick)
+	-- valve allows these in player names
+	if is_nick then
+		str = str:gsub("[\n|\t]", "")
+	end
+
 	for part_name, part_patterns in pairs(self.SpecialPatterns) do
 		if not is_exception_pattern(str, part_patterns.ExceptionPatterns) then
 			str = string_gsub(str, part_patterns.Pattern, function(...)
@@ -1107,7 +1112,7 @@ function chathud:NormalizeString(str)
 end
 
 function chathud:PushString(str, is_nick)
-	str = self:NormalizeString(str)
+	str = self:NormalizeString(str, is_nick)
 
 	local str_parts = string_explode(self.TagPattern, str, true)
 	local iterator = string_gmatch(str, self.TagPattern)

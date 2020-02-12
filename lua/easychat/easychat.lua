@@ -1007,20 +1007,16 @@ if CLIENT then
 		local alt_shortcuts = {}
 
 		local invalid_shortcut_keys = {
-			KEY_ENTER = true,
-			KEY_PAD_ENTER = true,
-			KEY_ESCAPE = true,
-			KEY_TAB = true
+			[KEY_ENTER] = true, [KEY_PAD_ENTER] = true,
+			[KEY_ESCAPE] = true, [KEY_TAB] = true
 		}
 		local function is_valid_shortcut_key(key)
 			return invalid_shortcut_keys[key] and true or false
 		end
 
 		local valid_base_keys = {
-			KEY_LCONTROL = true,
-			KEY_LALT = true,
-			KEY_RCONTROL = true,
-			KEY_RALT = true
+			[KEY_LCONTROL] = true, [KEY_LALT] = true,
+			[KEY_RCONTROL] = true, [KEY_RALT] = true
 		}
 		local function is_base_shortcut_key(key)
 			return valid_base_keys[key] and true or false
@@ -1226,9 +1222,7 @@ if CLIENT then
 		end)
 
 		hook.Add("HUDShouldDraw", TAG, function(hud_element)
-			if hud_element == "CHudChat" then
-				return false
-			end
+			if hud_element == "CHudChat" then return false end
 		end)
 
 		local chathud = EasyChat.ChatHUD
