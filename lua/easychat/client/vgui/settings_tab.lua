@@ -396,8 +396,8 @@ local SETTINGS_TAB = {
 			tab 		  = EasyChat.TabColor,
 			taboutline 	  = EasyChat.TabOutlineColor,
 		}
-		local json = util.TableToJSON(tab,true)
-		file.Write("easychat/colors.txt",json)
+		local json = util.TableToJSON(tab, true)
+		file.Write("easychat/colors.txt", json)
 	end,
 
 	SaveColors = function(self)
