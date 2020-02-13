@@ -991,12 +991,12 @@ if CLIENT then
 
 				if EC_HUD_FOLLOW:GetBool() then
 					local x, y, w, h = chatbox_frame:GetBounds()
-					chathud.Pos = {X = x, Y = y}
-					chathud.Size = {W = w, H = h}
+					chathud.Pos = { X = x, Y = y }
+					chathud.Size = { W = w, H = h }
 				else
 					local x, y, w, h = EasyChat.GetDefaultBounds()
-					chathud.Pos = {X = x, Y = y}
-					chathud.Size = {W = w, H = h}
+					chathud.Pos = { X = x, Y = y }
+					chathud.Size = { W = w, H = h }
 				end
 			end)
 
@@ -1226,12 +1226,67 @@ if CLIENT then
 		end)
 
 		local chathud = EasyChat.ChatHUD
-		local x, y, w, h = EasyChat.GetDefaultBounds()
-		chathud.Pos = {X = x, Y = y}
-		chathud.Size = {W = w, H = h}
-		chathud:InvalidateLayout()
+		local function chathud_screen_resolution_changed()
+			local x, y, w, h = EasyChat.GetDefaultBounds()
+			chathud.Pos = { X = x, Y = y }
+			chathud.Size = { W = w, H = h }
 
-		hook.Add("HUDPaint", TAG, function() chathud:Draw() end)
+			-- this is because 16 is way too small on 1440p and above
+			if ScrH() < 1080 then
+				chathud:UpdateFontSize(17)
+			elseif ScrH() == 1080 then
+				chathud:UpdateFontSize(18)
+			else
+				chathud:UpdateFontSize(20)
+			end
+
+			-- ant screens
+			if ScrW() < 1600 then
+				chathud.Size.W = 250
+			end
+
+			chathud:InvalidateLayout()
+		end
+
+		local function screen_resolution_changed(old_scrw, old_scrh)
+			local old_scrw, old_scrh =
+				old_scrw == 0 and ScrW() or old_scrw,
+				old_scrh == 0 and ScrH() or old_scrh
+
+			chathud_screen_resolution_changed()
+
+			local chatbox_frame = EasyChat.GUI.ChatBox
+			if not IsValid(chatbox_frame) then return end
+
+			local x, y, w, h = chatbox_frame:GetBounds()
+			local scrw, scrh = ScrW(), ScrH()
+			local coef_x, coef_y = scrw / old_scrw, scrh / old_scrh
+
+			-- scale position and size to the new res
+			x, y, w, h = x * coef_x, y * coef_y, w * coef_x, h * coef_y
+
+			-- unfuck position and size
+			if w >= scrw then w = scrh - 30 end
+			if h >= scrw then h = scrh - 30 end
+			if y + h >= scrw then y = scrh - h end
+			if x + w >= scrw then x = scrh - w end
+
+			chatbox_frame:SetPos(x, y)
+			chatbox_frame:SetSize(w, h)
+		end
+
+		local old_scrw, old_scrh = 0, 0
+		hook.Add("HUDPaint", TAG, function()
+			local scrw, scrh = ScrW(), ScrH()
+
+			-- this is because the "OnScreenSizeChanged" is kinda broken and unreliable
+			if scrh ~= old_scrh or scrw ~= old_scrw then
+				screen_resolution_changed(old_scrw, old_scrh)
+				old_scrw, old_scrh = scrw, scrh
+			end
+
+			chathud:Draw()
+		end)
 
 		-- for getting rid of chathud related annoying stuff
 		hook.Add("OnPlayerChat", TAG, function(ply, text)
