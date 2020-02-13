@@ -138,20 +138,6 @@ function chathud:UpdateFontSize(size)
 	})
 end
 
--- this is because 16 is way too small on 1440p and above
-if ScrH() < 1080 then
-	chathud:UpdateFontSize(17)
-elseif ScrH() == 1080 then
-	chathud:UpdateFontSize(18)
-else
-	chathud:UpdateFontSize(20)
-end
-
--- ant screens
-if ScrW() < 1600 then
-	chathud.Size.W = 250
-end
-
 -- taken from https://github.com/notcake/glib/blob/master/lua/glib/unicode/utf8.lua#L15
 local function utf8_byte(char, offset)
 	if char == "" then return -1 end
