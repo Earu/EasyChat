@@ -1,6 +1,5 @@
 local black_color = Color(0, 0, 0)
 local function update_settings_font(name, size)
-	--size = size - 2
 	surface.CreateFont("ECSettingsFont",{
 		font      = name,
 		extended  = true,
