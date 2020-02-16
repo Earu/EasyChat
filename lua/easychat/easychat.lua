@@ -129,7 +129,6 @@ if CLIENT then
 	local EC_TEAMS_COLOR    = CreateConVar("easychat_teams_colored", "0", FCVAR_ARCHIVE, "Display team with its relative color")
 	local EC_PLAYER_COLOR   = CreateConVar("easychat_players_colored", "1", FCVAR_ARCHIVE, "Display player with its relative team color")
 	local EC_ENABLE         = CreateConVar("easychat_enable", "1", {FCVAR_ARCHIVE, FCVAR_USERINFO}, "Use easychat or not")
-	local EC_ENABLEBROWSER  = CreateConVar("easychat_enablebrowser", "0", {FCVAR_ARCHIVE, FCVAR_USERINFO}, "Use easychat browser or not")
 	local EC_DERMASKIN      = CreateConVar("easychat_use_dermaskin", "0", {FCVAR_ARCHIVE, FCVAR_USERINFO}, "Use dermaskin look or not")
 	local EC_LOCAL_MSG_DIST = CreateConVar("easychat_local_msg_distance", "300", FCVAR_ARCHIVE, "Set the maximum distance for users to receive local messages")
 	local EC_NO_MODULES     = CreateConVar("easychat_no_modules", "0", FCVAR_ARCHIVE, "Should easychat load modules or not")
@@ -522,17 +521,6 @@ if CLIENT then
 		ec_convars = {}
 		ec_addtext_handles = {}
 		uploading = false
-
-		EasyChat.RegisterConvar(EC_GLOBAL_ON_OPEN, "Open chatbox in global tab")
-		EasyChat.RegisterConvar(EC_HISTORY, "Enable history")
-		EasyChat.RegisterConvar(EC_TIMESTAMPS, "Display timestamps")
-		EasyChat.RegisterConvar(EC_TIMESTAMPS_12, "12 hours mode timestamps")
-		EasyChat.RegisterConvar(EC_TEAMS, "Display teams")
-		EasyChat.RegisterConvar(EC_TEAMS_COLOR, "Color the team tags")
-		EasyChat.RegisterConvar(EC_PLAYER_COLOR, "Color players in their team color")
-		EasyChat.RegisterConvar(EC_HUD_FOLLOW, "Chathud follows chatbox")
-		EasyChat.RegisterConvar(EC_TICK_SOUND, "Tick sound on new messages")
-		EasyChat.RegisterConvar(EC_HUD_SMOOTH, "Smooth chathud")
 
 		function EasyChat.SendGlobalMessage(msg, is_team, is_local)
 			msg = EasyChat.MacroProcessor:ProcessString(msg:sub(1, MAX_CHARS))
@@ -1198,13 +1186,24 @@ if CLIENT then
 			gui.HideGameUI()
 		end)
 
+		-- we do that here so its available from modules
+		local settings = vgui.Create("ECSettingsTab")
+		EasyChat.Settings = settings
+
+		-- default settings
+		include("easychat/client/settings.lua")
+
 		if not EC_NO_MODULES:GetBool() then
 			hook.Run("ECPreLoadModules")
 			load_modules()
 			hook.Run("ECPostLoadModules")
 		end
 
-		local settings = vgui.Create("ECSettingsTab")
+		-- other settings (legacy)
+		for _, v in pairs(EasyChat.GetRegisteredConvars()) do
+			settings:AddConvarSetting("Others", "boolean", v.Convar, v.Description)
+		end
+
 		EasyChat.AddTab("Settings", settings)
 
 		local chat_text_types = {
