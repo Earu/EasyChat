@@ -1,7 +1,7 @@
 local EasyChat = _G.EasyChat or {}
 _G.EasyChat = EasyChat
 
-local print = _G._print or _G.print --epoe compat
+local print = _G._print or _G.print -- epoe compat
 
 local NET_BROADCAST_MSG = "EASY_CHAT_BROADCAST_MSG"
 local NET_SEND_MSG = "EASY_CHAT_RECEIVE_MSG"
@@ -121,25 +121,36 @@ if CLIENT then
 	local JSON_COLS = file.Read("easychat/colors.txt", "DATA")
 	local UPLOADING_TEXT = "[uploading image...]"
 
+	-- general
+	local EC_ENABLE = CreateConVar("easychat_enable", "1", {FCVAR_ARCHIVE, FCVAR_USERINFO}, "Use easychat or not")
+	local EC_NO_MODULES = CreateConVar("easychat_no_modules", "0", FCVAR_ARCHIVE, "Should easychat load modules or not")
+
+	-- timestamps
+	local EC_TIMESTAMPS = CreateConVar("easychat_timestamps", "0", FCVAR_ARCHIVE, "Display timestamp in front of messages or not")
+	local EC_TIMESTAMPS_12 = CreateConVar("easychat_timestamps_12", "0", FCVAR_ARCHIVE, "Display timestamps in 12 hours mode or not")
+
+	-- teams and colors
+	local EC_TEAMS = CreateConVar("easychat_teams", "0", FCVAR_ARCHIVE, "Display team in front of messages or not")
+	local EC_TEAMS_COLOR = CreateConVar("easychat_teams_colored", "0", FCVAR_ARCHIVE, "Display team with its relative color")
+	local EC_PLAYER_COLOR = CreateConVar("easychat_players_colored", "1", FCVAR_ARCHIVE, "Display player with its relative team color")
+	local EC_PLAYER_PASTEL = CreateConVar("easychat_pastel", "0", FCVAR_ARCHIVE, "Should players have pastelized colors instead of their team color")
+
+	-- misc
+	local EC_LOCAL_MSG_DIST = CreateConVar("easychat_local_msg_distance", "300", {FCVAR_ARCHIVE, FCVAR_USERINFO}, "Set the maximum distance for users to receive local messages")
+	local EC_TICK_SOUND = CreateConVar("easychat_tick_sound", "1", FCVAR_ARCHIVE, "Should a tick sound be played on new messages or not")
+	local EC_USE_ME = CreateConVar("easychat_use_me", "0", FCVAR_ARCHIVE, 'Should the chat display your name or "me"')
+
+	-- chatbox panel
 	local EC_GLOBAL_ON_OPEN = CreateConVar("easychat_global_on_open", "1", FCVAR_ARCHIVE, "Set the chat to always open global chat tab on open")
-	local EC_FONT           = CreateConVar("easychat_font", "Roboto", FCVAR_ARCHIVE, "Set the font to use for the chat")
-	local EC_FONT_SIZE      = CreateConVar("easychat_font_size", "15", FCVAR_ARCHIVE, "Set the font size for chatbox")
-	local EC_TIMESTAMPS     = CreateConVar("easychat_timestamps", "0", FCVAR_ARCHIVE, "Display timestamp in front of messages or not")
-	local EC_TEAMS          = CreateConVar("easychat_teams", "0", FCVAR_ARCHIVE, "Display team in front of messages or not")
-	local EC_TEAMS_COLOR    = CreateConVar("easychat_teams_colored", "0", FCVAR_ARCHIVE, "Display team with its relative color")
-	local EC_PLAYER_COLOR   = CreateConVar("easychat_players_colored", "1", FCVAR_ARCHIVE, "Display player with its relative team color")
-	local EC_ENABLE         = CreateConVar("easychat_enable", "1", {FCVAR_ARCHIVE, FCVAR_USERINFO}, "Use easychat or not")
-	local EC_DERMASKIN      = CreateConVar("easychat_use_dermaskin", "0", {FCVAR_ARCHIVE, FCVAR_USERINFO}, "Use dermaskin look or not")
-	local EC_LOCAL_MSG_DIST = CreateConVar("easychat_local_msg_distance", "300", FCVAR_ARCHIVE, "Set the maximum distance for users to receive local messages")
-	local EC_NO_MODULES     = CreateConVar("easychat_no_modules", "0", FCVAR_ARCHIVE, "Should easychat load modules or not")
-	local EC_HUD_FOLLOW     = CreateConVar("easychat_hud_follow", "0", FCVAR_ARCHIVE, "Set the chat hud to follow the chatbox")
-	local EC_TICK_SOUND     = CreateConVar("easychat_tick_sound", "1", FCVAR_ARCHIVE, "Should a tick sound be played on new messages or not")
-	local EC_HUD_TTL        = CreateConVar("easychat_hud_ttl", "16", FCVAR_ARCHIVE, "How long messages stay before vanishing")
-	local EC_TIMESTAMPS_12  = CreateConVar("easychat_timestamps_12", "0", FCVAR_ARCHIVE, "Display timestamps in 12 hours mode or not")
-	local EC_HISTORY        = CreateConVar("easychat_history", "1", FCVAR_ARCHIVE, "Should the history be shown")
-	local EC_USE_ME         = CreateConVar("easychat_use_me", "0", FCVAR_ARCHIVE, 'Should the chat display your name or "me"')
-	local EC_HUD_SMOOTH     = CreateClientConVar("easychat_hud_smooth", "1", true, false, "Enables chat smoothing")
-	local EC_PLAYER_PASTEL  = CreateClientConVar("easychat_pastel", "0", true, false, "Should players have pastelized colors instead of their team color")
+	local EC_FONT = CreateConVar("easychat_font", "Roboto", FCVAR_ARCHIVE, "Set the font to use for the chat")
+	local EC_FONT_SIZE = CreateConVar("easychat_font_size", "15", FCVAR_ARCHIVE, "Set the font size for chatbox")
+	local EC_DERMASKIN = CreateConVar("easychat_use_dermaskin", "0", FCVAR_ARCHIVE, "Use dermaskin look or not")
+	local EC_HISTORY = CreateConVar("easychat_history", "1", FCVAR_ARCHIVE, "Should the history be shown")
+
+	-- chathud
+	local EC_HUD_SMOOTH = CreateConVar("easychat_hud_smooth", "1", FCVAR_ARCHIVE, "Enables chat smoothing")
+	local EC_HUD_TTL = CreateConVar("easychat_hud_ttl", "16", FCVAR_ARCHIVE, "How long messages stay before vanishing")
+	local EC_HUD_FOLLOW = CreateConVar("easychat_hud_follow", "0", FCVAR_ARCHIVE, "Set the chat hud to follow the chatbox")
 
 	EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
 
@@ -206,6 +217,7 @@ if CLIENT then
 	EasyChat.MacroProcessor = include("easychat/client/macro_processor.lua")
 	EasyChat.ModeCount = 0
 
+	include("easychat/client/settings.lua")
 	include("easychat/client/markup.lua")
 
 	local ec_tabs = {}
@@ -516,6 +528,7 @@ if CLIENT then
 		EasyChat.MacroProcessor = include("easychat/client/macro_processor.lua")
 		EasyChat.ModeCount = 0
 
+		include("easychat/client/settings.lua")
 		include("easychat/client/markup.lua")
 
 		ec_convars = {}
@@ -1190,19 +1203,13 @@ if CLIENT then
 		local settings = vgui.Create("ECSettingsTab")
 		EasyChat.Settings = settings
 
-		-- default settings
-		include("easychat/client/settings.lua")
+		hook.Run("ECPreLoadModules")
 
 		if not EC_NO_MODULES:GetBool() then
-			hook.Run("ECPreLoadModules")
 			load_modules()
-			hook.Run("ECPostLoadModules")
 		end
 
-		-- other settings (legacy)
-		for _, v in pairs(EasyChat.GetRegisteredConvars()) do
-			settings:AddConvarSetting("Others", "boolean", v.Convar, v.Description)
-		end
+		hook.Run("ECPostLoadModules")
 
 		EasyChat.AddTab("Settings", settings)
 
