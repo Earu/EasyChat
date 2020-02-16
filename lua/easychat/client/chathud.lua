@@ -138,6 +138,8 @@ function chathud:UpdateFontSize(size)
 	})
 end
 
+chathud:UpdateFontSize(16)
+
 -- taken from https://github.com/notcake/glib/blob/master/lua/glib/unicode/utf8.lua#L15
 local function utf8_byte(char, offset)
 	if char == "" then return -1 end
