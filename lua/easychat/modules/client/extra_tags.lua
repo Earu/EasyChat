@@ -461,4 +461,48 @@ end
 
 chathud:RegisterPart("background", background_part)
 
+--[[-----------------------------------------------------------------------------
+    Minecraft Color Component
+
+    Colors from Minecraft, based off of carat color
+]]-------------------------------------------------------------------------------
+local mc_colors = {
+    ["0"] = Color(0, 0, 0),
+    ["1"] = Color(0, 0, 170),
+    ["2"] = Color(0, 170, 0),
+    ["3"] = Color(0, 170, 170),
+    ["4"] = Color(170, 0, 0),
+    ["5"] = Color(170, 0, 170),
+    ["6"] = Color(255, 170, 0),
+    ["7"] = Color(170, 170, 170),
+    ["8"] = Color(85, 85, 85),
+    ["9"] = Color(85, 85, 255),
+    ["a"] = Color(85, 255, 85),
+    ["b"] = Color(85, 255, 255),
+    ["c"] = Color(255, 85, 85),
+    ["d"] = Color(255, 85, 255),
+    ["e"] = Color(255, 255, 85),
+    ["f"] = Color(255, 255, 255),
+    ["r"] = Color(255, 255, 255),
+}
+
+local mc_color_part = {}
+
+function mc_color_part:Ctor(num)
+    local col = mc_colors[string.Trim(num)]
+    if col then
+        self.Color = col
+    else
+        self.Color = Color(255, 255, 255)
+    end
+
+    return self
+end
+
+function mc_color_part:Draw(ctx)
+    ctx:UpdateColor(self.Color)
+end
+
+chathud:RegisterPart("mccol", mc_color_part, "[&|§]+([0-9a-fr]?)")
+
 return "ChatHUD Extra Tags"
