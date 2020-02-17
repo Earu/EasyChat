@@ -1,11 +1,21 @@
 -- general
 local EC_ENABLE = GetConVar("easychat_enable")
-local EC_TICK_SOUND = GetConVar("easychat_tick_sound")
+local EC_NO_MODULES = GetConVar("easychat_no_modules")
+
+-- timestamps
 local EC_TIMESTAMPS = GetConVar("easychat_timestamps")
 local EC_TIMESTAMPS_12 = GetConVar("easychat_timestamps_12")
+
+-- teams and colors
 local EC_TEAMS = GetConVar("easychat_teams")
 local EC_TEAMS_COLOR = GetConVar("easychat_teams_colored")
 local EC_PLAYER_COLOR = GetConVar("easychat_players_colored")
+local EC_PLAYER_PASTEL = GetConVar("easychat_pastel")
+
+-- misc
+local EC_LOCAL_MSG_DIST = GetConVar("easychat_local_msg_distance")
+local EC_TICK_SOUND = GetConVar("easychat_tick_sound")
+local EC_USE_ME = GetConVar("easychat_use_me")
 
 -- chatbox
 local EC_USE_DERMASKIN = GetConVar("easychat_use_dermaskin")
@@ -20,10 +30,8 @@ local EC_HUD_TTL = GetConVar("easychat_hud_ttl")
 local EC_HUD_SMOOTH = GetConVar("easychat_hud_smooth")
 
 local function create_option_set(settings, category_name, options)
-	local created_settings = {}
 	for cvar, description in pairs(options) do
-		local setting = settings:AddConvarSetting(category_name, "boolean", cvar, description)
-		created_settings[cvar] = setting
+		settings:AddConvarSetting(category_name, "boolean", cvar, description)
 	end
 
 	local setting_reset_options = settings:AddSetting(category_name, "action", "Reset Options")
@@ -31,7 +39,6 @@ local function create_option_set(settings, category_name, options)
 		for cvar, _ in pairs(options) do
 			local default_value = tobool(cvar:GetDefault())
 			cvar:SetBool(default_value)
-			created_settings[cvar]:SetChecked(default_value)
 		end
 	end
 end
@@ -50,10 +57,25 @@ local function create_default_settings()
 			[EC_TEAMS] = "Display teams",
 			[EC_TEAMS_COLOR] = "Color the team tags",
 			[EC_PLAYER_COLOR] = "Color players in their team color",
+			[EC_PLAYER_PASTEL] = "Pastellize player colors",
 			[EC_TICK_SOUND] = "Tick sound on new messages",
+			[EC_USE_ME] = "Replaces your name in the chat with \"me\""
 		})
 
 		settings:AddSpacer(category_name)
+
+		settings:AddConvarSetting(category_name, "number", EC_LOCAL_MSG_DIST, "Local Message Distance", 1000, 100)
+
+		local setting_reset_local_distance = settings:AddSetting(category_name, "action", "Reset Message Distance")
+		setting_reset_local_distance.DoClick = function()
+			local default_distance = tonumber(EC_LOCAL_MSG_DIST:GetDefault())
+			EC_LOCAL_MSG_DIST:SetInt(default_distance)
+		end
+
+		settings:AddSpacer(category_name)
+
+		local setting_disable_modules = settings:AddSetting(category_name, "action", EC_NO_MODULES:GetBool() and "Run Modules" or "Disallow Modules")
+		setting_disable_modules.DoClick = function() EC_NO_MODULES:SetBool(not EC_NO_MODULES:GetBool()) end
 
 		local setting_reload_ec = settings:AddSetting(category_name, "action", "Reload EasyChat")
 		setting_reload_ec.DoClick = function() RunConsoleCommand("easychat_reload") end
@@ -137,16 +159,14 @@ local function create_default_settings()
 			settings:AddSpacer(category_name)
 		end
 
-		local setting_font = settings:AddConvarSetting(category_name, "string", EC_FONT, "Font")
-		local setting_font_size = settings:AddConvarSetting(category_name, "number", EC_FONT_SIZE, "Font Size", 128, 5)
+		settings:AddConvarSetting(category_name, "string", EC_FONT, "Font")
+		settings:AddConvarSetting(category_name, "number", EC_FONT_SIZE, "Font Size", 128, 5)
+
 		local setting_reset_font = settings:AddSetting(category_name, "action", "Reset Font")
 		setting_reset_font.DoClick = function()
 			local default_font, default_font_size = EC_FONT:GetDefault(), tonumber(EC_FONT_SIZE:GetDefault())
 			EC_FONT:SetString(default_font)
 			EC_FONT_SIZE:SetInt(default_font_size)
-
-			setting_font:SetText(default_font)
-			setting_font_size:SetValue(default_font_size)
 		end
 
 		settings:AddSpacer(category_name)
@@ -179,12 +199,12 @@ local function create_default_settings()
 
 		settings:AddSpacer(category_name)
 
-		local setting_msg_duration = settings:AddConvarSetting(category_name, "number", EC_HUD_TTL, "Message Duration", 60, 2)
+		settings:AddConvarSetting(category_name, "number", EC_HUD_TTL, "Message Duration", 60, 2)
+
 		local setting_reset_duration = settings:AddSetting(category_name, "action", "Reset Duration")
 		setting_reset_duration.DoClick = function()
 			local default_duration = tonumber(EC_HUD_TTL:GetDefault())
 			EC_HUD_TTL:SetInt(default_duration)
-			setting_msg_duration:SetValue(default_duration)
 		end
 	end
 end
