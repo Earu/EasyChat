@@ -321,7 +321,7 @@ local convar_type_callbacks = {
 	["boolean"] = function(self, panel, cvar, description)
 		local checkbox_label = self:CreateBooleanSetting(panel, description)
 		checkbox_label:SetChecked(cvar:GetBool())
-		checkbox_label.OnValueChanged = function(_, new_value)
+		checkbox_label.OnChange = function(_, new_value)
 			cvar:SetBool(new_value)
 		end
 
