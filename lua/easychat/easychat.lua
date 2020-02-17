@@ -118,7 +118,6 @@ end
 if CLIENT then
 	local MAX_CHARS = 3000
 	local NO_COLOR = Color(0, 0, 0, 0)
-	local JSON_COLS = file.Read("easychat/colors.txt", "DATA")
 	local UPLOADING_TEXT = "[uploading image...]"
 
 	-- general
@@ -154,7 +153,7 @@ if CLIENT then
 
 	EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
 
-	cvars.AddChangeCallback("easychat_enable", function(name, old, new)
+	cvars.AddChangeCallback(EC_ENABLE:GetName(), function()
 		if EC_ENABLE:GetBool() then
 			EasyChat.Init()
 		else
@@ -165,9 +164,9 @@ if CLIENT then
 		end
 	end)
 
-	cvars.AddChangeCallback("easychat_use_dermaskin", function(name, old, new)
+	cvars.AddChangeCallback(EC_DERMASKIN:GetName(), function()
 		EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
-		LocalPlayer():ConCommand("easychat_reload")
+		RunConsoleCommand("easychat_reload")
 	end)
 
 	EasyChat.FontName = EC_FONT:GetString()
@@ -196,20 +195,31 @@ if CLIENT then
 		update_chatbox_font(EasyChat.FontName, tonumber(new))
 	end)
 
-	if JSON_COLS then
-		local colors = util.JSONToTable(JSON_COLS)
-		EasyChat.OutlayColor = colors.outlay
-		EasyChat.OutlayOutlineColor = colors.outlayoutline
-		EasyChat.TabOutlineColor = colors.taboutline
-		EasyChat.TabColor = colors.tab
-	else
-		EasyChat.OutlayColor = Color(62, 62, 62, 255)
-		EasyChat.OutlayOutlineColor = Color(0, 0, 0, 0)
-		EasyChat.TabOutlineColor = Color(0, 0, 0, 0)
-		EasyChat.TabColor = Color(36, 36, 36, 255)
+	local function to_color(tbl)
+		tbl = tbl or {}
+		return Color(tbl.r or 0, tbl.g or 0, tbl.b or 0, tbl.a or 0)
 	end
 
-	EasyChat.TextColor = Color(255, 255, 255, 255)
+	local function load_chatbox_colors()
+		local JSON_COLS = file.Read("easychat/colors.txt", "DATA")
+		if JSON_COLS then
+			local colors = util.JSONToTable(JSON_COLS)
+			EasyChat.OutlayColor = to_color(colors.outlay)
+			EasyChat.OutlayOutlineColor = to_color(colors.outlayoutline)
+			EasyChat.TabOutlineColor = to_color(colors.taboutline)
+			EasyChat.TabColor = to_color(colors.tab)
+		else
+			EasyChat.OutlayColor = Color(62, 62, 62, 255)
+			EasyChat.OutlayOutlineColor = Color(0, 0, 0, 0)
+			EasyChat.TabColor = Color(36, 36, 36, 255)
+			EasyChat.TabOutlineColor = Color(0, 0, 0, 0)
+		end
+
+		EasyChat.TextColor = Color(255, 255, 255, 255)
+	end
+
+	load_chatbox_colors()
+
 	EasyChat.Mode = 0
 	EasyChat.Modes = {}
 	EasyChat.Expressions = include("easychat/client/expressions.lua")
@@ -284,20 +294,14 @@ if CLIENT then
 	end
 
 	local function save_chatbox_bounds()
-		local x, y, w, h = EasyChat.GUI.ChatBox:GetBounds()
-		local tab = {
-			w = w,
-			h = h,
-			x = x,
-			y = y
-		}
-
-		local json = util.TableToJSON(tab, true)
 		if not file.Exists("easychat", "DATA") then
 			file.CreateDir("easychat")
 		end
 
-		file.Write("easychat/possize.txt", json)
+		local x, y, w, h = EasyChat.GUI.ChatBox:GetBounds()
+		file.Write("easychat/possize.txt", util.TableToJSON({
+			x = x, y = y, w = w, h = h
+		}, true))
 	end
 
 	local function load_chatbox_bounds()
@@ -305,21 +309,14 @@ if CLIENT then
 		local json = file.Read("easychat/possize.txt", "DATA")
 		if not json then return x, y, w, h end
 
-		local tab = util.JSONToTable(json)
-		if tab then
-			if tab.x >= ScrW() then
-				tab.x = x
-			end
-			if tab.y >= ScrH() then
-				tab.y = y
-			end
-			if tab.w >= ScrW() then
-				tab.w = w
-			end
-			if tab.h >= ScrH() then
-				tab.h = h
-			end
-			return tab.x, tab.y, tab.w, tab.h
+		local bounds = util.JSONToTable(json)
+		if bounds then
+			if bounds.x >= ScrW() then bounds.x = x end
+			if bounds.y >= ScrH() then bounds.y = y end
+			if bounds.w >= ScrW() then bounds.w = w end
+			if bounds.h >= ScrH() then bounds.h = h end
+
+			return bounds.x, bounds.y, bounds.w, bounds.h
 		else
 			return x, y, w, h
 		end
@@ -519,8 +516,9 @@ if CLIENT then
 	end
 
 	function EasyChat.Init()
+		load_chatbox_colors()
+
 		-- reset for reload
-		EasyChat.TextColor = Color(255, 255, 255, 255)
 		EasyChat.Mode = 0
 		EasyChat.Modes = {}
 		EasyChat.Expressions = include("easychat/client/expressions.lua")
