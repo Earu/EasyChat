@@ -1,4 +1,5 @@
 -- general
+local EC_ENABLE = GetConVar("easychat_enable")
 local EC_TICK_SOUND = GetConVar("easychat_tick_sound")
 local EC_TIMESTAMPS = GetConVar("easychat_timestamps")
 local EC_TIMESTAMPS_12 = GetConVar("easychat_timestamps_12")
@@ -19,14 +20,18 @@ local EC_HUD_TTL = GetConVar("easychat_hud_ttl")
 local EC_HUD_SMOOTH = GetConVar("easychat_hud_smooth")
 
 local function create_option_set(settings, category_name, options)
+	local created_settings = {}
 	for cvar, description in pairs(options) do
-		settings:AddConvarSetting(category_name, "boolean", cvar, description)
+		local setting = settings:AddConvarSetting(category_name, "boolean", cvar, description)
+		created_settings[cvar] = setting
 	end
 
 	local setting_reset_options = settings:AddSetting(category_name, "action", "Reset Options")
 	setting_reset_options.DoClick = function()
 		for cvar, _ in pairs(options) do
-			RunConsoleCommand(cvar:GetName(), cvar:GetDefault())
+			local default_value = tobool(cvar:GetDefault())
+			cvar:SetBool(default_value)
+			created_settings[cvar]:SetChecked(default_value)
 		end
 	end
 end
@@ -54,7 +59,7 @@ local function create_default_settings()
 		setting_reload_ec.DoClick = function() RunConsoleCommand("easychat_reload") end
 
 		local setting_disable_ec = settings:AddSetting(category_name, "action", "Disable EasyChat")
-		setting_disable_ec.DoClick = function() RunConsoleCommand("easychat_enable", "0") end
+		setting_disable_ec.DoClick = function() EC_ENABLE:SetBool(false) end
 	end
 
 	-- chatbox settings
@@ -72,42 +77,30 @@ local function create_default_settings()
 		if not EasyChat.UseDermaskin then
 			local setting_outlay_color = settings:AddSetting(category_name, "color", "Outlay Color")
 			setting_outlay_color:SetColor(EasyChat.OutlayColor)
-			setting_outlay_color.OnValueChanged = function(_, color) EasyChat.OutlayColor = color end
+			setting_outlay_color.OnValueChanged = function(_, color)
+				EasyChat.OutlayColor = color
+			end
 
 			local setting_outlay_outline_color = settings:AddSetting(category_name, "color", "Outlay Outline Color")
 			setting_outlay_outline_color:SetColor(EasyChat.OutlayOutlineColor)
-			setting_outlay_outline_color.OnValueChanged = function(_, color) EasyChat.OutlayOutlineColor = color end
+			setting_outlay_outline_color.OnValueChanged = function(_, color)
+				EasyChat.OutlayOutlineColor = color
+			end
 
 			local setting_tab_color = settings:AddSetting(category_name, "color", "Tab Color")
 			setting_tab_color:SetColor(EasyChat.TabColor)
-			setting_tab_color.OnValueChanged = function(_, color) EasyChat.TabColor = color end
+			setting_tab_color.OnValueChanged = function(_, color)
+				EasyChat.TabColor = color
+			end
 
 			local setting_tab_outline_color = settings:AddSetting(category_name, "color", "Tab Outline Color")
 			setting_tab_outline_color:SetColor(EasyChat.TabOutlineColor)
-			setting_tab_outline_color.OnValueChanged = function(_, color) EasyChat.TabOutlineColor = color end
+			setting_tab_outline_color.OnValueChanged = function(_, color)
+				EasyChat.TabOutlineColor = color
+			end
 
 			local setting_save_colors = settings:AddSetting(category_name, "action", "Save Colors")
 			setting_save_colors.DoClick = function()
-				file.Write("easychat/colors.txt", util.TableToJSON({
-					outlay = setting_outlay_color:GetColor(),
-					outlayoutline = setting_outlay_outline_color:GetColor(),
-					tab = setting_tab_color:GetColor(),
-					taboutline = setting_tab_outline_color:GetColor(),
-				}, true))
-			end
-
-			local setting_reset_colors = settings:AddSetting(category_name, "action", "Reset Colors")
-			setting_reset_colors.DoClick = function()
-				EasyChat.OutlayColor = Color(62, 62, 62, 255)
-				EasyChat.OutlayOutlineColor = Color(0, 0, 0, 0)
-				EasyChat.TabColor = Color(36, 36, 36, 255)
-				EasyChat.TabOutlineColor = Color(0, 0, 0, 0)
-
-				setting_outlay_color:SetColor(EasyChat.OutlayColor)
-				setting_outlay_outline_color:SetColor(EasyChat.OutlayOutlineColor)
-				setting_tab_color:SetColor(EasyChat.TabColor)
-				setting_tab_outline_color:SetColor(EasyChat.TabOutlineColor)
-
 				file.Write("easychat/colors.txt", util.TableToJSON({
 					outlay = EasyChat.OutlayColor,
 					outlayoutline = EasyChat.OutlayOutlineColor,
@@ -116,24 +109,51 @@ local function create_default_settings()
 				}, true))
 			end
 
+			local setting_reset_colors = settings:AddSetting(category_name, "action", "Reset Colors")
+			setting_reset_colors.DoClick = function()
+				local outlay_color = Color(62, 62, 62, 255)
+				local outlay_outline_color = Color(0, 0, 0, 0)
+				local tab_color = Color(36, 36, 36, 255)
+				local tab_outline_color = Color(0, 0, 0, 0)
+
+				setting_outlay_color:SetColor(outlay_color)
+				setting_outlay_outline_color:SetColor(outlay_outline_color)
+				setting_tab_color:SetColor(tab_color)
+				setting_tab_outline_color:SetColor(tab_outline_color)
+
+				file.Write("easychat/colors.txt", util.TableToJSON({
+					outlay = outlay_color,
+					outlayoutline = outlay_outline_color,
+					tab = tab_color,
+					taboutline = tab_outline_color,
+				}, true))
+
+				EasyChat.OutlayColor = outlay_color
+				EasyChat.OutlayOutlineColor = outlay_outline_color
+				EasyChat.TabColor = tab_color
+				EasyChat.TabOutlineColor = tab_outline_color
+			end
+
 			settings:AddSpacer(category_name)
 		end
 
-		settings:AddConvarSetting(category_name, "string", EC_FONT, "Font")
-		settings:AddConvarSetting(category_name, "number", EC_FONT_SIZE, "Font Size", 128, 5)
-
+		local setting_font = settings:AddConvarSetting(category_name, "string", EC_FONT, "Font")
+		local setting_font_size = settings:AddConvarSetting(category_name, "number", EC_FONT_SIZE, "Font Size", 128, 5)
 		local setting_reset_font = settings:AddSetting(category_name, "action", "Reset Font")
 		setting_reset_font.DoClick = function()
-			RunConsoleCommand(EC_FONT:GetName(), EC_FONT:GetDefault())
-			RunConsoleCommand(EC_FONT_SIZE:GetName(), EC_FONT_SIZE:GetDefault())
+			local default_font, default_font_size = EC_FONT:GetDefault(), tonumber(EC_FONT_SIZE:GetDefault())
+			EC_FONT:SetString(default_font)
+			EC_FONT_SIZE:SetInt(default_font_size)
+
+			setting_font:SetText(default_font)
+			setting_font_size:SetValue(default_font_size)
 		end
 
 		settings:AddSpacer(category_name)
 
 		local setting_dermaskin = settings:AddSetting(category_name, "action", EC_USE_DERMASKIN:GetBool() and "Use Custom Skin" or "Use Dermaskin")
 		setting_dermaskin.DoClick = function()
-			local new_value = EC_USE_DERMASKIN:GetBool() and "0" or "1"
-			RunConsoleCommand(EC_USE_DERMASKIN:GetName(), new_value)
+			EC_USE_DERMASKIN:SetBool(not EC_USE_DERMASKIN:GetBool())
 		end
 
 		local setting_clear_history = settings:AddSetting(category_name, "action", "Clear History")
@@ -159,10 +179,13 @@ local function create_default_settings()
 
 		settings:AddSpacer(category_name)
 
-		settings:AddConvarSetting(category_name, "number", EC_HUD_TTL, "Message Duration", 60, 2)
-
+		local setting_msg_duration = settings:AddConvarSetting(category_name, "number", EC_HUD_TTL, "Message Duration", 60, 2)
 		local setting_reset_duration = settings:AddSetting(category_name, "action", "Reset Duration")
-		setting_reset_duration.DoClick = function() RunConsoleCommand(EC_HUD_TTL:GetName(), EC_HUD_TTL:GetDefault()) end
+		setting_reset_duration.DoClick = function()
+			local default_duration = tonumber(EC_HUD_TTL:GetDefault())
+			EC_HUD_TTL:SetInt(default_duration)
+			setting_msg_duration:SetValue(default_duration)
+		end
 	end
 end
 
@@ -193,9 +216,12 @@ local function add_chathud_markup_settings()
 end
 
 local function add_legacy_settings()
+	local options = {}
 	for _, registered_cvar in pairs(EasyChat.GetRegisteredConvars()) do
-		EasyChat.Settings:AddConvarSetting("Others", "boolean", registered_cvar.Convar, registered_cvar.Description)
+		options[registered_cvar.Convar] = registered_cvar.Description
 	end
+
+	create_option_set(EasyChat.Settings, "Others", options)
 end
 
 hook.Add("ECPreLoadModules", "EasyChatDefaultSettings", create_default_settings)

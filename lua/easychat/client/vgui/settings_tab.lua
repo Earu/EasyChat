@@ -12,22 +12,31 @@ end
 
 update_settings_font(EasyChat.Font, EasyChat.FontSize)
 
-local SETTINGS = {
-	CategoryList = {}
-}
+local SETTINGS = {}
 
 function SETTINGS:Init()
+	self.CategoryList = {}
+
 	self.Categories = self:Add("DColumnSheet")
 	self.Categories:Dock(FILL)
 	self.Categories.Navigation:DockMargin(0, 0, 0, 0)
 	self.Categories.Paint = function(self, w, h)
 		surface.SetDrawColor(EasyChat.TabColor)
 		surface.DrawRect(0, 0, w, h)
-		surface.SetDrawColor(EasyChat.OutlayColor)
 
 		local nagivation_w = self.Navigation:GetWide()
+		local line_col =
+			EasyChat.TabOutlineColor.a == 0
+				and EasyChat.OutlayColor
+				or EasyChat.TabOutlineColor
+		surface.SetDrawColor(line_col)
 		surface.DrawLine(nagivation_w, 0, nagivation_w, h)
 	end
+end
+
+function SETTINGS:PaintOver(w, h)
+	surface.SetDrawColor(EasyChat.OutlayOutlineColor)
+	surface.DrawOutlinedRect(0, 0, w, h)
 end
 
 function SETTINGS:CreateNumberSetting(panel, name, max, min)
@@ -117,6 +126,7 @@ end
 
 local COLOR_SETTING = {
 	Init = function(self)
+		self.Color = Color(0, 0, 0, 0)
 		self:SetTall(30)
 
 		self.Title = self:Add("DLabel")
@@ -129,46 +139,41 @@ local COLOR_SETTING = {
 		self.Red = self:CreateWang()
 		self.Red:SetTextColor(Color(255, 0, 0))
 		self.Red.OnValueChanged = function(_, val)
-			local cur_col = self.Mixer:GetRGB()
-			cur_col.r = val
-			self.Mixer:SetColor(cur_col)
-			self:OnValueChanged(cur_col)
+			self.Color.r = val
+			self:OnValueChanged(self.Color)
 		end
 
 		self.Green = self:CreateWang()
 		self.Green:SetTextColor(Color(0, 255, 0))
 		self.Green.OnValueChanged = function(_, val)
-			local cur_col = self.Mixer:GetRGB()
-			cur_col.g = val
-			self.Mixer:SetColor(cur_col)
-			self:OnValueChanged(cur_col)
+			self.Color.g = val
+			self:OnValueChanged(self.Color)
 		end
 
 		self.Blue = self:CreateWang()
 		self.Blue:SetTextColor(Color(0, 0, 255))
 		self.Blue.OnValueChanged = function(_, val)
-			local cur_col = self.Mixer:GetRGB()
-			cur_col.b = val
-			self.Mixer:SetColor(cur_col)
-			self:OnValueChanged(cur_col)
+			self.Color.b = val
+			self:OnValueChanged(self.Color)
 		end
 
 		self.Alpha = self:CreateWang()
 		self.Alpha:SetTextColor(black_color)
 		self.Alpha.OnValueChanged = function(_, val)
-			local cur_col = self.Mixer:GetRGB()
-			cur_col.a = val
-			self.Mixer:SetColor(cur_col)
-			self:OnValueChanged(cur_col)
+			self.Color.a = val
+			self:OnValueChanged(self.Color)
 		end
 
-		self.Mixer = self:Add("DColorCube")
-		self.Mixer:SetColor(color_white)
-		self.Mixer:Dock(LEFT)
-		self.Mixer:SetSize(100, 25)
-		self.Mixer.OnUserChanged = function(_, new_col)
-			self:SetColor(new_col)
-			self:OnValueChanged(new_col)
+		self.Preview = self:Add("DPanel")
+		self.Preview:Dock(LEFT)
+		self.Preview:SetSize(30, 30)
+		self.Preview:DockMargin(0, 0, 10, 0)
+		self.Preview.Paint = function(_, w, h)
+			surface.SetDrawColor(self.Color)
+			surface.DrawRect(0, 0, w, h)
+
+			surface.SetDrawColor(black_color)
+			surface.DrawOutlinedRect(0, 0, w, h)
 		end
 	end,
 	CreateWang = function(self)
@@ -182,13 +187,14 @@ local COLOR_SETTING = {
 
 		return wang
 	end,
-	GetColor = function(self) return self.Mixer:GetRGB() end,
+	GetColor = function(self) return self.Color end,
 	SetColor = function(self, color)
-		self.Red:SetValue(color.r)
-		self.Green:SetValue(color.g)
-		self.Blue:SetValue(color.b)
-		self.Alpha:SetValue(color.a)
-		self.Mixer:SetColor(color)
+		local new_col = Color(color.r, color.g, color.b, color.a)
+		self.Color = new_col
+		self.Red:SetValue(new_col.r)
+		self.Green:SetValue(new_col.g)
+		self.Blue:SetValue(new_col.b)
+		self.Alpha:SetValue(new_col.a)
 	end,
 	SetTitle = function(self, title)
 		self.Title:SetText(title)
@@ -249,7 +255,11 @@ function SETTINGS:AddCategory(category_name)
 	new_category.Button:SetFont("ECSettingsFont")
 	new_category.Button:DockPadding(0, 20, 0, 20)
 	new_category.Button.Paint = function(self, w, h)
-		surface.SetDrawColor(EasyChat.OutlayColor)
+		local line_col =
+			EasyChat.TabOutlineColor.a == 0
+				and EasyChat.OutlayColor
+				or EasyChat.TabOutlineColor
+		surface.SetDrawColor(line_col)
 		surface.DrawLine(0, h - 1, w, h - 1)
 
 		if self:IsHovered() then
@@ -284,37 +294,43 @@ local convar_type_callbacks = {
 		local number_wang = self:CreateNumberSetting(panel, name, max, min)
 		number_wang:SetValue(cvar:GetInt())
 		number_wang.OnValueChanged = function(_, new_value)
-			RunConsoleCommand(cvar:GetName(), tonumber(new_value) or "0")
+			cvar:SetInt(new_value)
 		end
 
 		self:AddChangeCallback(cvar, function()
 			if not IsValid(number_wang) then return end
 			number_wang:SetValue(cvar:GetInt())
 		end)
+
+		return number_wang
 	end,
 	["string"] = function(self, panel, cvar, name)
 		local text_entry = self:CreateStringSetting(panel, name)
 		text_entry:SetText(cvar:GetString())
 		text_entry.OnEnter = function(self)
-			RunConsoleCommand(cvar:GetName(), self:GetText():Trim())
+			cvar:SetString(self:GetText():Trim())
 		end
 
 		self:AddChangeCallback(cvar, function()
 			if not IsValid(text_entry) then return end
 			text_entry:SetText(cvar:GetString())
 		end)
+
+		return text_entry
 	end,
 	["boolean"] = function(self, panel, cvar, description)
 		local checkbox_label = self:CreateBooleanSetting(panel, description)
 		checkbox_label:SetChecked(cvar:GetBool())
 		checkbox_label.OnValueChanged = function(_, new_value)
-			RunConsoleCommand(cvar:GetName(), tobool(new_value))
+			cvar:SetBool(new_value)
 		end
 
 		self:AddChangeCallback(cvar, function()
 			if not IsValid(checkbox_label) then return end
 			checkbox_label:SetChecked(cvar:GetBool())
 		end)
+
+		return checkbox_label
 	end,
 }
 
@@ -323,7 +339,7 @@ function SETTINGS:AddConvarSetting(category_name, type, cvar, ...)
 	if not cvar then return end
 
 	local category_panel = self:GetCategory(category_name)
-	convar_type_callbacks[type](self, category_panel, cvar, ...)
+	return convar_type_callbacks[type](self, category_panel, cvar, ...)
 end
 
 local type_callbacks = {
@@ -346,7 +362,11 @@ function SETTINGS:AddSpacer(category_name)
 	spacer:Dock(TOP)
 	spacer:DockMargin(0, 0, 0, 10)
 	spacer.Paint = function(_, w, h)
-		surface.SetDrawColor(EasyChat.OutlayColor)
+		local line_col =
+			EasyChat.TabOutlineColor.a == 0
+				and EasyChat.OutlayColor
+				or EasyChat.TabOutlineColor
+		surface.SetDrawColor(line_col)
 		surface.DrawLine(0, h - 1, w, h - 1)
 	end
 end
