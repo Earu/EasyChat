@@ -30,23 +30,26 @@ function SETTINGS:Init()
 	self.Categories = self:Add("DColumnSheet")
 	self.Categories:Dock(FILL)
 	self.Categories.Navigation:DockMargin(0, 0, 0, 0)
-	self.Categories.Paint = function(self, w, h)
-		surface.SetDrawColor(EasyChat.TabColor)
-		surface.DrawRect(0, 0, w, h)
 
-		local nagivation_w = self.Navigation:GetWide()
-		local line_col =
-			EasyChat.TabOutlineColor.a == 0
-				and EasyChat.OutlayColor
-				or EasyChat.TabOutlineColor
-		surface.SetDrawColor(line_col)
-		surface.DrawLine(nagivation_w, 0, nagivation_w, h)
+	if not EasyChat.UseDermaSkin then
+		self.Categories.Paint = function(self, w, h)
+			surface.SetDrawColor(EasyChat.TabColor)
+			surface.DrawRect(0, 0, w, h)
+
+			local nagivation_w = self.Navigation:GetWide()
+			local line_col =
+				EasyChat.TabOutlineColor.a == 0
+					and EasyChat.OutlayColor
+					or EasyChat.TabOutlineColor
+			surface.SetDrawColor(line_col)
+			surface.DrawLine(nagivation_w, 0, nagivation_w, h)
+		end
+
+		self.PaintOver = function(self, w, h)
+			surface.SetDrawColor(EasyChat.OutlayOutlineColor)
+			surface.DrawOutlinedRect(0, 0, w, h)
+		end
 	end
-end
-
-function SETTINGS:PaintOver(w, h)
-	surface.SetDrawColor(EasyChat.OutlayOutlineColor)
-	surface.DrawOutlinedRect(0, 0, w, h)
 end
 
 function SETTINGS:CreateNumberSetting(panel, name, max, min)
@@ -55,6 +58,8 @@ function SETTINGS:CreateNumberSetting(panel, name, max, min)
 	number_wang:SetMin(min)
 	number_wang:Dock(TOP)
 	number_wang:DockMargin(10, 10, 10, 10)
+
+	local title_color = EasyChat.UseDermaSkin and self:GetSkin().text_normal or EasyChat.TextColor
 	number_wang.Paint = function(self, w, h)
 		surface.SetDrawColor(color_white)
 		surface.DrawRect(0, 0, w, h)
@@ -62,7 +67,7 @@ function SETTINGS:CreateNumberSetting(panel, name, max, min)
 
 		surface.DisableClipping(true)
 			surface.SetTextPos(0, -15)
-			surface.SetTextColor(EasyChat.TextColor)
+			surface.SetTextColor(title_color)
 			surface.SetFont("ECSettingsFont")
 			surface.DrawText(name)
 		surface.DisableClipping(false)
@@ -75,6 +80,8 @@ function SETTINGS:CreateStringSetting(panel, name)
 	local text_entry = panel:Add("DTextEntry")
 	text_entry:Dock(TOP)
 	text_entry:DockMargin(10, 10, 10, 10)
+
+	local title_color = EasyChat.UseDermaSkin and self:GetSkin().text_normal or EasyChat.TextColor
 	text_entry.Paint = function(self, w, h)
 		surface.SetDrawColor(color_white)
 		surface.DrawRect(0, 0, w, h)
@@ -82,7 +89,7 @@ function SETTINGS:CreateStringSetting(panel, name)
 
 		surface.DisableClipping(true)
 			surface.SetTextPos(0, -15)
-			surface.SetTextColor(EasyChat.TextColor)
+			surface.SetTextColor(title_color)
 			surface.SetFont("ECSettingsFont")
 			surface.DrawText(name)
 		surface.DisableClipping(false)
@@ -97,13 +104,17 @@ function SETTINGS:CreateBooleanSetting(panel, description)
 	checkbox_label:SetFont("ECSettingsFont")
 	checkbox_label:Dock(TOP)
 	checkbox_label:DockMargin(10, 0, 10, 10)
-	checkbox_label.Button.Paint = function(self, w, h)
-		surface.SetDrawColor(EasyChat.OutlayColor)
-		surface.DrawRect(0, 0, w, h)
 
-		if self:GetChecked() then
-			surface.SetDrawColor(EasyChat.TextColor)
-			surface.DrawRect(2, 2, w - 4, h - 4)
+	if not EasyChat.UseDermaSkin then
+		checkbox_label:SetTextColor(EasyChat.TextColor)
+		checkbox_label.Button.Paint = function(self, w, h)
+			surface.SetDrawColor(EasyChat.OutlayColor)
+			surface.DrawRect(0, 0, w, h)
+
+			if self:GetChecked() then
+				surface.SetDrawColor(EasyChat.TextColor)
+				surface.DrawRect(2, 2, w - 4, h - 4)
+			end
 		end
 	end
 
@@ -117,18 +128,21 @@ function SETTINGS:CreateActionSetting(panel, name)
 	btn:SetTall(25)
 	btn:SetText(name)
 	btn:SetFont("ECSettingsFont")
-	btn:SetTextColor(EasyChat.TextColor)
-	btn.Paint = function(self, w, h)
-		local prim_color, sec_color = EasyChat.OutlayColor, EasyChat.TabOutlineColor
-		if self:IsHovered() then
-			prim_color = Color(prim_color.r + 50, prim_color.g + 50, prim_color.b + 50, prim_color.a + 50)
-			sec_color = Color(255 - sec_color.r, 255 - sec_color.g, 255 - sec_color.b, 255 - sec_color.a)
-		end
 
-		surface.SetDrawColor(prim_color)
-		surface.DrawRect(0, 0, w, h)
-		surface.SetDrawColor(sec_color)
-		surface.DrawOutlinedRect(0, 0, w, h)
+	if not EasyChat.UseDermaSkin then
+		btn:SetTextColor(EasyChat.TextColor)
+		btn.Paint = function(self, w, h)
+			local prim_color, sec_color = EasyChat.OutlayColor, EasyChat.TabOutlineColor
+			if self:IsHovered() then
+				prim_color = Color(prim_color.r + 50, prim_color.g + 50, prim_color.b + 50, prim_color.a + 50)
+				sec_color = Color(255 - sec_color.r, 255 - sec_color.g, 255 - sec_color.b, 255 - sec_color.a)
+			end
+
+			surface.SetDrawColor(prim_color)
+			surface.DrawRect(0, 0, w, h)
+			surface.SetDrawColor(sec_color)
+			surface.DrawOutlinedRect(0, 0, w, h)
+		end
 	end
 
 	return btn
@@ -228,7 +242,10 @@ function SETTINGS:CreateColorSetting(panel, name)
 		self:DrawTextEntryText(self.m_colText, EasyChat.OutlayColor, black_color)
 	end
 
-	color_setting.Title:SetTextColor(EasyChat.TextColor)
+	if not EasyChat.UseDermaSkin then
+		color_setting.Title:SetTextColor(EasyChat.TextColor)
+	end
+
 	color_setting.Paint = function() end
 	color_setting.Red.Paint = entry_paint
 	color_setting.Green.Paint = entry_paint
@@ -245,35 +262,41 @@ function SETTINGS:AddCategory(category_name)
 	local panel = vgui.Create("DScrollPanel")
 	panel:DockMargin(0, 10, 0, 10)
 	panel:Dock(FILL)
-	panel.Paint = function() end
 
-	local scrollbar = panel:GetVBar()
-	scrollbar:SetHideButtons(true)
-	scrollbar.Paint = function(self, w, h)
-		surface.SetDrawColor(EasyChat.OutlayColor)
-		surface.DrawLine(0, 0, 0, h)
-	end
+	if not EasyChat.UseDermaSkin then
+		panel.Paint = function() end
 
-	local grip_color = table.Copy(EasyChat.OutlayColor)
-	grip_color.a = 150
-	scrollbar.btnGrip.Paint = function(self, w, h)
-		surface.SetDrawColor(grip_color)
-		surface.DrawRect(0, 0, w, h)
+		local scrollbar = panel:GetVBar()
+		scrollbar:SetHideButtons(true)
+		scrollbar.Paint = function(self, w, h)
+			surface.SetDrawColor(EasyChat.OutlayColor)
+			surface.DrawLine(0, 0, 0, h)
+		end
+
+		local grip_color = table.Copy(EasyChat.OutlayColor)
+		grip_color.a = 150
+		scrollbar.btnGrip.Paint = function(self, w, h)
+			surface.SetDrawColor(grip_color)
+			surface.DrawRect(0, 0, w, h)
+		end
 	end
 
 	local new_category = self.Categories:AddSheet(category_name, panel)
 	new_category.Button:SetFont("ECSettingsFont")
 	new_category.Button:DockPadding(0, 20, 0, 20)
-	new_category.Button.Paint = function(self, w, h)
-		local line_col =
-			EasyChat.TabOutlineColor.a == 0
-				and EasyChat.OutlayColor
-				or EasyChat.TabOutlineColor
-		surface.SetDrawColor(line_col)
-		surface.DrawLine(0, h - 1, w, h - 1)
 
-		if self:IsHovered() then
-			surface.DrawRect(0, 0, w, h)
+	if not EasyChat.UseDermaSkin then
+		new_category.Button.Paint = function(self, w, h)
+			local line_col =
+				EasyChat.TabOutlineColor.a == 0
+					and EasyChat.OutlayColor
+					or EasyChat.TabOutlineColor
+			surface.SetDrawColor(line_col)
+			surface.DrawLine(0, h - 1, w, h - 1)
+
+			if self:IsHovered() then
+				surface.DrawRect(0, 0, w, h)
+			end
 		end
 	end
 
@@ -371,13 +394,18 @@ function SETTINGS:AddSpacer(category_name)
 	spacer:SetTall(2)
 	spacer:Dock(TOP)
 	spacer:DockMargin(0, 0, 0, 10)
-	spacer.Paint = function(_, w, h)
-		local line_col =
-			EasyChat.TabOutlineColor.a == 0
-				and EasyChat.OutlayColor
-				or EasyChat.TabOutlineColor
-		surface.SetDrawColor(line_col)
-		surface.DrawLine(0, h - 1, w, h - 1)
+
+	if not EasyChat.UseDermaSkin then
+		spacer.Paint = function(_, w, h)
+			local line_col =
+				EasyChat.TabOutlineColor.a == 0
+					and EasyChat.OutlayColor
+					or EasyChat.TabOutlineColor
+			surface.SetDrawColor(line_col)
+			surface.DrawLine(0, h - 1, w, h - 1)
+		end
+	else
+		spacer.Paint = function() end
 	end
 end
 
