@@ -179,7 +179,7 @@ local COLOR_SETTING = {
 		self.Preview:SetSize(30, 30)
 		self.Preview:DockMargin(0, 0, 10, 0)
 		self.Preview.Paint = function(_, w, h)
-			surface.SetDrawColor(self.Color)
+			surface.SetDrawColor(self.Color:Unpack())
 			surface.DrawRect(0, 0, w, h)
 
 			surface.SetDrawColor(black_color)
