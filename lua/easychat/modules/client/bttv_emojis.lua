@@ -174,5 +174,6 @@ local function get_bttv(name)
 end
 
 EasyChat.ChatHUD:RegisterEmoteProvider("bttv", get_bttv)
+EasyChat.AddEmoteLookupTable("bttv", cache)
 
 return "BetterTTV Global Emotes"

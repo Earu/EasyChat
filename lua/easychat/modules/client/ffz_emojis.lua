@@ -116,5 +116,6 @@ local function get_ffz(name)
 end
 
 EasyChat.ChatHUD:RegisterEmoteProvider("ffz", get_ffz, 1)
+EasyChat.AddEmoteLookupTable("ffz", cache)
 
 return "FrankerFaceZ Global Emotes"
