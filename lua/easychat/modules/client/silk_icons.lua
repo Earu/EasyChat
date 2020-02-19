@@ -47,5 +47,6 @@ local function get_silk(name)
 end
 
 EasyChat.ChatHUD:RegisterEmoteProvider("silkicons", get_silk)
+EasyChat.AddEmoteLookupTable("silkicons", cache)
 
 return "Silk Icons"
