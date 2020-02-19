@@ -31,6 +31,23 @@ function SETTINGS:Init()
 	self.Categories:Dock(FILL)
 	self.Categories.Navigation:DockMargin(0, 0, 0, 0)
 
+	self.Categories.OnCategoryChanged = function(self, old_btn, new_btn)
+		if EasyChat.UseDermaSkin then return end
+
+		if IsValid(old_btn) then
+			old_btn:SetTextColor(self:GetSkin().text_normal)
+		end
+
+		new_btn:SetTextColor(EasyChat.TextColor)
+	end
+
+	local old_set_active_button = self.Categories.SetActiveButton
+	self.Categories.SetActiveButton = function(self, btn)
+		local old_btn = self:GetActiveButton()
+		old_set_active_button(self, btn)
+		self:OnCategoryChanged(old_btn, btn)
+	end
+
 	if not EasyChat.UseDermaSkin then
 		self.Categories.Paint = function(self, w, h)
 			surface.SetDrawColor(EasyChat.TabColor)
