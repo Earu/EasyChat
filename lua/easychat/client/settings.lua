@@ -78,7 +78,7 @@ local function create_default_settings()
 		setting_disable_modules.DoClick = function() EC_NO_MODULES:SetBool(not EC_NO_MODULES:GetBool()) end
 
 		local setting_reload_ec = settings:AddSetting(category_name, "action", "Reload EasyChat")
-		setting_reload_ec.DoClick = EasyChat.Reload
+		setting_reload_ec.DoClick = function() EasyChat.Reload() end
 
 		local setting_disable_ec = settings:AddSetting(category_name, "action", "Disable EasyChat")
 		setting_disable_ec.DoClick = function() EC_ENABLE:SetBool(false) end
@@ -100,25 +100,25 @@ local function create_default_settings()
 			local setting_outlay_color = settings:AddSetting(category_name, "color", "Outlay Color")
 			setting_outlay_color:SetColor(EasyChat.OutlayColor)
 			setting_outlay_color.OnValueChanged = function(_, color)
-				EasyChat.OutlayColor = color
+				EasyChat.OutlayColor = Color(color:Unpack())
 			end
 
 			local setting_outlay_outline_color = settings:AddSetting(category_name, "color", "Outlay Outline Color")
 			setting_outlay_outline_color:SetColor(EasyChat.OutlayOutlineColor)
 			setting_outlay_outline_color.OnValueChanged = function(_, color)
-				EasyChat.OutlayOutlineColor = color
+				EasyChat.OutlayOutlineColor = Color(color:Unpack())
 			end
 
 			local setting_tab_color = settings:AddSetting(category_name, "color", "Tab Color")
 			setting_tab_color:SetColor(EasyChat.TabColor)
 			setting_tab_color.OnValueChanged = function(_, color)
-				EasyChat.TabColor = color
+				EasyChat.TabColor = Color(color:Unpack())
 			end
 
 			local setting_tab_outline_color = settings:AddSetting(category_name, "color", "Tab Outline Color")
 			setting_tab_outline_color:SetColor(EasyChat.TabOutlineColor)
 			setting_tab_outline_color.OnValueChanged = function(_, color)
-				EasyChat.TabOutlineColor = color
+				EasyChat.TabOutlineColor = Color(color:Unpack())
 			end
 
 			local setting_save_colors = settings:AddSetting(category_name, "action", "Save Colors")

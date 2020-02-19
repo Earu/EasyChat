@@ -164,8 +164,8 @@ if CLIENT then
 		end
 	end)
 
-	cvars.AddChangeCallback(EC_NO_MODULES:GetName(), EasyChat.Reload)
-	cvars.AddChangeCallback(EC_HISTORY:GetName(), EasyChat.Reload)
+	cvars.AddChangeCallback(EC_NO_MODULES:GetName(), function() EasyChat.Reload() end)
+	cvars.AddChangeCallback(EC_HISTORY:GetName(), function() EasyChat.Reload() end)
 
 	cvars.AddChangeCallback(EC_DERMASKIN:GetName(), function()
 		EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
