@@ -646,7 +646,12 @@ if CLIENT then
 
 		lua_tab:LoadLastSession()
 
-		local function save_hook() lua_tab:SaveSession() end
+		local function save_hook()
+			-- this can happen with disabled modules
+			if not IsValid(lua_tab) then return end
+			lua_tab:SaveSession()
+		end
+
 		hook.Add("ShutDown", "EasyChatModuleLuaTab", save_hook)
 		hook.Add("ECPreDestroy", "EasyChatModuleLuaTab", save_hook)
 
