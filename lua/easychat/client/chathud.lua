@@ -117,6 +117,13 @@ local chathud = {
 	DefaultShadowFont = "ECHUDShadowDefault",
 }
 
+local EC_HUD_TTL = GetConVar("easychat_hud_ttl")
+chathud.FadeTime = EC_HUD_TTL:GetInt()
+
+cvars.AddChangeCallback(EC_HUD_TTL:GetName(), function()
+	chathud.FadeTime = EC_HUD_TTL:GetInt()
+end)
+
 function chathud:UpdateFontSize(size)
 	surface_CreateFont("ECHUDDefault", {
 		font = "Roboto",
