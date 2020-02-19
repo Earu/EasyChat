@@ -91,5 +91,6 @@ local function get_twemoji(name)
 end
 
 EasyChat.ChatHUD:RegisterEmoteProvider("twemojis", get_twemoji, 1)
+EasyChat.AddEmoteLookupTable("twemojis", cache)
 
 return "Twemojis"

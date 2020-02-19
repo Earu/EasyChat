@@ -14,9 +14,16 @@ local color_print_head = Color(244, 167, 66)
 local color_print_good = Color(0, 160, 220)
 local color_print_bad = Color(255, 127, 127)
 function EasyChat.Print(is_err, ...)
-	local body_color = is_err and color_print_bad or color_print_good
 	local args = { ... }
-	if isstring(is_err) then table.insert(args, 1, is_err) end
+	local body_color
+
+	if isstring(is_err) then
+		table.insert(args, 1, is_err)
+		body_color = color_print_good
+	else
+		body_color = is_err and color_print_bad or color_print_good
+	end
+
 	for k, v in ipairs(args) do args[k] = tostring(v) end
 	MsgC(color_print_head, "[EasyChat] ⮞ ", body_color, table.concat(args), "\n")
 end
@@ -479,7 +486,7 @@ if CLIENT then
 			return
 		end
 
-		EasyChat.Print(false, ("imgur uploaded: %s"):format(tostring(url)))
+		EasyChat.Print(("imgur uploaded: %s"):format(tostring(url)))
 		return url
 	end
 
@@ -506,7 +513,20 @@ if CLIENT then
 		}
 
 		HTTP(http_data)
-		EasyChat.Print(false, ("sent picture (%s) to imgur"):format(string.NiceSize(#img_base64)))
+		EasyChat.Print(("sent picture (%s) to imgur"):format(string.NiceSize(#img_base64)))
+	end
+
+	local emote_lookup_tables = {}
+	function EasyChat.AddEmoteLookupTable(loookup_name, lookup_table)
+		emote_lookup_tables[loookup_name] = lookup_table
+	end
+
+	function EasyChat.GetEmoteLookupTable(lookup_name)
+		return emote_lookup_tables[lookup_name] or {}
+	end
+
+	function EasyChat.GetEmoteLookupTables()
+		return emote_lookup_tables
 	end
 
 	local ec_addtext_handles = {}
