@@ -164,19 +164,22 @@ if CLIENT then
 		end
 	end)
 
+	cvars.AddChangeCallback(EC_NO_MODULES:GetName(), EasyChat.Reload)
+	cvars.AddChangeCallback(EC_HISTORY:GetName(), EasyChat.Reload)
+
 	cvars.AddChangeCallback(EC_DERMASKIN:GetName(), function()
 		EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
-		RunConsoleCommand("easychat_reload")
+		EasyChat.Reload()
 	end)
 
 	EasyChat.FontName = EC_FONT:GetString()
 	EasyChat.FontSize = EC_FONT_SIZE:GetInt()
 
-	local function update_chatbox_font(fontname, size)
-		EasyChat.FontName = fontname
+	local function update_chatbox_font(font_name, size)
+		EasyChat.FontName = font_name
 		EasyChat.FontSize = size
 		surface.CreateFont("EasyChatFont",{
-			font = fontname,
+			font = font_name,
 			extended = true,
 			size = size,
 			weight = 530,
@@ -187,12 +190,12 @@ if CLIENT then
 
 	update_chatbox_font(EasyChat.FontName, EasyChat.FontSize)
 
-	cvars.AddChangeCallback("easychat_font", function(name, old, new)
-		update_chatbox_font(new, EasyChat.FontSize)
+	cvars.AddChangeCallback(EC_FONT:GetName(), function(_, _, new_font_name)
+		update_chatbox_font(new_font_name, EasyChat.FontSize)
 	end)
 
-	cvars.AddChangeCallback("easychat_font_size", function(name, old, new)
-		update_chatbox_font(EasyChat.FontName, tonumber(new))
+	cvars.AddChangeCallback(EC_FONT_SIZE:GetName(), function(_, _, new_font_size)
+		update_chatbox_font(EasyChat.FontName, tonumber(new_font_size))
 	end)
 
 	local function to_color(tbl)
@@ -1410,13 +1413,15 @@ function EasyChat.Destroy()
 	hook.Run("ECDestroyed")
 end
 
-concommand.Add("easychat_reload", function()
+function EasyChat.Reload()
 	EasyChat.Destroy()
 	EasyChat.Init()
 
 	if SERVER then
 		for _, v in ipairs(player.GetAll()) do
-			v:SendLua([[EasyChat.Destroy() EasyChat.Init()]])
+			v:SendLua([[EasyChat.Reload()]])
 		end
 	end
-end)
+end
+
+concommand.Add("easychat_reload", EasyChat.Reload)

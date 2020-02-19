@@ -12,6 +12,16 @@ end
 
 update_settings_font(EasyChat.Font, EasyChat.FontSize)
 
+local EC_FONT = GetConVar("easychat_font")
+local EC_FONT_SIZE = GetConVar("easychat_font_size")
+cvars.AddChangeCallback(EC_FONT:GetName(), function(_, _, new_font_name)
+	update_settings_font(new_font_name, EasyChat.FontSize)
+end)
+
+cvars.AddChangeCallback(EC_FONT_SIZE:GetName(), function(_, _, new_font_size)
+	update_settings_font(EasyChat.FontName, tonumber(new_font_size))
+end)
+
 local SETTINGS = {}
 
 function SETTINGS:Init()

@@ -78,7 +78,7 @@ local function create_default_settings()
 		setting_disable_modules.DoClick = function() EC_NO_MODULES:SetBool(not EC_NO_MODULES:GetBool()) end
 
 		local setting_reload_ec = settings:AddSetting(category_name, "action", "Reload EasyChat")
-		setting_reload_ec.DoClick = function() RunConsoleCommand("easychat_reload") end
+		setting_reload_ec.DoClick = EasyChat.Reload
 
 		local setting_disable_ec = settings:AddSetting(category_name, "action", "Disable EasyChat")
 		setting_disable_ec.DoClick = function() EC_ENABLE:SetBool(false) end
@@ -183,7 +183,7 @@ local function create_default_settings()
 				file.Delete("easychat/" .. f)
 			end
 
-			RunConsoleCommand("easychat_reload")
+			EasyChat.Reload()
 		end
 	end
 
