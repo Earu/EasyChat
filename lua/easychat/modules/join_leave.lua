@@ -32,18 +32,18 @@ end
 
 if CLIENT then
 	hook.Add("ChatText", TAG, function(_, _, _, mode)
-		if mode == "joinleave" then
-			return true
-		end
+		if mode == "joinleave" then return true end
 	end)
 
 	net.Receive(TAG, function()
 		local is_join = net.ReadBool()
 		local name = net.ReadString()
 		local reason
+
 		if not is_join then
 			reason = net.ReadString()
 		end
+
 		local networkid = net.ReadString()
 		if not reason then
 			chat.AddText(Color(127, 255, 127), "⮞ ", Color(200, 200, 200), name, Color(175, 175, 175), " (" .. networkid .. ") is ", Color(127, 255, 127), "joining")

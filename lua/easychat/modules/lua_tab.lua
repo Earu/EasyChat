@@ -636,9 +636,7 @@ if CLIENT then
 	vgui.Register("ECLuaTab", LUA_TAB, "DPanel")
 
 	local EC_LUA_TAB = CreateConVar("easychat_luatab", "1", FCVAR_ARCHIVE, "Display luatab or not")
-	cvars.AddChangeCallback("easychat_luatab", function(name, old, new)
-		RunConsoleCommand("easychat_reload")
-	end)
+	cvars.AddChangeCallback(EC_LUA_TAB:GetName(), EasyChat.Reload)
 
 	EasyChat.RegisterConvar(EC_LUA_TAB, "Display lua tab")
 
