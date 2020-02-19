@@ -96,7 +96,7 @@ local function create_default_settings()
 
 		settings:AddSpacer(category_name)
 
-		if not EasyChat.UseDermaskin then
+		if not EasyChat.UseDermaSkin then
 			local setting_outlay_color = settings:AddSetting(category_name, "color", "Outlay Color")
 			setting_outlay_color:SetColor(EasyChat.OutlayColor)
 			setting_outlay_color.OnValueChanged = function(_, color)
