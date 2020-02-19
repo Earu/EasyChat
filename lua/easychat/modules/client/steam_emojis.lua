@@ -149,5 +149,6 @@ if content then
 end
 
 EasyChat.ChatHUD:RegisterEmoteProvider("steam", get_steam_emote)
+EasyChat.AddEmoteLookupTable("steam", cache)
 
 return "Steam Emojis"
