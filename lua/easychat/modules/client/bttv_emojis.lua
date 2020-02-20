@@ -26,8 +26,7 @@ http.Fetch(LOOKUP_TABLE_URL, function(body)
         cache[name] = UNCACHED
     end
 end, function(err)
-    Msg("[Emoticons] ")
-    print("Could not get the lookup table for BTTV")
+    EasyChat.Print(true, "Could not get the lookup table for BTTV")
 end)
 
 local function URLEncode(s)
@@ -68,15 +67,13 @@ local function get_bttv_url(name)
         http.Fetch(GIFINFO_URL:format(URLEncode(BTTV_CDN_URL:format(lookup_gif[name]))), function(data, len, hdr, code)
             if code ~= 200 or len <= 222 then
                 return function(code)
-                    Msg("[Emoticons] ")
-                    print("Could not get GIF framerate for ", name, ": " .. code)
+                    EasyChat.Print(true, "Could not get GIF framerate for ", name, ": " .. code)
                 end
             end
 
             framerate_cache[name] = tonumber(data)
         end, function(err)
-            Msg("[Emoticons] ")
-            print("Could not get GIF framerate for ", name, ": " .. err)
+            EasyChat.Print(true, "Could not get GIF framerate for ", name, ": " .. err)
         end)
         return GIFTOVTF_URL:format(URLEncode(BTTV_CDN_URL:format(lookup_gif[name]) .. "?_=.gif"))
     else
@@ -113,8 +110,7 @@ local function get_bttv(name)
         local mat = material_data(path)
 
         if not mat or mat:IsError() then
-            Msg("[Emoticons] ")
-            print("Material found, but is error: ", name, "redownloading")
+            EasyChat.Print(true, "Material found, but is error: ", name, "redownloading")
         else
             c = mat
             cache[name] = c
@@ -124,8 +120,7 @@ local function get_bttv(name)
         local mat = gif_material(name, path2)
 
         if not mat or mat:IsError() then
-            Msg("[Emoticons] ")
-            print("Material found, but is error: ", name, "redownloading")
+            EasyChat.Print(true, "Material found, but is error: ", name, "redownloading")
         else
             c = mat
             cache[name] = c
@@ -136,8 +131,7 @@ local function get_bttv(name)
     local url = get_bttv_url(name)
 
     local function fail(err, isvariant)
-        Msg("[Emoticons] ")
-        print("Http fetch failed for", url, ": " .. tostring(err))
+        EasyChat.Print(true, "Http fetch failed for", url, ": " .. tostring(err))
     end
 
     http.Fetch(url, function(data, len, hdr, code)
@@ -151,8 +145,7 @@ local function get_bttv(name)
             local mat = gif_material(name, path2)
 
             if not mat or mat:IsError() then
-                Msg("[Emoticons] ")
-                print("Downloaded material, but is error: ", name)
+                EasyChat.Print(true, "Downloaded material, but is error: ", name)
                 return
             end
 
@@ -163,8 +156,7 @@ local function get_bttv(name)
             local mat = material_data(path)
 
             if not mat or mat:IsError() then
-                Msg("[Emoticons] ")
-                print("Downloaded material, but is error: ", name)
+                EasyChat.Print(true, "Downloaded material, but is error: ", name)
                 return
             end
 

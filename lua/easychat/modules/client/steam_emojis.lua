@@ -23,7 +23,7 @@ local function parse_emote_file() end
 local url =	"http://g1.metastruct.net:20080/opendata/public/emote_lzma.dat"
 http.Fetch(url, function(dat, len, hdr, ret)
 	if not dat or ret ~= 200 then
-		ErrorNoHalt "steam emoticons update failed\n"
+		EasyChat.Print(true, "steam emoticons update failed")
 		return
 	end
 
@@ -32,10 +32,10 @@ http.Fetch(url, function(dat, len, hdr, ret)
 
 	file.Write(EMOTS, dat)
 	local count = count(dat, ",")
-	print(("Saved %d emoticons to %s"):format(count, EMOTS))
+	EasyChat.Print(("Saved %d emoticons to %s"):format(count, EMOTS))
 	parse_emote_file(dat)
 end, function(err)
-	ErrorNoHalt("[Emoticons] " .. err .. "\n")
+	EasyChat.Print(true, err)
 end, {
 	Referer = "http://steam.tools/emoticons/"
 })
@@ -88,8 +88,7 @@ local function get_steam_emote(name)
 		local mat = material_data(path)
 
 		if not mat or mat:IsError() then
-			Msg("[Emoticons] ")
-			print("Material found, but is error: ", name, "redownloading")
+			EasyChat.Print(true, "Material found, but is error: ", name, "redownloading")
 		else
 			c = mat
 			cache[name] = c
@@ -100,8 +99,7 @@ local function get_steam_emote(name)
 	local url = "http://steamcommunity-a.akamaihd.net/economy/emoticonhover/" .. name
 	--local url = 'http://cdn.steamcommunity.com/economy/emoticon/'..name
 	local function fail(err)
-		Msg("[Emoticons] ")
-		print("Http fetch failed for", url, ": " .. tostring(err))
+		EasyChat.Print(true, "Http fetch failed for", url, ": " .. tostring(err))
 	end
 
 	http.Fetch(url, function(data, len, hdr, code)
@@ -134,8 +132,7 @@ local function get_steam_emote(name)
 		local mat = material_data(path)
 
 		if not mat or mat:IsError() then
-			Msg("[Emoticons] ")
-			print("Downloaded material, but is error: ", name)
+			EasyChat.Print(true, "Downloaded material, but is error: ", name)
 			return
 		end
 

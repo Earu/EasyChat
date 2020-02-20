@@ -22,8 +22,7 @@ http.Fetch(LOOKUP_TABLE_URL, function(body)
 		end
 	end
 end, function(err)
-	Msg("[Emoticons] ")
-	print("Could not get the lookup table for FFZ")
+	EasyChat.Print(true, "Could not get the lookup table for FFZ")
 end)
 
 local function get_ffz_url(name)
@@ -57,8 +56,7 @@ local function get_ffz(name)
 		local mat = material_data(path)
 
 		if not mat or mat:IsError() then
-			Msg("[Emoticons] ")
-			print("Material found, but is error: ", name, "redownloading")
+			EasyChat.Print(true, "Material found, but is error: ", name, "redownloading")
 		else
 			c = mat
 			cache[name] = c
@@ -69,13 +67,11 @@ local function get_ffz(name)
 	local url = get_ffz_url(name)
 
 	local function fail(err, isvariant)
-		Msg("[Emoticons] ")
-		print("Http fetch failed for", url, ": " .. tostring(err))
+		EasyChat.Print(true, "Http fetch failed for", url, ": " .. tostring(err))
 
 		-- bad hack
 		if not isvariant then
-			Msg("[Emoticons] ")
-			print("Retrying without variant selector just in case...")
+			EasyChat.Print("Retrying without variant selector just in case...")
 			http.Fetch(url:Replace("-fe0f.png",".png"), function(data, len, hdr, code)
 				if code ~= 200 or len <= 222 then
 					return fail(code)
@@ -86,8 +82,7 @@ local function get_ffz(name)
 				local mat = material_data(path)
 
 				if not mat or mat:IsError() then
-					Msg("[Emoticons] ")
-					print("Downloaded material, but is error: ", name)
+					EasyChat.Print(true, "Downloaded material, but is error: ", name)
 					return
 				end
 
@@ -106,8 +101,7 @@ local function get_ffz(name)
 		local mat = material_data(path)
 
 		if not mat or mat:IsError() then
-			Msg("[Emoticons] ")
-			print("Downloaded material, but is error: ", name)
+			EasyChat.Print(true, "Downloaded material, but is error: ", name)
 			return
 		end
 
