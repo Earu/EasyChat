@@ -36,8 +36,7 @@ local function get_silk(name)
         local mat = Material(path)
 
         if not mat or mat:IsError() then
-            Msg("[Emoticons] ")
-            print("Vanilla silk icon is error????: " .. path)
+            EasyChat.Print(true, "Vanilla silk icon is error????: " .. path)
         else
             c = mat
             cache[name] = c
