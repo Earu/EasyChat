@@ -6,7 +6,7 @@ local PANEL = {
 
 function PANEL:Init()
 	self:SetFocusTopLevel(true)
-	self:SetKeyBoardInputEnabled(true)
+	self:SetKeyboardInputEnabled(true)
 	self:SetAllowLua(true)
 	self:SetHTML([[<html>
 		<body>
@@ -202,21 +202,3 @@ function PANEL:OnValueChange(value) end
 function PANEL:OnImagePaste(name, base64) end
 
 vgui.Register("TextEntryX", PANEL, "DHTML")
-
---[[
-	test code
-]]--
-
-local function test(class, x, y)
-	local p = vgui.Create(class)
-	p:SetPos(x, y)
-	p:SetSize(200, 25)
-	p:MakePopup()
-
-	timer.Simple(10, function()
-		p:Remove()
-	end)
-end
-
---test("TextEntryX", 200, 200)
---test("DTextEntry", 200, 300)
