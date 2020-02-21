@@ -115,7 +115,7 @@ local PICKER = {
 				local i = 1
 				for emote_name, _ in pairs(lookup_table) do
 					if i >= 50 then break end -- lets stop adding
-                    if (not no_search and search:match(emote_name)) or no_search then
+                    if (not no_search and emote_name:match(search)) or no_search then
 						local succ, emote = pcall(function() return providers[lookup_name](emote_name) end)
 						if succ and emote ~= false then
 							local set_emote_material = function() end
