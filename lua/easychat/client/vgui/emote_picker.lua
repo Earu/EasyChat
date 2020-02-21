@@ -62,10 +62,14 @@ local PICKER = {
                 surface_SetDrawColor(grip_color)
                 surface_DrawRect(0, 0, w, h)
             end
+        else
+            self.Paint = function(self, w, h)
+                derma.SkinHook("Paint", "Frame", self, w, h)
+            end
         end
 
         self:Populate()
-	end,
+    end,
 	MouseInBounds = function(self)
 		local x, y = self:LocalToScreen(0, 0)
 		local mouse_x, mouse_y = gui.MouseX(), gui.MouseY()
@@ -76,7 +80,10 @@ local PICKER = {
     -- meant for override
     OnEmoteClicked = function(self, emote_name)
     end,
-	Populate = function(self, search)
+    Populate = function(self, search)
+        search = (search or ""):Trim()
+        no_search = search == ""
+
 		for category_name, category_panel in pairs(self.Categories) do
 			category_panel:Remove()
 			self.Categories[category_name] = nil
@@ -88,8 +95,7 @@ local PICKER = {
 				local category = self.ScrollPanel:Add("DCollapsibleCategory")
 				category:Dock(TOP)
                 category:DockMargin(5, 2, 5, 0)
-				category:SetLabel(("%s (%d emotes)"):format(lookup_name, table.Count(lookup_table)))
-                category:SetExpanded(false)
+                category:SetExpanded(not no_search)
 
                 if not EasyChat.UseDermaSkin then
                     category.Header.Paint = function(_, w, h)
@@ -109,7 +115,7 @@ local PICKER = {
 				local i = 1
 				for emote_name, _ in pairs(lookup_table) do
 					if i >= 50 then break end -- lets stop adding
-                    if (search and search:Trim():match(emote_name)) or (not search) then
+                    if (not no_search and search:match(emote_name)) or no_search then
 						local succ, emote = pcall(function() return providers[lookup_name](emote_name) end)
 						if succ and emote ~= false then
 							local set_emote_material = function() end
@@ -126,6 +132,7 @@ local PICKER = {
                             emote_panel:DockMargin(0, 5, 0, 0)
                             emote_panel:SetSize(30, 30)
                             emote_panel:SetText("")
+                            emote_panel:SetToolTip(emote_name)
 							emote_panel.Paint = function(_, w, h)
                                 surface_SetDrawColor(color_white)
                                 set_emote_material()
@@ -140,11 +147,15 @@ local PICKER = {
 					end
 				end
 
-				category:SetContents(category_panel)
-				self.Categories[lookup_name] = category
+                local emote_count = no_search and table.Count(lookup_table) or i
+                category:SetLabel(("%s (%d emotes)"):format(lookup_name, emote_count - 1))
+                category:SetContents(category_panel)
+                self.Categories[lookup_name] = category
 			end
-		end
+        end
+
+        self:InvalidateChildren(true)
 	end,
 }
 
-vgui.Register("ECEmotePicker", PICKER, "DPanel")
+vgui.Register("ECEmotePicker", PICKER, "EditablePanel")

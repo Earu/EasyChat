@@ -58,18 +58,16 @@ local MAIN_TAB = {
 			self.TextEntry:RequestFocus()
 		end
 
-		self.Picker.Think = function(self)
-			if self:MouseInBounds() then self.Entered = true end
-			if not self.Entered then return end
-
-			if input.IsKeyDown(KEY_LSHIFT) or input.IsKeyDown(KEY_RSHIFT) then return end
-			if not self:MouseInBounds() then
-				self:SetVisible(false)
-				self.Entered = false
+		local function on_key_code_typed(_, key_code)
+			if key_code == KEY_ENTER or key_code == KEY_PAD_ENTER then
+				self.TextEntry:OnEnter()
 			end
 		end
 
-		local function picker_hook()
+		self.Picker.Search.OnKeyCodeTyped = on_key_code_typed
+		self.Picker.OnKeyCodePressed = on_key_code_typed
+
+		local function on_picker_mouse_pressed()
 			if not IsValid(self) then return end
 			if not IsValid(self.Picker) then return end
 
@@ -78,28 +76,34 @@ local MAIN_TAB = {
 			end
 		end
 
-		hook.Add("GUIMousePressed", self.Picker, picker_hook)
-		hook.Add("VGUIMousePressed", self.Picker, picker_hook)
+		hook.Add("GUIMousePressed", self.Picker, on_picker_mouse_pressed)
+		hook.Add("VGUIMousePressed", self.Picker, on_picker_mouse_pressed)
+		hook.Add("ECClosed", self.Picker, function()
+			if not IsValid(self) then return end
+			if not IsValid(self.Picker) then return end
+
+			self.Picker:SetVisible(false)
+		end)
 
 		self.Picker.OnRemove = function(self)
 			hook.Remove("GUIMousePressed", self)
 			hook.Remove("VGUIMousePressed", self)
+			hook.Remove("ECClosed", self)
 		end
 
 		self.BtnPicker = self:Add("DButton")
-		self.BtnPicker:SetText(":D")
-		self.BtnPicker:SetFont("EasyChatFont")
-		self.BtnPicker:SetSize(30, 20)
+		self.BtnPicker:SetText("")
+		self.BtnPicker:SetIcon("icon16/emoticon_smile.png")
+		self.BtnPicker:SetSize(25, 20)
 		self.BtnPicker.DoClick = function()
 			local btn_x, btn_y = self.BtnPicker:LocalToScreen(0, 0)
 			self.Picker:SetPos(btn_x - (self.Picker:GetWide() / 2), btn_y - self.Picker:GetTall())
 			self.Picker:SetVisible(true)
 
-			timer.Simple(0, function()
-				self.Picker:MakePopup()
-				self.Picker.Search:RequestFocus()
-				self.Picker:Populate()
-			end)
+			self.Picker:MakePopup()
+			self.Picker.Search:SetText("")
+			self.Picker.Search:RequestFocus()
+			self.Picker:Populate()
 		end
 
 		if not EasyChat.UseDermaSkin then
@@ -132,8 +136,6 @@ local MAIN_TAB = {
 
 			self.BtnSwitch:SetTextColor(EasyChat.TextColor)
 			self.BtnSwitch.Paint = btn_paint
-
-			self.BtnPicker:SetTextColor(EasyChat.TextColor)
 			self.BtnPicker.Paint = btn_paint
 		end
 	end,
