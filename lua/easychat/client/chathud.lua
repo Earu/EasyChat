@@ -276,6 +276,7 @@ end
 function default_part:LineBreak() end
 function default_part:ComputeSize() end
 function default_part:Draw(ctx) end
+function default_part:Normalize(str) return str end
 function default_part:PreLinePush(line, last_index) end
 function default_part:PostLinePush() end
 function default_part:OnStop() end
@@ -1088,6 +1089,10 @@ function chathud:NormalizeString(str, is_nick)
 	-- valve allows these in player names
 	if is_nick then
 		str = str:gsub("[\n|\t]", "")
+	end
+
+	for _, part in pairs(self.Parts) do
+		str = part:Normalize(str)
 	end
 
 	for part_name, part_patterns in pairs(self.SpecialPatterns) do
