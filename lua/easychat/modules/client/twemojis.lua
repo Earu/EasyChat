@@ -10,7 +10,7 @@ local cache = {}
 local FOLDER = "easychat/emojis/twemojis"
 file.CreateDir(FOLDER, "DATA")
 
-local LOOKUP_TABLE_URL = "https://gist.githubusercontent.com/Cynosphere/6aa8c1f37870e96796608a4ffc9d1ccb/raw/1ac67bc24a794d319011b712014f8ba6e4f26055/emojis.json"
+local LOOKUP_TABLE_URL = "https://github.com/Cynosphere/emojis.json/blob/master/emojis.json"
 local lookup = {}
 http.Fetch(LOOKUP_TABLE_URL, function(body)
 	local tbl = util.JSONToTable(body)
