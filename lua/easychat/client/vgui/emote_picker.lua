@@ -56,10 +56,10 @@ local PICKER = {
                 surface_DrawLine(0, 0, 0, h)
             end
 
-            local grip_color = table.Copy(EasyChat.OutlayColor)
-            grip_color.a = 150
             scrollbar.btnGrip.Paint = function(_, w, h)
-                surface_SetDrawColor(grip_color)
+                local r, g, b, a = EasyChat.OutlayColor:Unpack()
+                a = 150
+                surface_SetDrawColor(r, g, b, a)
                 surface_DrawRect(0, 0, w, h)
             end
         else
