@@ -290,10 +290,10 @@ function SETTINGS:AddCategory(category_name)
 			surface.DrawLine(0, 0, 0, h)
 		end
 
-		local grip_color = table.Copy(EasyChat.OutlayColor)
-		grip_color.a = 150
 		scrollbar.btnGrip.Paint = function(self, w, h)
-			surface.SetDrawColor(grip_color)
+			local r, g, b, a = EasyChat.OutlayColor:Unpack()
+			a = 150
+			surface.SetDrawColor(r, g, b, a)
 			surface.DrawRect(0, 0, w, h)
 		end
 	end
