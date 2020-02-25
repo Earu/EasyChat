@@ -30,13 +30,8 @@ local CHATBOX = {
 		self.BtnMaxim.IsFullScreen = false
 		self.BtnMaxim.DoClick = function(self)
 			if not self.IsFullScreen then
-				local a, b, c, d = frame:GetBounds()
-				self.Before = {
-					x = a,
-					y = b,
-					w = c,
-					h = d
-				}
+				local x, y, w, h = frame:GetBounds()
+				self.Before = { x = x, y = y, w = w, h = h }
 				frame:SetSize(ScrW(), ScrH())
 				frame:SetPos(0, 0)
 				self.IsFullScreen = true
@@ -48,12 +43,20 @@ local CHATBOX = {
 		end
 
 		self.Tabs:SetPos(6, 6)
-		self.Tabs.old_performlayout = self.Tabs.PerformLayout
+		self.Tabs.old_PerformLayout = self.Tabs.PerformLayout
 		self.Tabs.PerformLayout = function(self)
-			self.old_performlayout(self)
-			frame.Scroller:SetTall(22)
+			self:old_PerformLayout()
+			self.tabScroller:SetTall(22)
 		end
 
+		self.Tabs.old_AddSheet = self.Tabs.AddSheet
+		self.Tabs.AddSheet = function(self, ...)
+			local ret = self:old_AddSheet(...)
+			ret.Tab:Droppable("ECTabDnD")
+			return ret
+		end
+
+		self.Scroller:MakeDroppable("ECTabDnD", false)
 		self.Scroller.m_iOverlap = -2
 		self.Scroller:SetDragParent(self)
 		self.Scroller.OnMousePressed = function(self)
@@ -69,6 +72,21 @@ local CHATBOX = {
 		end
 
 		self.Scroller.Think = function(self)
+			-- necessary for letting the user scroll if they have many tabs
+			local frame_rate = VGUIFrameTime() - self.FrameTime
+			self.FrameTime = VGUIFrameTime()
+
+			if self.btnRight:IsDown() then
+				self.OffsetX = self.OffsetX + (500 * frame_rate)
+				self:InvalidateLayout(true)
+			end
+
+			if self.btnLeft:IsDown() then
+				self.OffsetX = self.OffsetX - (500 * frame_rate)
+				self:InvalidateLayout(true)
+			end
+
+			-- drag the chatbox when dragging this instead of scrolling
 			local mouse_x = math.Clamp(gui.MouseX(), 1, ScrW() - 1)
 			local mouse_y = math.Clamp(gui.MouseY(), 1, ScrH() - 1)
 
