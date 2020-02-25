@@ -276,23 +276,50 @@ function SETTINGS:CreateListSetting(panel, name)
 	local list_setting = panel:Add("DPanel")
 	list_setting:Dock(TOP)
 	list_setting:DockMargin(10, 0, 10, 10)
+	list_setting:SetTall(110)
 	list_setting.Paint = function() end
 
 	local title = list_setting:Add("DLabel")
 	title:SetFont("ECSettingsFont")
 	title:SetText(name)
 	title:Dock(TOP)
-	title:DockMargin(0, 0, 0, 5)
 	list_setting.Title = title
 
 	local list_view = list_setting:Add("DListView")
 	list_view:Dock(FILL)
-	list_view:DockMargin(0, 5, 0, 5)
 	list_view:SetTall(100)
 	list_setting.List = list_view
 
 	if not EasyChat.UseDermaSkin then
 		title:SetTextColor(EasyChat.TextColor)
+		list_view.Paint = function(self, w, h)
+			surface.SetDrawColor(EasyChat.OutlayColor)
+			surface.DrawOutlinedRect(0, 0, w, h)
+		end
+
+		local old_AddColumn = list_view.AddColumn
+		list_view.AddColumn = function(self, ...)
+			local column = old_AddColumn(self, ...)
+			column.Header:SetFont("ECSettingsFont")
+			column.Header:SetTextColor(EasyChat.TextColor)
+			column.Header.Paint = function(self, w, h)
+				surface.SetDrawColor(EasyChat.OutlayColor)
+				surface.DrawRect(0, 0, w, h)
+			end
+
+			return column
+		end
+
+		--[[local old_AddLine = list_view.AddLine
+		list_view.AddLine = function(self, ...)
+			local line = old_AddLine(self, ...)
+			for _, l in pairs(line.Lines) do
+					l:SetContentAlignment(5)
+				end
+			--end
+
+			return line
+		end]]--
 	end
 
 	return list_setting
