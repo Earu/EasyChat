@@ -321,7 +321,7 @@ if CLIENT then
 		local tabs = EasyChat.GUI.ChatBox.Scroller.Panels
 		local tabs_data = {}
 		for i, tab in pairs(tabs) do
-			tabs_data[i] = tab.Name
+			tabs_data[i] = { Name = tab.Name, Hidden = not tab:IsVisible() }
 		end
 
 		file.Write("easychat/tabs.txt", util.TableToJSON(tabs_data, true))
@@ -368,7 +368,7 @@ if CLIENT then
 		return util.JSONToTable(json)
 	end
 
-	local function close_chatbox()
+	local function close_chatbox(no_user_data_save)
 		if not EasyChat.IsOpened() then return end
 
 		EasyChat.GUI.ChatBox:SetMouseInputEnabled(false)
@@ -380,7 +380,10 @@ if CLIENT then
 		gamemode.Call("ChatTextChanged", "")
 		gamemode.Call("FinishChat")
 
-		save_chatbox_data()
+		if not no_user_data_save then
+			save_chatbox_data()
+		end
+
 		EasyChat.GUI.ChatBox:Hide()
 
 		safe_hook_run("ECClosed", LocalPlayer())
@@ -925,7 +928,9 @@ if CLIENT then
 				--chat.old_Open(input)
 			end
 
-			chat.Close = close_chatbox
+			-- lets not have third-party addons decide wether we should save
+			-- user data or not
+			chat.Close = function() close_chatbox() end
 		end
 
 		do
@@ -1000,6 +1005,10 @@ if CLIENT then
 				return nil
 			end
 
+			function EasyChat.GetTabs()
+				return ec_tabs
+			end
+
 			function EasyChat.GetActiveTab()
 				local active = chatbox_frame.Tabs:GetActiveTab()
 				return ec_tabs[active.Name]
@@ -1058,7 +1067,7 @@ if CLIENT then
 				end
 			end)
 
-			close_chatbox()
+			close_chatbox(true)
 		end
 
 		local ctrl_shortcuts = {}
@@ -1274,11 +1283,16 @@ if CLIENT then
 			local tabs_data = load_chatbox_tabs_data() or {}
 			local tabs = {}
 			local processed_tab = {}
-			for _, tab_name in ipairs(tabs_data) do
-				local tab_data = EasyChat.GetTab(tab_name)
-				if tab_data then
-					table.insert(tabs, tab_data.Tab)
-					processed_tab[tab_name] = true
+			for _, tab_data in ipairs(tabs_data) do
+				local tab = EasyChat.GetTab(tab_data.Name)
+				if tab then
+					table.insert(tabs, tab.Tab)
+
+					if tab_data.Hidden then
+						tab.Tab:Hide()
+					end
+
+					processed_tab[tab_data.Name] = true
 				end
 			end
 
@@ -1290,7 +1304,6 @@ if CLIENT then
 				end
 			end
 
-			for _, p in pairs(tabs) do print(p.Name) end
 			EasyChat.GUI.ChatBox.Scroller.Panels = tabs
 		end
 
