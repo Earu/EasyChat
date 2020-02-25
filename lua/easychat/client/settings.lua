@@ -171,12 +171,43 @@ local function create_default_settings()
 
 		settings:AddSpacer(category_name)
 
-		--[[local setting_tabs = settings:AddSetting(category_name, "list", "Tabs")
+		local setting_tabs = settings:AddSetting(category_name, "list", "Tabs")
 		local tab_list = setting_tabs.List
-		tab_list:AddColumn("Tab Name")
+		tab_list:SetMultiSelect(false)
+		tab_list:AddColumn("Name")
 		tab_list:AddColumn("Hidden")
 
-		settings:AddSpacer(category_name)]]--
+		local tab_class_blacklist = {
+			["ECChatTab"] = true,
+			["ECSettingsTab"] = true,
+		}
+		hook.Add("ECOpened", tab_list, function()
+			for tab_name, tab_data in pairs(EasyChat.GetTabs()) do
+				if not tab_class_blacklist[tab_data.Panel.ClassName] then
+					tab_list:AddLine(tab_name, tab_data.Tab:IsVisible() and "No" or "Yes")
+				end
+			end
+		end)
+
+		tab_list.OnRemove = function(self)
+			hook.Remove("ECOpened", self)
+		end
+
+		local setting_apply_tab = settings:AddSetting(category_name, "action", "Hide / Show Tab")
+		setting_apply_tab.DoClick = function()
+			local _, selected_line = tab_list:GetSelectedLine()
+			local tab_name = selected_line:GetColumnText(1)
+			local tab_data = EasyChat.GetTab(tab_name)
+			if not tab_data then return end
+
+			local is_visible = tab_data.Tab:IsVisible()
+			tab_data.Tab:SetVisible(not is_visible)
+
+			-- this is inverted, because we get IsVisible before setting it
+			selected_line:SetColumnText(2, is_visible and "Yes" or "No")
+		end
+
+		settings:AddSpacer(category_name)
 
 		local setting_dermaskin = settings:AddSetting(category_name, "action", EC_USE_DERMASKIN:GetBool() and "Use Custom Skin" or "Use Dermaskin")
 		setting_dermaskin.DoClick = function()
