@@ -171,6 +171,13 @@ local function create_default_settings()
 
 		settings:AddSpacer(category_name)
 
+		--[[local setting_tabs = settings:AddSetting(category_name, "list", "Tabs")
+		local tab_list = setting_tabs.List
+		tab_list:AddColumn("Tab Name")
+		tab_list:AddColumn("Hidden")
+
+		settings:AddSpacer(category_name)]]--
+
 		local setting_dermaskin = settings:AddSetting(category_name, "action", EC_USE_DERMASKIN:GetBool() and "Use Custom Skin" or "Use Dermaskin")
 		setting_dermaskin.DoClick = function()
 			EC_USE_DERMASKIN:SetBool(not EC_USE_DERMASKIN:GetBool())
