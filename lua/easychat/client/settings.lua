@@ -182,6 +182,8 @@ local function create_default_settings()
 			["ECSettingsTab"] = true,
 		}
 		hook.Add("ECOpened", tab_list, function()
+			tab_list:Clear()
+
 			for tab_name, tab_data in pairs(EasyChat.GetTabs()) do
 				if not tab_class_blacklist[tab_data.Panel.ClassName] then
 					tab_list:AddLine(tab_name, tab_data.Tab:IsVisible() and "No" or "Yes")
