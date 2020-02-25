@@ -272,6 +272,32 @@ function SETTINGS:CreateColorSetting(panel, name)
 	return color_setting
 end
 
+function SETTINGS:CreateListSetting(panel, name)
+	local list_setting = panel:Add("DPanel")
+	list_setting:Dock(TOP)
+	list_setting:DockMargin(10, 0, 10, 10)
+	list_setting.Paint = function() end
+
+	local title = list_setting:Add("DLabel")
+	title:SetFont("ECSettingsFont")
+	title:SetText(name)
+	title:Dock(TOP)
+	title:DockMargin(0, 0, 0, 5)
+	list_setting.Title = title
+
+	local list_view = list_setting:Add("DListView")
+	list_view:Dock(FILL)
+	list_view:DockMargin(0, 5, 0, 5)
+	list_view:SetTall(100)
+	list_setting.List = list_view
+
+	if not EasyChat.UseDermaSkin then
+		title:SetTextColor(EasyChat.TextColor)
+	end
+
+	return list_setting
+end
+
 function SETTINGS:AddCategory(category_name)
 	category_name = category_name or "???"
 	if self.CategoryList[category_name] then return end
@@ -398,6 +424,7 @@ local type_callbacks = {
 	["boolean"] = SETTINGS.CreateBooleanSetting,
 	["action"] = SETTINGS.CreateActionSetting,
 	["color"] = SETTINGS.CreateColorSetting,
+	["list"] = SETTINGS.CreateListSetting,
 }
 function SETTINGS:AddSetting(category_name, type, ...)
 	if not type_callbacks[type] then return end

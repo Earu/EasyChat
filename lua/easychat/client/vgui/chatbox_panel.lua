@@ -49,10 +49,42 @@ local CHATBOX = {
 			self.tabScroller:SetTall(22)
 		end
 
+		local function tab_do_right_click(self)
+			local sheet = self:GetPropertySheet()
+			if not IsValid(sheet) then return end
+
+			local tabs_menu = DermaMenu()
+			tabs_menu:AddOption("Hide Tab", function()
+				if not IsValid(self) then return end
+				self:SetVisible(false)
+			end):SetIcon("icon16/plugin_delete.png")
+
+			tabs_menu:AddSpacer()
+
+			-- add tabs to the menu
+			for _, item in pairs(sheet.Items) do
+				if item and IsValid(item.Tab) and item.Tab:IsVisible() then
+					local tab = item.Tab
+					local option = tabs_menu:AddOption(tab:GetText(), function()
+						if not IsValid(tab) or not IsValid(sheet) or not IsValid(sheet.tabScroller) then return end
+						tab:DoClick()
+						sheet.tabScroller:ScrollToChild(tab)
+					end)
+
+					if IsValid(tab.Image) then
+						option:SetIcon(tab.Image:GetImage())
+					end
+				end
+			end
+
+			tabs_menu:Open()
+		end
+
 		self.Tabs.old_AddSheet = self.Tabs.AddSheet
 		self.Tabs.AddSheet = function(self, ...)
 			local ret = self:old_AddSheet(...)
 			ret.Tab:Droppable("ECTabDnD")
+			ret.Tab.DoRightClick = tab_do_right_click
 			return ret
 		end
 
