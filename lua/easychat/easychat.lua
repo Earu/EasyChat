@@ -44,6 +44,19 @@ function PLY:IsTyping()
 	end
 end
 
+-- lets not break the addon with bad third-party code but still notify the
+-- developers with an error
+local function safe_hook_run(hook_name, ...)
+	local succ, a, b, c, d, e, f, i, j, k = pcall(hook.Run, hook_name, ...)
+	if not succ then
+		EasyChat.Print(true, ("Hook callback error [%s]"):format(hook_name))
+		ErrorNoHalt(a)
+		return nil
+	end
+
+	return a, b, c, d, e, f, i, j, k
+end
+
 if SERVER then
 	util.AddNetworkString(NET_SEND_MSG)
 	util.AddNetworkString(NET_BROADCAST_MSG)
@@ -97,14 +110,15 @@ if SERVER then
 	net.Receive(NET_SET_TYPING, function(len, ply)
 		local is_opened = net.ReadBool()
 		ply:SetNWBool("ec_is_typing", is_opened)
-		hook.Run(is_opened and "ECOpened" or "ECClosed", ply)
+		safe_hook_run(is_opened and "ECOpened" or "ECClosed", ply)
 	end)
 
 	function EasyChat.Init()
-		hook.Run("ECPreLoadModules")
+		safe_hook_run("ECPreLoadModules")
 		load_modules()
-		hook.Run("ECPostLoadModules")
-		hook.Run("ECInitialized")
+		safe_hook_run("ECPostLoadModules")
+
+		safe_hook_run("ECInitialized")
 	end
 
 	function EasyChat.PlayerCanSeePlayersChat(_, _, listener, speaker, is_local)
@@ -276,10 +290,10 @@ if CLIENT then
 	end
 
 	local function open_chatbox(is_team)
-		local ok = hook.Run("ECShouldOpen")
+		local ok = safe_hook_run("ECShouldOpen")
 		if ok == false then return end
 
-		ok = hook.Run("StartChat", is_team)
+		ok = safe_hook_run("StartChat", is_team)
 		if ok == true then return end
 
 		EasyChat.GUI.ChatBox:Show()
@@ -296,22 +310,37 @@ if CLIENT then
 
 		EasyChat.GUI.TextEntry:SetText("")
 
-		hook.Run("ECOpened", LocalPlayer())
+		safe_hook_run("ECOpened", LocalPlayer())
 
 		net.Start(NET_SET_TYPING)
 		net.WriteBool(true)
 		net.SendToServer()
 	end
 
-	local function save_chatbox_bounds()
-		if not file.Exists("easychat", "DATA") then
-			file.CreateDir("easychat")
+	local function save_chatbox_tabs_data()
+		local tabs = EasyChat.GUI.ChatBox.Scroller.Panels
+		local tabs_data = {}
+		for i, tab in pairs(tabs) do
+			tabs_data[i] = tab.Name
 		end
 
+		file.Write("easychat/tabs.txt", util.TableToJSON(tabs_data, true))
+	end
+
+	local function save_chatbox_bounds()
 		local x, y, w, h = EasyChat.GUI.ChatBox:GetBounds()
 		file.Write("easychat/possize.txt", util.TableToJSON({
 			x = x, y = y, w = w, h = h
 		}, true))
+	end
+
+	local function save_chatbox_data()
+		if not file.Exists("easychat", "DATA") then
+			file.CreateDir("easychat")
+		end
+
+		save_chatbox_tabs_data()
+		save_chatbox_bounds()
 	end
 
 	local function load_chatbox_bounds()
@@ -332,6 +361,13 @@ if CLIENT then
 		end
 	end
 
+	local function load_chatbox_tabs_data()
+		local json = file.Read("easychat/tabs.txt", "DATA")
+		if not json then return end
+
+		return util.JSONToTable(json)
+	end
+
 	local function close_chatbox()
 		if not EasyChat.IsOpened() then return end
 
@@ -344,10 +380,10 @@ if CLIENT then
 		gamemode.Call("ChatTextChanged", "")
 		gamemode.Call("FinishChat")
 
-		save_chatbox_bounds()
+		save_chatbox_data()
 		EasyChat.GUI.ChatBox:Hide()
 
-		hook.Run("ECClosed", LocalPlayer())
+		safe_hook_run("ECClosed", LocalPlayer())
 
 		net.Start(NET_SET_TYPING)
 		net.WriteBool(false)
@@ -378,7 +414,7 @@ if CLIENT then
 			url = ("http://%s"):format(url)
 		end
 
-		local ok = hook.Run("ECOpenURL", url)
+		local ok = safe_hook_run("ECOpenURL", url)
 		if ok == false then return end
 
 		gui.OpenURL(url)
@@ -900,7 +936,7 @@ if CLIENT then
 			chatbox_frame.BtnClose.DoClick = close_chatbox
 
 			function chatbox_frame.Tabs:OnActiveTabChanged(old_tab, new_tab)
-				hook.Run("ECTabChanged", old_tab.Name, new_tab.Name)
+				safe_hook_run("ECTabChanged", old_tab.Name, new_tab.Name)
 			end
 
 			function EasyChat.AddTab(name, panel)
@@ -959,9 +995,9 @@ if CLIENT then
 			function EasyChat.GetTab(name)
 				if ec_tabs[name] then
 					return ec_tabs[name]
-				else
-					return nil
 				end
+
+				return nil
 			end
 
 			function EasyChat.GetActiveTab()
@@ -1224,15 +1260,39 @@ if CLIENT then
 		local settings = vgui.Create("ECSettingsTab")
 		EasyChat.Settings = settings
 
-		hook.Run("ECPreLoadModules")
-
-		if not EC_NO_MODULES:GetBool() then
-			load_modules()
+		-- load modules
+		do
+			safe_hook_run("ECPreLoadModules")
+			if not EC_NO_MODULES:GetBool() then load_modules() end
+			safe_hook_run("ECPostLoadModules")
 		end
 
-		hook.Run("ECPostLoadModules")
-
 		EasyChat.AddTab("Settings", settings)
+
+		-- process the user tabs preferences
+		do
+			local tabs_data = load_chatbox_tabs_data() or {}
+			local tabs = {}
+			local processed_tab = {}
+			for _, tab_name in ipairs(tabs_data) do
+				local tab_data = EasyChat.GetTab(tab_name)
+				if tab_data then
+					table.insert(tabs, tab_data.Tab)
+					processed_tab[tab_name] = true
+				end
+			end
+
+			if #EasyChat.GUI.ChatBox.Scroller.Panels > #tabs then
+				for _, tab in ipairs(EasyChat.GUI.ChatBox.Scroller.Panels) do
+					if not processed_tab[tab.Name] then
+						table.insert(tabs, tab)
+					end
+				end
+			end
+
+			for _, p in pairs(tabs) do print(p.Name) end
+			EasyChat.GUI.ChatBox.Scroller.Panels = tabs
+		end
 
 		local chat_text_types = {
 			none = true, -- fallback
@@ -1322,7 +1382,7 @@ if CLIENT then
 			end
 		end)
 
-		hook.Run("ECInitialized")
+		safe_hook_run("ECInitialized")
 	end
 
 	net.Receive(NET_BROADCAST_MSG, function()
@@ -1392,18 +1452,18 @@ if CLIENT then
 			return true
 		end
 
-		hook.Run("ECPostInitialize")
+		safe_hook_run("ECPostInitialize")
 	end)
 end
 
 function EasyChat.Destroy()
 	-- dont fuck destroying if your addon is bad
-	local succ, err = pcall(hook.Run, "ECPreDestroy")
-	if not succ then
-		ErrorNoHalt(err)
-	end
+	safe_hook_run("ECPreDestroy")
 
 	if CLIENT then
+		-- call closing before destroying in-case the chatbox is opened
+		chat.Close()
+
 		hook.Remove("PreRender", TAG)
 		hook.Remove("Think", TAG)
 		hook.Remove("PlayerBindPress", TAG)
@@ -1430,7 +1490,7 @@ function EasyChat.Destroy()
 		end
 	end
 
-	hook.Run("ECDestroyed")
+	safe_hook_run("ECDestroyed")
 end
 
 function EasyChat.Reload()
