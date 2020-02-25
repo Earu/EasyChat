@@ -49,17 +49,24 @@ local CHATBOX = {
 			self.tabScroller:SetTall(22)
 		end
 
+		local tab_class_blacklist = {
+			["ECChatTab"] = true,
+			["ECSettingsTab"] = true,
+		}
 		local function tab_do_right_click(self)
 			local sheet = self:GetPropertySheet()
 			if not IsValid(sheet) then return end
 
 			local tabs_menu = DermaMenu()
-			tabs_menu:AddOption("Hide Tab", function()
-				if not IsValid(self) then return end
-				self:SetVisible(false)
-			end):SetIcon("icon16/plugin_delete.png")
 
-			tabs_menu:AddSpacer()
+			if not tab_class_blacklist[self.m_pPanel.ClassName] then
+				tabs_menu:AddOption("Hide Tab", function()
+					if not IsValid(self) then return end
+					self:SetVisible(false)
+				end):SetIcon("icon16/plugin_delete.png")
+
+				tabs_menu:AddSpacer()
+			end
 
 			-- add tabs to the menu
 			for _, item in pairs(sheet.Items) do
