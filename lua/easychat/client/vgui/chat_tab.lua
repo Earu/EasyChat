@@ -145,6 +145,9 @@ local MAIN_TAB = {
 		self.TextEntry:SetSize(w - self.BtnSwitch:GetWide() - self.BtnPicker:GetWide(), 20)
 		self.TextEntry:SetPos(self.BtnSwitch:GetWide(), h - 20)
 		self.BtnPicker:SetPos(w - self.BtnPicker:GetWide(), h - self.BtnPicker:GetTall())
+	end,
+	OnRemove = function(self)
+		self.Picker:Remove()
 	end
 }
 
