@@ -847,6 +847,7 @@ function image_part:Ctor(url)
 	function browser:OnDocumentReady()
 		self:QueueJavascript([[
 			if (!document.rootElement) {
+				document.body.style.background = "rgba(0,0,0,0)";
 				var img = document.body.getElementsByTagName("img")[0];
 				img.style.width = "100%";
 				if (img) {
@@ -1000,7 +1001,12 @@ function chathud:NewLine()
 
 	-- we never want to display that many lines
 	if #self.Lines > 50 then
+		local oldest_line = self.Lines[1]
 		table_remove(self.Lines, 1)
+
+		for _, component in ipairs(oldest_line.Components) do
+			component:OnRemove()
+		end
 	end
 
 	return new_line
