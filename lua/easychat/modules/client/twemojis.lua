@@ -296,8 +296,6 @@ function twemoji_part:TryGetEmote(name)
 	if not code_points then return end
 
 	local succ, twemoji = pcall(get_twemoji, name, code_points)
-	print(succ, twemoji)
-
 	-- false indicates that the emote name does not exist for the provider
 	if succ and twemoji ~= false then
 		-- material was cached
