@@ -191,9 +191,8 @@ local function to_hex(str)
 end
 
 local function get_twemoji(name, code_point)
-	if not lookup[name] then
+	if not discord_lookup[name] then
 		code_point = code_point or get_twemoji_code_points(name)
-
 		if code_point then
 			name = to_hex(name)
 		else

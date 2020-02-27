@@ -718,7 +718,9 @@ function emote_part:TryGetEmote(name)
 	-- look for providers with a priority set
 	for _, provider in ipairs(self.HUD.EmotePriorities) do
 		if providers[provider] then
-			local succ, emote = pcall(function() return providers[provider](name) end)
+			local succ, emote = pcall(providers[provider], name)
+			if not succ then EasyChat.Print(true, emote) end
+
 			-- false indicates that the emote name does not exist for the provider
 			if succ and emote ~= false then
 				-- material was cached
