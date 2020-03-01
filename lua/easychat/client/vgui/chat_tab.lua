@@ -1,10 +1,20 @@
+include("easychat/client/vgui/richtextx.lua")
 include("easychat/client/vgui/textentryx.lua")
 include("easychat/client/vgui/emote_picker.lua")
 
 local HAS_CHROMIUM = BRANCH ~= "dev" and BRANCH ~= "unknown"
 local MAIN_TAB = {
 	Init = function(self)
-		self.RichText = self:Add("RichText")
+		self.RichText = self:Add(HAS_CHROMIUM and "RichTextX" or "RichText")
+		if not HAS_CHROMIUM then
+			-- compat for RichTextX
+			self.RichText.AppendImageURL = function(self, url)
+				self:InsertClickableTextStart(url)
+				self:AppendText(url)
+				self:InsertClickableTextEnd()
+			end
+		end
+
 		self.RichText.PerformLayout = function(self)
 			self:SetFontInternal("EasyChatFont")
 			self:SetFGColor(EasyChat.UseDermaSkin and EasyChat.TextColor or Color(0, 0, 0, 255))
@@ -140,7 +150,8 @@ local MAIN_TAB = {
 		end
 	end,
 	PerformLayout = function(self, w, h)
-		self.RichText:SetSize(w, h - 25)
+		self.RichText:SetSize(w - 10, h - 30)
+		self.RichText:SetPos(5, 5)
 		self.BtnSwitch:SetPos(0, h - self.BtnSwitch:GetTall())
 		self.TextEntry:SetSize(w - self.BtnSwitch:GetWide() - self.BtnPicker:GetWide(), 20)
 		self.TextEntry:SetPos(self.BtnSwitch:GetWide(), h - 20)

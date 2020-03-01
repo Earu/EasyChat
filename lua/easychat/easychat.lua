@@ -207,6 +207,10 @@ if CLIENT then
 			shadow = false,
 			additive = false
 		})
+
+		if EasyChat.GUI and IsValid(EasyChat.GUI.RichText) then
+			EasyChat.GUI.RichText:SetFontInternal("EasyChatFont")
+		end
 	end
 
 	update_chatbox_font(EasyChat.FontName, EasyChat.FontSize)
@@ -657,7 +661,7 @@ if CLIENT then
 			"^https?://steamuserimages%-a%.akamaihd%.net/ugc/[0-9]+/[A-Z0-9]+/",
 			"^https?://pbs%.twimg%.com/media/",
 		}
-		local image_url_exts = { "png", "jpg", "jpeg", "gif", "gifv", "webp" }
+		local image_url_exts = { "png", "jpg", "jpeg", "gif", "webp" }
 		local function is_image_url(url)
 			local simple_url = url:gsub("%?[^/]+", ""):lower() -- remove url args, lower for exts like JPG, PNG
 			for _, url_ext in ipairs(image_url_exts) do
@@ -681,10 +685,12 @@ if CLIENT then
 				global_append_text(text:sub(1, start_pos - 1))
 
 				if is_image_url(url) then
-					EasyChat.ChatHUD:AppendImageURL(url)
 					EasyChat.GUI.RichText:InsertClickableTextStart(url)
 					append_text(EasyChat.GUI.RichText, url)
 					EasyChat.GUI.RichText:InsertClickableTextEnd()
+
+					EasyChat.ChatHUD:AppendImageURL(url)
+					EasyChat.GUI.RichText:AppendImageURL(url)
 				else
 					EasyChat.GUI.RichText:InsertClickableTextStart(url)
 					global_append_text(url)
