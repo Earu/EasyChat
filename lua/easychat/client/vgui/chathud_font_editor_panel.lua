@@ -210,17 +210,3 @@ local EDITOR = {
 }
 
 vgui.Register("ECChatHUDFontEditor", EDITOR, "DFrame")
-
-hook.Add("ECInitialized", "EasyChatChatHUDFontEditor", function()
-	if not file.Exists(file_path, "DATA") then return end
-
-	local json = file.Read(file_path, "DATA")
-	local data = util.JSONToTable(json)
-	local shadow_data = table.Copy(data)
-	shadow_data.blursize = 1
-
-	local chathud = EasyChat.ChatHUD
-	surface.CreateFont(chathud.DefaultFont, data)
-	surface.CreateFont(chathud.DefaultShadowFont, shadow_data)
-	chathud:InvalidateLayout()
-end)

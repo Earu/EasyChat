@@ -166,6 +166,7 @@ if CLIENT then
 	local EC_FONT_SIZE = CreateConVar("easychat_font_size", "15", FCVAR_ARCHIVE, "Set the font size for chatbox")
 	local EC_DERMASKIN = CreateConVar("easychat_use_dermaskin", "0", FCVAR_ARCHIVE, "Use dermaskin look or not")
 	local EC_HISTORY = CreateConVar("easychat_history", "1", FCVAR_ARCHIVE, "Should the history be shown")
+	local EC_IMAGES = CreateConVar("easychat_images", "1", FCVAR_ARCHIVE, "Display images in the chat window")
 
 	-- chathud
 	local EC_HUD_SMOOTH = CreateConVar("easychat_hud_smooth", "1", FCVAR_ARCHIVE, "Enables chat smoothing")
@@ -690,7 +691,10 @@ if CLIENT then
 					EasyChat.GUI.RichText:InsertClickableTextEnd()
 
 					EasyChat.ChatHUD:AppendImageURL(url)
-					EasyChat.GUI.RichText:AppendImageURL(url)
+
+					if EC_IMAGES:GetBool() then
+						EasyChat.GUI.RichText:AppendImageURL(url)
+					end
 				else
 					EasyChat.GUI.RichText:InsertClickableTextStart(url)
 					global_append_text(url)

@@ -16,6 +16,7 @@ local EC_PLAYER_PASTEL = GetConVar("easychat_pastel")
 local EC_LOCAL_MSG_DIST = GetConVar("easychat_local_msg_distance")
 local EC_TICK_SOUND = GetConVar("easychat_tick_sound")
 local EC_USE_ME = GetConVar("easychat_use_me")
+local EC_IMAGES = GetConVar("easychat_images")
 
 -- chatbox
 local EC_USE_DERMASKIN = GetConVar("easychat_use_dermaskin")
@@ -92,6 +93,7 @@ local function create_default_settings()
 		create_option_set(settings, category_name, {
 			[EC_GLOBAL_ON_OPEN] = "Open in the global tab",
 			[EC_HISTORY] = "Enable history",
+			[EC_IMAGES] = "Display images"
 		})
 
 		settings:AddSpacer(category_name)
