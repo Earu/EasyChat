@@ -14,10 +14,6 @@ function PANEL:Init()
 					margin: 0;
 				}
 
-				html, body, pre {
-					overflow-x: hidden;
-				}
-
 				::-webkit-scrollbar {
 					height: 16px;
 					width: 16px;
@@ -47,13 +43,26 @@ function PANEL:Init()
 			<pre id="main"></pre>
 		</body>
 	</html>]])
+
 	self:AddFunction("RichTextX", "OnClick", function(signal_value)
 		self:ActionSignal("TextClicked", signal_value)
 	end)
+
+	self:AddFunction("RichTextX", "Print", print)
+
 	self:QueueJavascript([[
+		const BODY = document.getElementsByTagName("body")[0];
 		const RICHTEXT = document.getElementById("main");
+
 		let span = null;
 		let img = null;
+		let isAtBottom = false;
+
+		function atBottom() {
+			if (BODY.scrollTop === 0) return true;
+
+			return BODY.scrollTop + window.innerHeight >= BODY.scrollHeight;
+		}
 	]])
 end
 
@@ -95,10 +104,14 @@ function PANEL:AppendText(text)
 		span.style.color = `]] .. css_color .. [[`;
 	]]) .. [[
 		span.textContent = `]] .. text .. [[`;
+		isAtBottom = atBottom();
+		RICHTEXT.appendChild(span);
+		if (isAtBottom) {
+			window.scrollTo(0, BODY.scrollHeight);
+		}
 	]]
 
-	self:QueueJavascript(js .. "\nRICHTEXT.appendChild(span);")
-	self:GotoTextEnd()
+	self:QueueJavascript(js)
 end
 
 function PANEL:AppendImageURL(url)
@@ -130,7 +143,7 @@ function PANEL:InsertClickableTextEnd()
 end
 
 function PANEL:GotoTextEnd()
-	self:QueueJavascript([[RICHTEXT.scrollIntoView(false);]])
+	self:QueueJavascript([[window.scrollTo(0, BODY.scrollHeight);]])
 end
 
 function PANEL:GotoTextStart()
