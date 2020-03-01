@@ -9,9 +9,6 @@ local MAIN_TAB = {
 		if not HAS_CHROMIUM then
 			-- compat for RichTextX
 			self.RichText.AppendImageURL = function(self, url)
-				self:InsertClickableTextStart(url)
-				self:AppendText(url)
-				self:InsertClickableTextEnd()
 			end
 		end
 
