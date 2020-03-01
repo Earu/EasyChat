@@ -68,6 +68,7 @@ local chat_GetSize = chat.GetChatBoxSize
 	Base ChatHUD
 ]]-------------------------------------------------------------------------------
 
+local CUSTOM_FONT_SETTINGS_PATH = "easychat/chud_font_settings.txt"
 local SHADOW_FONT_BLURSIZE = 1
 local SMOOTHING_SPEED = 1000
 local MAX_TEXT_OFFSET = 400
@@ -124,8 +125,25 @@ cvars.AddChangeCallback(EC_HUD_TTL:GetName(), function()
 	chathud.FadeTime = EC_HUD_TTL:GetInt()
 end)
 
+function chathud:ApplyCustomFontSettings()
+	if not file.Exists(CUSTOM_FONT_SETTINGS_PATH, "DATA") then return end
+
+	local json = file.Read(CUSTOM_FONT_SETTINGS_PATH, "DATA")
+	local data = util.JSONToTable(json)
+	local shadow_data = table_copy(data)
+	shadow_data.blursize = SHADOW_FONT_BLURSIZE
+
+	surface_CreateFont(self.DefaultFont, data)
+	surface_CreateFont(self.DefaultShadowFont, shadow_data)
+
+	-- when this is called early, this function might not exists
+	if self.InvalidateLayout then
+		self:InvalidateLayout()
+	end
+end
+
 function chathud:UpdateFontSize(size)
-	surface_CreateFont("ECHUDDefault", {
+	surface_CreateFont(self.DefaultFont, {
 		font = "Roboto",
 		extended = true,
 		size = size,
@@ -134,7 +152,7 @@ function chathud:UpdateFontSize(size)
 		read_speed = 100,
 	})
 
-	surface_CreateFont("ECHUDShadowDefault", {
+	surface_CreateFont(self.DefaultShadowFont, {
 		font = "Roboto",
 		extended = true,
 		size = size,
@@ -143,6 +161,8 @@ function chathud:UpdateFontSize(size)
 		blursize = SHADOW_FONT_BLURSIZE,
 		read_speed = 100,
 	})
+
+	self:ApplyCustomFontSettings()
 end
 
 chathud:UpdateFontSize(16)
