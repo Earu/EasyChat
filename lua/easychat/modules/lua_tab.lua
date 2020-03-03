@@ -676,29 +676,32 @@ if CLIENT then
 
 	vgui.Register("ECLuaTab", LUA_TAB, "DPanel")
 
-	local EC_LUA_TAB = CreateConVar("easychat_luatab", "1", FCVAR_ARCHIVE, "Display luatab or not")
-	cvars.AddChangeCallback(EC_LUA_TAB:GetName(), EasyChat.Reload)
+	local lua_tab = vgui.Create("ECLuaTab")
+	EasyChat.AddTab("Lua", lua_tab)
 
-	EasyChat.RegisterConvar(EC_LUA_TAB, "Display lua tab")
-
-	if EC_LUA_TAB:GetBool() then
-		local lua_tab = vgui.Create("ECLuaTab")
-		EasyChat.AddTab("Lua", lua_tab)
-
-		lua_tab:LoadLastSession()
-
-		local function save_hook()
-			-- this can happen with disabled modules
-			if not IsValid(lua_tab) then return end
-			lua_tab:SaveSession()
+	-- dont display it by default on small resolutions
+	if not cookie.GetNumber("EasyChatSmallScreenLuaTab") and ScrW() < 1600 then
+		local tab_data = EasyChat.GetTab("Lua")
+		if tab_data and IsValid(tab_data.Tab) then
+			tab_data.Tab:Hide()
 		end
 
-		hook.Add("ShutDown", "EasyChatModuleLuaTab", save_hook)
-		hook.Add("ECPreDestroy", "EasyChatModuleLuaTab", save_hook)
-
-		-- in case of crashes, have auto-saving
-		timer.Create("EasyChatModuleLuaTabAutoSave", 300, 0, save_hook)
+		cookie.Set("EasyChatSmallScreenLuaTab", "1")
 	end
+
+	lua_tab:LoadLastSession()
+
+	local function save_hook()
+		-- this can happen with disabled modules
+		if not IsValid(lua_tab) then return end
+		lua_tab:SaveSession()
+	end
+
+	hook.Add("ShutDown", "EasyChatModuleLuaTab", save_hook)
+	hook.Add("ECPreDestroy", "EasyChatModuleLuaTab", save_hook)
+
+	-- in case of crashes, have auto-saving
+	timer.Create("EasyChatModuleLuaTabAutoSave", 300, 0, save_hook)
 end
 
 return "LuaTab"
