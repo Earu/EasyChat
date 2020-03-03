@@ -71,7 +71,7 @@ if CLIENT then
 					surface.DrawRect(0, 0, w, h)
 
 					surface.SetDrawColor(EasyChat.OutlayColor)
-					surface.DrawOutlinedRect(0, 0, w, h)
+					surface.DrawLine(0, 0, w, 0)
 
 					self:DrawTextEntryText(EasyChat.TextColor, EasyChat.OutlayColor, EasyChat.TextColor)
 				end
