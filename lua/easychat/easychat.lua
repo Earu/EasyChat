@@ -271,7 +271,7 @@ if CLIENT then
 	-- after easychat var declarations [necessary]
 	include("easychat/client/vgui/chatbox_panel.lua")
 	include("easychat/client/vgui/chat_tab.lua")
-	include("easychat/client/vgui/settings_tab.lua")
+	include("easychat/client/vgui/settings_menu.lua")
 	include("easychat/client/vgui/chathud_font_editor_panel.lua")
 
 	function EasyChat.RegisterConvar(convar, desc)
@@ -1280,16 +1280,32 @@ if CLIENT then
 		end)
 
 		hook.Add("PreRender", TAG, function()
-			if not EasyChat.IsOpened() then return end
 			if not input.IsKeyDown(KEY_ESCAPE) then return end
 
-			close_chatbox()
-			gui.HideGameUI()
+			-- handle settings menu if opened, stop there for now
+			if IsValid(EasyChat.Settings) and EasyChat.Settings:IsVisible() then
+				EasyChat.Settings:SetVisible(false)
+				return
+			end
+
+			if EasyChat.IsOpened() then
+				close_chatbox()
+				gui.HideGameUI()
+			end
 		end)
 
 		-- we do that here so its available from modules
-		local settings = vgui.Create("ECSettingsTab")
-		EasyChat.Settings = settings
+		EasyChat.Settings = vgui.Create("ECSettingsMenu")
+		EasyChat.Settings:SetVisible(false)
+
+		function EasyChat.OpenSettings()
+			local settings = EasyChat.Settings
+			if not IsValid(settings) then return end
+
+			settings:SetVisible(true)
+			settings:MakePopup()
+			settings:Center()
+		end
 
 		-- load modules
 		do
@@ -1297,8 +1313,6 @@ if CLIENT then
 			if not EC_NO_MODULES:GetBool() then load_modules() end
 			safe_hook_run("ECPostLoadModules")
 		end
-
-		EasyChat.AddTab("Settings", settings)
 
 		-- process the user tabs preferences
 		do
@@ -1518,6 +1532,10 @@ function EasyChat.Destroy()
 
 		if EasyChat.GUI and IsValid(EasyChat.GUI.ChatBox) then
 			EasyChat.GUI.ChatBox:Remove()
+		end
+
+		if IsValid(EasyChat.Settings) then
+			EasyChat.Settings:Remove()
 		end
 
 		if EasyChat.ChatHUD then
