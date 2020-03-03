@@ -14,7 +14,7 @@ AddCSLuaFile("easychat/client/vgui/richtextx.lua")
 AddCSLuaFile("easychat/client/vgui/textentryx.lua")
 AddCSLuaFile("easychat/client/vgui/emote_picker.lua")
 AddCSLuaFile("easychat/client/vgui/chat_tab.lua")
-AddCSLuaFile("easychat/client/vgui/settings_tab.lua")
+AddCSLuaFile("easychat/client/vgui/settings_menu.lua")
 AddCSLuaFile("easychat/client/vgui/chathud_font_editor_panel.lua")
 
 include("easychat/client/font_extensions.lua")
