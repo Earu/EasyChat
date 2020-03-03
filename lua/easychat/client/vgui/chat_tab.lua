@@ -116,15 +116,18 @@ local MAIN_TAB = {
 		if not EasyChat.UseDermaSkin then
 			local black_color = Color(0, 0, 0)
 			if HAS_CHROMIUM then
-				self.TextEntry:SetBackgroundColor(color_white)
-				self.TextEntry:SetBorderColor(color_white)
-				self.TextEntry:SetTextColor(black_color)
+				self.TextEntry:SetBackgroundColor(EasyChat.TabColor)
+				self.TextEntry:SetBorderColor(EasyChat.OutlayColor)
+				self.TextEntry:SetTextColor(EasyChat.TextColor)
 			else
 				self.TextEntry.Paint = function(self, w, h)
-					surface.SetDrawColor(color_white)
+					surface.SetDrawColor(EasyChat.TabColor)
 					surface.DrawRect(0, 0, w, h)
 
-					self:DrawTextEntryText(black_color, EasyChat.OutlayColor, black_color)
+					surface.SetDrawColor(EasyChat.OutlayColor)
+					surface.DrawOutlinedRect(0, 0, w, h)
+
+					self:DrawTextEntryText(EasyChat.TextColor, EasyChat.OutlayColor, EasyChat.TextColor)
 				end
 			end
 
