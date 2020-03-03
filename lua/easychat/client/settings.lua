@@ -203,12 +203,9 @@ local function create_default_settings()
 
 		build_tab_list()
 
-		hook.Add("ECTabChanged", tab_list, function(_, new_tab_name)
-			if new_tab_name == "Settings" then build_tab_list() end
-		end)
-
+		hook.Add("ECSettingsOpened", tab_list, build_tab_list)
 		tab_list.OnRemove = function(self)
-			hook.Remove("ECTabChanged", self)
+			hook.Remove("ECSettingsOpened", self)
 		end
 
 		local setting_apply_tab = settings:AddSetting(category_name, "action", "Hide / Show Tab")
