@@ -22,7 +22,7 @@ function PANEL:Init()
 					height: 100%;
 					width: 100%;
 					border: none;
-					padding-left: 3px;
+					padding-left: 5px;
 					font-family: 'Roboto', sans-serif;
 				}
 			</style>
@@ -178,15 +178,30 @@ function PANEL:SetText(text)
 	text = text or ""
 
 	self.CurrentValue = text
-	local js = ([[TEXT_ENTRY.value = `%s`;]]):format(text:JavascriptSafe())
-	self:QueueJavascript(js)
+	self:QueueJavascript(([[TEXT_ENTRY.value = `%s`;]]):format(text:JavascriptSafe()))
 end
 PANEL.SetValue = PANEL.SetText
 
+local function color_to_css(col)
+	return ("rgba(%d, %d, %d, %d)"):format(col.r, col.g, col.b, col.a / 255)
+end
+
 function PANEL:SetTextColor(col)
-	local js = ([[TEXT_ENTRY.style.color = "rgba(%d,%d,%d,%d)";]]):format(col.r, col.g, col.b, col.a / 255)
-	self:QueueJavascript(js)
+	self:QueueJavascript(([[TEXT_ENTRY.style.color = "%s";]]):format(color_to_css(col)))
 	self.TextColor = col
+end
+
+function PANEL:SetPlaceholderText(text)
+	self:QueueJavascript(([[TEXT_ENTRY.placeholder = `%s`;]]):format(text:JavascriptSafe()))
+end
+
+function PANEL:SetPlaceholderColor(col)
+	self:QueueJavascript([[{
+		let style = document.createElement("style");
+		style.type = "text/css";
+		style.innerHTML = "#text-entry::placeholder { color: ]] .. color_to_css(col)  .. [[; }";
+		document.getElementsByTagName("head")[0].appendChild(style);
+	}]])
 end
 
 function PANEL:GetTextColor()
@@ -194,8 +209,7 @@ function PANEL:GetTextColor()
 end
 
 function PANEL:SetBackgroundColor(col)
-	local js = ([[TEXT_ENTRY.style.backgroundColor = "rgba(%d,%d,%d,%d)";]]):format(col.r, col.g, col.b, col.a / 255)
-	self:QueueJavascript(js)
+	self:QueueJavascript(([[TEXT_ENTRY.style.backgroundColor = "%s";]]):format(color_to_css(col)))
 	self.BackgroundColor = col
 end
 
