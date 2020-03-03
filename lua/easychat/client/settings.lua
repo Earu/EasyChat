@@ -292,8 +292,11 @@ local function add_chathud_markup_settings()
 end
 
 local function add_legacy_settings()
+	local registered_cvars = EasyChat.GetRegisteredConvars()
+	if #registered_cvars == 0 then return end
+
 	local options = {}
-	for _, registered_cvar in pairs(EasyChat.GetRegisteredConvars()) do
+	for _, registered_cvar in pairs(registered_cvars) do
 		options[registered_cvar.Convar] = registered_cvar.Description
 	end
 
