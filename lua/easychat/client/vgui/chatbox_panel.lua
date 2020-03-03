@@ -18,12 +18,12 @@ local CHATBOX = {
 		self.Scroller = self.Tabs.tabScroller
 		self.OldTab = NULL
 
-		self.BtnClose:SetSize(45, 18)
+		self.BtnClose:SetSize(30, 30)
 		self.BtnClose:SetZPos(10)
 		self.BtnClose:SetFont("DermaDefaultBold")
 		self.BtnClose:SetText("X")
 
-		self.BtnMaxim:SetSize(35, 23)
+		self.BtnMaxim:SetSize(30, 32)
 		self.BtnMaxim:SetZPos(10)
 		self.BtnMaxim:SetFont("DermaLarge")
 		self.BtnMaxim:SetText("▭")
@@ -155,17 +155,8 @@ local CHATBOX = {
 				surface.DrawOutlinedRect(6, 0, w - 13, h - 5)
 			end
 
-			local gray_color = Color(225, 225, 225)
-			self.BtnMaxim.Paint = function(self, w, h)
-				surface.SetDrawColor(gray_color)
-				surface.DrawRect(0, 0, w, h)
-			end
-
-			local red_color = Color(246, 40, 40)
-			self.BtnClose.Paint = function(self, w, h)
-				surface.SetDrawColor(red_color)
-				surface.DrawRect(0, 0, w - 1, h)
-			end
+			self.BtnMaxim.Paint = function() end
+			self.BtnClose.Paint = function() end
 
 			local no_color = Color(0, 0, 0, 0)
 			self.Tabs.Paint = function(self, w, h)
@@ -176,7 +167,7 @@ local CHATBOX = {
 	end,
 	PerformLayout = function(self, w, h)
 		self.Tabs:SetSize(w - 13, h - 11)
-		self.BtnMaxim:SetPos(w - self.BtnMaxim:GetWide() - 50, -7)
+		self.BtnMaxim:SetPos(w - self.BtnMaxim:GetWide() - 35, -4)
 		self.BtnClose:SetPos(w - self.BtnClose:GetWide() - 6, -2)
 	end
 }
