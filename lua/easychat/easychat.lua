@@ -163,7 +163,7 @@ if CLIENT then
 	-- chatbox panel
 	local EC_GLOBAL_ON_OPEN = CreateConVar("easychat_global_on_open", "1", FCVAR_ARCHIVE, "Set the chat to always open global chat tab on open")
 	local EC_FONT = CreateConVar("easychat_font", "Roboto", FCVAR_ARCHIVE, "Set the font to use for the chat")
-	local EC_FONT_SIZE = CreateConVar("easychat_font_size", "15", FCVAR_ARCHIVE, "Set the font size for chatbox")
+	local EC_FONT_SIZE = CreateConVar("easychat_font_size", "17", FCVAR_ARCHIVE, "Set the font size for chatbox")
 	local EC_DERMASKIN = CreateConVar("easychat_use_dermaskin", "0", FCVAR_ARCHIVE, "Use dermaskin look or not")
 	local EC_HISTORY = CreateConVar("easychat_history", "1", FCVAR_ARCHIVE, "Should the history be shown")
 	local EC_IMAGES = CreateConVar("easychat_images", "1", FCVAR_ARCHIVE, "Display images in the chat window")
@@ -1305,6 +1305,8 @@ if CLIENT then
 			settings:SetVisible(true)
 			settings:MakePopup()
 			settings:Center()
+
+			safe_hook_run("ECSettingsOpened")
 		end
 
 		-- load modules
