@@ -23,7 +23,7 @@ local CHATBOX = {
 		self.BtnClose:SetFont("DermaDefaultBold")
 		self.BtnClose:SetText("X")
 
-		self.BtnMaxim:SetSize(30, 32)
+		self.BtnMaxim:SetSize(30, 33)
 		self.BtnMaxim:SetZPos(10)
 		self.BtnMaxim:SetFont("DermaLarge")
 		self.BtnMaxim:SetText("▭")
@@ -145,8 +145,8 @@ local CHATBOX = {
 		end
 
 		if not EasyChat.UseDermaSkin then
-			self.BtnClose:SetTextColor(Color(200, 20, 20))
-			self.BtnMaxim:SetTextColor(Color(125, 125, 125))
+			self.BtnClose:SetTextColor(EasyChat.TextColor) --Color(200, 20, 20))
+			self.BtnMaxim:SetTextColor(EasyChat.TextColor) --Color(125, 125, 125))
 
 			self.Paint = function(self, w, h)
 				surface.SetDrawColor(EasyChat.OutlayColor)
@@ -167,7 +167,7 @@ local CHATBOX = {
 	end,
 	PerformLayout = function(self, w, h)
 		self.Tabs:SetSize(w - 13, h - 11)
-		self.BtnMaxim:SetPos(w - self.BtnMaxim:GetWide() - 35, -4)
+		self.BtnMaxim:SetPos(w - self.BtnMaxim:GetWide() - 35, -5)
 		self.BtnClose:SetPos(w - self.BtnClose:GetWide() - 6, -2)
 	end
 }

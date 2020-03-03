@@ -125,6 +125,13 @@ local function create_default_settings()
 
 			local setting_save_colors = settings:AddSetting(category_name, "action", "Save Colors")
 			setting_save_colors.DoClick = function()
+				local text_entry = EasyChat.GUI.TextEntry
+				if IsValid(text_entry) and text_entry.ClassName == "TextEntryX" then
+					text_entry:SetBackgroundColor(EasyChat.TabColor)
+					text_entry:SetBorderColor(EasyChat.OutlayColor)
+					text_entry:SetTextColor(EasyChat.TextColor)
+				end
+
 				file.Write("easychat/colors.txt", util.TableToJSON({
 					outlay = EasyChat.OutlayColor,
 					outlayoutline = EasyChat.OutlayOutlineColor,
