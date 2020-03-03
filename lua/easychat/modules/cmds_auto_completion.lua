@@ -76,7 +76,7 @@ if CLIENT then
 			return ulx_cmds
 		end
 
-		initialize("^!", generate_ulx_cmds_lookup())
+		initialize("!", generate_ulx_cmds_lookup())
 	elseif aowl then
 		net.Start(EASYCHAT_AUTO_COMPLETION)
 		net.SendToServer()
@@ -100,8 +100,9 @@ if CLIENT then
 	hook.Add("ChatTextChanged", hook_name, function(text)
 		if not cmds.Initialized then return end
 		cmds.ActiveOptionsIndex = 1
-
-		if not text:match(cmds.Prefix) then
+		
+		local prefix = text:match(("^%s"):format(cmds.Prefix))
+		if not prefix then
 			stop_auto_completion()
 			return
 		end
@@ -120,7 +121,7 @@ if CLIENT then
 		local options = {}
 		for cmd_name, cmd_args in pairs(cmds.Lookup) do
 			if cmd_name:match(cmd) then
-				options[("!%s"):format(cmd_name)] = cmd_args
+				options[("%s%s"):format(prefix, cmd_name)] = cmd_args
 				options_count = options_count + 1
 			end
 		end
