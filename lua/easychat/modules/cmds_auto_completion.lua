@@ -78,9 +78,6 @@ if CLIENT then
 
 		initialize("!", generate_ulx_cmds_lookup())
 	elseif aowl then
-		net.Start(EASYCHAT_AUTO_COMPLETION)
-		net.SendToServer()
-
 		net.Receive(EASYCHAT_AUTO_COMPLETION, function()
 			local aowl_cmds = {}
 			local cmds_str = net.ReadString()
@@ -95,12 +92,18 @@ if CLIENT then
 
 			initialize("[!|/|%.]", aowl_cmds)
 		end)
+
+		hook.Add("ECOpened", hook_name, function()
+			net.Start(EASYCHAT_AUTO_COMPLETION)
+			net.SendToServer()
+			hook.Remove("ECOpened", hook_name)
+		end)
 	end
 
 	hook.Add("ChatTextChanged", hook_name, function(text)
 		if not cmds.Initialized then return end
 		cmds.ActiveOptionsIndex = 1
-		
+
 		local prefix = text:match(("^%s"):format(cmds.Prefix))
 		if not prefix then
 			stop_auto_completion()
