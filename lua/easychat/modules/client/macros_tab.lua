@@ -347,4 +347,14 @@ end)
 
 EasyChat.AddTab("Macros", macro_tab)
 
+-- dont display it by default on small resolutions
+if not cookie.GetNumber("EasyChatSmallScreenMacrosTab") and ScrW() < 1600 then
+	local tab_data = EasyChat.GetTab("Macros")
+	if tab_data and IsValid(tab_data.Tab) then
+		tab_data.Tab:Hide()
+	end
+
+	cookie.Set("EasyChatSmallScreenMacrosTab", "1")
+end
+
 return "Macros Tab"
