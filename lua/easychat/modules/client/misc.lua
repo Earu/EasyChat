@@ -12,10 +12,11 @@ local EC_REPLACE = CreateConVar("easychat_misc_replace", "1", FCVAR_ARCHIVE, "Al
 hook.Add("OnChatTab","EasyChatModuleMisc",function(text)
 	if EC_EMOTES:GetBool() then
 		local args = string.Explode(" ", text)
-		if replaces[args[#args]] then
-			args[#args] = replaces[args[#args]]
+		local last_arg = args[#args]
+		if replaces[last_arg] then
+			args[#args] = replaces[last_arg]
+			return table.concat(args, " ", 1, #args)
 		end
-		return table.concat(args, " ", 1, #args)
 	end
 end)
 
