@@ -34,6 +34,7 @@ function PANEL:Init()
 					color: white;
 					font-family: Roboto, sans-serif;
 					font-size: 16;
+					overflow-x: hidden;
 				}
 
 				pre {
@@ -119,7 +120,7 @@ function PANEL:AppendImageURL(url)
 		img.onclick = () => RichTextX.OnClick(`]] .. url .. [[`);
 		img.style.cursor = "pointer";
 		img.src = `]] .. url .. [[`;
-		img.style.maxWidth = `100%`;
+		img.style.maxWidth = `80%`;
 		img.style.maxHeight = `300px`;
 
 		RICHTEXT.appendChild(document.createElement("br"));
