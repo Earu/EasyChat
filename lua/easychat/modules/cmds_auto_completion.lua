@@ -129,6 +129,11 @@ if CLIENT then
 			end
 		end
 
+		if options_count == 0 then
+			stop_auto_completion()
+			return
+		end
+
 		table.sort(options)
 		cmds.ActiveOptions = options
 		cmds.ActiveOptionsCount = options_count
