@@ -6,7 +6,7 @@ panel.btnMinim:Hide()
 
 function panel:Think()
 	if not IsValid(EasyChat.GUI.ChatBox) then return end
-	local x, y, w, h = EasyChat.GUI.ChatBox:GetBounds()
+	local x, y, w, _ = EasyChat.GUI.ChatBox:GetBounds()
 	self:SetPos(x + w, y)
 end
 
