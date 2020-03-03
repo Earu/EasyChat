@@ -20,7 +20,7 @@ local MAIN_TAB = {
 		self.BtnSwitch = self:Add("DButton")
 		self.BtnSwitch:SetText("Say")
 		self.BtnSwitch:SetFont("EasyChatFont")
-		self.BtnSwitch:SetTall(20)
+		self.BtnSwitch:SetTall(25)
 		self.BtnSwitch:SizeToContentsX(20)
 		self.BtnSwitch.Think = function(self)
 			local cur_mode = EasyChat.GetCurrentMode()
@@ -106,7 +106,7 @@ local MAIN_TAB = {
 		self.BtnPicker = self:Add("DButton")
 		self.BtnPicker:SetText("")
 		self.BtnPicker:SetIcon("icon16/emoticon_smile.png")
-		self.BtnPicker:SetSize(25, 20)
+		self.BtnPicker:SetSize(25, 25)
 		self.BtnPicker.DoClick = function()
 			local btn_x, btn_y = self.BtnPicker:LocalToScreen(0, 0)
 			self.Picker:SetPos(btn_x - (self.Picker:GetWide() / 2), btn_y - self.Picker:GetTall())
@@ -121,7 +121,7 @@ local MAIN_TAB = {
 		self.BtnSettings = self:Add("DButton")
 		self.BtnSettings:SetText("")
 		self.BtnSettings:SetIcon("icon16/cog.png")
-		self.BtnSettings:SetSize(25, 20)
+		self.BtnSettings:SetSize(25, 25)
 		self.BtnSettings.DoClick = function()
 			EasyChat.OpenSettings()
 		end
@@ -166,11 +166,11 @@ local MAIN_TAB = {
 		end
 	end,
 	PerformLayout = function(self, w, h)
-		self.RichText:SetSize(w - 10, h - 30)
+		self.RichText:SetSize(w - 10, h - 35)
 		self.RichText:SetPos(5, 5)
 		self.BtnSwitch:SetPos(0, h - self.BtnSwitch:GetTall())
-		self.TextEntry:SetSize(w - self.BtnSwitch:GetWide() - self.BtnPicker:GetWide() - self.BtnSettings:GetWide(), 20)
-		self.TextEntry:SetPos(self.BtnSwitch:GetWide(), h - 20)
+		self.TextEntry:SetSize(w - self.BtnSwitch:GetWide() - self.BtnPicker:GetWide() - self.BtnSettings:GetWide(), 25)
+		self.TextEntry:SetPos(self.BtnSwitch:GetWide(), h - self.TextEntry:GetTall())
 		self.BtnPicker:SetPos(w - self.BtnPicker:GetWide() - self.BtnSettings:GetWide(), h - self.BtnPicker:GetTall())
 		self.BtnSettings:SetPos(w - self.BtnSettings:GetWide(), h - self.BtnSettings:GetTall())
 	end,
