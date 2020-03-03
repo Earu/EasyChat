@@ -20,10 +20,16 @@ local MAIN_TAB = {
 		self.BtnSwitch = self:Add("DButton")
 		self.BtnSwitch:SetText("Say")
 		self.BtnSwitch:SetFont("EasyChatFont")
-		self.BtnSwitch:SetSize(65, 20)
+		self.BtnSwitch:SetTall(20)
+		self.BtnSwitch:SizeToContentsX(20)
 		self.BtnSwitch.Think = function(self)
 			local cur_mode = EasyChat.GetCurrentMode()
-			self:SetText(cur_mode.Name)
+			local cur_text = self:GetText()
+			if cur_text ~= cur_mode.Name then
+				self:SetText(cur_mode.Name)
+				self:SizeToContentsX(20)
+				self:InvalidateParent()
+			end
 		end
 		self.BtnSwitch.DoClick = function()
 			local next_mode = EasyChat.Mode + 1
@@ -50,6 +56,8 @@ local MAIN_TAB = {
 				last_key = key_code
 			end
 		end
+
+		self.TextEntry:SetPlaceholderText("type something...")
 
 		self.Picker = vgui.Create("ECEmotePicker")
 		self.Picker:SetVisible(false)
@@ -110,8 +118,18 @@ local MAIN_TAB = {
 			self.Picker:Populate()
 		end
 
+		self.BtnSettings = self:Add("DButton")
+		self.BtnSettings:SetText("")
+		self.BtnSettings:SetIcon("icon16/cog.png")
+		self.BtnSettings:SetSize(25, 20)
+		self.BtnSettings.DoClick = function()
+			EasyChat.OpenSettings()
+		end
+
 		if not EasyChat.UseDermaSkin then
-			local black_color = Color(0, 0, 0)
+			local text_color = EasyChat.TextColor
+			self.TextEntry:SetPlaceholderColor(Color(text_color.r - 100, text_color.g - 100, text_color.b - 100))
+
 			if HAS_CHROMIUM then
 				self.TextEntry:SetBackgroundColor(EasyChat.TabColor)
 				self.TextEntry:SetBorderColor(EasyChat.OutlayColor)
@@ -144,15 +162,17 @@ local MAIN_TAB = {
 			self.BtnSwitch:SetTextColor(EasyChat.TextColor)
 			self.BtnSwitch.Paint = btn_paint
 			self.BtnPicker.Paint = btn_paint
+			self.BtnSettings.Paint = btn_paint
 		end
 	end,
 	PerformLayout = function(self, w, h)
 		self.RichText:SetSize(w - 10, h - 30)
 		self.RichText:SetPos(5, 5)
 		self.BtnSwitch:SetPos(0, h - self.BtnSwitch:GetTall())
-		self.TextEntry:SetSize(w - self.BtnSwitch:GetWide() - self.BtnPicker:GetWide(), 20)
+		self.TextEntry:SetSize(w - self.BtnSwitch:GetWide() - self.BtnPicker:GetWide() - self.BtnSettings:GetWide(), 20)
 		self.TextEntry:SetPos(self.BtnSwitch:GetWide(), h - 20)
-		self.BtnPicker:SetPos(w - self.BtnPicker:GetWide(), h - self.BtnPicker:GetTall())
+		self.BtnPicker:SetPos(w - self.BtnPicker:GetWide() - self.BtnSettings:GetWide(), h - self.BtnPicker:GetTall())
+		self.BtnSettings:SetPos(w - self.BtnSettings:GetWide(), h - self.BtnSettings:GetTall())
 	end,
 	OnRemove = function(self)
 		self.Picker:Remove()
