@@ -1165,10 +1165,12 @@ if CLIENT then
 		function EasyChat.GUI.TextEntry:OnTab()
 			if self:GetText() ~= "" then
 				local autocompletion_text = gamemode.Call("OnChatTab", self:GetText())
-				self:SetText(autocompletion_text)
-				timer.Simple(0, function()
-					self:RequestFocus()
-				end)
+				if autocompletion_text then
+					self:SetText(autocompletion_text)
+					timer.Simple(0, function()
+						self:RequestFocus()
+					end)
+				end
 			else
 				local next_mode = EasyChat.Mode + 1
 				EasyChat.Mode = next_mode > EasyChat.ModeCount and 0 or next_mode
