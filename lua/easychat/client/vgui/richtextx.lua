@@ -97,7 +97,6 @@ function PANEL:AppendText(text)
 		span = document.createElement("span");
 		span.onclick = () => RichTextX.OnClick(`]] .. self.ClickableTextValue .. [[`);
 		span.style.cursor = "pointer";
-		span.style.textDecoration = "underline";
 		span.style.color = "4497CE";
 	]] or [[
 		span = document.createElement("span");
