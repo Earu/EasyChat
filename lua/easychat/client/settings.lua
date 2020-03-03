@@ -183,7 +183,8 @@ local function create_default_settings()
 			["ECChatTab"] = true,
 			["ECSettingsTab"] = true,
 		}
-		hook.Add("ECOpened", tab_list, function()
+		hook.Add("ECTabChanged", tab_list, function(_, new_tab_name)
+			if new_tab_name ~= "Settings" then return end
 			tab_list:Clear()
 
 			for tab_name, tab_data in pairs(EasyChat.GetTabs()) do
@@ -194,7 +195,7 @@ local function create_default_settings()
 		end)
 
 		tab_list.OnRemove = function(self)
-			hook.Remove("ECOpened", self)
+			hook.Remove("ECTabChanged", self)
 		end
 
 		local setting_apply_tab = settings:AddSetting(category_name, "action", "Hide / Show Tab")
