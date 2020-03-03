@@ -120,6 +120,27 @@ function PANEL:Init()
 	self:SetBackgroundColor(skin.colTextEntryBG)
 	self:SetTextColor(skin.colTextEntryText)
 	self:SetBorderColor(skin.colTextEntryBorder)
+
+	-- hack to clear the focus on the JS side
+	local old_KillFocus = self.KillFocus
+	self.KillFocus = function(self)
+		old_KillFocus(self)
+		self:QueueJavascript([[
+			if (document.activeElement != document.body) {
+				document.activeElement.blur();
+			}
+		]])
+	end
+
+	-- hack to proper re-gain focus on the JS side
+	local old_RequestFocus = self.RequestFocus
+	self.RequestFocus = function(self)
+		old_RequestFocus(self)
+		self:QueueJavascript([[
+			TEXT_ENTRY.click();
+			TEXT_ENTRY.focus();
+		]])
+	end
 end
 
 function PANEL:AddInternalCallback(name, callback)

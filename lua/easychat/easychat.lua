@@ -944,7 +944,6 @@ if CLIENT then
 			function chat.Open(input)
 				local is_team = input == 0
 				open_chatbox(is_team)
-				--chat.old_Open(input)
 			end
 
 			-- lets not have third-party addons decide wether we should save
@@ -960,6 +959,12 @@ if CLIENT then
 			chatbox_frame.BtnClose.DoClick = close_chatbox
 
 			function chatbox_frame.Tabs:OnActiveTabChanged(old_tab, new_tab)
+				-- we don't want to type in another tab
+				local focused_panel = old_tab.FocusOn
+				if IsValid(focused_panel) then
+					focused_panel:KillFocus()
+				end
+
 				safe_hook_run("ECTabChanged", old_tab.Name, new_tab.Name)
 			end
 
