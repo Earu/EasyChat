@@ -1,6 +1,6 @@
 local black_color = Color(0, 0, 0)
 local function update_settings_font(name, size)
-	surface.CreateFont("ECSettingsFont",{
+	surface.CreateFont("ECSettingsFont", {
 		font = name,
 		extended = true,
 		size = size - 1,
@@ -25,6 +25,22 @@ end)
 local SETTINGS = {}
 
 function SETTINGS:Init()
+	self:SetSize(700, 500)
+	self:SetTitle("EasyChat Settings")
+
+	self.lblTitle:SetFont("EasyChatFont")
+
+	self.btnMaxim:Hide()
+	self.btnMinim:Hide()
+
+	self.btnClose:SetSize(30, 30)
+	self.btnClose:SetZPos(10)
+	self.btnClose:SetFont("DermaDefaultBold")
+	self.btnClose:SetText("X")
+	self.btnClose.DoClick = function()
+		self:SetVisible(false)
+	end
+
 	self.CategoryList = {}
 
 	self.Categories = self:Add("DColumnSheet")
@@ -49,6 +65,10 @@ function SETTINGS:Init()
 	end
 
 	if not EasyChat.UseDermaSkin then
+		self.lblTitle:SetTextColor(EasyChat.TextColor)
+		self.btnClose:SetTextColor(EasyChat.TextColor)
+		self.btnClose.Paint = function() end
+
 		self.Categories.Paint = function(self, w, h)
 			surface.SetDrawColor(EasyChat.TabColor)
 			surface.DrawRect(0, 0, w, h)
@@ -60,6 +80,14 @@ function SETTINGS:Init()
 					or EasyChat.TabOutlineColor
 			surface.SetDrawColor(line_col)
 			surface.DrawLine(nagivation_w, 0, nagivation_w, h)
+		end
+
+		self.Paint = function(self, w, h)
+			surface.SetDrawColor(EasyChat.TabColor)
+			surface.DrawRect(0, 0, w, h)
+
+			surface.SetDrawColor(EasyChat.OutlayColor)
+			surface.DrawRect(0, 0, w, 25)
 		end
 
 		self.PaintOver = function(self, w, h)
@@ -480,4 +508,4 @@ function SETTINGS:AddSpacer(category_name)
 	end
 end
 
-vgui.Register("ECSettingsTab", SETTINGS, "DPanel")
+vgui.Register("ECSettingsMenu", SETTINGS, "DFrame")
