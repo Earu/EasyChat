@@ -93,10 +93,10 @@ if CLIENT then
 			initialize("[!|/|%.]", aowl_cmds)
 		end)
 
-		hook.Add("ECOpened", hook_name, function()
+		hook.Add("StartChat", hook_name, function()
 			net.Start(EASYCHAT_AUTO_COMPLETION)
 			net.SendToServer()
-			hook.Remove("ECOpened", hook_name)
+			hook.Remove("StartChat", hook_name)
 		end)
 	end
 
@@ -157,7 +157,7 @@ if CLIENT then
 		local pos_x = chat_x + chat_w + 2
 
 		-- account for the panel that shows people that can "hear" you
-		local cur_mode = EasyChat.Modes[EasyChat.Mode]
+		local cur_mode = EasyChat.GetCurrentMode()
 		local localui_panel = EasyChat.GUI.LocalPanel
 		if cur_mode and cur_mode.Name == "Local" and IsValid(localui_panel) then
 			pos_x = pos_x + localui_panel:GetWide()
