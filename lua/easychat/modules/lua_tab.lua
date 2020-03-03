@@ -144,6 +144,10 @@ if CLIENT then
 
 			self.MenuEdit = self.MenuBar:AddMenu("Edit")
 			table.insert(options, self.MenuEdit:AddOption("Rename Current (F2)", function() self:RenameCurrentTab() end))
+
+			self.MenuTools = self.MenuBar:AddMenu("Tools")
+			table.insert(options, self.MenuTools:AddOption("Upload to Pastebin", function() self:UploadCodeToPastebin() end))
+			table.insert(options, self.MenuTools:AddOption("Load Code from URL", function() self:LoadCodeFromURL() end))
 			-- table.insert(options, self.MenuFile:AddOption("Load File (Ctrl + O)"))
 			-- table.insert(options, self.MenuFile:AddOption("Save (Ctrl + S)"))
 			-- table.insert(options, self.MenuFile:AddOption("Save As... (Ctrl + Shift + S)"))
@@ -197,6 +201,7 @@ if CLIENT then
 
 			self.MenuFile.Paint = MenuPaint
 			self.MenuEdit.Paint = MenuPaint
+			self.MenuTools.Paint = MenuPaint
 			self.EnvSelector.Paint = MenuPaint
 			self.EnvSelector.Think = function(self)
 				if self:IsMenuOpen() and not self.Menu.CustomPainted then
@@ -622,6 +627,42 @@ if CLIENT then
 			end
 
 			return ""
+		end,
+		UploadCodeToPastebin = function(self)
+			local code = self:GetCode()
+			if code == "" then return end
+
+			http.Post("https://pastebin.com/api/api_post.php", {
+				api_dev_key = "58cf95ab426b33880fad5d9374afefea",
+				api_paste_code = code,
+				api_option = "paste",
+				api_paste_format = "lua",
+				api_paste_private = 0,
+				api_paste_expire_date = "1D",
+			}, function(url)
+				local msg = ("Uploaded code on pastebin: %s"):format(url)
+				EasyChat.Print(msg)
+				chat.AddText(color_white, msg)
+				SetClipboardText(url)
+			end, function(err)
+				local msg = ("Pastebin error: %s"):format(err)
+				EasyChat.Print(true, msg)
+				chat.AddText(Color(255, 0, 0), msg)
+			end)
+		end,
+		LoadCodeFromURL = function(self)
+			EasyChat.AskForInput("Code URL", function(url)
+				url = url
+					:gsub("pastebin.com/", "pastebin.com/raw/")
+					:gsub("hastebin.com/", "hastebin.com/raw/")
+				http.Fetch(url, function(txt)
+					if txt:match("%</html%>") then return end
+					self:NewTab(txt)
+					EasyChat.Print(("Loaded code from: %s"):format(url))
+				end, function(err)
+					EasyChat.Print(true, ("Could not load code from: %s"):format(url))
+				end)
+			end)
 		end,
 		Paint = function(self, w, h)
 			surface.SetDrawColor(EasyChat.TabColor)
