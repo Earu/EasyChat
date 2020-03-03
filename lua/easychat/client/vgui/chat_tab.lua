@@ -22,11 +22,8 @@ local MAIN_TAB = {
 		self.BtnSwitch:SetFont("EasyChatFont")
 		self.BtnSwitch:SetSize(65, 20)
 		self.BtnSwitch.Think = function(self)
-			if EasyChat.Mode == 0 then
-				self:SetText("Say")
-			else
-				self:SetText(EasyChat.Modes[EasyChat.Mode].Name)
-			end
+			local cur_mode = EasyChat.GetCurrentMode()
+			self:SetText(cur_mode.Name)
 		end
 		self.BtnSwitch.DoClick = function()
 			local next_mode = EasyChat.Mode + 1

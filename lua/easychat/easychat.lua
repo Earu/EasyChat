@@ -249,8 +249,13 @@ if CLIENT then
 
 	load_chatbox_colors()
 
+	local default_chat_mode = {
+		Name = "Say",
+		Callback = function(text) EasyChat.SendGlobalMessage(text, false, false) end,
+	}
+
 	EasyChat.Mode = 0
-	EasyChat.Modes = {}
+	EasyChat.Modes = { [0] = default_chat_mode }
 	EasyChat.Expressions = include("easychat/client/expressions.lua")
 	EasyChat.ChatHUD = include("easychat/client/chathud.lua")
 	EasyChat.MacroProcessor = include("easychat/client/macro_processor.lua")
@@ -283,6 +288,10 @@ if CLIENT then
 	function EasyChat.AddMode(name, callback)
 		table.insert(EasyChat.Modes, { Name = name, Callback = callback })
 		EasyChat.ModeCount = #EasyChat.Modes
+	end
+
+	function EasyChat.GetCurrentMode()
+		return EasyChat.Modes[EasyChat.Mode]
 	end
 
 	function EasyChat.IsOpened()
@@ -587,7 +596,7 @@ if CLIENT then
 
 		-- reset for reload
 		EasyChat.Mode = 0
-		EasyChat.Modes = {}
+		EasyChat.Modes = { [0] = default_chat_mode }
 		EasyChat.Expressions = include("easychat/client/expressions.lua")
 		EasyChat.ChatHUD = include("easychat/client/chathud.lua")
 		EasyChat.MacroProcessor = include("easychat/client/macro_processor.lua")
@@ -1180,12 +1189,8 @@ if CLIENT then
 		function EasyChat.GUI.TextEntry:OnEnter()
 			self:SetText(self:GetText():Replace("╚​", ""))
 			if self:GetText():Trim() ~= "" then
-				if EasyChat.Mode == 0 then
-					EasyChat.SendGlobalMessage(self:GetText(), false, false)
-				else
-					local mode = EasyChat.Modes[EasyChat.Mode]
-					mode.Callback(self:GetText())
-				end
+				local cur_mode = EasyChat.GetCurrentMode()
+				cur_mode.Callback(self:GetText())
 			end
 
 			close_chatbox()
@@ -1504,7 +1509,7 @@ function EasyChat.Destroy()
 
 		EasyChat.ModeCount = 0
 		EasyChat.Mode = 0
-		EasyChat.Modes = {}
+		EasyChat.Modes = { [0] = default_chat_mode }
 
 		if EasyChat.GUI and IsValid(EasyChat.GUI.ChatBox) then
 			EasyChat.GUI.ChatBox:Remove()
