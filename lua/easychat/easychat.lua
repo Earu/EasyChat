@@ -1192,10 +1192,15 @@ if CLIENT then
 		end
 
 		function EasyChat.GUI.TextEntry:OnEnter()
-			self:SetText(self:GetText():Replace("╚​", ""))
-			if self:GetText():Trim() ~= "" then
+			local msg = self:GetText():Replace("╚​", ""):Trim()
+			self:SetText(msg)
+
+			if msg ~= "" then
+				local should_send = safe_hook_run("ECShouldSendMessage", msg)
+				if should_send == false then return end
+
 				local cur_mode = EasyChat.GetCurrentMode()
-				cur_mode.Callback(self:GetText())
+				cur_mode.Callback(msg)
 			end
 
 			close_chatbox()
