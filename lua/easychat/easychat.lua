@@ -9,6 +9,7 @@ local NET_SET_TYPING = "EASY_CHAT_START_CHAT"
 
 local PLY = FindMetaTable("Player")
 local TAG = "EasyChat"
+local MAX_CHARS = 3000
 
 local color_print_head = Color(244, 167, 66)
 local color_print_good = Color(0, 160, 220)
@@ -62,12 +63,8 @@ if SERVER then
 	util.AddNetworkString(NET_BROADCAST_MSG)
 	util.AddNetworkString(NET_SET_TYPING)
 
-	net.Receive(NET_SEND_MSG, function(len, ply)
-		local str = net.ReadString()
-		local is_team = net.ReadBool()
-		local is_local = net.ReadBool()
+	function EasyChat.SendGlobalMessage(ply, msg, is_team, is_local)
 		local msg = gamemode.Call("PlayerSay", ply, str, is_team)
-
 		if type(msg) ~= "string" or msg:Trim() == "" then return end
 
 		local filter = {}
@@ -105,6 +102,14 @@ if SERVER then
 		net.Send(filter)
 
 		print(ply:Nick():gsub("<.->", "") .. ": " .. msg) -- shows in server console
+	end
+
+	net.Receive(NET_SEND_MSG, function(len, ply)
+		local msg = net.ReadString()
+		local is_team = net.ReadBool()
+		local is_local = net.ReadBool()
+
+		EasyChat.SendGlobalMessage(ply, msg:sub(1, MAX_CHARS), is_team, is_local)
 	end)
 
 	net.Receive(NET_SET_TYPING, function(len, ply)
@@ -137,7 +142,6 @@ if SERVER then
 end
 
 if CLIENT then
-	local MAX_CHARS = 3000
 	local NO_COLOR = Color(0, 0, 0, 0)
 	local UPLOADING_TEXT = "[uploading image...]"
 
