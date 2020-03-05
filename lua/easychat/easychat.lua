@@ -973,6 +973,13 @@ if CLIENT then
 			end
 
 			function EasyChat.AddTab(name, panel)
+				-- in case we get overriden
+				if ec_tabs[name] then
+					local old_panel, old_tab = ec_tabs[name].Panel, ec_tabs[name].Tab
+					if IsValid(old_panel) then old_panel:Remove() end
+					if IsValid(old_tab) then old_tab:Remove() end
+				end
+
 				local tab = chatbox_frame.Tabs:AddSheet(name, panel)
 				tab.Tab.Name = name
 				tab.Tab:SetFont("EasyChatFont")
