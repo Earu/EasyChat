@@ -165,7 +165,7 @@ function scale_part:PreTextDraw(ctx, x, y, w, h)
 	m:Translate(tr)
 	m:Scale(self.Scale)
 	m:Translate(-tr)
-	cam_PushModelMatrix(m)
+	cam_PushModelMatrix(m, true)
 end
 
 function scale_part:PostTextDraw(ctx, x, y, w, h)
@@ -212,7 +212,7 @@ function rotate_part:PreTextDraw(ctx, x, y, w, h)
 	m:Translate(tr)
 	m:SetAngles(self.Angle)
 	m:Translate(-tr)
-	cam_PushModelMatrix(m)
+	cam_PushModelMatrix(m, true)
 end
 
 function rotate_part:PostTextDraw(ctx, x, y, w, h)
@@ -258,7 +258,7 @@ function z_rotate_part:PreTextDraw(ctx, x, y, w, h)
 	m:Translate(tr)
 	m:SetAngles(self.Angle)
 	m:Translate(-tr)
-	cam_PushModelMatrix(m)
+	cam_PushModelMatrix(m, true)
 end
 
 function z_rotate_part:PostTextDraw(ctx, x, y, w, h)
