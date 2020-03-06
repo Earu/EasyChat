@@ -989,6 +989,8 @@ if CLIENT then
 							table.remove(EasyChat.GUI.TabControl.Items, i)
 						end
 					end
+
+					ec_tabs[name] = nil
 				end
 			end
 
