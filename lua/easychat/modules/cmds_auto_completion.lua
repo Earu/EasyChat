@@ -90,6 +90,10 @@ if CLIENT then
 				aowl_cmds[cmd_name] = {}
 			end
 
+			for chat_cmd, _ in pairs(list.Get("ChatCommands")) do
+				aowl_cmds[chat_cmd] = {}
+			end
+
 			initialize("[!|/|%.]", aowl_cmds)
 		end)
 
