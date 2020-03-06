@@ -11,29 +11,20 @@ hook.Add("ECPostInitialize", "EasyChatModuleDarkRP", function()
 		local msg_components = {}
 
 		-- I don't trust this gamemode at all.
-		local col1 = col1 or Color(255, 255, 255)
-		local col2 = col2 or Color(255, 255, 255)
+		local col1 = col1 or color_white
+		local col2 = col2 or color_white
 
-		table.insert(msg_components, Color(255, 255, 255)) -- we don't want previous colors to be used again
+		table.insert(msg_components, color_white) -- we don't want previous colors to be used again
 
-		if EC_ENABLE:GetBool() then
-			if IsValid(ply) and EC_TEAMS:GetBool() then
-				if EC_TEAMS_COLOR:GetBool() then
-					local tcol = team.GetColor(ply:Team())
-					table.insert(msg_components, tcol)
-				end
-				table.insert(msg_components, "[" .. team.GetName(ply:Team()) .. "] - ")
-			end
-		end
+		EasyChat.AddTimeStamp(msg_components)
 
 		if is_dead then
-			table.insert(msg_components, Color(240, 80, 80))
-			table.insert(msg_components, "*DEAD* ")
+			EasyChat.AddDeadTag(msg_components)
 		end
 
 		if prefix then
 			if col1 == team.GetColor(ply:Team()) then -- Just prettier
-				col1 = Color(255, 255, 255)
+				col1 = color_white
 			end
 
 			table.insert(msg_components, col1)
@@ -48,7 +39,7 @@ hook.Add("ECPostInitialize", "EasyChatModuleDarkRP", function()
 			table.insert(msg_components, "???") -- console or weird stuff
 		end
 
-		table.insert(msg_components, Color(255, 255, 255))
+		table.insert(msg_components, color_white)
 		table.insert(msg_components, ": ")
 		table.insert(msg_components, col2)
 		table.insert(msg_components, msg)
