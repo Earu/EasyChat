@@ -976,14 +976,25 @@ if CLIENT then
 				safe_hook_run("ECTabChanged", old_tab.Name, new_tab.Name)
 			end
 
-			function EasyChat.AddTab(name, panel)
-				-- in case we get overriden
+			function EasyChat.RemoveTab(name)
 				local old_tab_data = ec_tabs[name]
 				if old_tab_data then
 					local old_panel, old_tab = old_tab_data.Panel, old_tab_data.Tab
 					if IsValid(old_panel) then old_panel:Remove() end
 					if IsValid(old_tab) then old_tab:Remove() end
+
+					-- we need this as the panel doesnt update itself otherwise
+					for i, item in pairs(EasyChat.GUI.TabControl.Items) do
+						if not IsValid(item.Tab) or not IsValid(item.Panel) then
+							table.remove(EasyChat.GUI.TabControl.Items, i)
+						end
+					end
 				end
+			end
+
+			function EasyChat.AddTab(name, panel)
+				-- in case we get overriden
+				EasyChat.RemoveTab(name)
 
 				local tab = chatbox_frame.Tabs:AddSheet(name, panel)
 				tab.Tab.Name = name
