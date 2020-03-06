@@ -2,10 +2,6 @@
 local EC_ENABLE = GetConVar("easychat_enable")
 local EC_NO_MODULES = GetConVar("easychat_no_modules")
 
--- timestamps
-local EC_TIMESTAMPS = GetConVar("easychat_timestamps")
-local EC_TIMESTAMPS_12 = GetConVar("easychat_timestamps_12")
-
 -- teams and colors
 local EC_TEAMS = GetConVar("easychat_teams")
 local EC_TEAMS_COLOR = GetConVar("easychat_teams_colored")
@@ -17,6 +13,7 @@ local EC_LOCAL_MSG_DIST = GetConVar("easychat_local_msg_distance")
 local EC_TICK_SOUND = GetConVar("easychat_tick_sound")
 local EC_USE_ME = GetConVar("easychat_use_me")
 local EC_IMAGES = GetConVar("easychat_images")
+local EC_TIMESTAMPS_12 = GetConVar("easychat_timestamps_12")
 
 -- chatbox
 local EC_USE_DERMASKIN = GetConVar("easychat_use_dermaskin")
@@ -24,11 +21,13 @@ local EC_HISTORY = GetConVar("easychat_history")
 local EC_GLOBAL_ON_OPEN = GetConVar("easychat_global_on_open")
 local EC_FONT = GetConVar("easychat_font")
 local EC_FONT_SIZE = GetConVar("easychat_font_size")
+local EC_TIMESTAMPS = GetConVar("easychat_timestamps")
 
 -- chathud
 local EC_HUD_FOLLOW = GetConVar("easychat_hud_follow")
 local EC_HUD_TTL = GetConVar("easychat_hud_ttl")
 local EC_HUD_SMOOTH = GetConVar("easychat_hud_smooth")
+local EC_HUD_TIMESTAMPS = GetConVar("easychat_hud_timestamps")
 
 local function create_option_set(settings, category_name, options)
 	for cvar, description in pairs(options) do
@@ -53,7 +52,6 @@ local function create_default_settings()
 		settings:AddCategory(category_name)
 
 		create_option_set(settings, category_name, {
-			[EC_TIMESTAMPS] = "Display timestamps",
 			[EC_TIMESTAMPS_12] = "12 hours mode timestamps",
 			[EC_TEAMS] = "Display teams",
 			[EC_TEAMS_COLOR] = "Color the team tags",
@@ -92,6 +90,7 @@ local function create_default_settings()
 
 		create_option_set(settings, category_name, {
 			[EC_GLOBAL_ON_OPEN] = "Open in the global tab",
+			[EC_TIMESTAMPS] = "Display timestamps",
 			[EC_HISTORY] = "Enable history",
 			[EC_IMAGES] = "Display images"
 		})
@@ -247,6 +246,7 @@ local function create_default_settings()
 
 		create_option_set(settings, category_name, {
 			[EC_HUD_FOLLOW] = "Follow chatbox window",
+			[EC_HUD_TIMESTAMPS] = "Display timestamps",
 			[EC_HUD_SMOOTH] = "Smooth message transitions"
 		})
 
