@@ -883,6 +883,43 @@ if CLIENT then
 			save_text(richtext)
 		end
 
+		function EasyChat.GlobalAddText(...)
+			EasyChat.ChatHUD:NewLine()
+			append_text(EasyChat.GUI.RichText, "\n")
+			global_insert_color_change(255, 255, 255, 255)
+
+			if EC_ENABLE:GetBool() then
+				if EC_TIMESTAMPS:GetBool() then
+					if EC_TIMESTAMPS_12:GetBool() then
+						global_append_text(os.date("%I:%M %p") .. " - ")
+					else
+						global_append_text(os.date("%H:%M") .. " - ")
+					end
+				end
+			end
+
+			local args = {...}
+			for _, arg in ipairs(args) do
+				local callback = ec_addtext_handles[type(arg)]
+				if callback then
+					pcall(callback, arg)
+				else
+					local str = tostring(arg)
+					global_append_text(str)
+				end
+			end
+
+			EasyChat.ChatHUD:PushPartComponent("stop")
+			EasyChat.ChatHUD:InvalidateLayout()
+
+			chat.old_AddText(...)
+			save_text(EasyChat.GUI.RichText)
+
+			if EC_TICK_SOUND:GetBool() then
+				chat.PlaySound()
+			end
+		end
+
 		do
 			chat.old_AddText = chat.old_AddText or chat.AddText
 			chat.old_GetChatBoxPos = chat.old_GetChatBoxPos or chat.GetChatBoxPos
@@ -890,42 +927,7 @@ if CLIENT then
 			chat.old_Open = chat.old_Open or chat.Open
 			chat.old_Close = chat.old_Close or chat.Close
 
-			function chat.AddText(...)
-				EasyChat.ChatHUD:NewLine()
-				append_text(EasyChat.GUI.RichText, "\n")
-				global_insert_color_change(255, 255, 255, 255)
-
-				if EC_ENABLE:GetBool() then
-					if EC_TIMESTAMPS:GetBool() then
-						if EC_TIMESTAMPS_12:GetBool() then
-							global_append_text(os.date("%I:%M %p") .. " - ")
-						else
-							global_append_text(os.date("%H:%M") .. " - ")
-						end
-					end
-				end
-
-				local args = {...}
-				for _, arg in ipairs(args) do
-					local callback = ec_addtext_handles[type(arg)]
-					if callback then
-						pcall(callback, arg)
-					else
-						local str = tostring(arg)
-						global_append_text(str)
-					end
-				end
-
-				EasyChat.ChatHUD:PushPartComponent("stop")
-				EasyChat.ChatHUD:InvalidateLayout()
-
-				chat.old_AddText(...)
-				save_text(EasyChat.GUI.RichText)
-
-				if EC_TICK_SOUND:GetBool() then
-					chat.PlaySound()
-				end
-			end
+			chat.AddText = function(...) EasyChat.GlobalAddText(...) end
 
 			function chat.GetChatBoxPos()
 				if EasyChat.GUI and IsValid(EasyChat.GUI.ChatBox) then
