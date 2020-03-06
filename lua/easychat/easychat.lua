@@ -149,10 +149,6 @@ if CLIENT then
 	local EC_ENABLE = CreateConVar("easychat_enable", "1", {FCVAR_ARCHIVE, FCVAR_USERINFO}, "Use easychat or not")
 	local EC_NO_MODULES = CreateConVar("easychat_no_modules", "0", FCVAR_ARCHIVE, "Should easychat load modules or not")
 
-	-- timestamps
-	local EC_TIMESTAMPS = CreateConVar("easychat_timestamps", "0", FCVAR_ARCHIVE, "Display timestamp in front of messages or not")
-	local EC_TIMESTAMPS_12 = CreateConVar("easychat_timestamps_12", "0", FCVAR_ARCHIVE, "Display timestamps in 12 hours mode or not")
-
 	-- teams and colors
 	local EC_TEAMS = CreateConVar("easychat_teams", "0", FCVAR_ARCHIVE, "Display team in front of messages or not")
 	local EC_TEAMS_COLOR = CreateConVar("easychat_teams_colored", "0", FCVAR_ARCHIVE, "Display team with its relative color")
@@ -163,6 +159,7 @@ if CLIENT then
 	local EC_LOCAL_MSG_DIST = CreateConVar("easychat_local_msg_distance", "300", {FCVAR_ARCHIVE, FCVAR_USERINFO}, "Set the maximum distance for users to receive local messages")
 	local EC_TICK_SOUND = CreateConVar("easychat_tick_sound", "1", FCVAR_ARCHIVE, "Should a tick sound be played on new messages or not")
 	local EC_USE_ME = CreateConVar("easychat_use_me", "0", FCVAR_ARCHIVE, 'Should the chat display your name or "me"')
+	local EC_TIMESTAMPS_12 = CreateConVar("easychat_timestamps_12", "0", FCVAR_ARCHIVE, "Display timestamps in 12 hours mode or not")
 
 	-- chatbox panel
 	local EC_GLOBAL_ON_OPEN = CreateConVar("easychat_global_on_open", "1", FCVAR_ARCHIVE, "Set the chat to always open global chat tab on open")
@@ -171,11 +168,13 @@ if CLIENT then
 	local EC_DERMASKIN = CreateConVar("easychat_use_dermaskin", "0", FCVAR_ARCHIVE, "Use dermaskin look or not")
 	local EC_HISTORY = CreateConVar("easychat_history", "1", FCVAR_ARCHIVE, "Should the history be shown")
 	local EC_IMAGES = CreateConVar("easychat_images", "1", FCVAR_ARCHIVE, "Display images in the chat window")
+	local EC_TIMESTAMPS = CreateConVar("easychat_timestamps", "0", FCVAR_ARCHIVE, "Display timestamps in the chatbox")
 
 	-- chathud
 	local EC_HUD_SMOOTH = CreateConVar("easychat_hud_smooth", "1", FCVAR_ARCHIVE, "Enables chat smoothing")
 	local EC_HUD_TTL = CreateConVar("easychat_hud_ttl", "16", FCVAR_ARCHIVE, "How long messages stay before vanishing")
 	local EC_HUD_FOLLOW = CreateConVar("easychat_hud_follow", "0", FCVAR_ARCHIVE, "Set the chat hud to follow the chatbox")
+	local EC_HUD_TIMESTAMPS = CreateConVar("easychat_hud_timestamps", "0", FCVAR_ARCHIVE, "Display timestamps in the chat hud")
 
 	EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
 
@@ -889,12 +888,13 @@ if CLIENT then
 			global_insert_color_change(255, 255, 255, 255)
 
 			if EC_ENABLE:GetBool() then
+				local timestamp = (EC_TIMESTAMPS_12:GetBool() and os.date("%I:%M %p") or os.date("%H:%M")) .. " - "
 				if EC_TIMESTAMPS:GetBool() then
-					if EC_TIMESTAMPS_12:GetBool() then
-						global_append_text(os.date("%I:%M %p") .. " - ")
-					else
-						global_append_text(os.date("%H:%M") .. " - ")
-					end
+					append_text(EasyChat.GUI.RichText, timestamp)
+				end
+
+				if EC_HUD_TIMESTAMPS:GetBool() then
+					EasyChat.ChatHUD:AppendText(timestamp)
 				end
 			end
 
@@ -1495,7 +1495,7 @@ if CLIENT then
 		gamemode.Call("OnPlayerChat", ply, msg, is_team, dead, is_local)
 	end)
 
-	function EasyChat.AddTimeStamp(msg_components)
+	function EasyChat.AddNameTags(msg_components)
 		msg_components = msg_components or {}
 
 		if EC_ENABLE:GetBool() then
@@ -1550,7 +1550,7 @@ if CLIENT then
 			-- reset color to white
 			table.insert(msg_components, Color(255, 255, 255))
 
-			EasyChat.AddTimeStamp(msg_components)
+			EasyChat.AddNameTags(msg_components)
 
 			if is_dead then
 				EasyChat.AddDeadTag(msg_components)

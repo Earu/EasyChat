@@ -27,7 +27,7 @@ local function mention(ply, msg, is_team, is_dead, is_local)
 		if ply == LocalPlayer() then return end
 
 		local msg_components = {}
-		EasyChat.AddTimeStamp(msg_components)
+		EasyChat.AddNameTags(msg_components)
 
 		if is_team then
 			EasyChat.AddTeamTag(msg_components)
