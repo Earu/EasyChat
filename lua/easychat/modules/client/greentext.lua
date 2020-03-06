@@ -4,7 +4,7 @@ hook.Add("OnPlayerChat", "EasyChatModuleGreenText", function(ply, msg, is_team, 
 	if EC_GREENTEXT:GetBool() and string.match(msg,"^>") then
 		local msg_components = {}
 
-		EasyChat.AddTimeStamp(msg_components)
+		EasyChat.AddNameTags(msg_components)
 
 		if is_team then
 			EasyChat.AddTeamTag(msg_components)
