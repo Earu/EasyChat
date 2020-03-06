@@ -912,7 +912,6 @@ if CLIENT then
 			EasyChat.ChatHUD:PushPartComponent("stop")
 			EasyChat.ChatHUD:InvalidateLayout()
 
-			chat.old_AddText(...)
 			save_text(EasyChat.GUI.RichText)
 
 			if EC_TICK_SOUND:GetBool() then
@@ -927,7 +926,10 @@ if CLIENT then
 			chat.old_Open = chat.old_Open or chat.Open
 			chat.old_Close = chat.old_Close or chat.Close
 
-			chat.AddText = function(...) EasyChat.GlobalAddText(...) end
+			chat.AddText = function(...)
+				EasyChat.GlobalAddText(...)
+				chat.old_AddText(...)
+			end
 
 			function chat.GetChatBoxPos()
 				if EasyChat.GUI and IsValid(EasyChat.GUI.ChatBox) then
