@@ -39,6 +39,8 @@ function PANEL:Init()
 
 				pre {
 					white-space: pre-line;
+					width: 100%;
+					height: 95%;
 				}
 			</style>
 			<pre id="main"></pre>
@@ -49,11 +51,25 @@ function PANEL:Init()
 		self:ActionSignal("TextClicked", signal_value)
 	end)
 
+	self:AddFunction("RichTextX", "OnRightClick", function(selected_text)
+		local copy_menu = DermaMenu()
+		copy_menu:AddOption("copy", function()
+			SetClipboardText(selected_text)
+		end)
+		copy_menu:Open()
+	end)
+
 	self:AddFunction("RichTextX", "Print", print)
 
 	self:QueueJavascript([[
 		const BODY = document.getElementsByTagName("body")[0];
 		const RICHTEXT = document.getElementById("main");
+
+		window.addEventListener("contextmenu", (ev) => {
+			ev.preventDefault();
+			let selection = window.getSelection();
+			RichTextX.OnRightClick(selection.toString());
+		});
 
 		let span = null;
 		let img = null;
