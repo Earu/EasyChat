@@ -168,6 +168,11 @@ if CLIENT then
 		end
 
 		hook.Add("HUDPaint", hook_name, function()
+			if not EasyChat.IsOpened() then
+				stop_auto_completion()
+				return
+			end
+
 			local i = 0
 			for option, option_args in pairs(options) do
 				local pos_y = chat_y + (i * option_h)
