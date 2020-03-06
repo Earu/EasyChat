@@ -14,6 +14,7 @@ local CHATBOX = {
 
 		self.BtnClose = self:Add("DButton")
 		self.BtnMaxim = self:Add("DButton")
+		self.BtnSettings = self:Add("DButton")
 		self.Tabs = self:Add("DPropertySheet")
 		self.Scroller = self.Tabs.tabScroller
 		self.OldTab = NULL
@@ -40,6 +41,14 @@ local CHATBOX = {
 				frame:SetSize(self.Before.w, self.Before.h)
 				self.IsFullScreen = false
 			end
+		end
+
+		self.BtnSettings:SetSize(30, 30)
+		self.BtnSettings:SetZPos(10)
+		self.BtnSettings:SetText("")
+		self.BtnSettings:SetIcon("icon16/cog.png")
+		self.BtnSettings.DoClick = function()
+			EasyChat.OpenSettings()
 		end
 
 		self.Tabs:SetPos(6, 6)
@@ -157,6 +166,7 @@ local CHATBOX = {
 
 			self.BtnMaxim.Paint = function() end
 			self.BtnClose.Paint = function() end
+			self.BtnSettings.Paint = function() end
 
 			local no_color = Color(0, 0, 0, 0)
 			self.Tabs.Paint = function(self, w, h)
@@ -167,6 +177,7 @@ local CHATBOX = {
 	end,
 	PerformLayout = function(self, w, h)
 		self.Tabs:SetSize(w - 13, h - 11)
+		self.BtnSettings:SetPos(w - self.BtnSettings:GetWide() - 65, -1)
 		self.BtnMaxim:SetPos(w - self.BtnMaxim:GetWide() - 35, -5)
 		self.BtnClose:SetPos(w - self.BtnClose:GetWide() - 6, -2)
 	end
