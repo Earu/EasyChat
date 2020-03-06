@@ -239,9 +239,10 @@ if CLIENT then
 	vgui.Register("ECDMTab", DM_TAB, "DPanel")
 	local dmtab = vgui.Create("ECDMTab")
 
-	net.Receive( EASYCHAT_DM, function()
+	net.Receive(EASYCHAT_DM, function()
 		local sender = net.ReadEntity()
 		local message = net.ReadString()
+		if not IsValid(dmtab) then return end
 		if not IsValid(sender) then return end
 
 		local chat = dmtab.Chats[sender]
@@ -260,17 +261,20 @@ if CLIENT then
 	end)
 
 	net.Receive(EASYCHAT_DM_REMOVE, function()
+		if not IsValid(dmtab) then return end
 		local ply = net.ReadEntity()
 		dmtab:RemoveChat(ply)
 	end)
 
 	hook.Add("EntityRemoved", "EasyChatModuleDMTab", function(ent)
+		if not IsValid(dmtab) then return end
 		if ent:IsPlayer() and ent ~= LocalPlayer() then
 			dmtab:RemoveChat(ent)
 		end
 	end)
 
 	hook.Add("ECTabChanged", "EasyChatModuleDMTab", function(_, tab)
+		if not IsValid(dmtab) then return end
 		if tab == "DM" then
 			local chat = dmtab.ActiveChat
 			if IsValid(chat.Player) and chat.NewMessages > 0 then
@@ -281,12 +285,14 @@ if CLIENT then
 	end)
 
 	hook.Add("NetworkEntityCreated", "EasyChatModuleDMTab", function(ent)
+		if not IsValid(dmtab) then return end
 		if ent:IsPlayer() and ent ~= LocalPlayer() then
 			dmtab:CreateChat(ent)
 		end
 	end)
 
 	hook.Add("ECInitialized", "EasyChatModuleDMTab", function()
+		if not IsValid(dmtab) then return end
 		for _, ply in pairs(player.GetAll()) do
 			if ply ~= LocalPlayer() then
 				dmtab:CreateChat(ply)
