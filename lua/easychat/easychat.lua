@@ -1245,7 +1245,10 @@ if CLIENT then
 		function EasyChat.GUI.TextEntry:OnImagePaste(name, base64)
 			if uploading then return end
 
-			self:SetText(self:GetText() .. UPLOADING_TEXT)
+			local caret_pos = self:GetCaretPos()
+			local str = self:GetText()
+			local str_start, str_end = str:sub(1, caret_pos), str:sub(caret_pos + 1)
+			self:SetText("%s%s%s"):format(str_start, UPLOADING_TEXT, str_end)
 			uploading = true
 
 			EasyChat.UploadToImgur(base64, function(url)
