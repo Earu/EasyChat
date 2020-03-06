@@ -2,6 +2,7 @@ local PANEL = {
 	CurrentValue = "",
 	History = {},
 	HistoryPos = 0,
+	CaretPos = 0,
 }
 
 function PANEL:Init()
@@ -38,19 +39,22 @@ function PANEL:Init()
 		</body>
 	</html>]])
 
-	self:AddInternalCallback("OnChange", function(value)
+	self:AddInternalCallback("OnChange", function(value, caret_pos)
 		self.CurrentValue = value
+		self.CaretPos = caret_pos
 
 		self:OnChange()
 		self:OnValueChange(value)
 	end)
 
-	self:AddInternalCallback("OnArrowUp", function()
+	self:AddInternalCallback("OnArrowUp", function(caret_pos)
+		self.CaretPos = caret_pos
 		self.HistoryPos = self.HistoryPos - 1
 		self:UpdateFromHistory()
 	end)
 
-	self:AddInternalCallback("OnArrowDown", function()
+	self:AddInternalCallback("OnArrowDown", function(caret_pos)
+		self.CaretPos = caret_pos
 		self.HistoryPos = self.HistoryPos + 1
 		self:UpdateFromHistory()
 	end)
@@ -59,14 +63,16 @@ function PANEL:Init()
 		self:OnImagePaste(name, base64)
 	end)
 
-	self:AddInternalCallback("OnEnter", function()
+	self:AddInternalCallback("OnEnter", function(caret_pos)
+		self.CaretPos = caret_pos
 		self:AddHistory(self:GetText())
 		self.HistoryPos = 0
 
 		self:OnEnter()
 	end)
 
-	self:AddInternalCallback("OnTab", function()
+	self:AddInternalCallback("OnTab", function(caret_pos)
+		self.CaretPos = caret_pos
 		self:OnTab()
 	end)
 
@@ -92,23 +98,23 @@ function PANEL:Init()
 				}
 			}
 		});
-		TEXT_ENTRY.addEventListener("input", (ev) => TextEntryX.OnChange(ev.target.value));
+		TEXT_ENTRY.addEventListener("input", (ev) => TextEntryX.OnChange(ev.target.value, ev.target.selectionStart));
 		TEXT_ENTRY.addEventListener("keydown", (ev) => {
 			switch (ev.which) {
 				case 9:
 					ev.preventDefault();
-					TextEntryX.OnTab();
+					TextEntryX.OnTab(TEXT_ENTRY.selectionStart);
 					return false;
 				case 13:
-					TextEntryX.OnEnter();
+					TextEntryX.OnEnter(TEXT_ENTRY.selectionStart);
 					break;
 				case 38:
 					ev.preventDefault();
-					TextEntryX.OnArrowUp();
+					TextEntryX.OnArrowUp(TEXT_ENTRY.selectionStart);
 					return false;
 				case 40:
 					ev.preventDefault();
-					TextEntryX.OnArrowDown();
+					TextEntryX.OnArrowDown(TEXT_ENTRY.selectionStart);
 					return false;
 				default:
 					break;
@@ -169,6 +175,18 @@ function PANEL:AddHistory(text)
 
 	table.RemoveByValue(self.History, text)
 	table.insert(self.History, text)
+end
+
+function PANEL:GetCaretPos()
+	return self.CaretPos
+end
+
+function PANEL:SetCaretPos(offset)
+	self:QueueJavascript(([[
+		TEXT_ENTRY.selectionStart = %d;
+		TEXT_ENTRY.selectionEnd = %d;
+	]]):format(offset, offset))
+	self.CaretPos = offset
 end
 
 function PANEL:GetText()
