@@ -117,7 +117,7 @@ if CLIENT then
 			return
 		end
 
-		local cmd = args[1]:lower()
+		local cmd = args[1]:lower():PatternSafe()
 		table.remove(args, 1) -- remove the command from the args
 
 		local options_count = 0
