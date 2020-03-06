@@ -157,7 +157,7 @@ if CLIENT then
 
 	-- misc
 	local EC_LOCAL_MSG_DIST = CreateConVar("easychat_local_msg_distance", "300", {FCVAR_ARCHIVE, FCVAR_USERINFO}, "Set the maximum distance for users to receive local messages")
-	local EC_TICK_SOUND = CreateConVar("easychat_tick_sound", "1", FCVAR_ARCHIVE, "Should a tick sound be played on new messages or not")
+	local EC_TICK_SOUND = CreateConVar("easychat_tick_sound", "0", FCVAR_ARCHIVE, "Should a tick sound be played on new messages or not")
 	local EC_USE_ME = CreateConVar("easychat_use_me", "0", FCVAR_ARCHIVE, 'Should the chat display your name or "me"')
 	local EC_TIMESTAMPS_12 = CreateConVar("easychat_timestamps_12", "0", FCVAR_ARCHIVE, "Display timestamps in 12 hours mode or not")
 
@@ -241,9 +241,9 @@ if CLIENT then
 			EasyChat.TabOutlineColor = to_color(colors.taboutline)
 			EasyChat.TabColor = to_color(colors.tab)
 		else
-			EasyChat.OutlayColor = Color(62, 62, 62, 255)
+			EasyChat.OutlayColor = Color(62, 62, 62, 235)
 			EasyChat.OutlayOutlineColor = Color(0, 0, 0, 0)
-			EasyChat.TabColor = Color(36, 36, 36, 255)
+			EasyChat.TabColor = Color(36, 36, 36, 235)
 			EasyChat.TabOutlineColor = Color(0, 0, 0, 0)
 		end
 
