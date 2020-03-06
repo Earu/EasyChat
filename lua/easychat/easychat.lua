@@ -63,7 +63,7 @@ if SERVER then
 	util.AddNetworkString(NET_BROADCAST_MSG)
 	util.AddNetworkString(NET_SET_TYPING)
 
-	function EasyChat.SendGlobalMessage(ply, msg, is_team, is_local)
+	function EasyChat.SendGlobalMessage(ply, str, is_team, is_local)
 		local msg = gamemode.Call("PlayerSay", ply, str, is_team)
 		if type(msg) ~= "string" or msg:Trim() == "" then return end
 
@@ -1023,6 +1023,11 @@ if CLIENT then
 							surface.SetDrawColor(EasyChat.TabOutlineColor)
 							surface.DrawLine(0, 0, 0, h)
 							surface.DrawLine(w - 1, 0, w - 1, h)
+						elseif self:IsHovered() then
+							surface.DisableClipping(true)
+							surface.SetDrawColor(EasyChat.TextColor)
+							surface.DrawOutlinedRect(0, -2, w, h + 4)
+							surface.DisableClipping(false)
 						end
 					end
 				end
@@ -1203,6 +1208,8 @@ if CLIENT then
 		end
 
 		function EasyChat.GUI.TextEntry:OnEnter()
+			if input.IsKeyDown(KEY_LSHIFT) or input.IsKeyDown(KEY_RSHIFT) then return end
+
 			local msg = self:GetText():Replace("╚​", ""):Trim()
 			self:SetText(msg)
 
@@ -1467,6 +1474,49 @@ if CLIENT then
 		gamemode.Call("OnPlayerChat", ply, msg, is_team, dead, is_local)
 	end)
 
+	function EasyChat.AddTimeStamp(msg_components)
+		msg_components = msg_components or {}
+
+		if EC_ENABLE:GetBool() then
+			if IsValid(ply) and EC_TEAMS:GetBool() then
+				if EC_TEAMS_COLOR:GetBool() then
+					local team_color = team.GetColor(ply:Team())
+					table.insert(msg_components, team_color)
+				end
+				table.insert(msg_components, "[" .. team.GetName(ply:Team()) .. "] - ")
+			end
+		end
+
+		return msg_components
+	end
+
+	function EasyChat.AddDeadTag(msg_components)
+		msg_components = msg_components or {}
+
+		table.insert(msg_components, Color(240, 80, 80))
+		table.insert(msg_components, "*DEAD* ")
+
+		return msg_components
+	end
+
+	function EasyChat.AddLocalTag(msg_components)
+		msg_components = msg_components or {}
+
+		table.insert(msg_components, Color(120, 210, 255))
+		table.insert(msg_components, "(Local) ")
+
+		return msg_components
+	end
+
+	function EasyChat.AddTeamTag(msg_components)
+		msg_components = msg_components or {}
+
+		table.insert(msg_components, Color(120, 120, 240))
+		table.insert(msg_components, "(Team) ")
+
+		return msg_components
+	end
+
 	hook.Add("Initialize", TAG, function()
 		if EC_ENABLE:GetBool() then
 			EasyChat.Init()
@@ -1479,29 +1529,18 @@ if CLIENT then
 			-- reset color to white
 			table.insert(msg_components, Color(255, 255, 255))
 
-			if EC_ENABLE:GetBool() then
-				if IsValid(ply) and EC_TEAMS:GetBool() then
-					if EC_TEAMS_COLOR:GetBool() then
-						local team_color = team.GetColor(ply:Team())
-						table.insert(msg_components, team_color)
-					end
-					table.insert(msg_components, "[" .. team.GetName(ply:Team()) .. "] - ")
-				end
-			end
+			EasyChat.AddTimeStamp(msg_components)
 
 			if is_dead then
-				table.insert(msg_components, Color(240, 80, 80))
-				table.insert(msg_components, "*DEAD* ")
+				EasyChat.AddDeadTag(msg_components)
 			end
 
 			if is_local == true then
-				table.insert(msg_components, Color(120, 210, 255))
-				table.insert(msg_components, "(Local) ")
+				EasyChat.AddLocalTag(msg_components)
 			end
 
 			if is_team then
-				table.insert(msg_components, Color(120, 120, 240))
-				table.insert(msg_components, "(Team) ")
+				EasyChat.AddTeamTag(msg_components)
 			end
 
 			if IsValid(ply) then

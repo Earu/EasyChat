@@ -15,6 +15,7 @@ function PANEL:Init()
 					padding: 0;
 					margin: 0;
 					border: none;
+					overflow: hidden;
 				}
 
 				#text-entry {
@@ -23,16 +24,17 @@ function PANEL:Init()
 					width: 100%;
 					border: none;
 					padding-left: 5px;
+					padding-top: 5px;
 					font-family: 'Roboto', sans-serif;
+					resize: none;
 				}
 			</style>
-			<input
+			<textarea
 				id="text-entry"
 				autocomplete="off"
 				autocorrect="off"
 				autocapitalize="off"
-				spellcheck="false"
-				type="text"/>
+				spellcheck="false" />
 		</body>
 	</html>]])
 
