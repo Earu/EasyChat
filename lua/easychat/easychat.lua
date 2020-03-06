@@ -978,8 +978,9 @@ if CLIENT then
 
 			function EasyChat.AddTab(name, panel)
 				-- in case we get overriden
-				if ec_tabs[name] then
-					local old_panel, old_tab = ec_tabs[name].Panel, ec_tabs[name].Tab
+				local old_tab_data = ec_tabs[name]
+				if old_tab_data then
+					local old_panel, old_tab = old_tab_data.Panel, old_tab_data.Tab
 					if IsValid(old_panel) then old_panel:Remove() end
 					if IsValid(old_tab) then old_tab:Remove() end
 				end
@@ -988,6 +989,8 @@ if CLIENT then
 				tab.Tab.Name = name
 				tab.Tab:SetFont("EasyChatFont")
 				tab.Tab:SetTextColor(Color(255, 255, 255))
+				tab.Tab.GetPanel = function() return panel end
+
 				ec_tabs[name] = tab
 				panel:Dock(FILL)
 
