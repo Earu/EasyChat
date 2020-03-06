@@ -1114,6 +1114,8 @@ local function is_exception_pattern(str, patterns)
 end
 
 function chathud:NormalizeString(str, is_nick)
+	if not str or type(str) ~= "string" then return "" end
+
 	-- valve allows these in player names
 	if is_nick then
 		str = str:gsub("[\n|\t]", "")
