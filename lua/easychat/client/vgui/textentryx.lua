@@ -76,11 +76,24 @@ function PANEL:Init()
 		self:OnTab()
 	end)
 
+	self:AddInternalCallback("OnRightClick", function()
+		local paste_menu = DermaMenu()
+		paste_menu:AddOption("paste", function()
+			self:QueueJavascript([[{
+				let ev = new ClipboardEvent("paste");
+				TEXT_ENTRY.dispatchEvent(ev);
+			}]])
+		end)
+		paste_menu:Open()
+	end)
+
 	self:AddInternalCallback("Debug", print)
 
 	self:QueueJavascript([[
 		const TEXT_ENTRY = document.getElementById("text-entry");
+		TEXT_ENTRY.addEventListener("contextmenu", (_) => TextEntryX.OnRightClick());
 		TEXT_ENTRY.addEventListener("paste", (ev) => {
+			if (!ev.clipboardData && !window.clipboardData) return;
 			let items = (ev.clipboardData || window.clipboardData).items;
 			if (!items) return;
 
