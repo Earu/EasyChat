@@ -35,6 +35,15 @@ local MAIN_TAB = {
 			local next_mode = EasyChat.Mode + 1
 			EasyChat.Mode = next_mode > EasyChat.ModeCount and 0 or next_mode
 		end
+		self.BtnSwitch.DoRightClick = function()
+			local switch_menu = DermaMenu()
+			for mode_index, mode in pairs(EasyChat.Modes) do
+				switch_menu:AddOption(mode.Name, function()
+					EasyChat.Mode = mode_index
+				end)
+			end
+			switch_menu:Open()
+		end
 
 		if HAS_CHROMIUM then
 			self.TextEntry = self:Add("TextEntryX")
@@ -118,14 +127,6 @@ local MAIN_TAB = {
 			self.Picker:Populate()
 		end
 
-		self.BtnSettings = self:Add("DButton")
-		self.BtnSettings:SetText("")
-		self.BtnSettings:SetIcon("icon16/cog.png")
-		self.BtnSettings:SetSize(25, 25)
-		self.BtnSettings.DoClick = function()
-			EasyChat.OpenSettings()
-		end
-
 		if not EasyChat.UseDermaSkin then
 			local text_color = EasyChat.TextColor
 			self.TextEntry:SetPlaceholderColor(Color(text_color.r - 100, text_color.g - 100, text_color.b - 100))
@@ -162,17 +163,15 @@ local MAIN_TAB = {
 			self.BtnSwitch:SetTextColor(EasyChat.TextColor)
 			self.BtnSwitch.Paint = btn_paint
 			self.BtnPicker.Paint = btn_paint
-			self.BtnSettings.Paint = btn_paint
 		end
 	end,
 	PerformLayout = function(self, w, h)
 		self.RichText:SetSize(w - 10, h - 35)
 		self.RichText:SetPos(5, 5)
 		self.BtnSwitch:SetPos(0, h - self.BtnSwitch:GetTall())
-		self.TextEntry:SetSize(w - self.BtnSwitch:GetWide() - self.BtnPicker:GetWide() - self.BtnSettings:GetWide(), 25)
+		self.TextEntry:SetSize(w - self.BtnSwitch:GetWide() - self.BtnPicker:GetWide(), 25)
 		self.TextEntry:SetPos(self.BtnSwitch:GetWide(), h - self.TextEntry:GetTall())
-		self.BtnPicker:SetPos(w - self.BtnPicker:GetWide() - self.BtnSettings:GetWide(), h - self.BtnPicker:GetTall())
-		self.BtnSettings:SetPos(w - self.BtnSettings:GetWide(), h - self.BtnSettings:GetTall())
+		self.BtnPicker:SetPos(w - self.BtnPicker:GetWide(), h - self.BtnPicker:GetTall())
 	end,
 	OnRemove = function(self)
 		self.Picker:Remove()
