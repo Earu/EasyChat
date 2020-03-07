@@ -20,6 +20,9 @@ if SERVER then
 end
 
 if CLIENT then
+	local EC_CMDS_SUGGESTIONS = CreateConVar("easychat_cmd_suggestions", "1", FCVAR_ARCHIVE, "Shows suggestions for commands")
+	EasyChat.RegisterConvar(EC_CMDS_SUGGESTIONS, "Displays command suggestions")
+
 	local black_color = Color(0, 0, 0, 200)
 	local option_font = "EasyChatFont"
 	local hook_name = "EasyChatModuleCmdsAutoComplete"
@@ -105,6 +108,8 @@ if CLIENT then
 	end
 
 	hook.Add("ChatTextChanged", hook_name, function(text)
+		if not EC_CMDS_SUGGESTIONS:GetBool() then return end
+
 		if not cmds.Initialized then return end
 		cmds.ActiveOptionsIndex = 1
 
@@ -192,6 +197,7 @@ if CLIENT then
 	end)
 
 	hook.Add("OnChatTab", hook_name, function(text)
+		if not EC_CMDS_SUGGESTIONS:GetBool() then return end
 		if cmds.ActiveOptionsCount == 0 then return end
 		if text:match(" ") then return end
 
