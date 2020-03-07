@@ -1,4 +1,5 @@
 local EC_GREENTEXT = CreateConVar("easychat_misc_greentext", "1", FCVAR_ARCHIVE, "Makes your text green when using > at the beginning of a message")
+EasyChat.RegisterConvar(EC_GREENTEXT, "4chan greentext")
 
 hook.Add("OnPlayerChat", "EasyChatModuleGreenText", function(ply, msg, is_team, is_dead, is_local)
 	if EC_GREENTEXT:GetBool() and string.match(msg,"^>") then

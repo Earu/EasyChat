@@ -1,4 +1,9 @@
 local EC_MENTION = CreateConVar("easychat_mentions", "1", FCVAR_ARCHIVE, "Highlights messages containing your name")
+local EC_MENTION_FLASH = CreateConVar("easychat_mentions_flash_window", "1", "Flashes your window when you get mentioned")
+local EC_MENTION_COLOR = CreateConVar("easychat_mentions_color", "244 167 66", "Color of the mentions")
+
+EasyChat.RegisterConvar(EC_MENTION, "Color messages containing your name")
+EasyChat.RegisterConvar(EC_MENTION_FLASH, "Flashes your game when you are mentioned")
 
 local function undecorate_nick(nick)
 	if ec_markup then
@@ -17,7 +22,7 @@ local function mention(ply, msg, is_team, is_dead, is_local)
 	msg = msg:lower()
 	local undec_nick = undecorate_nick(LocalPlayer():Nick())
 	if not msg:match("^[%!|%.|%/]") and msg:match(undec_nick:PatternSafe()) then
-		if not system.HasFocus() then
+		if not system.HasFocus() and EC_MENTION_FLASH:GetBool() then
 			system.FlashWindow()
 		end
 
@@ -44,7 +49,13 @@ local function mention(ply, msg, is_team, is_dead, is_local)
 		table.insert(msg_components, ply)
 		table.insert(msg_components, color_white)
 		table.insert(msg_components, ": ")
-		table.insert(msg_components, Color(244, 167, 66))
+
+		local r, g, b = EC_MENTION_COLOR:GetString():match("^(%d%d?%d?) (%d%d?%d?) (%d%d?%d?)")
+		r = r and tonumber(r) or 244
+		g = g and tonumber(g) or 167
+		b = b and tonumber(b) or 66
+
+		table.insert(msg_components, Color(r, g, b))
 		table.insert(msg_components, msg)
 		chat.AddText(unpack(msg_components))
 
