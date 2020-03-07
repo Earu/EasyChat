@@ -1422,7 +1422,7 @@ if CLIENT then
 		end)
 
 		hook.Add("HUDShouldDraw", TAG, function(hud_element)
-			if not EC_HUD_CUSTOM:GetBool() return end
+			if not EC_HUD_CUSTOM:GetBool() then return end
 			if hud_element == "CHudChat" then return false end
 		end)
 
