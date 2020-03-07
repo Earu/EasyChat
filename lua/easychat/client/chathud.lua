@@ -1122,7 +1122,11 @@ function chathud:NormalizeString(str, is_nick)
 	end
 
 	for _, part in pairs(self.Parts) do
-		str = part:Normalize(str)
+		if part.Enabled then
+			if (is_nick and part.OkInNicks) or not is_nick then
+				str = part:Normalize(str)
+			end
+		end
 	end
 
 	for part_name, part_patterns in pairs(self.SpecialPatterns) do
