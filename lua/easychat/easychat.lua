@@ -156,10 +156,12 @@ if CLIENT then
 	local EC_PLAYER_PASTEL = CreateConVar("easychat_pastel", "0", FCVAR_ARCHIVE, "Should players have pastelized colors instead of their team color")
 
 	-- misc
+	local EC_ALWAYS_LOCAL = CreateConVar("easychat_always_local", "0", FCVAR_ARCHIVE, "Should we always type in local chat by default")
 	local EC_LOCAL_MSG_DIST = CreateConVar("easychat_local_msg_distance", "300", {FCVAR_ARCHIVE, FCVAR_USERINFO}, "Set the maximum distance for users to receive local messages")
 	local EC_TICK_SOUND = CreateConVar("easychat_tick_sound", "0", FCVAR_ARCHIVE, "Should a tick sound be played on new messages or not")
 	local EC_USE_ME = CreateConVar("easychat_use_me", "0", FCVAR_ARCHIVE, 'Should the chat display your name or "me"')
 	local EC_TIMESTAMPS_12 = CreateConVar("easychat_timestamps_12", "0", FCVAR_ARCHIVE, "Display timestamps in 12 hours mode or not")
+	local EC_LINKS_CLIPBOARD = CreateConVar("easychat_links_to_clipboard", "0", FCVAR_ARCHIVE, "Automatically copies links to your clipboard")
 
 	-- chatbox panel
 	local EC_GLOBAL_ON_OPEN = CreateConVar("easychat_global_on_open", "1", FCVAR_ARCHIVE, "Set the chat to always open global chat tab on open")
@@ -175,6 +177,8 @@ if CLIENT then
 	local EC_HUD_TTL = CreateConVar("easychat_hud_ttl", "16", FCVAR_ARCHIVE, "How long messages stay before vanishing")
 	local EC_HUD_FOLLOW = CreateConVar("easychat_hud_follow", "0", FCVAR_ARCHIVE, "Set the chat hud to follow the chatbox")
 	local EC_HUD_TIMESTAMPS = CreateConVar("easychat_hud_timestamps", "0", FCVAR_ARCHIVE, "Display timestamps in the chat hud")
+	local EC_HUD_SH_CLEAR = CreateConVar("easychat_hud_sh_clear", "1", FCVAR_ARCHIVE, "Should \'sh\' clear the chat hud tags")
+	local EC_HUD_CUSTOM = CreateConVar("easychat_hud_custom", "1", FCVAR_ARCHIVE, "Use EasyChat's custom chat hud")
 
 	EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
 
@@ -316,6 +320,10 @@ if CLIENT then
 		EasyChat.GUI.ChatBox:Show()
 		EasyChat.GUI.ChatBox:MakePopup()
 		EasyChat.Mode = is_team and 1 or 0
+
+		if EC_ALWAYS_LOCAL:GetBool() then
+			EasyChat.Mode = 2
+		end
 
 		if EC_GLOBAL_ON_OPEN:GetBool() then
 			EasyChat.OpenTab("Global")
@@ -653,6 +661,10 @@ if CLIENT then
 				append_text(richtext, url)
 				richtext:InsertClickableTextEnd()
 
+				if EC_LINKS_CLIPBOARD:GetBool() and richtext:IsVisible() then
+					SetClipboardText(url)
+				end
+
 				-- recurse for possible other urls after this one
 				append_text_url(richtext, text:sub(end_pos + 1))
 			end
@@ -711,6 +723,10 @@ if CLIENT then
 					EasyChat.GUI.RichText:InsertClickableTextStart(url)
 					global_append_text(url)
 					EasyChat.GUI.RichText:InsertClickableTextEnd()
+				end
+
+				if EC_LINKS_CLIPBOARD:GetBool() and EasyChat.GUI.RichText:IsVisible() then
+					SetClipboardText(url)
 				end
 
 				-- recurse for possible other urls after this one
@@ -1406,6 +1422,7 @@ if CLIENT then
 		end)
 
 		hook.Add("HUDShouldDraw", TAG, function(hud_element)
+			if not EC_HUD_CUSTOM:GetBool() return end
 			if hud_element == "CHudChat" then return false end
 		end)
 
@@ -1469,12 +1486,14 @@ if CLIENT then
 				old_scrw, old_scrh = scrw, scrh
 			end
 
-			chathud:Draw()
+			if EC_HUD_CUSTOM:GetBool() then
+				chathud:Draw()
+			end
 		end)
 
 		-- for getting rid of chathud related annoying stuff
 		hook.Add("OnPlayerChat", TAG, function(ply, text)
-			if text == "sh" or text:match("%ssh%s") then
+			if EC_HUD_SH_CLEAR:GetBool() and text == "sh" or text:match("%ssh%s") then
 				chathud:StopComponents()
 			end
 		end)

@@ -9,11 +9,13 @@ local EC_PLAYER_COLOR = GetConVar("easychat_players_colored")
 local EC_PLAYER_PASTEL = GetConVar("easychat_pastel")
 
 -- misc
+local EC_ALWAYS_LOCAL = GetConVar("easychat_always_local")
 local EC_LOCAL_MSG_DIST = GetConVar("easychat_local_msg_distance")
 local EC_TICK_SOUND = GetConVar("easychat_tick_sound")
 local EC_USE_ME = GetConVar("easychat_use_me")
 local EC_IMAGES = GetConVar("easychat_images")
 local EC_TIMESTAMPS_12 = GetConVar("easychat_timestamps_12")
+local EC_LINKS_CLIPBOARD = GetConVar("easychat_links_to_clipboard")
 
 -- chatbox
 local EC_USE_DERMASKIN = GetConVar("easychat_use_dermaskin")
@@ -28,6 +30,8 @@ local EC_HUD_FOLLOW = GetConVar("easychat_hud_follow")
 local EC_HUD_TTL = GetConVar("easychat_hud_ttl")
 local EC_HUD_SMOOTH = GetConVar("easychat_hud_smooth")
 local EC_HUD_TIMESTAMPS = GetConVar("easychat_hud_timestamps")
+local EC_HUD_SH_CLEAR = GetConVar("easychat_hud_sh_clear")
+local EC_HUD_CUSTOM = GetConVar("easychat_hud_custom")
 
 local function create_option_set(settings, category_name, options)
 	for cvar, description in pairs(options) do
@@ -52,6 +56,8 @@ local function create_default_settings()
 		settings:AddCategory(category_name)
 
 		create_option_set(settings, category_name, {
+			[EC_ALWAYS_LOCAL] = "Always talk in local mode by default",
+			[EC_LINKS_CLIPBOARD] = "Automatically copy links to your clipboard",
 			[EC_TIMESTAMPS_12] = "12 hours mode timestamps",
 			[EC_TEAMS] = "Display teams",
 			[EC_TEAMS_COLOR] = "Color the team tags",
@@ -247,7 +253,9 @@ local function create_default_settings()
 		create_option_set(settings, category_name, {
 			[EC_HUD_FOLLOW] = "Follow chatbox window",
 			[EC_HUD_TIMESTAMPS] = "Display timestamps",
-			[EC_HUD_SMOOTH] = "Smooth message transitions"
+			[EC_HUD_SMOOTH] = "Smooth message transitions",
+			[EC_HUD_SH_CLEAR] = "Clear the tags upon saying \'sh\'",
+			[EC_HUD_CUSTOM] = "Use EasyChat's custom hud",
 		})
 
 		settings:AddSpacer(category_name)
