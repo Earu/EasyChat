@@ -14,7 +14,7 @@ for _, f in pairs(files) do
 end
 
 -- sort by timestamp
-table.sort(migrations, function(a, b) a[1] > b[1] end)
+table.sort(migrations, function(a, b) return a[1] < b[1] end)
 
 if SERVER then
 	for _, migration in ipairs(migrations) do
