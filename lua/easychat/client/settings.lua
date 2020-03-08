@@ -16,6 +16,8 @@ local EC_USE_ME = GetConVar("easychat_use_me")
 local EC_IMAGES = GetConVar("easychat_images")
 local EC_TIMESTAMPS_12 = GetConVar("easychat_timestamps_12")
 local EC_LINKS_CLIPBOARD = GetConVar("easychat_links_to_clipboard")
+local EC_GM_COMPLETE = GetConVar("easychat_gm_complete")
+local EC_NICK_COMPLETE = GetConVar("easychat_nick_complete")
 
 -- chatbox
 local EC_USE_DERMASKIN = GetConVar("easychat_use_dermaskin")
@@ -64,7 +66,9 @@ local function create_default_settings()
 			[EC_PLAYER_COLOR] = "Color players in their team color",
 			[EC_PLAYER_PASTEL] = "Pastellize player colors",
 			[EC_TICK_SOUND] = "Tick sound on new messages",
-			[EC_USE_ME] = "Replaces your name in the chat with \"me\""
+			[EC_USE_ME] = "Replaces your name in the chat with \"me\"",
+			[EC_GM_COMPLETE] = "Uses the default gamemode name auto-completion",
+			[EC_NICK_COMPLETE] = "Auto-complete player names",
 		})
 
 		settings:AddSpacer(category_name)
