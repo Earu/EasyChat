@@ -199,6 +199,7 @@ if CLIENT then
 	hook.Add("OnChatTab", hook_name, function(text)
 		if not EC_CMDS_SUGGESTIONS:GetBool() then return end
 		if cmds.ActiveOptionsCount == 0 then return end
+		if not cmds.ActiveOptions then return end
 		if text:match(" ") then return end
 
 		local i = 1
