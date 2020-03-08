@@ -252,7 +252,6 @@ end
 
 local EC_HUD_TTL = GetConVar("easychat_hud_ttl")
 local EC_HUD_SMOOTH = GetConVar("easychat_hud_smooth")
-local EC_HUD_CUSTOM = GetConVar("easychat_hud_custom")
 
 chathud.FadeTime = EC_HUD_TTL:GetInt()
 cvars.AddChangeCallback("easychat_hud_ttl", function(_, _, new)
@@ -1302,20 +1301,14 @@ end
 	Input into ChatHUD
 ]]-------------------------------------------------------------------------------
 function chathud:AppendText(txt)
-	if not EC_HUD_CUSTOM:GetBool() then return end
-
 	self:PushString(txt, false)
 end
 
 function chathud:AppendNick(nick)
-	if not EC_HUD_CUSTOM:GetBool() then return end
-
 	self:PushString(nick, true)
 end
 
 function chathud:AppendImageURL(url)
-	if not EC_HUD_CUSTOM:GetBool() then return end
-
 	if chathud.Parts.image.Enabled then
 		self:PushPartComponent("image", url)
 	else
@@ -1324,8 +1317,6 @@ function chathud:AppendImageURL(url)
 end
 
 function chathud:InsertColorChange(r, g, b)
-	if not EC_HUD_CUSTOM:GetBool() then return end
-
 	local expr = ("%d,%d,%d"):format(r, g, b)
 	self:PushPartComponent("color", expr)
 end
