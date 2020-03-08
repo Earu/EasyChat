@@ -173,6 +173,7 @@ if CLIENT then
 	local EC_HISTORY = CreateConVar("easychat_history", "1", FCVAR_ARCHIVE, "Should the history be shown")
 	local EC_IMAGES = CreateConVar("easychat_images", "1", FCVAR_ARCHIVE, "Display images in the chat window")
 	local EC_TIMESTAMPS = CreateConVar("easychat_timestamps", "0", FCVAR_ARCHIVE, "Display timestamps in the chatbox")
+	local EC_PEEK_COMPLETION = CreateConVar("easychat_peek_completion", "1", FCVAR_ARCHIVE, "Display a preview of the possible text completion")
 
 	-- chathud
 	local EC_HUD_SMOOTH = CreateConVar("easychat_hud_smooth", "1", FCVAR_ARCHIVE, "Enables chat smoothing")
@@ -1248,13 +1249,16 @@ if CLIENT then
 
 		function EasyChat.GUI.TextEntry:OnTab()
 			if self:GetText() ~= "" then
-				local gm = EC_GM_COMPLETE:GetBool() and gmod.GetGamemode() or nil
-				local autocompletion_text = hook.Call("OnChatTab", gm, self:GetText())
-				if autocompletion_text then
-					self:SetText(autocompletion_text)
-					timer.Simple(0, function()
-						self:RequestFocus()
-					end)
+				if EC_PEEK_COMPLETION:GetBool() and self.TabCompletion then
+					self:SetText(self.TabCompletion)
+					timer.Simple(0, function() self:RequestFocus() end)
+				elseif not EC_PEEK_COMPLETION:GetBool() then
+					local gm = EC_GM_COMPLETE:GetBool() and gmod.GetGamemode() or nil
+					local completion = hook.Call("OnChatTab", gm, self:GetText())
+					if completion then
+						self:SetText(completion)
+						timer.Simple(0, function() self:RequestFocus() end)
+					end
 				end
 			else
 				local next_mode = EasyChat.Mode + 1
@@ -1310,6 +1314,22 @@ if CLIENT then
 
 		function EasyChat.GUI.TextEntry:OnValueChange(text)
 			gamemode.Call("ChatTextChanged", text)
+
+			if not EC_PEEK_COMPLETION:GetBool() then return end
+
+			if text:Trim() == "" then
+				self.TabCompletion = nil
+				self:SetCompletionText(nil)
+				timer.Destroy("ECCompletionPeek")
+				return
+			end
+
+			timer.Create("ECCompletionPeek", 0.25, 1, function()
+				local gm = EC_GM_COMPLETE:GetBool() and gmod.GetGamemode() or nil
+				local completion = hook.Call("OnChatTab", gm, self:GetText())
+				self.TabCompletion = completion
+				self:SetCompletionText(completion)
+			end)
 		end
 
 		function EasyChat.GUI.RichText:ActionSignal(name, value)
@@ -1352,11 +1372,14 @@ if CLIENT then
 			if EC_GM_COMPLETE:GetBool() then return end
 			if not EC_NICK_COMPLETE:GetBool() then return end
 
+			local words = text:Split(" ")
+			local last_word = words[#words]
+
 			local max_perc = 0
 			local res
 			for _, ply in ipairs(player.GetAll()) do
 				local nick = ec_markup.Parse(ply:Nick(), nil, true):GetText()
-				local match = nick:match(text)
+				local match = nick:lower():match(last_word:lower())
 				if match then
 					local perc = #match / #nick
 					if (perc > 0.5 or #match >= 4) and perc > max_perc then
@@ -1366,7 +1389,10 @@ if CLIENT then
 				end
 			end
 
-			return res
+			if res then
+				words[#words] = res
+				return table.concat(words, " ")
+			end
 		end)
 
 		hook.Add("PlayerBindPress", TAG, function(ply, bind, pressed)
