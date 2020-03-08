@@ -16,11 +16,11 @@ hook.Add("ECPostInitialize", "EasyChatModuleDarkRP", function()
 
 		table.insert(msg_components, color_white) -- we don't want previous colors to be used again
 
-		EasyChat.AddTimeStamp(msg_components)
-
 		if is_dead then
 			EasyChat.AddDeadTag(msg_components)
 		end
+
+		EasyChat.AddNameTags(ply, msg_components)
 
 		if prefix then
 			if col1 == team.GetColor(ply:Team()) then -- Just prettier
