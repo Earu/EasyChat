@@ -26,6 +26,7 @@ local EC_GLOBAL_ON_OPEN = GetConVar("easychat_global_on_open")
 local EC_FONT = GetConVar("easychat_font")
 local EC_FONT_SIZE = GetConVar("easychat_font_size")
 local EC_TIMESTAMPS = GetConVar("easychat_timestamps")
+local EC_PEEK_COMPLETION = GetConVar("easychat_peek_completion")
 
 -- chathud
 local EC_HUD_FOLLOW = GetConVar("easychat_hud_follow")
@@ -102,7 +103,8 @@ local function create_default_settings()
 			[EC_GLOBAL_ON_OPEN] = "Open in the global tab",
 			[EC_TIMESTAMPS] = "Display timestamps",
 			[EC_HISTORY] = "Enable history",
-			[EC_IMAGES] = "Display images"
+			[EC_IMAGES] = "Display images",
+			[EC_PEEK_COMPLETION] = "Peek at the possible chat completion",
 		})
 
 		settings:AddSpacer(category_name)
