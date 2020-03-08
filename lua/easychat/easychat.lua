@@ -1532,7 +1532,7 @@ if CLIENT then
 		gamemode.Call("OnPlayerChat", ply, msg, is_team, dead, is_local)
 	end)
 
-	function EasyChat.AddNameTags(msg_components)
+	function EasyChat.AddNameTags(ply, msg_components)
 		msg_components = msg_components or {}
 
 		if EC_ENABLE:GetBool() then
@@ -1585,9 +1585,7 @@ if CLIENT then
 			local msg_components = {}
 
 			-- reset color to white
-			table.insert(msg_components, Color(255, 255, 255))
-
-			EasyChat.AddNameTags(msg_components)
+			table.insert(msg_components, color_white)
 
 			if is_dead then
 				EasyChat.AddDeadTag(msg_components)
@@ -1601,6 +1599,8 @@ if CLIENT then
 				EasyChat.AddTeamTag(msg_components)
 			end
 
+			EasyChat.AddNameTags(ply, msg_components)
+
 			if IsValid(ply) then
 				table.insert(msg_components, ply)
 			else
@@ -1608,7 +1608,7 @@ if CLIENT then
 				table.insert(msg_components, "???") -- console or weird stuff
 			end
 
-			table.insert(msg_components, Color(255, 255, 255))
+			table.insert(msg_components, color_white)
 			table.insert(msg_components, ": " .. msg)
 
 			chat.AddText(unpack(msg_components))
