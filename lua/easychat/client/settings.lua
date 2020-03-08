@@ -147,9 +147,9 @@ local function create_default_settings()
 
 			local setting_reset_colors = settings:AddSetting(category_name, "action", "Reset Colors")
 			setting_reset_colors.DoClick = function()
-				local outlay_color = Color(62, 62, 62, 255)
+				local outlay_color = Color(62, 62, 62, 235)
 				local outlay_outline_color = Color(0, 0, 0, 0)
-				local tab_color = Color(36, 36, 36, 255)
+				local tab_color = Color(36, 36, 36, 235)
 				local tab_outline_color = Color(0, 0, 0, 0)
 
 				setting_outlay_color:SetColor(outlay_color)
