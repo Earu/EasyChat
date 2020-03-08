@@ -470,7 +470,9 @@ function SETTINGS:AddConvarSetting(category_name, type, cvar, ...)
 	if not cvar then return end
 
 	local category_panel = self:GetCategory(category_name)
-	return convar_type_callbacks[type](self, category_panel, cvar, ...)
+	local setting_panel = convar_type_callbacks[type](self, category_panel, cvar, ...)
+	setting_panel:SetToolTip(cvar:GetName())
+	return setting_panel
 end
 
 local type_callbacks = {
