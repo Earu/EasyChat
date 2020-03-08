@@ -401,7 +401,6 @@ if CLIENT then
 		EasyChat.GUI.TextEntry:SetText("")
 
 		gui.EnableScreenClicker(false)
-		chat.old_Close()
 		gamemode.Call("ChatTextChanged", "")
 		gamemode.Call("FinishChat")
 
@@ -677,8 +676,13 @@ if CLIENT then
 			richtext.Log = ""
 		end
 
-		local function global_append_text(text)
+		local function hud_append_text(text)
+			if not EC_HUD_CUSTOM:GetBool() then return end
 			EasyChat.ChatHUD:AppendText(text)
+		end
+
+		local function global_append_text(text)
+			hud_append_text(text)
 			append_text(EasyChat.GUI.RichText, text)
 		end
 
@@ -714,7 +718,9 @@ if CLIENT then
 					append_text(EasyChat.GUI.RichText, url)
 					EasyChat.GUI.RichText:InsertClickableTextEnd()
 
-					EasyChat.ChatHUD:AppendImageURL(url)
+					if EC_HUD_CUSTOM:GetBool() then
+						EasyChat.ChatHUD:AppendImageURL(url)
+					end
 
 					if EC_IMAGES:GetBool() then
 						EasyChat.GUI.RichText:AppendImageURL(url)
@@ -754,15 +760,20 @@ if CLIENT then
 
 			EasyChat.GUI.RichText:InsertColorChange(255, 255, 255, 255)
 
-			-- let the chathud do its own thing
-			local chathud = EasyChat.ChatHUD
-			chathud:AppendNick(str)
-			chathud:PushPartComponent("stop")
+			if EC_HUD_CUSTOM:GetBool() then
+				-- let the chathud do its own thing
+				local chathud = EasyChat.ChatHUD
+				chathud:AppendNick(str)
+				chathud:PushPartComponent("stop")
+			end
 		end
 
 		local function global_insert_color_change(r, g, b, a)
 			EasyChat.GUI.RichText:InsertColorChange(r, g, b, a)
-			EasyChat.ChatHUD:InsertColorChange(r, g, b)
+
+			if EC_HUD_CUSTOM:GetBool() then
+				EasyChat.ChatHUD:InsertColorChange(r, g, b)
+			end
 		end
 
 		EasyChat.SetAddTextTypeHandle("table", function(col)
@@ -899,7 +910,10 @@ if CLIENT then
 		end
 
 		function EasyChat.GlobalAddText(...)
-			EasyChat.ChatHUD:NewLine()
+			if EC_HUD_CUSTOM:GetBool() then
+				EasyChat.ChatHUD:NewLine()
+			end
+
 			append_text(EasyChat.GUI.RichText, "\n")
 			global_insert_color_change(255, 255, 255, 255)
 
@@ -910,7 +924,7 @@ if CLIENT then
 				end
 
 				if EC_HUD_TIMESTAMPS:GetBool() then
-					EasyChat.ChatHUD:AppendText(timestamp)
+					hud_append_text(timestamp)
 				end
 			end
 
@@ -925,8 +939,10 @@ if CLIENT then
 				end
 			end
 
-			EasyChat.ChatHUD:PushPartComponent("stop")
-			EasyChat.ChatHUD:InvalidateLayout()
+			if EC_HUD_CUSTOM:GetBool() then
+				EasyChat.ChatHUD:PushPartComponent("stop")
+				EasyChat.ChatHUD:InvalidateLayout()
+			end
 
 			save_text(EasyChat.GUI.RichText)
 
