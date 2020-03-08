@@ -162,6 +162,8 @@ if CLIENT then
 	local EC_USE_ME = CreateConVar("easychat_use_me", "0", FCVAR_ARCHIVE, 'Should the chat display your name or "me"')
 	local EC_TIMESTAMPS_12 = CreateConVar("easychat_timestamps_12", "0", FCVAR_ARCHIVE, "Display timestamps in 12 hours mode or not")
 	local EC_LINKS_CLIPBOARD = CreateConVar("easychat_links_to_clipboard", "0", FCVAR_ARCHIVE, "Automatically copies links to your clipboard")
+	local EC_GM_COMPLETE = CreateConVar("easychat_gm_complete", "0", FCVAR_ARCHIVE, "Use the gamemode bad auto-completion")
+	local EC_NICK_COMPLETE = CreateConVar("easychat_nick_complete", "1", FCVAR_ARCHIVE, "Auto-completes player names")
 
 	-- chatbox panel
 	local EC_GLOBAL_ON_OPEN = CreateConVar("easychat_global_on_open", "1", FCVAR_ARCHIVE, "Set the chat to always open global chat tab on open")
@@ -1246,7 +1248,8 @@ if CLIENT then
 
 		function EasyChat.GUI.TextEntry:OnTab()
 			if self:GetText() ~= "" then
-				local autocompletion_text = gamemode.Call("OnChatTab", self:GetText())
+				local gm = EC_GM_COMPLETE:GetBool() and gmod.GetGamemode() or nil
+				local autocompletion_text = hook.Call("OnChatTab", gm, self:GetText())
 				if autocompletion_text then
 					self:SetText(autocompletion_text)
 					timer.Simple(0, function()
@@ -1344,6 +1347,27 @@ if CLIENT then
 				end
 			end
 		end
+
+		hook.Add("OnChatTab", TAG, function(text)
+			if EC_GM_COMPLETE:GetBool() then return end
+			if not EC_NICK_COMPLETE:GetBool() then return end
+
+			local max_perc = 0
+			local res
+			for _, ply in ipairs(player.GetAll()) do
+				local nick = ec_markup.Parse(ply:Nick(), nil, true):GetText()
+				local match = nick:match(text)
+				if match then
+					local perc = #match / #nick
+					if (perc > 0.5 or #match >= 4) and perc > max_perc then
+						max_perc = perc
+						res = nick
+					end
+				end
+			end
+
+			return res
+		end)
 
 		hook.Add("PlayerBindPress", TAG, function(ply, bind, pressed)
 			if not pressed then return end
