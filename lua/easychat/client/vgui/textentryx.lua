@@ -229,12 +229,21 @@ function PANEL:SetPlaceholderText(text)
 end
 
 function PANEL:SetPlaceholderColor(col)
+	self.PlaceholderColor = col
 	self:QueueJavascript([[{
 		let style = document.createElement("style");
 		style.type = "text/css";
 		style.innerHTML = "#text-entry::placeholder { color: ]] .. color_to_css(col)  .. [[; }";
 		document.getElementsByTagName("head")[0].appendChild(style);
 	}]])
+end
+
+function PANEL:SetCompletionText(text)
+	if not text or text:Trim() == "" then
+		self.CompletionText = nil
+	else
+		self.CompletionText = text
+	end
 end
 
 function PANEL:GetTextColor()
@@ -258,9 +267,32 @@ function PANEL:GetBorderColor()
 	return self.BorderColor
 end
 
+surface.CreateFont("EasyChatCompletionFont", {
+	font = "Roboto",
+	size = 16,
+})
+
 function PANEL:PaintOver(w, h)
 	surface.SetDrawColor(self.BorderColor)
 	surface.DrawOutlinedRect(0, 0, w, h)
+
+	if self.CompletionText then
+		surface.SetDrawColor(self.PlaceholderColor)
+		surface.SetFont("EasyChatCompletionFont")
+		local cur_text_w = surface.GetTextSize(self.CurrentValue)
+		local start_pos, end_pos = self.CompletionText:find(self.CurrentValue, 1, true)
+		if start_pos then
+			local sub_completion = self.CompletionText:sub(end_pos + 1)
+			local _, completion_text_h = surface.GetTextSize(sub_completion)
+			surface.SetTextPos(cur_text_w + 2, h / 2 - completion_text_h / 2)
+			surface.DrawText(sub_completion)
+		else
+			local sub_completion = ("<< %s >>"):format(self.CompletionText)
+			local _, completion_text_h = surface.GetTextSize(sub_completion)
+			surface.SetTextPos(cur_text_w + 15, h / 2 - completion_text_h / 2)
+			surface.DrawText(sub_completion)
+		end
+	end
 end
 
 function PANEL:OnTab() end
