@@ -1,6 +1,7 @@
 include("easychat/client/vgui/richtextx.lua")
 include("easychat/client/vgui/textentryx.lua")
 include("easychat/client/vgui/emote_picker.lua")
+include("easychat/client/vgui/color_picker.lua")
 
 local HAS_CHROMIUM = BRANCH ~= "dev" and BRANCH ~= "unknown"
 local MAIN_TAB = {
@@ -68,14 +69,24 @@ local MAIN_TAB = {
 
 		self.TextEntry:SetPlaceholderText("type something...")
 
-		self.Picker = vgui.Create("ECEmotePicker")
-		self.Picker:SetVisible(false)
-		self.Picker.OnEmoteClicked = function(_, emote_name)
+		self.EmotePicker = vgui.Create("ECEmotePicker")
+		self.EmotePicker:SetVisible(false)
+		self.EmotePicker.OnEmoteClicked = function(_, emote_name)
 			local text = ("%s :%s:"):format(self.TextEntry:GetText():Trim(), emote_name)
 			self.TextEntry:SetText(text)
 
 			if input.IsKeyDown(KEY_LSHIFT) or input.IsKeyDown(KEY_RSHIFT) then return end
-			self.Picker:SetVisible(false)
+			self.EmotePicker:SetVisible(false)
+			self.TextEntry:RequestFocus()
+		end
+
+		self.ColorPicker = vgui.Create("ECColorPicker")
+		self.ColorPicker:SetVisible(false)
+		self.ColorPicker.DoClick = function(_, btn)
+			local col_str = btn.CurrentColorString
+			local text = ("%s%s"):format(self.TextEntry:GetText():Trim(), col_str)
+			self.TextEntry:SetText(text)
+			self.ColorPicker:SetVisible(false)
 			self.TextEntry:RequestFocus()
 		end
 
@@ -85,46 +96,64 @@ local MAIN_TAB = {
 			end
 		end
 
-		self.Picker.Search.OnKeyCodeTyped = on_key_code_typed
-		self.Picker.OnKeyCodePressed = on_key_code_typed
+		self.EmotePicker.Search.OnKeyCodeTyped = on_key_code_typed
+		self.EmotePicker.OnKeyCodePressed = on_key_code_typed
+		self.ColorPicker.OnKeyCodePressed = on_key_code_typed
 
 		local function on_picker_mouse_pressed()
 			if not IsValid(self) then return end
-			if not IsValid(self.Picker) then return end
 
-			if not self.Picker:MouseInBounds() then
-				self.Picker:SetVisible(false)
+			if IsValid(self.EmotePicker) then
+				if not self.EmotePicker:MouseInBounds() then
+					self.EmotePicker:SetVisible(false)
+				end
+			end
+
+			if IsValid(self.ColorPicker) then
+				if not self.ColorPicker:MouseInBounds() then
+					self.ColorPicker:SetVisible(false)
+				end
 			end
 		end
 
-		hook.Add("GUIMousePressed", self.Picker, on_picker_mouse_pressed)
-		hook.Add("VGUIMousePressed", self.Picker, on_picker_mouse_pressed)
-		hook.Add("ECClosed", self.Picker, function()
+		hook.Add("GUIMousePressed", self, on_picker_mouse_pressed)
+		hook.Add("VGUIMousePressed", self, on_picker_mouse_pressed)
+		hook.Add("ECClosed", self, function()
 			if not IsValid(self) then return end
-			if not IsValid(self.Picker) then return end
 
-			self.Picker:SetVisible(false)
+			if IsValid(self.EmotePicker) then
+				self.EmotePicker:SetVisible(false)
+			end
+
+			if IsValid(self.ColorPicker) then
+				self.ColorPicker:SetVisible(false)
+			end
 		end)
 
-		self.Picker.OnRemove = function(self)
-			hook.Remove("GUIMousePressed", self)
-			hook.Remove("VGUIMousePressed", self)
-			hook.Remove("ECClosed", self)
+		self.BtnEmotePicker = self:Add("DButton")
+		self.BtnEmotePicker:SetText("")
+		self.BtnEmotePicker:SetIcon("icon16/emoticon_smile.png")
+		self.BtnEmotePicker:SetSize(25, 25)
+		self.BtnEmotePicker.DoClick = function()
+			local btn_x, btn_y = self.BtnEmotePicker:LocalToScreen(0, 0)
+			self.EmotePicker:SetPos(btn_x - (self.EmotePicker:GetWide() / 2), btn_y - self.EmotePicker:GetTall())
+			self.EmotePicker:SetVisible(true)
+
+			self.EmotePicker:MakePopup()
+			self.EmotePicker.Search:SetText("")
+			self.EmotePicker.Search:RequestFocus()
+			self.EmotePicker:Populate()
 		end
 
-		self.BtnPicker = self:Add("DButton")
-		self.BtnPicker:SetText("")
-		self.BtnPicker:SetIcon("icon16/emoticon_smile.png")
-		self.BtnPicker:SetSize(25, 25)
-		self.BtnPicker.DoClick = function()
-			local btn_x, btn_y = self.BtnPicker:LocalToScreen(0, 0)
-			self.Picker:SetPos(btn_x - (self.Picker:GetWide() / 2), btn_y - self.Picker:GetTall())
-			self.Picker:SetVisible(true)
-
-			self.Picker:MakePopup()
-			self.Picker.Search:SetText("")
-			self.Picker.Search:RequestFocus()
-			self.Picker:Populate()
+		self.BtnColorPicker = self:Add("DButton")
+		self.BtnColorPicker:SetText("")
+		self.BtnColorPicker:SetIcon("icon16/color_wheel.png")
+		self.BtnColorPicker:SetSize(25, 25)
+		self.BtnColorPicker.DoClick = function()
+			local btn_x, btn_y = self.BtnColorPicker:LocalToScreen(0, 0)
+			self.ColorPicker:SetPos(btn_x - (self.ColorPicker:GetWide() / 2), btn_y - self.ColorPicker:GetTall())
+			self.ColorPicker:SetVisible(true)
+			self.ColorPicker:MakePopup()
 		end
 
 		if not EasyChat.UseDermaSkin then
@@ -162,19 +191,26 @@ local MAIN_TAB = {
 
 			self.BtnSwitch:SetTextColor(EasyChat.TextColor)
 			self.BtnSwitch.Paint = btn_paint
-			self.BtnPicker.Paint = btn_paint
+			self.BtnEmotePicker.Paint = btn_paint
+			self.BtnColorPicker.Paint = btn_paint
 		end
 	end,
 	PerformLayout = function(self, w, h)
 		self.RichText:SetSize(w - 10, h - 35)
 		self.RichText:SetPos(5, 5)
 		self.BtnSwitch:SetPos(0, h - self.BtnSwitch:GetTall())
-		self.TextEntry:SetSize(w - self.BtnSwitch:GetWide() - self.BtnPicker:GetWide(), 25)
+		self.TextEntry:SetSize(w - self.BtnSwitch:GetWide() - self.BtnEmotePicker:GetWide() - self.BtnColorPicker:GetWide(), 25)
 		self.TextEntry:SetPos(self.BtnSwitch:GetWide(), h - self.TextEntry:GetTall())
-		self.BtnPicker:SetPos(w - self.BtnPicker:GetWide(), h - self.BtnPicker:GetTall())
+		self.BtnEmotePicker:SetPos(w - self.BtnEmotePicker:GetWide() - self.BtnColorPicker:GetWide(), h - self.BtnEmotePicker:GetTall())
+		self.BtnColorPicker:SetPos(w - self.BtnColorPicker:GetWide(), h - self.BtnColorPicker:GetTall())
 	end,
 	OnRemove = function(self)
-		self.Picker:Remove()
+		self.EmotePicker:Remove()
+		self.ColorPicker:Remove()
+
+		hook.Remove("GUIMousePressed", self)
+		hook.Remove("VGUIMousePressed", self)
+		hook.Remove("ECClosed", self)
 	end
 }
 
