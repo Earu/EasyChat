@@ -4,20 +4,19 @@ EasyChat.RegisterConvar(EC_GREENTEXT, "4chan greentext")
 hook.Add("OnPlayerChat", "EasyChatModuleGreenText", function(ply, msg, is_team, is_dead, is_local)
 	if EC_GREENTEXT:GetBool() and string.match(msg,"^>") then
 		local msg_components = {}
-
-		EasyChat.AddNameTags(msg_components)
+		if is_dead then
+			EasyChat.AddDeadTag(msg_components)
+		end
 
 		if is_team then
 			EasyChat.AddTeamTag(msg_components)
 		end
 
-		if is_dead then
-			EasyChat.AddDeadTag(msg_components)
-		end
-
 		if is_local then
 			EasyChat.AddLocalTag(msg_components)
 		end
+
+		EasyChat.AddNameTags(ply, msg_components)
 
 		table.insert(msg_components, ply)
 		table.insert(msg_components, color_white)
