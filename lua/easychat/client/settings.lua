@@ -35,6 +35,9 @@ local EC_HUD_SMOOTH = GetConVar("easychat_hud_smooth")
 local EC_HUD_TIMESTAMPS = GetConVar("easychat_hud_timestamps")
 local EC_HUD_SH_CLEAR = GetConVar("easychat_hud_sh_clear")
 local EC_HUD_CUSTOM = GetConVar("easychat_hud_custom")
+local EC_HUD_POS_X = GetConVar("easychat_hud_pos_x")
+local EC_HUD_POS_Y = GetConVar("easychat_hud_pos_y")
+local EC_HUD_WIDTH = GetConVar("easychat_hud_width")
 
 local function create_option_set(settings, category_name, options)
 	for cvar, description in pairs(options) do
@@ -263,6 +266,19 @@ local function create_default_settings()
 			[EC_HUD_SH_CLEAR] = "Clear the tags upon saying \'sh\'",
 			[EC_HUD_CUSTOM] = "Use EasyChat's custom hud",
 		})
+
+		settings:AddSpacer(category_name)
+
+		local setting_hud_w = settings:AddConvarSetting(category_name, "number", EC_HUD_WIDTH, "HUD Width", 250, 1250)
+		local setting_hud_x = settings:AddConvarSetting(category_name, "number", EC_HUD_POS_X, "HUD X Pos", 0, 5000)
+		local setting_hud_y = settings:AddConvarSetting(category_name, "number", EC_HUD_POS_X, "HUD Y Pos", 0, 5000)
+
+		local setting_reset_hud_bounds = settings:AddSetting(category_name, "action", "Reset HUD Bounds")
+		setting_reset_hud_bounds.DoClick = function()
+			EC_HUD_WIDTH:SetInt(-1)
+			EC_HUD_POS_X:SetInt(-1)
+			EC_HUD_POS_Y:SetInt(-1)
+		end
 
 		settings:AddSpacer(category_name)
 

@@ -182,6 +182,9 @@ if CLIENT then
 	local EC_HUD_TIMESTAMPS = CreateConVar("easychat_hud_timestamps", "0", FCVAR_ARCHIVE, "Display timestamps in the chat hud")
 	local EC_HUD_SH_CLEAR = CreateConVar("easychat_hud_sh_clear", "1", FCVAR_ARCHIVE, "Should \'sh\' clear the chat hud tags")
 	local EC_HUD_CUSTOM = CreateConVar("easychat_hud_custom", "1", FCVAR_ARCHIVE, "Use EasyChat's custom chat hud")
+	local EC_HUD_POS_X = CreateConVar("easychat_hud_pos_x", "-1", FCVAR_ARCHIVE, "Changes the position of the chat hud on the x axis")
+	local EC_HUD_POS_Y = CreateConVar("easychat_hud_pos_y", "-1", FCVAR_ARCHIVE, "Changes the position of the chat hud on the y axis")
+	local EC_HUD_WIDTH = CreateConVar("easychat_hud_width", "-1", FCVAR_ARCHIVE, "Changes the width of the chat hud")
 
 	EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
 
@@ -1509,6 +1512,29 @@ if CLIENT then
 		local chathud = EasyChat.ChatHUD
 		local function chathud_screen_resolution_changed()
 			local x, y, w, h = EasyChat.GetDefaultBounds()
+
+			if EC_HUD_WIDTH:GetInt() > 0 then
+				w = math.min(EC_HUD_WIDTH:GetInt(), ScrW() - 30)
+			elseif ScrW() < 1600 then -- ant screens
+				w = 250
+			end
+
+			if EC_HUD_POS_X:GetInt() > 0 then
+				x = EC_HUD_POS_X:GetInt()
+				if x + w > ScrW() then
+					local diff = (x + w) - ScrW()
+					x = x - diff - 30
+				end
+			end
+
+			if EC_HUD_POS_Y:GetInt() > 0 then
+				y = EC_HUD_POS_Y:GetInt()
+				if y + h > ScrH() then
+					local diff = (y + h) - ScrH()
+					y = y - diff - 30
+				end
+			end
+
 			chathud.Pos = { X = x, Y = y }
 			chathud.Size = { W = w, H = h }
 
@@ -1521,12 +1547,14 @@ if CLIENT then
 				chathud:UpdateFontSize(20)
 			end
 
-			-- ant screens
-			if ScrW() < 1600 then
-				chathud.Size.W = 250
-			end
-
 			chathud:InvalidateLayout()
+		end
+
+		local chathud_bounds_cvar = { EC_HUD_WIDTH, EC_HUD_POS_X, EC_HUD_POS_Y }
+		for _, cvar in ipairs(chathud_bounds_cvar) do
+			local name = cvar:GetName()
+			cvars.RemoveChangeCallback(name, name)
+			cvars.AddChangeCallback(name, chathud_screen_resolution_changed, name)
 		end
 
 		local function screen_resolution_changed(old_scrw, old_scrh)
