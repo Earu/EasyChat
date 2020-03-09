@@ -1255,18 +1255,16 @@ if CLIENT then
 
 		function EasyChat.GUI.TextEntry:OnTab()
 			if self:GetText() ~= "" then
-				if EC_PEEK_COMPLETION:GetBool() then
-					if self.TabCompletion then
-						if self.TabbedOnce then
-							local completion = get_completion(self.BaseCompletionText)
-							if completion then self:SetText(completion) end
-						else
-							self.TabbedOnce = true
-							self.BaseCompletionText = self:GetText()
-							self:SetText(self.TabCompletion)
-						end
-						timer.Simple(0, function() self:RequestFocus() end)
+				if EC_PEEK_COMPLETION:GetBool() and self.TabCompletion then
+					if self.TabbedOnce then
+						local completion = get_completion(self.BaseCompletionText)
+						if completion then self:SetText(completion) end
+					else
+						self.TabbedOnce = true
+						self.BaseCompletionText = self:GetText()
+						self:SetText(self.TabCompletion)
 					end
+					timer.Simple(0, function() self:RequestFocus() end)
 				else
 					local completion = get_completion(self:GetText())
 					if completion then
@@ -1335,12 +1333,11 @@ if CLIENT then
 
 			if not EC_PEEK_COMPLETION:GetBool() then return end
 
-			if text:Trim() == "" then
-				self.TabCompletion = nil
-				self:SetCompletionText(nil)
-				timer.Destroy("ECCompletionPeek")
-				return
-			end
+			self.TabCompletion = nil
+			self:SetCompletionText(nil)
+			timer.Destroy("ECCompletionPeek")
+
+			if text:Trim() == "" then return end
 
 			timer.Create("ECCompletionPeek", 0.25, 1, function()
 				local completion = get_completion(self:GetText())
