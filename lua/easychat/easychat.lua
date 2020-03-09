@@ -1494,7 +1494,7 @@ if CLIENT then
 			if hud_element == "CHudChat" then return false end
 		end)
 
-		local function chathud_get_bounds(x, y, w)
+		local function chathud_get_bounds(x, y, w, h)
 			local c_x, c_y, c_w =
 				EC_HUD_POS_X:GetInt(),
 				EC_HUD_POS_Y:GetInt(),
@@ -1522,13 +1522,13 @@ if CLIENT then
 				end
 			end
 
-			return x, y, w
+			return x, y, w, h
 		end
 
 		local chathud = EasyChat.ChatHUD
 		local function chathud_screen_resolution_changed()
 			local x, y, w, h = EasyChat.GetDefaultBounds()
-			x, y, w = chathud_get_bounds(x, y, w)
+			x, y, w, h = chathud_get_bounds(x, y, w, h)
 
 			chathud.Pos = { X = x, Y = y }
 			chathud.Size = { W = w, H = h }
@@ -1588,7 +1588,7 @@ if CLIENT then
 				chathud.Size = { W = w, H = h }
 			else
 				local x, y, w, h = EasyChat.GetDefaultBounds()
-				x, y, w = chathud_get_bounds(x, y, w)
+				x, y, w, h = chathud_get_bounds(x, y, w, h)
 				chathud.Pos = { X = x, Y = y }
 				chathud.Size = { W = w, H = h }
 			end
