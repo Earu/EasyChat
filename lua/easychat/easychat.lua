@@ -1500,8 +1500,8 @@ if CLIENT then
 				EC_HUD_POS_Y:GetInt(),
 				EC_HUD_WIDTH:GetInt()
 
-			if c_w > 0 then
-				w = math.Clamp(c_w, 250, ScrW() - 30)
+			if c_w >= 250 then
+				w = math.min(c_w, ScrW() - 30)
 			elseif ScrW() < 1600 then -- ant screens
 				w = 250
 			end
@@ -1515,7 +1515,7 @@ if CLIENT then
 			end
 
 			if c_y > 0 then
-				y = c_y
+				y = c_y - h
 				if y + h > ScrH() then
 					local diff = (y + h) - ScrH()
 					y = y - diff - 30
