@@ -120,6 +120,10 @@ function PANEL:Init()
 					return false;
 				case 13:
 					TextEntryX.OnEnter(TEXT_ENTRY.selectionStart);
+					if (!ev.shiftKey) {
+						ev.preventDefault();
+						return false;
+					}
 					break;
 				case 38:
 					ev.preventDefault();
@@ -290,7 +294,7 @@ function PANEL:PaintOver(w, h)
 		local cur_text_w = surface_GetTextSize(self.CurrentValue)
 		local start_pos, end_pos = string_find(self.CompletionText, self.CurrentValue, 1, true)
 		if start_pos then
-			local sub_completion = string_sub(self.CompletionText, sub(end_pos + 1))
+			local sub_completion = string_sub(self.CompletionText, end_pos + 1)
 			local _, completion_text_h = surface_GetTextSize(sub_completion)
 			surface_SetTextPos(cur_text_w + 3, h / 2 - completion_text_h / 2)
 			surface_DrawText(sub_completion)

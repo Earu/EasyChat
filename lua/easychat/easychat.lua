@@ -1514,7 +1514,7 @@ if CLIENT then
 			local x, y, w, h = EasyChat.GetDefaultBounds()
 
 			if EC_HUD_WIDTH:GetInt() > 0 then
-				w = math.min(EC_HUD_WIDTH:GetInt(), ScrW() - 30)
+				w = math.Clamp(EC_HUD_WIDTH:GetInt(), 250, ScrW() - 30)
 			elseif ScrW() < 1600 then -- ant screens
 				w = 250
 			end
