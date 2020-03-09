@@ -1500,7 +1500,7 @@ if CLIENT then
 				EC_HUD_POS_Y:GetInt(),
 				EC_HUD_WIDTH:GetInt()
 
-			if c_w >= 250 then
+			if c_w > 250 then
 				w = math.min(c_w, ScrW() - 30)
 			elseif ScrW() < 1600 then -- ant screens
 				w = 250
