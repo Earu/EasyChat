@@ -182,9 +182,9 @@ if CLIENT then
 	local EC_HUD_TIMESTAMPS = CreateConVar("easychat_hud_timestamps", "0", FCVAR_ARCHIVE, "Display timestamps in the chat hud")
 	local EC_HUD_SH_CLEAR = CreateConVar("easychat_hud_sh_clear", "1", FCVAR_ARCHIVE, "Should \'sh\' clear the chat hud tags")
 	local EC_HUD_CUSTOM = CreateConVar("easychat_hud_custom", "1", FCVAR_ARCHIVE, "Use EasyChat's custom chat hud")
-	local EC_HUD_POS_X = CreateConVar("easychat_hud_pos_x", "-1", FCVAR_ARCHIVE, "Changes the position of the chat hud on the x axis")
-	local EC_HUD_POS_Y = CreateConVar("easychat_hud_pos_y", "-1", FCVAR_ARCHIVE, "Changes the position of the chat hud on the y axis")
-	local EC_HUD_WIDTH = CreateConVar("easychat_hud_width", "-1", FCVAR_ARCHIVE, "Changes the width of the chat hud")
+	local EC_HUD_POS_X = CreateConVar("easychat_hud_pos_x", "0", FCVAR_ARCHIVE, "Changes the position of the chat hud on the x axis")
+	local EC_HUD_POS_Y = CreateConVar("easychat_hud_pos_y", "0", FCVAR_ARCHIVE, "Changes the position of the chat hud on the y axis")
+	local EC_HUD_WIDTH = CreateConVar("easychat_hud_width", "0", FCVAR_ARCHIVE, "Changes the width of the chat hud")
 
 	EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
 
@@ -682,13 +682,13 @@ if CLIENT then
 			richtext.Log = ""
 		end
 
-		local function hud_append_text(text)
+		local function chathud_append_text(text)
 			if not EC_HUD_CUSTOM:GetBool() then return end
 			EasyChat.ChatHUD:AppendText(text)
 		end
 
 		local function global_append_text(text)
-			hud_append_text(text)
+			chathud_append_text(text)
 			append_text(EasyChat.GUI.RichText, text)
 		end
 
@@ -930,7 +930,7 @@ if CLIENT then
 				end
 
 				if EC_HUD_TIMESTAMPS:GetBool() then
-					hud_append_text(timestamp)
+					chathud_append_text(timestamp)
 				end
 			end
 
@@ -1149,21 +1149,6 @@ if CLIENT then
 				RichText = global_tab.RichText,
 				TabControl = chatbox_frame.Tabs
 			}
-
-			hook.Add("Think", TAG, function()
-				local chathud = EasyChat.ChatHUD
-				if not chathud then return end
-
-				if EC_HUD_FOLLOW:GetBool() then
-					local x, y, w, h = chatbox_frame:GetBounds()
-					chathud.Pos = { X = x, Y = y }
-					chathud.Size = { W = w, H = h }
-				else
-					local x, y, w, h = EasyChat.GetDefaultBounds()
-					chathud.Pos = { X = x, Y = y }
-					chathud.Size = { W = w, H = h }
-				end
-			end)
 
 			close_chatbox(true)
 		end
@@ -1509,31 +1494,41 @@ if CLIENT then
 			if hud_element == "CHudChat" then return false end
 		end)
 
-		local chathud = EasyChat.ChatHUD
-		local function chathud_screen_resolution_changed()
-			local x, y, w, h = EasyChat.GetDefaultBounds()
+		local function chathud_get_bounds(x, y, w)
+			local c_x, c_y, c_w =
+				EC_HUD_POS_X:GetInt(),
+				EC_HUD_POS_Y:GetInt(),
+				EC_HUD_WIDTH:GetInt()
 
-			if EC_HUD_WIDTH:GetInt() > 0 then
-				w = math.Clamp(EC_HUD_WIDTH:GetInt(), 250, ScrW() - 30)
+			if c_w > 0 then
+				w = math.Clamp(c_w, 250, ScrW() - 30)
 			elseif ScrW() < 1600 then -- ant screens
 				w = 250
 			end
 
-			if EC_HUD_POS_X:GetInt() > 0 then
-				x = EC_HUD_POS_X:GetInt()
+			if c_x > 0 then
+				x = c_x
 				if x + w > ScrW() then
 					local diff = (x + w) - ScrW()
 					x = x - diff - 30
 				end
 			end
 
-			if EC_HUD_POS_Y:GetInt() > 0 then
-				y = EC_HUD_POS_Y:GetInt()
+			if c_y > 0 then
+				y = c_y
 				if y + h > ScrH() then
 					local diff = (y + h) - ScrH()
 					y = y - diff - 30
 				end
 			end
+
+			return x, y, w
+		end
+
+		local chathud = EasyChat.ChatHUD
+		local function chathud_screen_resolution_changed()
+			local x, y, w, h = EasyChat.GetDefaultBounds()
+			x, y, w = chathud_get_bounds(x, y, w)
 
 			chathud.Pos = { X = x, Y = y }
 			chathud.Size = { W = w, H = h }
@@ -1583,6 +1578,21 @@ if CLIENT then
 			chatbox_frame:SetPos(x, y)
 			chatbox_frame:SetSize(w, h)
 		end
+
+		hook.Add("Think", TAG, function()
+			if not chathud then return end
+
+			if EC_HUD_FOLLOW:GetBool() then
+				local x, y, w, h = chatbox_frame:GetBounds()
+				chathud.Pos = { X = x, Y = y }
+				chathud.Size = { W = w, H = h }
+			else
+				local x, y, w, h = EasyChat.GetDefaultBounds()
+				x, y, w = chathud_get_bounds(x, y, w)
+				chathud.Pos = { X = x, Y = y }
+				chathud.Size = { W = w, H = h }
+			end
+		end)
 
 		local old_scrw, old_scrh = 0, 0
 		hook.Add("HUDPaint", TAG, function()
