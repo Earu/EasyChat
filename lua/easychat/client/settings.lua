@@ -269,9 +269,9 @@ local function create_default_settings()
 
 		settings:AddSpacer(category_name)
 
-		local setting_hud_w = settings:AddConvarSetting(category_name, "number", EC_HUD_WIDTH, "HUD Width", 250, 1250)
-		local setting_hud_x = settings:AddConvarSetting(category_name, "number", EC_HUD_POS_X, "HUD X Pos", 0, 5000)
-		local setting_hud_y = settings:AddConvarSetting(category_name, "number", EC_HUD_POS_X, "HUD Y Pos", 0, 5000)
+		local setting_hud_w = settings:AddConvarSetting(category_name, "number", EC_HUD_WIDTH, "HUD Width", 1250, 250)
+		local setting_hud_x = settings:AddConvarSetting(category_name, "number", EC_HUD_POS_X, "HUD X Pos", 5000, 0)
+		local setting_hud_y = settings:AddConvarSetting(category_name, "number", EC_HUD_POS_X, "HUD Y Pos", 5000, 0)
 
 		local setting_reset_hud_bounds = settings:AddSetting(category_name, "action", "Reset HUD Bounds")
 		setting_reset_hud_bounds.DoClick = function()
