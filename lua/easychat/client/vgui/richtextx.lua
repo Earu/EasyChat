@@ -67,6 +67,17 @@ function PANEL:Init()
 
 		window.addEventListener("contextmenu", (ev) => {
 			ev.preventDefault();
+
+			if (ev.target.nodeName == "IMG") {
+				RichTextX.OnRightClick(ev.target.src);
+				return;
+			}
+
+			if (ev.target.nodeName == "SPAN" && ev.target.clickableText) {
+				RichTextX.OnRightClick(ev.target.textContent);
+				return;
+			}
+
 			let selection = window.getSelection();
 			RichTextX.OnRightClick(selection.toString());
 		});
@@ -113,6 +124,7 @@ function PANEL:AppendText(text)
 	local js = (self.ClickableTextValue and [[
 		span = document.createElement("span");
 		span.onclick = () => RichTextX.OnClick(`]] .. self.ClickableTextValue .. [[`);
+		span.clickableText = true;
 		span.style.cursor = "pointer";
 		span.style.color = "4497CE";
 	]] or [[
@@ -205,8 +217,9 @@ function TestRichTextX()
 		r:AppendText(long_text)
 	end
 
+	r:AppendImageURL("https://cdn.discordapp.com/attachments/289906269278568448/686970306770108455/unknown.png")
+
 	timer.Simple(4, function() r:GotoTextEnd() end)
 	timer.Simple(6, function() r:GotoTextStart() end)
-
 	timer.Simple(10, function() r:Remove() end)
 end
