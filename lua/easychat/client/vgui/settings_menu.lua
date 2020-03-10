@@ -83,7 +83,8 @@ function SETTINGS:Init()
 		end
 
 		self.Paint = function(self, w, h)
-			surface.SetDrawColor(EasyChat.TabColor)
+			local r, g, b = EasyChat.TabColor:Unpack()
+			surface.SetDrawColor(r, g, b)
 			surface.DrawRect(0, 0, w, h)
 
 			surface.SetDrawColor(EasyChat.OutlayColor)
