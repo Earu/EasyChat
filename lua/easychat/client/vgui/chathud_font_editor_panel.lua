@@ -42,6 +42,13 @@ local EDITOR = {
 		self:SetPos(ScrW() / 2 - 300, ScrH() / 2 - 200)
 		self:SetTitle("EC ChatHUD Font Editor")
 		self.lblTitle:SetFont("EasyChatFont")
+		self.btnMaxim:Hide()
+		self.btnMinim:Hide()
+
+		self.btnClose:SetSize(30, 30)
+		self.btnClose:SetZPos(10)
+		self.btnClose:SetFont("DermaDefaultBold")
+		self.btnClose:SetText("X")
 
 		self.BaseFont = self:Add("DTextEntry")
 		self.FontSize = self:Add("DNumSlider")
@@ -49,6 +56,7 @@ local EDITOR = {
 		self.FontScanlines = self:Add("DNumSlider")
 		self.ResetFont = self:Add("DButton")
 		self.ApplyFont = self:Add("DButton")
+		self.Canvas = self:Add("DPanel")
 
 		local width, x = 580, 10
 		local total_height = 30
@@ -117,15 +125,27 @@ local EDITOR = {
 			self:SaveFontData()
 		end
 
+		self.Canvas:SetSize(100, 100)
+		self.Canvas:SetPos(350, 200)
+
+		local mk = ec_markup.Parse("Hello World!")
+		local black_color = Color(0, 0, 0)
+		self.Canvas.Paint = function(_, w, h)
+			surface.SetDrawColor(black_color)
+			surface.DrawRect(0, 0, w, h)
+			mk:Draw(w / 2 - mk:GetWide() / 2, h / 2 - mk:GetTall() / 2)
+		end
+
 		if not EasyChat.UseDermaSkin then
-			--self.FontSize:SetTextColor(EasyChat.TextColor)
-			--self.FontWeight:SetTextColor(EasyChat.TextColor)
-			--self.FontScanlines:SetTextColor(EasyChat.TextColor)
+			self.lblTitle:SetTextColor(EasyChat.TextColor)
+			self.btnClose:SetTextColor(EasyChat.TextColor)
+			self.btnClose.Paint = function() end
+
 			self.ResetFont:SetTextColor(EasyChat.TextColor)
 			self.ApplyFont:SetTextColor(EasyChat.TextColor)
 
 			local ECButtonPaint = function(self,w,h)
-				local col1, col2 = EasyChat.TabColor, EasyChat.TabOutlineColor
+				local col1, col2 = EasyChat.OutlayColor, EasyChat.TabOutlineColor
 				if self:IsHovered() then
 					col1 = Color(col1.r + 50, col1.g + 50, col1.b + 50, col1.a + 50)
 					col2 = Color(255 - col2.r, 255 - col2.g, 255 - col2.b, 255 - col2.a)
@@ -143,7 +163,7 @@ local EDITOR = {
 			for prop_name, _ in pairs(props) do
 				local checkbox = self[prop_name]
 				checkbox.Button.Paint = function(self, w, h)
-					surface.SetDrawColor(EasyChat.TabColor)
+					surface.SetDrawColor(EasyChat.OutlayColor)
 					surface.DrawRect(0, 0, w, h)
 
 					if self:GetChecked() then
@@ -187,6 +207,8 @@ local EDITOR = {
 
 		local json = util.TableToJSON(data, true)
 		file.Write(file_path, json)
+
+		notification.AddLegacy("Successfully applied your font settings", NOTIFY_HINT, 5)
 	end,
 	ResetFontData = function(self)
 		local shadow_data = table.Copy(default_font_data)
@@ -202,8 +224,11 @@ local EDITOR = {
 		end
 	end,
 	Paint = function(self, w, h)
-		surface.SetDrawColor(EasyChat.OutlayColor)
+		local r, g, b = EasyChat.TabColor:Unpack()
+		surface.SetDrawColor(r, g, b)
 		surface.DrawRect(0, 0, w, h)
+		surface.SetDrawColor(EasyChat.OutlayColor)
+		surface.DrawRect(0, 0, w, 25)
 		surface.SetDrawColor(EasyChat.OutlayOutlineColor)
 		surface.DrawOutlinedRect(0, 0, w, h)
 	end,
