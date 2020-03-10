@@ -51,6 +51,7 @@ local MAIN_TAB = {
 		else
 			self.TextEntry = self:Add("DTextEntry")
 			self.TextEntry.OnTab = function() end
+			self.TextEntry.SetCompletionText = function() end
 
 			local last_key = KEY_ENTER
 			self.TextEntry.OnKeyCodeTyped = function(self, key_code)
