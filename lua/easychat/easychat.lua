@@ -340,8 +340,8 @@ if CLIENT then
 		end
 
 		-- make sure to get rid of the possible completion
-		self.TabCompletion = nil
-		self:SetCompletionText(nil)
+		EasyChat.GUI.TextEntry.TabCompletion = nil
+		EasyChat.GUI.TextEntry:SetCompletionText(nil)
 		timer.Destroy("ECCompletionPeek")
 
 		EasyChat.GUI.TextEntry:SetText("")
