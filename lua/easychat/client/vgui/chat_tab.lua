@@ -52,8 +52,43 @@ local MAIN_TAB = {
 			self.TextEntry = self:Add("TextEntryX")
 		else
 			self.TextEntry = self:Add("DTextEntry")
+			self.TextEntry:SetFont("EasyChatCompletionFont")
+			self.TextEntry:SetUpdateOnType(true)
+
+			self.TextEntry.OnKeyCodeTyped = function(self, key_code)
+				if key_code == KEY_TAB then self:OnTab() end
+			end
+
 			self.TextEntry.OnTab = function() end
-			self.TextEntry.SetCompletionText = function() end
+
+			self.TextEntry.SetCompletionText = function(self, text)
+				if not text or text:Trim() == "" then
+					self.CompletionText = nil
+				else
+					self.CompletionText = text
+				end
+			end
+
+			self.TextEntry.PaintOver = function(self, w, h)
+				if not self.CompletionText then return end
+
+				local cur_value = self:GetText()
+				surface.SetDrawColor(self.PlaceholderColor)
+				surface.SetFont("EasyChatCompletionFont")
+				local cur_text_w = surface.GetTextSize(cur_value)
+				local start_pos, end_pos = string.find(self.CompletionText, cur_value, 1, true)
+				if start_pos then
+					local sub_completion = string.sub(self.CompletionText, end_pos + 1)
+					local _, completion_text_h = surface.GetTextSize(sub_completion)
+					surface.SetTextPos(cur_text_w + 3, h / 2 - completion_text_h / 2)
+					surface.DrawText(sub_completion)
+				else
+					local sub_completion = string.format("<< %s >>", self.CompletionText)
+					local _, completion_text_h = surface.GetTextSize(sub_completion)
+					surface.SetTextPos(cur_text_w + 15, h / 2 - completion_text_h / 2)
+					surface.DrawText(sub_completion)
+				end
+			end
 
 			local last_key = KEY_ENTER
 			self.TextEntry.OnKeyCodeTyped = function(self, key_code)
@@ -161,13 +196,14 @@ local MAIN_TAB = {
 
 		if not EasyChat.UseDermaSkin then
 			local text_color = EasyChat.TextColor
-			self.TextEntry:SetPlaceholderColor(Color(text_color.r - 100, text_color.g - 100, text_color.b - 100))
-
+			local placeholder_color = Color(text_color.r - 100, text_color.g - 100, text_color.b - 100)
 			if HAS_CHROMIUM and use_new_text_entry then
 				self.TextEntry:SetBackgroundColor(EasyChat.TabColor)
 				self.TextEntry:SetBorderColor(EasyChat.OutlayColor)
 				self.TextEntry:SetTextColor(EasyChat.TextColor)
+				self.TextEntry:SetPlaceholderColor(placeholder_color)
 			else
+				self.TextEntry.PlaceholderColor = placeholder_color
 				self.TextEntry.Paint = function(self, w, h)
 					surface.SetDrawColor(EasyChat.TabColor)
 					surface.DrawRect(0, 0, w, h)
