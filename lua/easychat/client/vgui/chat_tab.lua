@@ -3,6 +3,7 @@ include("easychat/client/vgui/textentryx.lua")
 include("easychat/client/vgui/emote_picker.lua")
 include("easychat/client/vgui/color_picker.lua")
 
+local EC_LEGACY_ENTRY = GetConVar("easychat_legacy_entry")
 local HAS_CHROMIUM = BRANCH ~= "dev" and BRANCH ~= "unknown"
 local MAIN_TAB = {
 	Init = function(self)
@@ -46,7 +47,8 @@ local MAIN_TAB = {
 			switch_menu:Open()
 		end
 
-		if HAS_CHROMIUM then
+		local use_new = (EC_LEGACY_ENTRY and not EC_LEGACY_ENTRY:GetBool()) or not EC_LEGACY_ENTRY
+		if HAS_CHROMIUM and use_new then
 			self.TextEntry = self:Add("TextEntryX")
 		else
 			self.TextEntry = self:Add("DTextEntry")
