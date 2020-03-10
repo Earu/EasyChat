@@ -1588,7 +1588,7 @@ if CLIENT then
 			if not chathud then return end
 
 			if EC_HUD_FOLLOW:GetBool() then
-				local x, y, w, h = chatbox_frame:GetBounds()
+				local x, y, w, h = EasyChat.GUI.ChatBox:GetBounds()
 				chathud.Pos = { X = x, Y = y }
 				chathud.Size = { W = w, H = h }
 			else
