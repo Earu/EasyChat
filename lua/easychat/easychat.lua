@@ -339,6 +339,11 @@ if CLIENT then
 			end)
 		end
 
+		-- make sure to get rid of the possible completion
+		self.TabCompletion = nil
+		self:SetCompletionText(nil)
+		timer.Destroy("ECCompletionPeek")
+
 		EasyChat.GUI.TextEntry:SetText("")
 
 		safe_hook_run("ECOpened", LocalPlayer())
