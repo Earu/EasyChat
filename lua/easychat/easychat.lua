@@ -1589,6 +1589,7 @@ if CLIENT then
 
 			if EC_HUD_FOLLOW:GetBool() then
 				local x, y, w, h = EasyChat.GUI.ChatBox:GetBounds()
+				x, y = x + 10, y - EasyChat.GUI.TextEntry:GetTall() -- fix slightly off pos
 				chathud.Pos = { X = x, Y = y }
 				chathud.Size = { W = w, H = h }
 			else
