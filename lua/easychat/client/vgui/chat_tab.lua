@@ -47,8 +47,8 @@ local MAIN_TAB = {
 			switch_menu:Open()
 		end
 
-		local use_new = (EC_LEGACY_ENTRY and not EC_LEGACY_ENTRY:GetBool()) or not EC_LEGACY_ENTRY
-		if HAS_CHROMIUM and use_new then
+		local use_new_text_entry = (EC_LEGACY_ENTRY and not EC_LEGACY_ENTRY:GetBool()) or not EC_LEGACY_ENTRY
+		if HAS_CHROMIUM and use_new_text_entry then
 			self.TextEntry = self:Add("TextEntryX")
 		else
 			self.TextEntry = self:Add("DTextEntry")
@@ -163,7 +163,7 @@ local MAIN_TAB = {
 			local text_color = EasyChat.TextColor
 			self.TextEntry:SetPlaceholderColor(Color(text_color.r - 100, text_color.g - 100, text_color.b - 100))
 
-			if HAS_CHROMIUM then
+			if HAS_CHROMIUM and use_new_text_entry then
 				self.TextEntry:SetBackgroundColor(EasyChat.TabColor)
 				self.TextEntry:SetBorderColor(EasyChat.OutlayColor)
 				self.TextEntry:SetTextColor(EasyChat.TextColor)
