@@ -174,6 +174,7 @@ if CLIENT then
 	local EC_IMAGES = CreateConVar("easychat_images", "1", FCVAR_ARCHIVE, "Display images in the chat window")
 	local EC_TIMESTAMPS = CreateConVar("easychat_timestamps", "0", FCVAR_ARCHIVE, "Display timestamps in the chatbox")
 	local EC_PEEK_COMPLETION = CreateConVar("easychat_peek_completion", "1", FCVAR_ARCHIVE, "Display a preview of the possible text completion")
+	local EC_LEGACY_ENTRY = CreateConVar("easychat_legacy_entry", "0", FCVAR_ARCHIVE, "Uses the legacy textbox entry")
 
 	-- chathud
 	local EC_HUD_SMOOTH = CreateConVar("easychat_hud_smooth", "1", FCVAR_ARCHIVE, "Enables chat smoothing")
@@ -206,6 +207,8 @@ if CLIENT then
 		EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
 		EasyChat.Reload()
 	end)
+
+	cvars.AddChangeCallback(EC_LEGACY_ENTRY:GetName(), function() EasyChat.Reload() end)
 
 	EasyChat.FontName = EC_FONT:GetString()
 	EasyChat.FontSize = EC_FONT_SIZE:GetInt()

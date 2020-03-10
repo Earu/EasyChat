@@ -339,16 +339,15 @@ function SETTINGS:CreateListSetting(panel, name)
 			return column
 		end
 
-		--[[local old_AddLine = list_view.AddLine
+		local old_AddLine = list_view.AddLine
 		list_view.AddLine = function(self, ...)
 			local line = old_AddLine(self, ...)
-			for _, l in pairs(line.Lines) do
-					l:SetContentAlignment(5)
-				end
-			--end
+			for _, column in pairs(line.Columns) do
+				column:SetTextColor(EasyChat.TextColor)
+			end
 
 			return line
-		end]]--
+		end
 	end
 
 	return list_setting
