@@ -300,7 +300,7 @@ if CLIENT then
 		end
 	end)
 
-	EasyChat.AddTab("DM", dmtab)
+	EasyChat.AddTab("DM", dmtab, "icon16/group.png")
 	EasyChat.SetFocusForOn("DM", dmtab.TextEntry)
 end
 

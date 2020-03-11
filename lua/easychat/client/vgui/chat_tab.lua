@@ -4,6 +4,7 @@ include("easychat/client/vgui/textentrylegacy.lua")
 include("easychat/client/vgui/emote_picker.lua")
 include("easychat/client/vgui/color_picker.lua")
 
+local NEW_LINE_PATTERN = "\n"
 local EC_LEGACY_ENTRY = GetConVar("easychat_legacy_entry")
 local HAS_CHROMIUM = BRANCH ~= "dev" and BRANCH ~= "unknown"
 local MAIN_TAB = {
@@ -115,7 +116,7 @@ local MAIN_TAB = {
 
 		self.BtnEmotePicker = self:Add("DButton")
 		self.BtnEmotePicker:SetText("")
-		self.BtnEmotePicker:SetIcon("icon16/emoticon_smile.png")
+		self.BtnEmotePicker:SetIcon("icon16/emoticon_grin.png")
 		self.BtnEmotePicker:SetSize(25, 25)
 		self.BtnEmotePicker.DoClick = function()
 			local btn_x, btn_y = self.BtnEmotePicker:LocalToScreen(0, 0)
@@ -179,13 +180,22 @@ local MAIN_TAB = {
 		end
 	end,
 	PerformLayout = function(self, w, h)
-		self.RichText:SetSize(w - 10, h - 35)
+		local _, line_count = self.TextEntry:GetText():gsub(NEW_LINE_PATTERN, "\n")
+		local text_entry_height = math.min(25 + (line_count * 10), 100)
+
+		local old_richtext_height = self.RichText:GetTall()
+		self.RichText:SetSize(w - 10, h - (text_entry_height + 10))
 		self.RichText:SetPos(5, 5)
-		self.BtnSwitch:SetPos(0, h - self.BtnSwitch:GetTall())
-		self.TextEntry:SetSize(w - self.BtnSwitch:GetWide() - self.BtnEmotePicker:GetWide() - self.BtnColorPicker:GetWide(), 25)
-		self.TextEntry:SetPos(self.BtnSwitch:GetWide(), h - self.TextEntry:GetTall())
-		self.BtnEmotePicker:SetPos(w - self.BtnEmotePicker:GetWide() - self.BtnColorPicker:GetWide(), h - self.BtnEmotePicker:GetTall())
-		self.BtnColorPicker:SetPos(w - self.BtnColorPicker:GetWide(), h - self.BtnColorPicker:GetTall())
+		if self.RichText:GetTall() ~= old_richtext_height then
+			self.RichText:GotoTextEnd()
+		end
+
+		self.TextEntry:SetSize(w - self.BtnSwitch:GetWide() - self.BtnEmotePicker:GetWide() - self.BtnColorPicker:GetWide(), text_entry_height)
+		self.TextEntry:SetPos(self.BtnSwitch:GetWide(), h - text_entry_height)
+
+		self.BtnSwitch:SetPos(0, h - text_entry_height)
+		self.BtnEmotePicker:SetPos(w - self.BtnEmotePicker:GetWide() - self.BtnColorPicker:GetWide(), h - text_entry_height)
+		self.BtnColorPicker:SetPos(w - self.BtnColorPicker:GetWide(), h - text_entry_height)
 	end,
 	OnRemove = function(self)
 		self.EmotePicker:Remove()
