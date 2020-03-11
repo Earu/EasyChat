@@ -1245,8 +1245,7 @@ if CLIENT then
 
 		local function get_completion(text)
 			local gm = EC_GM_COMPLETE:GetBool() and gmod.GetGamemode() or nil
-			local completion = hook.Call("OnChatTab", gm, text)
-			return completion
+			return hook.Call("OnChatTab", gm, text)
 		end
 
 		function EasyChat.GUI.TextEntry:OnTab()
