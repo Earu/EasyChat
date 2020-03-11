@@ -322,6 +322,8 @@ local function add_chathud_markup_settings()
 		editor:MakePopup()
 		editor:Center()
 	end
+
+	concommand.Add("chathud_font_editor", setting_font_editor.DoClick)
 end
 
 local function add_legacy_settings()
