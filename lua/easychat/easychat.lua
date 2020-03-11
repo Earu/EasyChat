@@ -1243,39 +1243,65 @@ if CLIENT then
 			end
 		end
 
-		local function get_completion(text)
-			local gm = EC_GM_COMPLETE:GetBool() and gmod.GetGamemode() or nil
-			return hook.Call("OnChatTab", gm, text)
+		local completion_blacklist = {
+			chatsounds_autocomplete = true
+		}
+		local function get_completion(text, use_blacklist)
+			if not use_blacklist then
+				local gm = EC_GM_COMPLETE:GetBool() and gmod.GetGamemode() or nil
+				return hook.Call("OnChatTab", gm, text)
+			else
+				local callbacks = hook.GetTable().OnChatTab
+				if callbacks then
+					local completion
+					for callback_key, callback in pairs(callbacks) do
+						if not completion_blacklist[callback_key] then
+							if isstring(callback_key) then
+								completion = callback(text)
+							elseif IsValid(callback_key) then
+								completion = callback(callback_key, text)
+							end
+						end
+					end
+
+					if completion then return completion end
+				end
+
+				if EC_GM_COMPLETE:GetBool() then
+					local gm = gmod.GetGamemode()
+					if gm.OnChatTab then return gm:OnChatTab(text) end
+				end
+			end
 		end
 
 		function EasyChat.GUI.TextEntry:OnTab()
-			if self:GetText() ~= "" then
-				if EC_PEEK_COMPLETION:GetBool() and self.TabCompletion then
-					if self.TabbedOnce then
-						local completion = get_completion(self.BaseCompletionText)
-						if completion then self:SetText(completion) end
-					else
-						self.TabbedOnce = true
-						self.BaseCompletionText = self:GetText()
-						self:SetText(self.TabCompletion)
-					end
+			if self:GetText() == "" then
+				local next_mode = EasyChat.Mode + 1
+				EasyChat.Mode = next_mode > EasyChat.ModeCount and 0 or next_mode
+				return
+			end
+
+			if EC_PEEK_COMPLETION:GetBool() and self.TabCompletion then
+				if self.TabbedOnce then
+					local completion = get_completion(self.BaseCompletionText)
+					if completion then self:SetText(completion) end
+				else
+					self.TabbedOnce = true
+					self:SetText(self.TabCompletion)
+				end
+				timer.Simple(0, function()
+					self:RequestFocus()
+					self:SetCaretPos(#self:GetText())
+				end)
+			else
+				local completion = get_completion(self:GetText())
+				if completion then
+					self:SetText(completion)
 					timer.Simple(0, function()
 						self:RequestFocus()
 						self:SetCaretPos(#self:GetText())
 					end)
-				else
-					local completion = get_completion(self:GetText())
-					if completion then
-						self:SetText(completion)
-						timer.Simple(0, function()
-							self:RequestFocus()
-							self:SetCaretPos(#self:GetText())
-						end)
-					end
 				end
-			else
-				local next_mode = EasyChat.Mode + 1
-				EasyChat.Mode = next_mode > EasyChat.ModeCount and 0 or next_mode
 			end
 		end
 
@@ -1329,22 +1355,20 @@ if CLIENT then
 			gamemode.Call("ChatTextChanged", text)
 
 			-- this needs to be reset here for peeking to work properly
-			self.TabbedOnce = nil
-			self.BaseCompletionText = nil
+			self.TabbedOnce = false
+			self.BaseCompletionText = text
 
 			if not EC_PEEK_COMPLETION:GetBool() then return end
 
-			self.TabCompletion = nil
-			self:SetCompletionText(nil)
-			timer.Destroy("ECCompletionPeek")
+			if text:Trim() == "" then
+				self.TabCompletion = nil
+				self:SetCompletionText(nil)
+				return
+			end
 
-			if text:Trim() == "" then return end
-
-			timer.Create("ECCompletionPeek", 0.25, 1, function()
-				local completion = get_completion(self:GetText())
-				self.TabCompletion = completion
-				self:SetCompletionText(completion)
-			end)
+			local completion = get_completion(text, true)
+			self.TabCompletion = completion
+			self:SetCompletionText(completion)
 		end
 
 		function EasyChat.GUI.RichText:ActionSignal(name, value)
