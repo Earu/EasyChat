@@ -73,7 +73,8 @@ local MAIN_TAB = {
 				if not self.CompletionText then return end
 
 				local cur_value = self:GetText()
-				surface.SetDrawColor(self.PlaceholderColor)
+				local r, g, b = self.PlaceholderColor:Unpack()
+				surface.SetDrawColor(r, g, b)
 				surface.SetFont("EasyChatCompletionFont")
 				local cur_text_w = surface.GetTextSize(cur_value)
 				local start_pos, end_pos = string.find(self.CompletionText, cur_value, 1, true)
