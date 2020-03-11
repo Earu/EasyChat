@@ -677,7 +677,7 @@ if CLIENT then
 	vgui.Register("ECLuaTab", LUA_TAB, "DPanel")
 
 	local lua_tab = vgui.Create("ECLuaTab")
-	EasyChat.AddTab("Lua", lua_tab)
+	EasyChat.AddTab("Lua", lua_tab, "icon16/page_edit.png")
 
 	-- dont display it by default on small resolutions
 	if not cookie.GetNumber("EasyChatSmallScreenLuaTab") and ScrW() < 1600 then
