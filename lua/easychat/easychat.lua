@@ -1514,7 +1514,7 @@ if CLIENT then
 
 		local chat_text_types = {
 			none = true, -- fallback
-			darkrp = true -- darkrp compat most likely?
+			--darkrp = true -- darkrp compat most likely? Note: prints twice
 			--namechange = true, -- annoying
 			--servermsg = true,  -- annoying
 			--teamchange = true, -- annoying
