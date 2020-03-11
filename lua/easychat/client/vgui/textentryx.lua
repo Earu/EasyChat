@@ -276,7 +276,8 @@ surface.CreateFont("EasyChatCompletionFont", {
 	size = 16,
 })
 
-local surface_SetTextColor = _G.surface.SetDrawColor
+local surface_SetDrawColor = _G.surface.SetDrawColor
+local surface_SetTextColor = _G.surface.SetTextColor
 local surface_DrawOutlinedRect = _G.surface.DrawOutlinedRect
 local surface_SetFont = _G.surface.SetFont
 local surface_GetTextSize = _G.surface.GetTextSize
