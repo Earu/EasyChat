@@ -1,5 +1,6 @@
 include("easychat/client/vgui/richtextx.lua")
 include("easychat/client/vgui/textentryx.lua")
+include("easychat/client/vgui/textentrylegacy.lua")
 include("easychat/client/vgui/emote_picker.lua")
 include("easychat/client/vgui/color_picker.lua")
 
@@ -48,62 +49,7 @@ local MAIN_TAB = {
 		end
 
 		local use_new_text_entry = (EC_LEGACY_ENTRY and not EC_LEGACY_ENTRY:GetBool()) or not EC_LEGACY_ENTRY
-		if HAS_CHROMIUM and use_new_text_entry then
-			self.TextEntry = self:Add("TextEntryX")
-		else
-			self.TextEntry = self:Add("DTextEntry")
-			self.TextEntry:SetFont("EasyChatCompletionFont")
-			self.TextEntry:SetUpdateOnType(true)
-			self.TextEntry:SetMultiline(true)
-			self.TextEntry.OnTab = function() end
-
-			self.TextEntry.SetCompletionText = function(self, text)
-				if not text or text:Trim() == "" then
-					self.CompletionText = nil
-				else
-					self.CompletionText = text
-				end
-			end
-
-			self.TextEntry.PaintOver = function(self, w, h)
-				if not self.CompletionText then return end
-
-				local cur_value = self:GetText()
-				local r, g, b = self.PlaceholderColor:Unpack()
-				surface.SetDrawColor(r, g, b)
-				surface.SetFont("EasyChatCompletionFont")
-				local cur_text_w = surface.GetTextSize(cur_value)
-				local start_pos, end_pos = string.find(self.CompletionText, cur_value, 1, true)
-				if start_pos then
-					local sub_completion = string.sub(self.CompletionText, end_pos + 1)
-					local _, completion_text_h = surface.GetTextSize(sub_completion)
-					surface.SetTextPos(cur_text_w + 3, h / 2 - completion_text_h / 2)
-					surface.DrawText(sub_completion)
-				else
-					local sub_completion = string.format("<< %s >>", self.CompletionText)
-					local _, completion_text_h = surface.GetTextSize(sub_completion)
-					surface.SetTextPos(cur_text_w + 15, h / 2 - completion_text_h / 2)
-					surface.DrawText(sub_completion)
-				end
-			end
-
-			local last_key = KEY_ENTER
-			self.TextEntry.OnKeyCodeTyped = function(self, key_code)
-				EasyChat.SetupHistory(self, key_code)
-				EasyChat.UseRegisteredShortcuts(self, last_key, code)
-
-				if key_code == KEY_TAB then
-					self:OnTab()
-					return true
-				elseif key_code == KEY_ENTER or key_code == KEY_PAD_ENTER then
-					self:OnEnter()
-					return true
-				end
-
-				last_key = key_code
-			end
-		end
-
+		self.TextEntry = self:Add((HAS_CHROMIUM and use_new_text_entry) and "TextEntryX" or "TextEntryLegacy")
 		self.TextEntry:SetPlaceholderText("type something...")
 
 		self.EmotePicker = vgui.Create("ECEmotePicker")
@@ -196,13 +142,12 @@ local MAIN_TAB = {
 		if not EasyChat.UseDermaSkin then
 			local text_color = EasyChat.TextColor
 			local placeholder_color = Color(text_color.r - 100, text_color.g - 100, text_color.b - 100)
+			self.TextEntry:SetPlaceholderColor(placeholder_color)
 			if HAS_CHROMIUM and use_new_text_entry then
 				self.TextEntry:SetBackgroundColor(EasyChat.TabColor)
 				self.TextEntry:SetBorderColor(EasyChat.OutlayColor)
 				self.TextEntry:SetTextColor(EasyChat.TextColor)
-				self.TextEntry:SetPlaceholderColor(placeholder_color)
 			else
-				self.TextEntry.PlaceholderColor = placeholder_color
 				self.TextEntry.Paint = function(self, w, h)
 					surface.SetDrawColor(EasyChat.TabColor)
 					surface.DrawRect(0, 0, w, h)
