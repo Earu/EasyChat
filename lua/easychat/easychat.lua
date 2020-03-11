@@ -1030,7 +1030,7 @@ if CLIENT then
 					if IsValid(old_tab) then old_tab:Remove() end
 
 					-- we need this as the panel doesnt update itself otherwise
-					for i, item in pairs(EasyChat.GUI.TabControl.Items) do
+					for i, item in pairs(EasyChat.GUI.TabControl.Items or {}) do
 						if not IsValid(item.Tab) or not IsValid(item.Panel) then
 							table.remove(EasyChat.GUI.TabControl.Items, i)
 						end
