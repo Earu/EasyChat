@@ -276,7 +276,7 @@ surface.CreateFont("EasyChatCompletionFont", {
 	size = 16,
 })
 
-local surface_SetDrawColor = _G.surface.SetDrawColor
+local surface_SetTextColor = _G.surface.SetDrawColor
 local surface_DrawOutlinedRect = _G.surface.DrawOutlinedRect
 local surface_SetFont = _G.surface.SetFont
 local surface_GetTextSize = _G.surface.GetTextSize
@@ -289,7 +289,7 @@ function PANEL:PaintOver(w, h)
 	surface_DrawOutlinedRect(0, 0, w, h)
 
 	if self.CompletionText then
-		surface_SetDrawColor(self.PlaceholderColor)
+		surface_SetTextColor(self.PlaceholderColor)
 		surface_SetFont("EasyChatCompletionFont")
 		local cur_text_w = surface_GetTextSize(self.CurrentValue)
 		local start_pos, end_pos = string_find(self.CompletionText, self.CurrentValue, 1, true)

@@ -7,7 +7,6 @@ surface.CreateFont("EasyChatCompletionFont", {
 
 function PANEL:Init()
 	self.PlaceholderColor = color_white
-	self.BorderColor = color_white
 	self.LastKey = KEY_ENTER
 
 	self:SetFont("EasyChatCompletionFont")
@@ -43,7 +42,7 @@ function PANEL:OnKeyCodeTyped(key_code)
 	self.LastKey = key_code
 end
 
-local surface_SetDrawColor = _G.surface.SetDrawColor
+local surface_SetTextColor = _G.surface.SetDrawColor
 local surface_DrawOutlinedRect = _G.surface.DrawOutlinedRect
 local surface_SetFont = _G.surface.SetFont
 local surface_GetTextSize = _G.surface.GetTextSize
@@ -52,9 +51,6 @@ local surface_DrawText = _G.surface.DrawText
 local string_format, string_find, string_sub = _G.string.format, _G.string.find, _G.string.sub
 
 function PANEL:PaintOver(w, h)
-	surface_SetDrawColor(self.BorderColor)
-	surface_DrawOutlinedRect(0, 0, w, h)
-
 	if not self.CompletionText then return end
 
 	local cur_value = self:GetText()
