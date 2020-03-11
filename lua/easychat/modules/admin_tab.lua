@@ -219,7 +219,7 @@ if CLIENT then
 		admintab:SendMessage(text)
 	end)
 
-	EasyChat.AddTab("Admin", admintab)
+	EasyChat.AddTab("Admin", admintab, "icon16/vcard.png")
 	EasyChat.SetFocusForOn("Admin", admintab.TextEntry)
 end
 
