@@ -1394,7 +1394,7 @@ if CLIENT then
 			local res
 			for _, ply in ipairs(player.GetAll()) do
 				local nick = ec_markup.Parse(ply:Nick(), nil, true):GetText()
-				local match = nick:lower():match(last_word:lower())
+				local match = nick:lower():match(last_word:lower():PatternSafe())
 				if match then
 					local perc = #match / #nick
 					if (perc > 0.5 or #match >= 4) and perc > max_perc then
