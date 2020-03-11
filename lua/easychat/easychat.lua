@@ -1040,11 +1040,11 @@ if CLIENT then
 				end
 			end
 
-			function EasyChat.AddTab(name, panel)
+			function EasyChat.AddTab(name, panel, icon)
 				-- in case we get overriden
 				EasyChat.RemoveTab(name)
 
-				local tab = chatbox_frame.Tabs:AddSheet(name, panel)
+				local tab = chatbox_frame.Tabs:AddSheet(name, panel, icon)
 				tab.Tab.Name = name
 				tab.Tab:SetFont("EasyChatFont")
 				tab.Tab:SetTextColor(Color(255, 255, 255))
@@ -1133,7 +1133,7 @@ if CLIENT then
 			end
 
 			local global_tab = vgui.Create("ECChatTab")
-			EasyChat.AddTab("Global", global_tab)
+			EasyChat.AddTab("Global", global_tab, "icon16/comments.png")
 			EasyChat.SetFocusForOn("Global", global_tab.TextEntry)
 
 			if not EasyChat.UseDermaSkin then
