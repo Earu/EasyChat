@@ -54,11 +54,7 @@ local MAIN_TAB = {
 			self.TextEntry = self:Add("DTextEntry")
 			self.TextEntry:SetFont("EasyChatCompletionFont")
 			self.TextEntry:SetUpdateOnType(true)
-
-			self.TextEntry.OnKeyCodeTyped = function(self, key_code)
-				if key_code == KEY_TAB then self:OnTab() end
-			end
-
+			self.TextEntry:SetMultiline(true)
 			self.TextEntry.OnTab = function() end
 
 			self.TextEntry.SetCompletionText = function(self, text)
@@ -98,8 +94,10 @@ local MAIN_TAB = {
 
 				if key_code == KEY_TAB then
 					self:OnTab()
+					return true
 				elseif key_code == KEY_ENTER or key_code == KEY_PAD_ENTER then
 					self:OnEnter()
+					return true
 				end
 
 				last_key = key_code
