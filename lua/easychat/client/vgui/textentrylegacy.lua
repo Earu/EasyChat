@@ -42,7 +42,7 @@ function PANEL:OnKeyCodeTyped(key_code)
 	self.LastKey = key_code
 end
 
-local surface_SetTextColor = _G.surface.SetDrawColor
+local surface_SetTextColor = _G.surface.SetTextColor
 local surface_DrawOutlinedRect = _G.surface.DrawOutlinedRect
 local surface_SetFont = _G.surface.SetFont
 local surface_GetTextSize = _G.surface.GetTextSize
@@ -60,13 +60,11 @@ function PANEL:PaintOver(w, h)
 	local start_pos, end_pos = string_find(self.CompletionText, cur_value, 1, true)
 	if start_pos then
 		local sub_completion = string_sub(self.CompletionText, end_pos + 1)
-		local _, completion_text_h = surface_GetTextSize(sub_completion)
-		surface_SetTextPos(cur_text_w + 3, h / 2 - completion_text_h / 2)
+		surface_SetTextPos(cur_text_w + 3, 2)
 		surface_DrawText(sub_completion)
 	else
 		local sub_completion = string_format("<< %s >>", self.CompletionText)
-		local _, completion_text_h = surface_GetTextSize(sub_completion)
-		surface_SetTextPos(cur_text_w + 15, h / 2 - completion_text_h / 2)
+		surface_SetTextPos(cur_text_w + 15, 2)
 		surface_DrawText(sub_completion)
 	end
 end
