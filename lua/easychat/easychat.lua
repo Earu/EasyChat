@@ -1257,9 +1257,9 @@ if CLIENT then
 					for callback_key, callback in pairs(callbacks) do
 						if not completion_blacklist[callback_key] then
 							if isstring(callback_key) then
-								completion = callback(text)
+								completion = callback(text) or completion
 							elseif IsValid(callback_key) then
-								completion = callback(callback_key, text)
+								completion = callback(callback_key, text) or completion
 							end
 						end
 					end
