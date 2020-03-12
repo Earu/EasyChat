@@ -85,6 +85,11 @@ function macro_processor:ProcessString(str)
 		local pos_offset = ("<%s>"):format(macro_name):len()
 		if macro then
 			local str_chunk = self:ProcessMacro(macro, str:sub(start_pos + pos_offset))
+			if not isstring(str_chunk) then
+				ErrorNoHalt(("[EasyChat] > macro [%s] did not have any return value or was not a string\n"):format(macro_name))
+				str_chunk = ""
+			end
+
 			str = str:sub(1, start_pos - 1) .. str_chunk
 
 			start_pos, _, macro_name = str:find(self.Pattern, start_pos, false)
