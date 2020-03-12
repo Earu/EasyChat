@@ -107,9 +107,11 @@ function SETTINGS:CreateNumberSetting(panel, name, max, min)
 
 	local title_color = EasyChat.UseDermaSkin and self:GetSkin().text_normal or EasyChat.TextColor
 	number_wang.Paint = function(self, w, h)
-		surface.SetDrawColor(color_white)
+		surface.SetDrawColor(EasyChat.TabColor)
 		surface.DrawRect(0, 0, w, h)
-		self:DrawTextEntryText(black_color, EasyChat.OutlayColor, black_color)
+		surface.SetDrawColor(EasyChat.OutlayColor)
+		surface.DrawOutlinedRect(0, 0, w, h)
+		self:DrawTextEntryText(color_white, EasyChat.OutlayColor, color_white)
 
 		surface.DisableClipping(true)
 			surface.SetTextPos(0, -15)
@@ -129,9 +131,11 @@ function SETTINGS:CreateStringSetting(panel, name)
 
 	local title_color = EasyChat.UseDermaSkin and self:GetSkin().text_normal or EasyChat.TextColor
 	text_entry.Paint = function(self, w, h)
-		surface.SetDrawColor(color_white)
+		surface.SetDrawColor(EasyChat.TabColor)
 		surface.DrawRect(0, 0, w, h)
-		self:DrawTextEntryText(black_color, EasyChat.OutlayColor, black_color)
+		surface.SetDrawColor(EasyChat.OutlayColor)
+		surface.DrawOutlinedRect(0, 0, w, h)
+		self:DrawTextEntryText(color_white, EasyChat.OutlayColor, color_white)
 
 		surface.DisableClipping(true)
 			surface.SetTextPos(0, -15)
@@ -207,28 +211,24 @@ local COLOR_SETTING = {
 		self.Title:DockMargin(0, 0, 0, 5)
 
 		self.Red = self:CreateWang()
-		self.Red:SetTextColor(Color(255, 0, 0))
 		self.Red.OnValueChanged = function(_, val)
 			self.Color.r = val
 			self:OnValueChanged(self.Color)
 		end
 
 		self.Green = self:CreateWang()
-		self.Green:SetTextColor(Color(0, 255, 0))
 		self.Green.OnValueChanged = function(_, val)
 			self.Color.g = val
 			self:OnValueChanged(self.Color)
 		end
 
 		self.Blue = self:CreateWang()
-		self.Blue:SetTextColor(Color(0, 0, 255))
 		self.Blue.OnValueChanged = function(_, val)
 			self.Color.b = val
 			self:OnValueChanged(self.Color)
 		end
 
 		self.Alpha = self:CreateWang()
-		self.Alpha:SetTextColor(black_color)
 		self.Alpha.OnValueChanged = function(_, val)
 			self.Color.a = val
 			self:OnValueChanged(self.Color)
@@ -282,10 +282,12 @@ function SETTINGS:CreateColorSetting(panel, name)
 	color_setting:SetTitle(name)
 	color_setting:SetColor(color_white)
 
-	local function entry_paint(self, w, h)
-		surface.SetDrawColor(color_white)
+	local function entry_paint(self, w, h, text_color)
+		surface.SetDrawColor(EasyChat.TabColor)
 		surface.DrawRect(0, 0, w, h)
-		self:DrawTextEntryText(self.m_colText, EasyChat.OutlayColor, black_color)
+		surface.SetDrawColor(EasyChat.OutlayColor)
+		surface.DrawOutlinedRect(0, 0, w, h)
+		self:DrawTextEntryText(text_color, EasyChat.OutlayColor, color_white)
 	end
 
 	if not EasyChat.UseDermaSkin then
@@ -293,10 +295,10 @@ function SETTINGS:CreateColorSetting(panel, name)
 	end
 
 	color_setting.Paint = function() end
-	color_setting.Red.Paint = entry_paint
-	color_setting.Green.Paint = entry_paint
-	color_setting.Blue.Paint = entry_paint
-	color_setting.Alpha.Paint = entry_paint
+	color_setting.Red.Paint = function(self, w, h) entry_paint(self, w, h, Color(200, 0, 50)) end
+	color_setting.Green.Paint = function(self, w, h) entry_paint(self, w, h, Color(0, 200, 70)) end
+	color_setting.Blue.Paint = function(self, w, h) entry_paint(self, w, h, Color(0, 50, 200)) end
+	color_setting.Alpha.Paint = function(self, w, h) entry_paint(self, w, h, color_white) end
 
 	return color_setting
 end
