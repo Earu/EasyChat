@@ -186,6 +186,13 @@ local function create_default_settings()
 		settings:AddConvarSetting(category_name, "string", EC_FONT, "Font")
 		settings:AddConvarSetting(category_name, "number", EC_FONT_SIZE, "Font Size", 128, 5)
 
+		cvars.RemoveChangeCallback(EC_FONT:GetName(), EC_FONT:GetName())
+		cvars.RemoveChangeCallback(EC_FONT_SIZE:GetName(), EC_FONT_SIZE:GetName())
+
+		local function font_change_callback() settings:InvalidateChildren(true) end
+		cvars.AddChangeCallback(EC_FONT:GetName(), font_change_callback, EC_FONT:GetName())
+		cvars.AddChangeCallback(EC_FONT_SIZE:GetName(), font_change_callback, EC_FONT_SIZE:GetName())
+
 		local setting_reset_font = settings:AddSetting(category_name, "action", "Reset Font")
 		setting_reset_font.DoClick = function()
 			local default_font, default_font_size = EC_FONT:GetDefault(), tonumber(EC_FONT_SIZE:GetDefault())
