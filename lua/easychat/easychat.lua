@@ -175,6 +175,7 @@ if CLIENT then
 	local EC_TIMESTAMPS = CreateConVar("easychat_timestamps", "0", FCVAR_ARCHIVE, "Display timestamps in the chatbox")
 	local EC_PEEK_COMPLETION = CreateConVar("easychat_peek_completion", "1", FCVAR_ARCHIVE, "Display a preview of the possible text completion")
 	local EC_LEGACY_ENTRY = CreateConVar("easychat_legacy_entry", "0", FCVAR_ARCHIVE, "Uses the legacy textbox entry")
+	local EC_LEGACY_TEXT = CreateConVar("easychat_legacy_text", "0", FCVAR_ARCHIVE, "Uses the legacy text output")
 
 	-- chathud
 	local EC_HUD_SMOOTH = CreateConVar("easychat_hud_smooth", "1", FCVAR_ARCHIVE, "Enables chat smoothing")
@@ -209,6 +210,7 @@ if CLIENT then
 	end)
 
 	cvars.AddChangeCallback(EC_LEGACY_ENTRY:GetName(), function() EasyChat.Reload() end)
+	cvars.AddChangeCallback(EC_LEGACY_TEXT:GetName(), function() EasyChat.Reload() end)
 
 	EasyChat.FontName = EC_FONT:GetString()
 	EasyChat.FontSize = EC_FONT_SIZE:GetInt()
@@ -696,8 +698,28 @@ if CLIENT then
 		end
 
 		local function global_append_text(text)
+			local data = {}
+
 			chathud_append_text(text)
 			append_text(EasyChat.GUI.RichText, text)
+
+			if not ec_markup then
+				table.insert(data, text)
+				return data
+			end
+
+			local mk = ec_markup.Parse(text)
+			for _, line in ipairs(mk.Lines) do
+				for _, component in ipairs(line.Components) do
+					if component.Color then
+						table.insert(data, component.Color)
+					elseif component.Type == "text" then
+						table.insert(data, component.Content)
+					end
+				end
+			end
+
+			return data
 		end
 
 		local image_url_patterns = {
@@ -720,12 +742,14 @@ if CLIENT then
 		end
 
 		local function global_append_text_url(text)
+			local data = {}
+
 			local start_pos, end_pos = EasyChat.IsURL(text)
 			if not start_pos then
-				global_append_text(text)
+				table.Add(data, global_append_text(text))
 			else
 				local url = text:sub(start_pos, end_pos)
-				global_append_text(text:sub(1, start_pos - 1))
+				table.Add(data, global_append_text(text:sub(1, start_pos - 1)))
 
 				if is_image_url(url) then
 					EasyChat.GUI.RichText:InsertClickableTextStart(url)
@@ -745,18 +769,25 @@ if CLIENT then
 					EasyChat.GUI.RichText:InsertClickableTextEnd()
 				end
 
+				table.insert(data, url)
+
 				if EC_LINKS_CLIPBOARD:GetBool() and EasyChat.GUI.RichText:IsVisible() then
 					SetClipboardText(url)
 				end
 
 				-- recurse for possible other urls after this one
-				global_append_text_url(text:sub(end_pos + 1))
+				table.Add(data, global_append_text_url(text:sub(end_pos + 1)))
 			end
+
+			return data
 		end
 
 		local function global_append_nick(str)
+			local data = {}
+
 			if not ec_markup then
 				append_text(EasyChat.GUI.RichText, str)
+				table.insert(data, str)
 			else
 				-- use markup to get text and colors out of nicks
 				local mk = ec_markup.Parse(str, nil, true)
@@ -765,14 +796,17 @@ if CLIENT then
 						if component.Color then
 							local c = component.Color
 							EasyChat.GUI.RichText:InsertColorChange(c.r, c.g, c.b, 255)
+							table.insert(data, c)
 						elseif component.Type == "text" then
 							append_text(EasyChat.GUI.RichText, component.Content)
+							table.insert(data, component.Content)
 						end
 					end
 				end
 			end
 
 			EasyChat.GUI.RichText:InsertColorChange(255, 255, 255, 255)
+			table.insert(data, color_white)
 
 			if EC_HUD_CUSTOM:GetBool() then
 				-- let the chathud do its own thing
@@ -780,6 +814,8 @@ if CLIENT then
 				chathud:AppendNick(str)
 				chathud:PushPartComponent("stop")
 			end
+
+			return data
 		end
 
 		local function global_insert_color_change(r, g, b, a)
@@ -788,13 +824,15 @@ if CLIENT then
 			if EC_HUD_CUSTOM:GetBool() then
 				EasyChat.ChatHUD:InsertColorChange(r, g, b)
 			end
+
+			return Color(r, g, b, a)
 		end
 
 		EasyChat.SetAddTextTypeHandle("table", function(col)
-			global_insert_color_change(col.r or 255, col.g or 255, col.b or 255, col.a or 255)
+			return global_insert_color_change(col.r or 255, col.g or 255, col.b or 255, col.a or 255)
 		end)
 
-		EasyChat.SetAddTextTypeHandle("string", global_append_text_url)
+		EasyChat.SetAddTextTypeHandle("string", function(str) return global_append_text_url(str) end)
 
 		local function string_hash(text)
 			local counter = 1
@@ -817,21 +855,29 @@ if CLIENT then
 		end
 
 		EasyChat.SetAddTextTypeHandle("Player", function(ply)
+			local data = {}
+
 			local team_color = EC_PLAYER_COLOR:GetBool() and team.GetColor(ply:Team()) or Color(255, 255, 255)
 			global_insert_color_change(team_color.r, team_color.g, team_color.b, 255)
+			table.insert(data, team_color)
 
 			if EC_PLAYER_PASTEL:GetBool() and ec_markup then
 				local nick = ec_markup.Parse(ply:Nick(), nil, true):GetText()
 				local pastel_color = pastelize_nick(nick)
 				global_insert_color_change(pastel_color.r, pastel_color.g, pastel_color.b, 255)
+				table.insert(data, pastel_color)
 			end
 
 			local lp = LocalPlayer()
 			if IsValid(lp) and lp == ply and EC_USE_ME:GetBool() then
 				global_append_text("me")
+				table.insert(data, "me")
 			else
-				global_append_nick(ply:Nick())
+				local nick_data = global_append_nick(ply:Nick())
+				table.Add(data, nick_data)
 			end
+
+			return data
 		end)
 
 		local history_file_handles = {}
@@ -923,13 +969,21 @@ if CLIENT then
 			save_text(richtext)
 		end
 
+		local function is_color(tbl)
+			if type(tbl) ~= "table" then return false end
+			return tbl.r and tbl.g and tbl.b and tbl.a
+		end
+
 		function EasyChat.GlobalAddText(...)
+			local data = {}
+
 			if EC_HUD_CUSTOM:GetBool() then
 				EasyChat.ChatHUD:NewLine()
 			end
 
 			append_text(EasyChat.GUI.RichText, "\n")
 			global_insert_color_change(255, 255, 255, 255)
+			table.insert(data, color_white)
 
 			if EC_ENABLE:GetBool() then
 				local timestamp = (EC_TIMESTAMPS_12:GetBool() and os.date("%I:%M %p") or os.date("%H:%M")) .. " - "
@@ -939,6 +993,7 @@ if CLIENT then
 
 				if EC_HUD_TIMESTAMPS:GetBool() then
 					chathud_append_text(timestamp)
+					table.insert(data, timestamp)
 				end
 			end
 
@@ -946,10 +1001,19 @@ if CLIENT then
 			for _, arg in ipairs(args) do
 				local callback = ec_addtext_handles[type(arg)]
 				if callback then
-					pcall(callback, arg)
+					local succ, err = pcall(callback, arg)
+					if succ and err then
+						if is_color(err) or isstring(err) then
+							table.insert(data, err)
+						elseif istable(err) then
+							table.Add(data, err)
+						end
+					else
+						ErrorNoHalt(err)
+					end
 				else
 					local str = tostring(arg)
-					global_append_text(str)
+					table.Add(data, global_append_text(str))
 				end
 			end
 
@@ -963,6 +1027,8 @@ if CLIENT then
 			if EC_TICK_SOUND:GetBool() then
 				chat.PlaySound()
 			end
+
+			return data
 		end
 
 		do
@@ -973,8 +1039,8 @@ if CLIENT then
 			chat.old_Close = chat.old_Close or chat.Close
 
 			chat.AddText = function(...)
-				EasyChat.GlobalAddText(...)
-				chat.old_AddText(...)
+				local processed_args = EasyChat.GlobalAddText(...)
+				chat.old_AddText(unpack(processed_args))
 			end
 
 			function chat.GetChatBoxPos()
