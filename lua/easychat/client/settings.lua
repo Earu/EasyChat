@@ -28,6 +28,7 @@ local EC_FONT_SIZE = GetConVar("easychat_font_size")
 local EC_TIMESTAMPS = GetConVar("easychat_timestamps")
 local EC_PEEK_COMPLETION = GetConVar("easychat_peek_completion")
 local EC_LEGACY_ENTRY = GetConVar("easychat_legacy_entry")
+local EC_LEGACY_TEXT = GetConVar("easychat_legacy_text")
 
 -- chathud
 local EC_HUD_FOLLOW = GetConVar("easychat_hud_follow")
@@ -249,6 +250,11 @@ local function create_default_settings()
 		local setting_legacy_entry = settings:AddSetting(category_name, "action", EC_LEGACY_ENTRY:GetBool() and "Use Modern Textbox" or "Use Legacy Textbox")
 		setting_legacy_entry.DoClick = function()
 			EC_LEGACY_ENTRY:SetBool(not EC_LEGACY_ENTRY:GetBool())
+		end
+
+		local setting_legacy_text = settings:AddSetting(category_name, "action", EC_LEGACY_TEXT:GetBool() and "Use Modern RichText" or "Use Legacy RichText")
+		setting_legacy_text.DoClick = function()
+			EC_LEGACY_TEXT:SetBool(not EC_LEGACY_TEXT:GetBool())
 		end
 
 		local setting_dermaskin = settings:AddSetting(category_name, "action", EC_USE_DERMASKIN:GetBool() and "Use Custom Skin" or "Use Dermaskin")

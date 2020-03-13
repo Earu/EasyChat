@@ -6,11 +6,13 @@ include("easychat/client/vgui/color_picker.lua")
 
 local NEW_LINE_PATTERN = "\n"
 local EC_LEGACY_ENTRY = GetConVar("easychat_legacy_entry")
+local EC_LEGACY_TEXT = GetConVar("easychat_legacy_text")
 local HAS_CHROMIUM = BRANCH ~= "dev" and BRANCH ~= "unknown"
 local MAIN_TAB = {
 	Init = function(self)
-		self.RichText = self:Add(HAS_CHROMIUM and "RichTextX" or "RichText")
-		if not HAS_CHROMIUM then
+		local use_new_richtext = (EC_LEGACY_TEXT and not EC_LEGACY_TEXT:GetBool()) or not EC_LEGACY_TEXT
+		self.RichText = self:Add((HAS_CHROMIUM and use_new_richtext) and "RichTextX" or "RichText")
+		if not HAS_CHROMIUM or not use_new_richtext then
 			-- compat for RichTextX
 			self.RichText.AppendImageURL = function(self, url)
 			end
