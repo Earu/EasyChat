@@ -286,6 +286,7 @@ local surface_DrawText = _G.surface.DrawText
 local string_format, string_find, string_sub = _G.string.format, _G.string.find, _G.string.sub
 
 function PANEL:PaintOver(w, h)
+	if EasyChat.UseDermaskin then return end
 	surface_SetDrawColor(self.BorderColor)
 	surface_DrawOutlinedRect(0, 0, w, h)
 
