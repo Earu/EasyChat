@@ -27,6 +27,7 @@ local SETTINGS = {}
 function SETTINGS:Init()
 	self:SetSize(700, 500)
 	self:SetTitle("EasyChat Settings")
+	self:DockPadding(0, 25, 0, 0)
 
 	self.lblTitle:SetFont("EasyChatFont")
 
