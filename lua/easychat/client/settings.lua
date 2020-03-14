@@ -208,7 +208,7 @@ local function create_default_settings()
 
 		local setting_tabs = settings:AddSetting(category_name, "list", "Tabs")
 		local tab_list = setting_tabs.List
-		tab_list:SetMultiSelect(false)
+		tab_list:SetMultiSelect(true)
 		tab_list:AddColumn("Name")
 		tab_list:AddColumn("Hidden")
 
@@ -236,16 +236,18 @@ local function create_default_settings()
 
 		local setting_apply_tab = settings:AddSetting(category_name, "action", "Hide / Show Tab")
 		setting_apply_tab.DoClick = function()
-			local _, selected_line = tab_list:GetSelectedLine()
-			local tab_name = selected_line:GetColumnText(1)
-			local tab_data = EasyChat.GetTab(tab_name)
-			if not tab_data then return end
+			local selected_lines = tab_list:GetSelected()
+			for _, selected_line in pairs(selected_lines) do
+				local tab_name = selected_line:GetColumnText(1)
+				local tab_data = EasyChat.GetTab(tab_name)
+				if tab_data then
+					local is_visible = tab_data.Tab:IsVisible()
+					tab_data.Tab:SetVisible(not is_visible)
 
-			local is_visible = tab_data.Tab:IsVisible()
-			tab_data.Tab:SetVisible(not is_visible)
-
-			-- this is inverted, because we get IsVisible before setting it
-			selected_line:SetColumnText(2, is_visible and "Yes" or "No")
+					-- this is inverted, because we get IsVisible before setting it
+					selected_line:SetColumnText(2, is_visible and "Yes" or "No")
+				end
+			end
 		end
 
 		settings:AddSpacer(category_name)
