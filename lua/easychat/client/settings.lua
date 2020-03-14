@@ -9,6 +9,7 @@ local EC_PLAYER_COLOR = GetConVar("easychat_players_colored")
 local EC_PLAYER_PASTEL = GetConVar("easychat_pastel")
 
 -- misc
+local EC_SECONDARY = GetConVar("easychat_secondary_mode")
 local EC_ALWAYS_LOCAL = GetConVar("easychat_always_local")
 local EC_LOCAL_MSG_DIST = GetConVar("easychat_local_msg_distance")
 local EC_TICK_SOUND = GetConVar("easychat_tick_sound")
@@ -79,12 +80,14 @@ local function create_default_settings()
 
 		settings:AddSpacer(category_name)
 
+		settings:AddConvarSetting(category_name, "string", EC_SECONDARY, "Secondary Message Mode")
 		settings:AddConvarSetting(category_name, "number", EC_LOCAL_MSG_DIST, "Local Message Distance", 1000, 100)
 
-		local setting_reset_local_distance = settings:AddSetting(category_name, "action", "Reset Message Distance")
-		setting_reset_local_distance.DoClick = function()
+		local setting_reset_misc = settings:AddSetting(category_name, "action", "Reset Options")
+		setting_reset_misc.DoClick = function()
 			local default_distance = tonumber(EC_LOCAL_MSG_DIST:GetDefault())
 			EC_LOCAL_MSG_DIST:SetInt(default_distance)
+			EC_SECONDARY:SetString(EC_SECONDARY:GetDefault())
 		end
 
 		settings:AddSpacer(category_name)
