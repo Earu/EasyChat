@@ -64,7 +64,7 @@ local expr_env = {
 	time = RealTime,
 }
 
-local blacklist = { "repeat", "until", "function", "end" }
+local blacklist = { "repeat", "until", "function", "end", "\"", "\'" }
 
 local function compile_expression(str)
 	if not str or str:Trim() == "" then return false, "nil or empty expression" end
