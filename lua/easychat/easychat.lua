@@ -156,6 +156,7 @@ if CLIENT then
 	local EC_PLAYER_PASTEL = CreateConVar("easychat_pastel", "0", FCVAR_ARCHIVE, "Should players have pastelized colors instead of their team color")
 
 	-- misc
+	local EC_SECONDARY = CreateConVar("easychat_secondary_mode", "team", FCVAR_ARCHIVE, "Opens the chat in the selected mode with the secondary chat bind")
 	local EC_ALWAYS_LOCAL = CreateConVar("easychat_always_local", "0", FCVAR_ARCHIVE, "Should we always type in local chat by default")
 	local EC_LOCAL_MSG_DIST = CreateConVar("easychat_local_msg_distance", "300", {FCVAR_ARCHIVE, FCVAR_USERINFO}, "Set the maximum distance for users to receive local messages")
 	local EC_TICK_SOUND = CreateConVar("easychat_tick_sound", "0", FCVAR_ARCHIVE, "Should a tick sound be played on new messages or not")
@@ -309,7 +310,8 @@ if CLIENT then
 	end
 
 	function EasyChat.GetCurrentMode()
-		return EasyChat.Modes[EasyChat.Mode]
+		local mode = EasyChat.Mode or 0
+		return EasyChat.Modes[mode]
 	end
 
 	function EasyChat.IsOpened()
@@ -321,7 +323,7 @@ if CLIENT then
 		return 50 * coef_w, ScrH() - (320 + (coef_h * 250)), 550, 320
 	end
 
-	local function open_chatbox(is_team)
+	local function open_chatbox(is_team, requested_mode)
 		local ok = safe_hook_run("ECShouldOpen")
 		if ok == false then return end
 
@@ -330,11 +332,6 @@ if CLIENT then
 
 		EasyChat.GUI.ChatBox:Show()
 		EasyChat.GUI.ChatBox:MakePopup()
-		EasyChat.Mode = is_team and 1 or 0
-
-		if EC_ALWAYS_LOCAL:GetBool() then
-			EasyChat.Mode = 2
-		end
 
 		if EC_GLOBAL_ON_OPEN:GetBool() then
 			EasyChat.OpenTab("Global")
@@ -350,6 +347,31 @@ if CLIENT then
 		timer.Destroy("ECCompletionPeek")
 
 		EasyChat.GUI.TextEntry:SetText("")
+
+		if is_team then
+			local secondary_mode_name = EC_SECONDARY:GetString():lower()
+			local handled = safe_hook_run("ECSecondaryOpen", secondary_mode_name)
+			if handled ~= true then
+				EasyChat.Mode = 1 -- default to team if nothing is found
+				for i = 0, EasyChat.ModeCount do
+					local mode = EasyChat.Modes[i]
+					if mode.Name:lower() == secondary_mode_name then
+						EasyChat.Mode = i
+						break
+					end
+				end
+			end
+		else
+			if requested_mode ~= -1 then
+				EasyChat.Mode = requested_mode
+			else
+				if EC_ALWAYS_LOCAL:GetBool() then
+					EasyChat.Mode = 2
+				else
+					EasyChat.Mode = 0
+				end
+			end
+		end
 
 		safe_hook_run("ECOpened", LocalPlayer())
 
@@ -1062,7 +1084,7 @@ if CLIENT then
 			end
 
 			function chat.Open(input)
-				local is_team = input == 0
+				local is_team = input ~= 1
 				open_chatbox(is_team)
 			end
 
@@ -1500,11 +1522,25 @@ if CLIENT then
 			end
 		end)
 
+		local chat_mode_keys = { KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6 }
+		local function key_to_chat_mode()
+			for i, chat_mode_key in ipairs(chat_mode_keys) do
+				if input.IsKeyDown(chat_mode_key) then
+					local mode = i - 1
+					if mode < 0 then return 0 end
+					if mode > EasyChat.ModeCount then return EasyChat.ModeCount end
+					return mode
+				end
+			end
+
+			return -1
+		end
+
 		hook.Add("PlayerBindPress", TAG, function(ply, bind, pressed)
 			if not pressed then return end
 
 			if bind == "messagemode" then
-				open_chatbox(false)
+				open_chatbox(false, key_to_chat_mode())
 				return true
 			elseif bind == "messagemode2" then
 				open_chatbox(true)
