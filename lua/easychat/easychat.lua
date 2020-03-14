@@ -1377,20 +1377,17 @@ if CLIENT then
 					self.TabbedOnce = true
 					self:SetText(self.TabCompletion)
 				end
-				timer.Simple(0, function()
-					self:RequestFocus()
-					self:SetCaretPos(#self:GetText())
-				end)
 			else
 				local completion = get_completion(self:GetText())
 				if completion then
 					self:SetText(completion)
-					timer.Simple(0, function()
-						self:RequestFocus()
-						self:SetCaretPos(#self:GetText())
-					end)
 				end
 			end
+
+			timer.Simple(0, function()
+				self:RequestFocus()
+				self:SetCaretPos(#self:GetText())
+			end)
 		end
 
 		function EasyChat.GUI.TextEntry:OnEnter()
