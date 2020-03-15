@@ -3,6 +3,7 @@ local CHATBOX = {
 		local frame = self
 
 		self:ShowCloseButton(true)
+		self:SetScreenLock(true)
 		self:SetDraggable(true)
 		self:SetSizable(true)
 		self:SetDeleteOnClose(false)
