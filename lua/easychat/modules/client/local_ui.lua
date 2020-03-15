@@ -27,34 +27,35 @@ end
 panel:SetWide(150)
 panel.old_paint = panel.Paint
 function panel:Paint(w, h)
-	local cur_mode = EasyChat.GetCurrentMode()
-	if EasyChat.IsOpened() and cur_mode.Name == "Local" then
-		if EasyChat.UseDermaSkin then
-			self:old_paint(w, h)
-		else
-			surface.SetDrawColor(EasyChat.OutlayColor)
-			surface.DrawRect(0, 0, w, h)
-			surface.SetDrawColor(EasyChat.OutlayOutlineColor)
-			surface.DrawOutlinedRect(0, 0, w, h)
-		end
+	if not EasyChat.IsOpened() then return end
+	if EasyChat.GetActiveTab().Name ~= "Global" then return end
+	if EasyChat.GetCurrentMode().Name ~= "Local" then return end
 
-		surface.SetFont("EasyChatFont")
-		surface.SetTextPos(15, 5)
-		surface.SetTextColor(EasyChat.TextColor)
-		surface.DrawText("Message Receivers")
+	if EasyChat.UseDermaSkin then
+		self:old_paint(w, h)
+	else
+		surface.SetDrawColor(EasyChat.OutlayColor)
+		surface.DrawRect(0, 0, w, h)
+		surface.SetDrawColor(EasyChat.OutlayOutlineColor)
+		surface.DrawOutlinedRect(0, 0, w, h)
+	end
 
-		local i = 1
-		for _, ply in pairs(player.GetAll()) do
-			if ply ~= LocalPlayer()
-				and ply:GetPos():Distance(LocalPlayer():GetPos()) <= GetConVar("easychat_local_msg_distance"):GetInt()
-			then
-				self:SetTall(5 + (20 * (i + 1)))
+	surface.SetFont("EasyChatFont")
+	surface.SetTextPos(15, 5)
+	surface.SetTextColor(EasyChat.TextColor)
+	surface.DrawText("Message Receivers")
 
-				local mk = cache_nick(ply)
-				mk:Draw(15, 5 + (20 * i))
+	local i = 1
+	for _, ply in pairs(player.GetAll()) do
+		if ply ~= LocalPlayer()
+			and ply:GetPos():Distance(LocalPlayer():GetPos()) <= GetConVar("easychat_local_msg_distance"):GetInt()
+		then
+			self:SetTall(5 + (20 * (i + 1)))
 
-				i = i + 1
-			end
+			local mk = cache_nick(ply)
+			mk:Draw(15, 5 + (20 * i))
+
+			i = i + 1
 		end
 	end
 end
