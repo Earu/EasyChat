@@ -218,6 +218,7 @@ if CLIENT then
 	end)
 
 	hook.Add("FinishChat", hook_name, stop_auto_completion)
+	hook.Add("ECTabChanged", hook_name, stop_auto_completion)
 end
 
 return "Commands Auto-Completion"
