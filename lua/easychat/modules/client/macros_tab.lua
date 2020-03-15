@@ -18,11 +18,17 @@ local MACRO_PANEL = {
 		self.TitleEdit.DoClick = function()
 			EasyChat.AskForInput("New Macro Name", function(macro_name)
 				self.Title:SetText(("<%s>"):format(macro_name))
-				macro_processor:RegisterMacro(macro_name, {
+				local succ, err = macro_processor:RegisterMacro(macro_name, {
 					IsLua = self.IsLua:GetChecked(),
 					PerCharacter = not self.IsLua:GetChecked() and self.PerChar:GetChecked() or false,
 					Value = self.Value:GetText(),
 				})
+
+				if not succ then
+					notification.AddLegacy(err, NOTIFY_ERROR, 5)
+					surface.PlaySound("buttons/button8.wav")
+					return
+				end
 
 				self:DeleteMacro()
 			end)
@@ -170,12 +176,19 @@ local MACRO_PANEL = {
 		self:CacheMarkup()
 	end,
 	SaveMacro = function(self)
-		self.Title:SetText(("<%s>"):format(self.MacroName))
-		macro_processor:RegisterMacro(self.MacroName, {
+		local succ, err = macro_processor:RegisterMacro(self.MacroName, {
 			IsLua = self.IsLua:GetChecked(),
 			PerCharacter = not self.IsLua:GetChecked() and self.PerChar:GetChecked() or false,
 			Value = self.Value:GetText(),
 		})
+
+		if not succ then
+			notification.AddLegacy(err, NOTIFY_ERROR, 5)
+			surface.PlaySound("buttons/button8.wav")
+			return
+		end
+
+		self.Title:SetText(("<%s>"):format(self.MacroName))
 	end,
 	DeleteMacro = function(self)
 		macro_processor:DeleteMacro(self.MacroName)
