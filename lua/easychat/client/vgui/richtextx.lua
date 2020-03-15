@@ -120,6 +120,7 @@ function PANEL:ActionSignal(signal_name, signal_value)
 end
 
 function PANEL:AppendText(text)
+	text = text:JavascriptSafe()
 	local css_color = ("rgb(%d,%d,%d)"):format(self.CurrentColor:Unpack())
 	local js = (self.ClickableTextValue and [[
 		span = document.createElement("span");
@@ -143,6 +144,7 @@ function PANEL:AppendText(text)
 end
 
 function PANEL:AppendImageURL(url)
+	url = url:JavascriptSafe()
 	self:QueueJavascript([[
 		img = document.createElement("img");
 		img.onclick = () => RichTextX.OnClick(`]] .. url .. [[`);
