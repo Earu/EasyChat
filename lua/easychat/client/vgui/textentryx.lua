@@ -145,6 +145,7 @@ function PANEL:Init()
 	self:SetBackgroundColor(skin.colTextEntryBG)
 	self:SetTextColor(skin.colTextEntryText)
 	self:SetBorderColor(skin.colTextEntryBorder)
+	self:SetPlaceholderColor(skin.control_color_dark)
 
 	-- hack to clear the focus on the JS side
 	local old_KillFocus = self.KillFocus
