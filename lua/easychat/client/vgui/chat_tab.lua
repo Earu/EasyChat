@@ -122,7 +122,12 @@ local MAIN_TAB = {
 		self.BtnEmotePicker:SetSize(25, 25)
 		self.BtnEmotePicker.DoClick = function()
 			local btn_x, btn_y = self.BtnEmotePicker:LocalToScreen(0, 0)
-			self.EmotePicker:SetPos(btn_x - (self.EmotePicker:GetWide() / 2), btn_y - self.EmotePicker:GetTall())
+			local x, y = btn_x - (self.EmotePicker:GetWide() / 2), btn_y - self.EmotePicker:GetTall()
+			if x + self.EmotePicker:GetWide() > ScrW() then
+				x = ScrW() - self.EmotePicker:GetWide()
+			end
+
+			self.EmotePicker:SetPos(x, y)
 			self.EmotePicker:SetVisible(true)
 
 			self.EmotePicker:MakePopup()
@@ -137,7 +142,12 @@ local MAIN_TAB = {
 		self.BtnColorPicker:SetSize(25, 25)
 		self.BtnColorPicker.DoClick = function()
 			local btn_x, btn_y = self.BtnColorPicker:LocalToScreen(0, 0)
-			self.ColorPicker:SetPos(btn_x - (self.ColorPicker:GetWide() / 2), btn_y - self.ColorPicker:GetTall())
+			local x, y = btn_x - (self.ColorPicker:GetWide() / 2), btn_y - self.ColorPicker:GetTall()
+			if x + self.ColorPicker:GetWide() > ScrW() then
+				x = ScrW() - self.ColorPicker:GetWide()
+			end
+
+			self.ColorPicker:SetPos(x, y)
 			self.ColorPicker:SetVisible(true)
 			self.ColorPicker:MakePopup()
 		end
