@@ -841,7 +841,12 @@ if CLIENT then
 		end
 
 		local function global_insert_color_change(r, g, b, a)
-			EasyChat.GUI.RichText:InsertColorChange(r, g, b, a)
+			if EasyChat.UseDermaSkin and r == 255 and g == 255 and b == 255 then
+				local new_col = EasyChat.GUI.RichText:GetSkin().text_normal
+				EasyChat.GUI.RichText:InsertColorChange(new_col:Unpack())
+			else
+				EasyChat.GUI.RichText:InsertColorChange(r, g, b, a)
+			end
 
 			if EC_HUD_CUSTOM:GetBool() then
 				EasyChat.ChatHUD:InsertColorChange(r, g, b)
@@ -879,7 +884,7 @@ if CLIENT then
 		EasyChat.SetAddTextTypeHandle("Player", function(ply)
 			local data = {}
 
-			local team_color = EC_PLAYER_COLOR:GetBool() and team.GetColor(ply:Team()) or Color(255, 255, 255)
+			local team_color = EC_PLAYER_COLOR:GetBool() and team.GetColor(ply:Team()) or color_white
 			global_insert_color_change(team_color.r, team_color.g, team_color.b, 255)
 			table.insert(data, team_color)
 
@@ -1135,7 +1140,7 @@ if CLIENT then
 				local tab = chatbox_frame.Tabs:AddSheet(name, panel, icon)
 				tab.Tab.Name = name
 				tab.Tab:SetFont("EasyChatFont")
-				tab.Tab:SetTextColor(Color(255, 255, 255))
+				tab.Tab:SetTextColor(color_white)
 				tab.Tab.GetPanel = function() return panel end
 
 				ec_tabs[name] = tab
@@ -1232,6 +1237,11 @@ if CLIENT then
 			if EC_HISTORY:GetBool() then
 				local history = EasyChat.ReadFromHistory("global")
 				if history:Trim() ~= "" then
+					if EasyChat.UseDermaSkin then
+						local new_col = global_tab.RichText:GetSkin().text_normal
+						global_tab.RichText:InsertColorChange(new_col:Unpack())
+					end
+
 					global_tab.RichText:AppendText(history)
 					local historynotice = "\n^^^^^ Last Session History ^^^^^\n\n"
 					global_tab.RichText:AppendText(historynotice)
@@ -1752,6 +1762,14 @@ if CLIENT then
 				chathud:StopComponents()
 			end
 		end)
+
+		if jit.arch == "x64" and not cookie.GetString("ECChromiumWarn") then
+			-- warn related to chromium regression
+			EasyChat.AddText(EasyChat.GUI.RichText, Color(255, 0, 0), "IF YOU ARE HAVING TROUBLES TO TYPE SOME CHARACTERS PLEASE TYPE", color_white, " easychat_legacy_entry 1 ",
+			Color(255,0,0), "IN YOUR CONSOLE. THE ISSUE IS DUE TO A REGRESSION IN CHROMIUM. MORE INFO HERE: https://github.com/Facepunch/garrysmod-issues/issues/4414\n"
+			.. "IF YOU STILL HAVE ISSUES PLEASE DO REPORT IT HERE: https://github.com/Earu/EasyChat/issues")
+			cookie.Set("ECChromiumWarn", "1")
+		end
 
 		safe_hook_run("ECInitialized")
 	end

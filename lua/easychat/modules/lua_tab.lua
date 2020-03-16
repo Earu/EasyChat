@@ -274,7 +274,7 @@ if CLIENT then
 			self.ErrorList:SetLabel("Error List")
 			self.ErrorList.Paint = function(self, w, h)
 				surface.SetDrawColor(blue_color)
-				surface.DrawRect(0, 0, w, h)
+				surface.DrawRect(0, 0, w, 25)
 			end
 
 			-- hack to always keep the expanded state at the same height
