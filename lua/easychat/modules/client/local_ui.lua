@@ -6,8 +6,14 @@ panel.btnMinim:Hide()
 
 function panel:Think()
 	if not IsValid(EasyChat.GUI.ChatBox) then return end
-	local x, y, w, _ = EasyChat.GUI.ChatBox:GetBounds()
-	self:SetPos(x + w, y)
+	local chat_x, chat_y, chat_w, _ = EasyChat.GUI.ChatBox:GetBounds()
+	local w = self:GetWide()
+
+	if chat_x + (chat_w / 2) > (ScrW() / 2) then
+		self:SetPos(chat_x - w, chat_y)
+	else
+		self:SetPos(chat_x + chat_w, chat_y)
+	end
 end
 
 local nick_cache = {}
