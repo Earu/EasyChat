@@ -1372,10 +1372,19 @@ if CLIENT then
 			end
 		end
 
-		function EasyChat.GUI.TextEntry:OnTab()
-			if self:GetText() == "" then
+		local function update_chat_mode()
+			if input.IsKeyDown(KEY_LCONTROL) or input.IsKeyDown(KEY_RCONTROL) then
+				local next_mode = EasyChat.Mode - 1
+				EasyChat.Mode = next_mode < 0 and EasyChat.ModeCount or next_mode
+			else
 				local next_mode = EasyChat.Mode + 1
 				EasyChat.Mode = next_mode > EasyChat.ModeCount and 0 or next_mode
+			end
+		end
+
+		function EasyChat.GUI.TextEntry:OnTab()
+			if self:GetText() == "" then
+				update_chat_mode()
 				return
 			end
 
@@ -1731,11 +1740,19 @@ if CLIENT then
 			if EC_HUD_FOLLOW:GetBool() then
 				local x, y, w, h = EasyChat.GUI.ChatBox:GetBounds()
 				x, y = x + 10, y - EasyChat.GUI.TextEntry:GetTall() -- fix slightly off pos
+
+				local new_x, new_y, new_w, new_h = hook.Run("ECHUDBoundsUpdate", x, y, w, h)
+				x, y, w, h = new_x or x, new_y or y, new_w or w, new_h or h
+
 				chathud.Pos = { X = x, Y = y }
 				chathud.Size = { W = w, H = h }
 			else
 				local x, y, w, h = EasyChat.GetDefaultBounds()
 				x, y, w, h = chathud_get_bounds(x, y, w, h)
+
+				local new_x, new_y, new_w, new_h = hook.Run("ECHUDBoundsUpdate", x, y, w, h)
+				x, y, w, h = new_x or x, new_y or y, new_w or w, new_h or h
+
 				chathud.Pos = { X = x, Y = y }
 				chathud.Size = { W = w, H = h }
 			end
