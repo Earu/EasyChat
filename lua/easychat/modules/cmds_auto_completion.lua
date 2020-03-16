@@ -84,7 +84,7 @@ if CLIENT then
 		net.Receive(EASYCHAT_AUTO_COMPLETION, function()
 			local aowl_cmds = {}
 			local cmds_str = net.ReadString()
-			for cmd_name, _ in pairs(aowl.cmds) do
+			for cmd_name, _ in pairs(aowl.cmds or {}) do
 				aowl_cmds[cmd_name] = {}
 			end
 
@@ -168,8 +168,15 @@ if CLIENT then
 		-- account for the panel that shows people that can "hear" you
 		local cur_mode = EasyChat.GetCurrentMode()
 		local localui_panel = EasyChat.GUI.LocalPanel
-		if cur_mode and cur_mode.Name == "Local" and IsValid(localui_panel) then
-			pos_x = pos_x + localui_panel:GetWide()
+		local is_local_mode = cur_mode and cur_mode.Name == "Local" and IsValid(localui_panel)
+		if is_local_mode then
+			pos_x = pos_x + 5 + localui_panel:GetWide()
+		end
+
+		local left_pos_set = false
+		local should_left_side = chat_x + (chat_w / 2) > (ScrW() / 2)
+		if should_left_side then
+			pos_x = 0
 		end
 
 		hook.Add("HUDPaint", hook_name, function()
@@ -179,12 +186,15 @@ if CLIENT then
 			end
 
 			local i = 0
+			local max_w = 0
 			for option, option_args in pairs(options) do
 				local pos_y = chat_y + (i * option_h)
-				draw.WordBox(4, pos_x, pos_y, option, option_font, black_color, color_white)
+				local option_w, _ = draw.WordBox(4, pos_x, pos_y, option, option_font, black_color, color_white)
+				if option_w > max_w then max_w = option_w end
 
 				for arg_index, arg in ipairs(option_args) do
-					draw.WordBox(4, pos_x + (arg_index * 130), pos_y, arg, option_font, black_color, color_white)
+					local arg_w, _ = draw.WordBox(4, pos_x + (arg_index * 130), pos_y, arg, option_font, black_color, color_white)
+					if arg_w > max_w then max_w = arg_w end
 				end
 
 				i = i + 1
@@ -192,6 +202,12 @@ if CLIENT then
 
 			if above_screen_height then
 				draw.WordBox(4, pos_x, chat_y + (i * option_h), "...", option_font, black_color, color_white)
+			end
+
+			if should_left_side and not left_pos_set then
+				left_pos_set = true
+				pos_x = chat_x - max_w - 2
+				if is_local_mode then pos_x = pos_x - 5 - localui_panel:GetWide() end
 			end
 		end)
 	end)

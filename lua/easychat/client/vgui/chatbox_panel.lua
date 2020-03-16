@@ -44,10 +44,10 @@ local CHATBOX = {
 			end
 		end
 
-		self.BtnSettings:SetSize(30, 30)
+		self.BtnSettings:SetSize(30, 29)
 		self.BtnSettings:SetZPos(10)
 		self.BtnSettings:SetText("")
-		self.BtnSettings:SetIcon("icon16/cog.png")
+		self.BtnSettings:SetImage("icon16/cog.png")
 		self.BtnSettings.DoClick = function()
 			EasyChat.OpenSettings()
 		end
@@ -178,7 +178,7 @@ local CHATBOX = {
 	end,
 	PerformLayout = function(self, w, h)
 		self.Tabs:SetSize(w - 13, h - 11)
-		self.BtnSettings:SetPos(w - self.BtnSettings:GetWide() - 65, -1)
+		self.BtnSettings:SetPos(w - self.BtnSettings:GetWide() - 64, -1)
 		self.BtnMaxim:SetPos(w - self.BtnMaxim:GetWide() - 35, -5)
 		self.BtnClose:SetPos(w - self.BtnClose:GetWide() - 6, -2)
 	end
