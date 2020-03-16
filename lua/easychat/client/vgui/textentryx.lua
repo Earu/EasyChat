@@ -19,6 +19,10 @@ function PANEL:Init()
 					overflow: hidden;
 				}
 
+				::-webkit-scrollbar {
+					display: none;
+				}
+
 				#text-entry {
 					margin: 0;
 					height: 100%;

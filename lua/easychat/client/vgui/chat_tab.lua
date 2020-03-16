@@ -7,7 +7,7 @@ include("easychat/client/vgui/color_picker.lua")
 local NEW_LINE_PATTERN = "\n"
 local EC_LEGACY_ENTRY = GetConVar("easychat_legacy_entry")
 local EC_LEGACY_TEXT = GetConVar("easychat_legacy_text")
-local HAS_CHROMIUM = BRANCH ~= "dev" and BRANCH ~= "unknown"
+local HAS_CHROMIUM = jit.arch == "x64"
 local MAIN_TAB = {
 	Init = function(self)
 		local use_new_richtext = (EC_LEGACY_TEXT and not EC_LEGACY_TEXT:GetBool()) or not EC_LEGACY_TEXT
@@ -191,10 +191,15 @@ local MAIN_TAB = {
 			self.BtnColorPicker.Paint = btn_paint
 		end
 	end,
-	PerformLayout = function(self, w, h)
+	ComputeNewLineCount = function(self)
 		local _, line_count = self.TextEntry:GetText():gsub(NEW_LINE_PATTERN, "\n")
-		local text_entry_height = math.min(25 + (line_count * 10), 100)
-
+		surface.SetFont("EasyChatCompletionFont")
+		local tw, _ = surface.GetTextSize(self.TextEntry:GetText())
+		line_count = line_count + math.floor(tw / self.TextEntry:GetWide())
+		return math.min(25 + (line_count * 10), 100)
+	end,
+	PerformLayout = function(self, w, h)
+		local text_entry_height = self:ComputeNewLineCount()
 		local old_richtext_height = self.RichText:GetTall()
 		self.RichText:SetSize(w - 10, h - (text_entry_height + 10))
 		self.RichText:SetPos(5, 5)
