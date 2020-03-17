@@ -438,6 +438,7 @@ if CLIENT then
 		EasyChat.GUI.ChatBox:SetMouseInputEnabled(false)
 		EasyChat.GUI.ChatBox:SetKeyboardInputEnabled(false)
 		EasyChat.GUI.TextEntry:SetText("")
+		EasyChat.GUI.TextEntry.HistoryPos = 0 -- reset history also
 
 		gui.EnableScreenClicker(false)
 		gamemode.Call("ChatTextChanged", "")
