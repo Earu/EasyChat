@@ -286,6 +286,7 @@ if CLIENT then
 	local ec_tabs = {}
 	local ec_convars = {}
 	local uploading = false
+	local queued_upload = nil
 
 	-- after easychat var declarations [necessary]
 	include("easychat/client/vgui/chatbox_panel.lua")
@@ -656,6 +657,7 @@ if CLIENT then
 		ec_convars = {}
 		ec_addtext_handles = {}
 		uploading = false
+		queued_upload = nil
 
 		function EasyChat.SendGlobalMessage(msg, is_team, is_local)
 			msg = EasyChat.MacroProcessor:ProcessString(msg:sub(1, MAX_CHARS))
@@ -1415,6 +1417,15 @@ if CLIENT then
 			local msg = self:GetText():Replace("╚​", ""):Trim()
 			self:SetText(msg)
 
+			if uploading and msg:match(UPLOADING_TEXT) then
+				local should_send = safe_hook_run("ECShouldSendMessage", msg)
+				if should_send == false then return end
+
+				queued_upload = { Message = msg, Mode = EasyChat.GetCurrentMode() }
+				close_chatbox()
+				return
+			end
+
 			if msg ~= "" then
 				local should_send = safe_hook_run("ECShouldSendMessage", msg)
 				if should_send == false then return end
@@ -1445,9 +1456,15 @@ if CLIENT then
 					notification.AddLegacy("Image upload failed, check your console", NOTIFY_ERROR, 3)
 					surface.PlaySound("buttons/button11.wav")
 				else
-					local cur_text = self:GetText():Trim()
-					if cur_text:match(UPLOADING_TEXT) then
-						self:SetText(cur_text:Replace(UPLOADING_TEXT, url))
+					if queued_upload then
+						local msg = queued_upload.Message:Replace(UPLOADING_TEXT, url)
+						local mode = EasyChat.Modes[queued_upload.Mode]
+						mode.Callback(msg)
+					else
+						local cur_text = self:GetText():Trim()
+						if cur_text:match(UPLOADING_TEXT) then
+							self:SetText(cur_text:Replace(UPLOADING_TEXT, url))
+						end
 					end
 				end
 
