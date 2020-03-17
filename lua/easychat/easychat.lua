@@ -1458,8 +1458,7 @@ if CLIENT then
 				else
 					if queued_upload then
 						local msg = queued_upload.Message:Replace(UPLOADING_TEXT, url)
-						local mode = EasyChat.Modes[queued_upload.Mode]
-						mode.Callback(msg)
+						queued_upload.Mode.Callback(msg)
 					else
 						local cur_text = self:GetText():Trim()
 						if cur_text:match(UPLOADING_TEXT) then
