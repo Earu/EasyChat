@@ -222,10 +222,12 @@ if CLIENT then
 	EasyChat.AddTab("Admin", admintab, "icon16/vcard.png")
 	EasyChat.SetFocusForOn("Admin", admintab.TextEntry)
 
-	local tab_data = EasyChat.GetTab("Admin")
-	if tab_data and IsValid(tab_data.Tab) and not LocalPlayer():IsAdmin() then
-		tab_data.Tab:Hide()
-	end
+	hook.Add("ECOpened", "EasyChatModuleDMTab", function()
+		local tab_data = EasyChat.GetTab("Admin")
+		if tab_data and IsValid(tab_data.Tab) and IsValid(LocalPlayer()) then
+			tab_data.Tab:SetVisible(LocalPlayer():IsAdmin())
+		end
+	end)
 end
 
 return "Admin Chat"
