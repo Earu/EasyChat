@@ -110,7 +110,7 @@ local function twemojify(str)
 	local ok, ret, ret2 = pcall(twemojify_unsafe, str)
 	if not ok then
 		str = utf8.force(str)
-		ok, ret, ret2 = xpcall(emojify_unsafe, debug.traceback, str)
+		ok, ret, ret2 = xpcall(twemojify_unsafe, debug.traceback, str)
 		if not ok then error(ret) end
 	end
 
