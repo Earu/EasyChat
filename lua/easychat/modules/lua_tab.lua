@@ -679,6 +679,15 @@ if CLIENT then
 	local lua_tab = vgui.Create("ECLuaTab")
 	EasyChat.AddTab("Lua", lua_tab, "icon16/page_edit.png")
 
+	hook.Add("ECTabChanged", "EasyChatModuleLuaTab", function(_, new_tab_name)
+		if new_tab_name ~= "Lua" then return end
+		if not IsValid(lua_tab) then return end
+		local active_code_tab = lua_tab.CodeTabs:GetActiveTab()
+		if not IsValid(active_code_tab) then return end
+
+		active_code_tab.m_pPanel:RequestFocus()
+	end)
+
 	-- dont display it by default on small resolutions
 	if not cookie.GetNumber("EasyChatSmallScreenLuaTab") and ScrW() < 1600 then
 		local tab_data = EasyChat.GetTab("Lua")
