@@ -1115,6 +1115,11 @@ if CLIENT then
 					focused_panel:KillFocus()
 				end
 
+				local panel_to_focus = new_tab.FocusOn
+				if IsValid(panel_to_focus) then
+					panel_to_focus:RequestFocus()
+				end
+
 				safe_hook_run("ECTabChanged", old_tab.Name, new_tab.Name)
 			end
 
