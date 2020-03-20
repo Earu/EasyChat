@@ -53,9 +53,11 @@ function PANEL:Init()
 
 	self:AddFunction("RichTextX", "OnRightClick", function(selected_text)
 		local copy_menu = DermaMenu()
-		copy_menu:AddOption("copy", function()
-			SetClipboardText(selected_text)
-		end)
+		copy_menu:AddOption("copy", function() SetClipboardText(selected_text) end)
+		copy_menu:AddSpacer()
+		-- setting the textContent node of the richtext clears all the children and replaces it
+		-- with a single text node, it also doesnt invoke chromium HTML parser which is relatively fast
+		copy_menu:AddOption("clear chatlog", function() self:QueueJavascript([[RICHTEXT.textContent = "";]]) end)
 		copy_menu:Open()
 	end)
 
