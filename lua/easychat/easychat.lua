@@ -794,6 +794,14 @@ if CLIENT then
 					EasyChat.GUI.RichText:InsertClickableTextEnd()
 				end
 
+				-- hack that fixes broken URLs for the gmod default RichText panel unti we get a proper fix
+				if EC_LEGACY_TEXT:GetBool() then
+					EasyChat.GUI.RichText:InsertClickableTextStart(url)
+					EasyChat.GUI.RichText:AppendText(" ")
+					EasyChat.GUI.RichText:InsertClickableTextEnd()
+					EasyChat.GUI.RichText:AppendText(" ")
+				end
+
 				table.insert(data, url)
 
 				if EC_LINKS_CLIPBOARD:GetBool() and EasyChat.GUI.RichText:IsVisible() then
