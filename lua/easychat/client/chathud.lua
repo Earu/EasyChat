@@ -390,7 +390,11 @@ local font_part = {}
 function font_part:Ctor(str)
 	local succ, _ = pcall(surface_SetFont, str) -- only way to check if a font is valid
 	self.Font = succ and str or self.HUD.DefaultFont
-	if not succ then self.Invalid = true end
+	if not succ then
+		self.Invalid = true
+	elseif self.HUD == EasyChat.ChatHUD and draw_GetFontHeight(self.Font) > 30 then
+		self.Invalid = true
+	end
 
 	return self
 end
