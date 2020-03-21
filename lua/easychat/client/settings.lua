@@ -387,6 +387,17 @@ local function create_default_settings()
 		local category_name = "Chat HUD"
 		settings:AddCategory(category_name)
 
+		local setting_font_editor = settings:AddSetting(category_name, "action", "Font Editor")
+		setting_font_editor.DoClick = function()
+			local editor = vgui.Create("ECChatHUDFontEditor")
+			editor:MakePopup()
+			editor:Center()
+		end
+
+		concommand.Add("chathud_font_editor", setting_font_editor.DoClick)
+
+		settings:AddSpacer(category_name)
+
 		create_option_set(settings, category_name, {
 			[EC_HUD_FOLLOW] = "Follow chatbox window",
 			[EC_HUD_TIMESTAMPS] = "Display timestamps",
@@ -435,17 +446,6 @@ local function add_chathud_markup_settings()
 	end
 
 	create_option_set(settings, category_name, tag_options)
-
-	settings:AddSpacer(category_name)
-
-	local setting_font_editor = settings:AddSetting(category_name, "action", "Font Editor")
-	setting_font_editor.DoClick = function()
-		local editor = vgui.Create("ECChatHUDFontEditor")
-		editor:MakePopup()
-		editor:Center()
-	end
-
-	concommand.Add("chathud_font_editor", setting_font_editor.DoClick)
 end
 
 local function add_legacy_settings()
