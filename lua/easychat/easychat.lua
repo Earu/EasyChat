@@ -607,8 +607,14 @@ if CLIENT then
 		headers["Authorization"] = "Client-ID 62f1e31985e240b"
 
 		local http_data = {
-			failed = function(...) on_imgur_failure(...) on_finished(nil) end,
-			success = function(...) local url = on_imgur_success(...) callback(url) end,
+			failed = function(...)
+				on_imgur_failure(...)
+				callback(nil)
+			end,
+			success = function(...)
+				local url = on_imgur_success(...)
+				callback(url)
+			end,
 			method = "post",
 			url = "https://api.imgur.com/3/image.json",
 			parameters = params,
