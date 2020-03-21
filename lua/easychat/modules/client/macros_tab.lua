@@ -306,7 +306,7 @@ local MACRO_TAB = {
 	Paint = function() end
 }
 
-vgui.Register("EasyChatMacroTab", MACRO_TAB, "DPanel")
+vgui.Register("ECMacrosTab", MACRO_TAB, "DPanel")
 
 -- example macros
 if not cookie.GetNumber("EasyChatExampleMacros") then
@@ -344,7 +344,7 @@ if not cookie.GetNumber("EasyChatExampleMacros") then
 	cookie.Set("EasyChatExampleMacros", "1")
 end
 
-local macro_tab = vgui.Create("EasyChatMacroTab")
+local macro_tab = vgui.Create("ECMacrosTab")
 hook.Add("ECMacroRegistered", "EasyChatModuleMacroTab", function(macro_name, macro)
 	if not IsValid(macro_tab) then return end
 	if macro_tab.KnownMacros[macro_name] then return end

@@ -80,7 +80,46 @@ local function create_default_settings()
 
 		settings:AddSpacer(category_name)
 
-		settings:AddConvarSetting(category_name, "string", EC_SECONDARY, "Secondary Message Mode")
+		local setting_secondary_mode = settings:AddConvarSetting(category_name, "string", EC_SECONDARY, "Secondary Message Mode")
+		setting_secondary_mode.GetAutoComplete = function(self, text)
+			local suggestions = {}
+			for _, mode in pairs(EasyChat.Modes) do
+				table.insert(suggestions, mode.Name:lower())
+			end
+
+			return suggestions
+		end
+
+		local secondary_mode_selection = 1
+		local secondary_mode_input = ""
+		setting_secondary_mode.OnKeyCodeTyped = function(self, key_code)
+			if key_code == KEY_TAB then
+				local suggestion = self:GetAutoComplete(secondary_mode_input)[secondary_mode_selection]
+				if suggestion then
+					self:SetText(suggestion)
+					timer.Simple(0, function()
+						self:RequestFocus()  -- keep focus
+						self:SetCaretPos(#self:GetText())
+					end)
+				end
+
+				secondary_mode_selection = secondary_mode_selection + 1
+				if secondary_mode_selection > (EasyChat.ModeCount + 1) then
+					secondary_mode_selection = 1
+				end
+			elseif key_code == KEY_ENTER or key_code == KEY_PAD_ENTER then
+				if IsValid(self.Menu) then self.Menu:Remove() end
+				self:OnEnter()
+				timer.Simple(0, function()
+					self:RequestFocus()  -- keep focus
+					self:SetCaretPos(#self:GetText())
+				end)
+			else
+				secondary_mode_input = self:GetText()
+				secondary_mode_selection = 1
+			end
+		end
+
 		settings:AddConvarSetting(category_name, "number", EC_LOCAL_MSG_DIST, "Local Message Distance", 1000, 100)
 
 		local setting_reset_misc = settings:AddSetting(category_name, "action", "Reset Options")
@@ -118,10 +157,56 @@ local function create_default_settings()
 		settings:AddSpacer(category_name)
 
 		if not EasyChat.UseDermaSkin then
+			local built_in_themes = {
+				Crimson = {
+					outlay        = Color(62, 32, 32, 255),
+					outlayoutline = Color(0, 0, 0, 0),
+					tab           = Color(32, 15, 15, 255),
+					taboutline    = Color(0, 0, 0, 0),
+				},
+				Ocean = {
+					outlay        = Color(30, 30, 128, 235),
+					outlayoutline = Color(0, 0, 0, 0),
+					tab           = Color(15, 15, 62, 235),
+					taboutline    = Color(0, 0, 0, 0)
+				},
+				["High Contrast"] = {
+					outlay        = Color(0, 0, 0, 255),
+					outlayoutline = Color(255, 255, 255, 255),
+					tab           = Color(0, 0, 0, 255),
+					taboutline    = Color(255, 255, 255, 255),
+				},
+				["80s"] = {
+					outlay        = Color(128, 30, 128, 235),
+					outlayoutline = Color(0, 0, 0, 0),
+					tab           = Color(0, 0, 36, 255),
+					taboutline    = Color(0, 0, 0, 0),
+				},
+				Desert = {
+					outlay        = Color(220, 100, 0, 235),
+					outlayoutline = Color(0, 0, 0, 0),
+					tab           = Color(36, 15, 0, 255),
+					taboutline    = Color(0, 0, 0, 0),
+				},
+				["Red Light"] = {
+					outlay        = Color(220, 0, 75, 235),
+					outlayoutline = Color(0, 0, 0, 0),
+					tab           = Color(25, 25, 25, 255),
+					taboutline    = Color(0, 0, 0, 0),
+				}
+			}
+
+			local setting_built_in_themes = settings:AddSetting(category_name, "action", "Built-in Themes")
+
 			local setting_outlay_color = settings:AddSetting(category_name, "color", "Outlay Color")
 			setting_outlay_color:SetColor(EasyChat.OutlayColor)
 			setting_outlay_color.OnValueChanged = function(_, color)
 				EasyChat.OutlayColor = Color(color:Unpack())
+
+				local text_entry = EasyChat.GUI.TextEntry
+				if IsValid(text_entry) and text_entry.ClassName == "TextEntryX" then
+					text_entry:SetBorderColor(EasyChat.OutlayColor)
+				end
 			end
 
 			local setting_outlay_outline_color = settings:AddSetting(category_name, "color", "Outlay Outline Color")
@@ -134,12 +219,31 @@ local function create_default_settings()
 			setting_tab_color:SetColor(EasyChat.TabColor)
 			setting_tab_color.OnValueChanged = function(_, color)
 				EasyChat.TabColor = Color(color:Unpack())
+
+				local text_entry = EasyChat.GUI.TextEntry
+				if IsValid(text_entry) and text_entry.ClassName == "TextEntryX" then
+					text_entry:SetBackgroundColor(EasyChat.TabColor)
+				end
 			end
 
 			local setting_tab_outline_color = settings:AddSetting(category_name, "color", "Tab Outline Color")
 			setting_tab_outline_color:SetColor(EasyChat.TabOutlineColor)
 			setting_tab_outline_color.OnValueChanged = function(_, color)
 				EasyChat.TabOutlineColor = Color(color:Unpack())
+			end
+
+			-- needs to be done after color settings so we can apply the new colors to them
+			setting_built_in_themes.DoClick = function()
+				local themes_menu = DermaMenu()
+				for theme_name, theme_data in pairs(built_in_themes) do
+					themes_menu:AddOption(theme_name, function()
+						setting_outlay_color:SetColor(theme_data.outlay)
+						setting_outlay_outline_color:SetColor(theme_data.outlayoutline)
+						setting_tab_color:SetColor(theme_data.tab)
+						setting_tab_outline_color:SetColor(theme_data.taboutline)
+					end)
+				end
+				themes_menu:Open()
 			end
 
 			local setting_save_colors = settings:AddSetting(category_name, "action", "Save Colors")
