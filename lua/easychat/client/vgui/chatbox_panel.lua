@@ -53,6 +53,7 @@ local CHATBOX = {
 		end
 
 		self.Tabs:SetPos(6, 6)
+		self.Tabs:SetFadeTime(0)
 		self.Tabs.old_PerformLayout = self.Tabs.PerformLayout
 		self.Tabs.PerformLayout = function(self)
 			self:old_PerformLayout()
