@@ -1,6 +1,6 @@
 include("easychat/client/vgui/richtextx.lua")
 include("easychat/client/vgui/textentryx.lua")
-include("easychat/client/vgui/textentrylegacy.lua")
+include("easychat/client/vgui/textentry_legacy.lua")
 include("easychat/client/vgui/emote_picker.lua")
 include("easychat/client/vgui/color_picker.lua")
 
