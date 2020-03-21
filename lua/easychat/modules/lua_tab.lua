@@ -251,6 +251,7 @@ if CLIENT then
 			self.CodeTabs = self:Add("DPropertySheet")
 			self.CodeTabs:SetPos(0, 35)
 			self.CodeTabs:SetPadding(0)
+			self.CodeTabs:SetFadeTime(0)
 			self.CodeTabs.Paint = function() end -- remove ugly grey background when no tab is opened
 			self.CodeTabs.tabScroller.Paint = function() end
 			self.CodeTabs.OnActiveTabChanged = function(_, _, new_tab)
