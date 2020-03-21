@@ -125,8 +125,8 @@ local EDITOR = {
 			self:SaveFontData()
 		end
 
-		self.Canvas:SetSize(100, 100)
-		self.Canvas:SetPos(350, 200)
+		self.Canvas:SetSize(200, 200)
+		self.Canvas:SetPos(350, 140)
 
 		local mk = ec_markup.Parse("Hello World!")
 		local black_color = Color(0, 0, 0)
