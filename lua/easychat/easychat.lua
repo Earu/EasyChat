@@ -324,6 +324,21 @@ if CLIENT then
 		return 50 * coef_w, ScrH() - (320 + (coef_h * 250)), 550, 320
 	end
 
+	local function get_secondary_chat_mode()
+		local secondary_mode_name = EC_SECONDARY:GetString():lower()
+		local handled = safe_hook_run("ECSecondaryOpen", secondary_mode_name)
+		if handled ~= true then
+			for i = 0, EasyChat.ModeCount do
+				local mode = EasyChat.Modes[i]
+				if mode.Name:lower() == secondary_mode_name then
+					return i
+				end
+			end
+		end
+
+		return 1
+	end
+
 	local function open_chatbox(is_team, requested_mode)
 		local ok = safe_hook_run("ECShouldOpen")
 		if ok == false then return end
@@ -331,15 +346,8 @@ if CLIENT then
 		ok = safe_hook_run("StartChat", is_team)
 		if ok == true then return end
 
-		EasyChat.GUI.ChatBox:Show()
-		EasyChat.GUI.ChatBox:MakePopup()
-
 		if EC_GLOBAL_ON_OPEN:GetBool() then
 			EasyChat.OpenTab("Global")
-			EasyChat.GUI.TextEntry:RequestFocus()
-			timer.Simple(0, function()
-				EasyChat.GUI.RichText:GotoTextEnd()
-			end)
 		end
 
 		-- make sure to get rid of the possible completion
@@ -350,18 +358,7 @@ if CLIENT then
 		EasyChat.GUI.TextEntry:SetText("")
 
 		if is_team then
-			local secondary_mode_name = EC_SECONDARY:GetString():lower()
-			local handled = safe_hook_run("ECSecondaryOpen", secondary_mode_name)
-			if handled ~= true then
-				EasyChat.Mode = 1 -- default to team if nothing is found
-				for i = 0, EasyChat.ModeCount do
-					local mode = EasyChat.Modes[i]
-					if mode.Name:lower() == secondary_mode_name then
-						EasyChat.Mode = i
-						break
-					end
-				end
-			end
+			EasyChat.Mode = get_secondary_chat_mode()
 		else
 			if requested_mode ~= -1 then
 				EasyChat.Mode = requested_mode
@@ -373,6 +370,22 @@ if CLIENT then
 				end
 			end
 		end
+
+		EasyChat.GUI.ChatBox:Show()
+		EasyChat.GUI.ChatBox:MakePopup()
+
+		if EC_GLOBAL_ON_OPEN:GetBool() then
+			EasyChat.GUI.TextEntry:RequestFocus()
+		else
+			local cur_tab = EasyChat.GetActiveTab().Tab
+			if IsValid(cur_tab.FocusOn) then
+				cur_tab.FocusOn:RequestFocus()
+			end
+		end
+
+		timer.Simple(0, function()
+			EasyChat.GUI.RichText:GotoTextEnd()
+		end)
 
 		safe_hook_run("ECOpened", LocalPlayer())
 
