@@ -158,14 +158,20 @@ local MAIN_TAB = {
 			self.TextEntry:SetPlaceholderColor(placeholder_color)
 			if HAS_CHROMIUM and use_new_text_entry then
 				self.TextEntry:SetBackgroundColor(EasyChat.TabColor)
-				self.TextEntry:SetBorderColor(EasyChat.OutlayColor)
+
+				local border_color = EasyChat.TabOutlineColor.a == 0
+					and EasyChat.OutlayColor or EasyChat.TabOutlineColor
+				self.TextEntry:SetBorderColor(border_color)
 				self.TextEntry:SetTextColor(EasyChat.TextColor)
 			else
 				self.TextEntry.Paint = function(_, w, h)
 					surface.SetDrawColor(EasyChat.TabColor)
 					surface.DrawRect(0, 0, w, h)
 
-					surface.SetDrawColor(EasyChat.OutlayColor)
+
+					local border_color = EasyChat.TabOutlineColor.a == 0
+						and EasyChat.OutlayColor or EasyChat.TabOutlineColor
+					surface.SetDrawColor(border_color)
 					surface.DrawOutlinedRect(0, 0, w, h)
 				end
 
