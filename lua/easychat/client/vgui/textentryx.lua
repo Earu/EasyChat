@@ -300,7 +300,7 @@ function PANEL:PaintOver(w, h)
 		surface_SetFont("EasyChatCompletionFont")
 		local cur_text_w = surface_GetTextSize(self.CurrentValue)
 		local start_pos, end_pos = string_find(self.CompletionText, self.CurrentValue, 1, true)
-		if start_pos then
+		if start_pos == 1 then
 			local sub_completion = string_sub(self.CompletionText, end_pos + 1)
 			local _, completion_text_h = surface_GetTextSize(sub_completion)
 			surface_SetTextPos(cur_text_w + 3, h / 2 - completion_text_h / 2)
