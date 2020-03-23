@@ -160,6 +160,12 @@ local function create_default_settings()
 
 		if not EasyChat.UseDermaSkin then
 			local built_in_themes = {
+				Standard = {
+					outlay        = Color(62, 62, 62, 235),
+					outlayoutline = Color(0, 0, 0, 0),
+					tab           = Color(36, 36, 36, 235),
+					taboutline    = Color(0, 0, 0, 0),
+				},
 				Crimson = {
 					outlay        = Color(62, 32, 32, 255),
 					outlayoutline = Color(0, 0, 0, 0),
