@@ -161,14 +161,30 @@ local MAIN_TAB = {
 				self.TextEntry:SetBorderColor(EasyChat.OutlayColor)
 				self.TextEntry:SetTextColor(EasyChat.TextColor)
 			else
-				self.TextEntry.Paint = function(self, w, h)
+				self.TextEntry.Paint = function(_, w, h)
 					surface.SetDrawColor(EasyChat.TabColor)
 					surface.DrawRect(0, 0, w, h)
 
 					surface.SetDrawColor(EasyChat.OutlayColor)
 					surface.DrawOutlinedRect(0, 0, w, h)
+				end
 
-					self:DrawTextEntryText(EasyChat.TextColor, EasyChat.OutlayColor, EasyChat.TextColor)
+				-- this is an ugly hack so we can render the text inside the legacy text entry
+				-- with proper padding as gmod doesnt allow us to do any other way :(
+				local text_entry_fix = self:Add("DPanel")
+				text_entry_fix:SetMouseInputEnabled(false)
+				text_entry_fix:SetKeyboardInputEnabled(false)
+				text_entry_fix:SetZPos(9999)
+
+				self.TextEntry.PerformLayout = function(_, w, h)
+					local tb_x, tb_y = self.TextEntry:GetPos()
+					text_entry_fix:SetPos(tb_x, tb_y + 4)
+					text_entry_fix:SetWide(self.TextEntry:GetWide())
+					text_entry_fix:SetTall(self.TextEntry:GetTall() - 4)
+				end
+
+				text_entry_fix.Paint = function()
+					self.TextEntry:DrawTextEntryText(EasyChat.TextColor, EasyChat.OutlayColor, EasyChat.TextColor)
 				end
 			end
 
