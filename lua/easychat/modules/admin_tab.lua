@@ -70,7 +70,9 @@ if CLIENT then
 					surface.SetDrawColor(EasyChat.TabColor)
 					surface.DrawRect(0, 0, w, h)
 
-					surface.SetDrawColor(EasyChat.OutlayColor)
+					local border_color = EasyChat.TabOutlineColor.a == 0
+						and EasyChat.OutlayColor or EasyChat.TabOutlineColor
+					surface.SetDrawColor(border_color)
 					surface.DrawLine(0, 0, w, 0)
 
 					self:DrawTextEntryText(EasyChat.TextColor, EasyChat.OutlayColor, EasyChat.TextColor)
