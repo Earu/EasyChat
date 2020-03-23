@@ -165,6 +165,7 @@ if CLIENT then
 	local EC_LINKS_CLIPBOARD = CreateConVar("easychat_links_to_clipboard", "0", FCVAR_ARCHIVE, "Automatically copies links to your clipboard")
 	local EC_GM_COMPLETE = CreateConVar("easychat_gm_complete", "0", FCVAR_ARCHIVE, "Use the gamemode bad auto-completion")
 	local EC_NICK_COMPLETE = CreateConVar("easychat_nick_complete", "1", FCVAR_ARCHIVE, "Auto-completes player names")
+	local EC_NICK_PRIORITIZE = CreateConVar("easychat_nick_prioritize", "0", FCVAR_ARCHIVE, "Prioritize player nick completion over everything else")
 
 	-- chatbox panel
 	local EC_GLOBAL_ON_OPEN = CreateConVar("easychat_global_on_open", "1", FCVAR_ARCHIVE, "Set the chat to always open global chat tab on open")
@@ -1376,10 +1377,45 @@ if CLIENT then
 			end
 		end
 
+		local function nick_completion(text)
+			if EC_GM_COMPLETE:GetBool() then return end
+			if not EC_NICK_COMPLETE:GetBool() then return end
+
+			local words = text:Split(" ")
+			local last_word = words[#words]
+
+			local prioritize_nicks = EC_NICK_PRIORITIZE:GetBool()
+			local max_perc = 0
+			local res
+			for _, ply in ipairs(player.GetAll()) do
+				local nick = ec_markup.Parse(ply:Nick(), nil, true):GetText()
+				local match = nick:lower():match(last_word:lower():PatternSafe())
+				if match then
+					local perc = #match / #nick
+					local consider_match = (perc > 0.5 or #match >= 3)
+					if prioritize_nicks then consider_match = true end
+					if consider_match and perc > max_perc then
+						max_perc = perc
+						res = nick
+					end
+				end
+			end
+
+			if res then
+				words[#words] = res
+				return table.concat(words, " ")
+			end
+		end
+
 		local completion_blacklist = {
 			chatsounds_autocomplete = true
 		}
 		local function get_completion(text, use_blacklist)
+			if EC_NICK_PRIORITIZE:GetBool() then
+				local ply_nick = nick_completion(text)
+				if ply_nick then return ply_nick end
+			end
+
 			if not use_blacklist then
 				local gm = EC_GM_COMPLETE:GetBool() and gmod.GetGamemode() or nil
 				return hook.Call("OnChatTab", gm, text)
@@ -1561,30 +1597,8 @@ if CLIENT then
 		end
 
 		hook.Add("OnChatTab", TAG, function(text)
-			if EC_GM_COMPLETE:GetBool() then return end
-			if not EC_NICK_COMPLETE:GetBool() then return end
-
-			local words = text:Split(" ")
-			local last_word = words[#words]
-
-			local max_perc = 0
-			local res
-			for _, ply in ipairs(player.GetAll()) do
-				local nick = ec_markup.Parse(ply:Nick(), nil, true):GetText()
-				local match = nick:lower():match(last_word:lower():PatternSafe())
-				if match then
-					local perc = #match / #nick
-					if (perc > 0.5 or #match >= 4) and perc > max_perc then
-						max_perc = perc
-						res = nick
-					end
-				end
-			end
-
-			if res then
-				words[#words] = res
-				return table.concat(words, " ")
-			end
+			if EC_NICK_PRIORITIZE:GetBool() then return end
+			return nick_completion(text)
 		end)
 
 		local chat_mode_keys = { KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6 }
