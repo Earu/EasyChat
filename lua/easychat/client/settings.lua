@@ -213,7 +213,9 @@ local function create_default_settings()
 
 				local text_entry = EasyChat.GUI.TextEntry
 				if IsValid(text_entry) and text_entry.ClassName == "TextEntryX" then
-					text_entry:SetBorderColor(EasyChat.OutlayColor)
+					local border_color = EasyChat.TabOutlineColor.a == 0
+						and EasyChat.OutlayColor or EasyChat.TabOutlineColor
+					text_entry:SetBorderColor(border_color)
 				end
 			end
 
@@ -238,6 +240,13 @@ local function create_default_settings()
 			setting_tab_outline_color:SetColor(EasyChat.TabOutlineColor)
 			setting_tab_outline_color.OnValueChanged = function(_, color)
 				EasyChat.TabOutlineColor = Color(color:Unpack())
+				local text_entry = EasyChat.GUI.TextEntry
+
+				if IsValid(text_entry) and text_entry.ClassName == "TextEntryX" then
+					local border_color = EasyChat.TabOutlineColor.a == 0
+						and EasyChat.OutlayColor or EasyChat.TabOutlineColor
+					text_entry:SetBorderColor(border_color)
+				end
 			end
 
 			-- needs to be done after color settings so we can apply the new colors to them
