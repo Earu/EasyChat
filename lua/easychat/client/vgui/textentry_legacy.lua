@@ -61,11 +61,11 @@ function PANEL:PaintOver(w, h)
 	local start_pos, end_pos = string_find(self.CompletionText, cur_value, 1, true)
 	if start_pos == 1 then
 		local sub_completion = string_sub(self.CompletionText, end_pos + 1)
-		surface_SetTextPos(cur_text_w + 3, 2)
+		surface_SetTextPos(cur_text_w + 3, 5)
 		surface_DrawText(sub_completion)
 	else
 		local sub_completion = string_format("<< %s >>", self.CompletionText)
-		surface_SetTextPos(cur_text_w + 15, 2)
+		surface_SetTextPos(cur_text_w + 15, 5)
 		surface_DrawText(sub_completion)
 	end
 end
