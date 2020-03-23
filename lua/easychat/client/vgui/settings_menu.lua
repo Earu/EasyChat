@@ -93,6 +93,9 @@ function SETTINGS:Init()
 		end
 
 		self.PaintOver = function(self, w, h)
+			surface.SetDrawColor(EasyChat.TabOutlineColor)
+			surface.DrawLine(0, 25, w, 25)
+
 			surface.SetDrawColor(EasyChat.OutlayOutlineColor)
 			surface.DrawOutlinedRect(0, 0, w, h)
 		end
