@@ -1123,7 +1123,7 @@ function chathud:NormalizeString(str, is_nick)
 
 	-- valve allows these in player names
 	if is_nick then
-		str = str:gsub("[\n|\t]", "")
+		str = str:gsub("[\n\t]", "")
 	end
 
 	for _, part in pairs(self.Parts) do
