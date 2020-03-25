@@ -7,7 +7,7 @@ EasyChat.RegisterConvar(EC_MENTION_FLASH, "Flashes your game when you are mentio
 
 local function undecorate_nick(nick)
 	if ec_markup then
-		return ec_markup.Parse(nick, nil, true):GetText()
+		return ec_markup.Parse(nick, nil, true):GetText():lower()
 	else
 		return nick:gsub("<.->", ""):lower()
 	end
@@ -20,8 +20,8 @@ local function mention(ply, msg, is_team, is_dead, is_local)
 	if not LocalPlayer().Nick then return end
 
 	msg = msg:lower()
-	local undec_nick = undecorate_nick(LocalPlayer():Nick())
-	if not msg:match("^[%!|%.|%/]") and msg:match(undec_nick:PatternSafe()) then
+	local undec_nick = undecorate_nick(LocalPlayer():Nick()):PatternSafe()
+	if not msg:match("^[%!|%.|%/]") and msg:match(undec_nick) then
 		if not system.HasFocus() and EC_MENTION_FLASH:GetBool() then
 			system.FlashWindow()
 		end
