@@ -13,23 +13,22 @@ local function undecorate_nick(nick)
 	end
 end
 
-local function mention(ply, msg, is_team, is_dead, is_local)
+hook.Add("OnPlayerChat", "EasyChatModuleMention", function(ply, msg, is_team, is_dead, is_local)
 	if not EC_MENTION:GetBool() then return end
 
 	-- could be run too early
-	if not LocalPlayer().Nick then return end
+	local lp = LocalPlayer()
+	if not IsValid(lp) then return end
+	if ply == lp then return end
 
 	msg = msg:lower()
-	local undec_nick = undecorate_nick(LocalPlayer():Nick()):PatternSafe()
-	if not msg:match("^[%!|%.|%/]") and msg:match(undec_nick) then
-		if not system.HasFocus() and EC_MENTION_FLASH:GetBool() then
+	local undec_nick = undecorate_nick(lp:Nick()):PatternSafe()
+	if not msg:match("^[%!%.%/]") and msg:match(undec_nick) then
+		if EC_MENTION_FLASH:GetBool() then
 			system.FlashWindow()
 		end
 
 		EasyChat.FlashTab("Global")
-
-		if not IsValid(ply) then return end
-		if ply == LocalPlayer() then return end
 
 		local msg_components = {}
 		if is_dead then
@@ -44,7 +43,9 @@ local function mention(ply, msg, is_team, is_dead, is_local)
 			EasyChat.AddLocalTag(msg_components)
 		end
 
-		EasyChat.AddNameTags(ply, msg_components)
+		if IsValid(ply) then
+			EasyChat.AddNameTags(ply, msg_components)
+		end
 
 		table.insert(msg_components, ply)
 		table.insert(msg_components, color_white)
@@ -61,8 +62,6 @@ local function mention(ply, msg, is_team, is_dead, is_local)
 
 		return true -- hide chat message
 	end
-end
-
-hook.Add("OnPlayerChat", "EasyChatModuleMention", mention)
+end)
 
 return "Mentions"
