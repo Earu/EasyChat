@@ -375,7 +375,7 @@ if CLIENT then
 		EasyChat.GUI.ChatBox:Show()
 		EasyChat.GUI.ChatBox:MakePopup()
 
-		if EC_GLOBAL_ON_OPEN:GetBool() then
+		if EC_GLOBAL_ON_OPEN:GetBool() and EasyChat.GetActiveTab().Name == "Global" then
 			EasyChat.GUI.TextEntry:RequestFocus()
 		else
 			local cur_tab = EasyChat.GetActiveTab().Tab
