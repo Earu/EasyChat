@@ -1486,7 +1486,7 @@ if CLIENT then
 			local msg = self:GetText():Replace("╚​", ""):Trim()
 			self:SetText(msg)
 
-			if uploading and msg:match(UPLOADING_TEXT) then
+			if uploading and msg:match(UPLOADING_TEXT) and not queued_upload then
 				local should_send = safe_hook_run("ECShouldSendMessage", msg)
 				if should_send == false then return end
 
