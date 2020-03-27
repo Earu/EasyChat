@@ -7,11 +7,16 @@ function PANEL:Init()
 	self:SetHTML([[<html>
 		<body>
 			<style>
-				@import url('https://fonts.googleapis.com/css?family=Roboto&display=swap');
+				@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap');
 
 				html, body, span {
 					padding: 0;
 					margin: 0;
+				}
+
+				::selection {
+					background-color: rgba(255, 0, 0, 0.5);
+					color: gray;
 				}
 
 				::-webkit-scrollbar {
@@ -32,7 +37,7 @@ function PANEL:Init()
 				body {
 					background: rgba(0, 0, 0, 0);
 					color: white;
-					font-family: Roboto, sans-serif;
+					font-family: 'Roboto', sans-serif;
 					font-size: 16;
 					overflow-x: hidden;
 				}
