@@ -1528,6 +1528,7 @@ if CLIENT then
 					if queued_upload then
 						local msg = queued_upload.Message:Replace(UPLOADING_TEXT, url)
 						queued_upload.Mode.Callback(msg)
+						queued_upload = nil
 					else
 						local cur_text = self:GetText():Trim()
 						if cur_text:match(UPLOADING_TEXT) then
