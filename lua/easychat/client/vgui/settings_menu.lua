@@ -36,8 +36,6 @@ function SETTINGS:Init()
 
 	self.btnClose:SetSize(30, 30)
 	self.btnClose:SetZPos(10)
-	self.btnClose:SetFont("DermaDefaultBold")
-	self.btnClose:SetText("X")
 	self.btnClose.DoClick = function()
 		self:SetVisible(false)
 	end
@@ -67,6 +65,9 @@ function SETTINGS:Init()
 
 	if not EasyChat.UseDermaSkin then
 		self.lblTitle:SetTextColor(EasyChat.TextColor)
+
+		self.btnClose:SetFont("DermaDefaultBold")
+		self.btnClose:SetText("X")
 		self.btnClose:SetTextColor(EasyChat.TextColor)
 		self.btnClose.Paint = function() end
 
@@ -110,19 +111,23 @@ function SETTINGS:CreateNumberSetting(panel, name, max, min)
 	number_wang:DockMargin(10, 10, 10, 10)
 
 	local title_color = EasyChat.UseDermaSkin and self:GetSkin().text_normal or EasyChat.TextColor
-	number_wang.Paint = function(self, w, h)
-		surface.SetDrawColor(EasyChat.TabColor)
-		surface.DrawRect(0, 0, w, h)
-		surface.SetDrawColor(EasyChat.OutlayColor)
-		surface.DrawOutlinedRect(0, 0, w, h)
-		self:DrawTextEntryText(color_white, EasyChat.OutlayColor, color_white)
-
+	number_wang.PaintOver = function(self, w, h)
 		surface.DisableClipping(true)
 			surface.SetTextPos(0, -15)
 			surface.SetTextColor(title_color)
 			surface.SetFont("ECSettingsFont")
 			surface.DrawText(name)
 		surface.DisableClipping(false)
+	end
+
+	if not EasyChat.UseDermaSkin then
+		number_wang.Paint = function(self, w, h)
+			surface.SetDrawColor(EasyChat.TabColor)
+			surface.DrawRect(0, 0, w, h)
+			surface.SetDrawColor(EasyChat.OutlayColor)
+			surface.DrawOutlinedRect(0, 0, w, h)
+			self:DrawTextEntryText(color_white, EasyChat.OutlayColor, color_white)
+		end
 	end
 
 	return number_wang
@@ -134,19 +139,23 @@ function SETTINGS:CreateStringSetting(panel, name)
 	text_entry:DockMargin(10, 10, 10, 10)
 
 	local title_color = EasyChat.UseDermaSkin and self:GetSkin().text_normal or EasyChat.TextColor
-	text_entry.Paint = function(self, w, h)
-		surface.SetDrawColor(EasyChat.TabColor)
-		surface.DrawRect(0, 0, w, h)
-		surface.SetDrawColor(EasyChat.OutlayColor)
-		surface.DrawOutlinedRect(0, 0, w, h)
-		self:DrawTextEntryText(color_white, EasyChat.OutlayColor, color_white)
-
+	text_entry.PaintOver = function(self, w, h)
 		surface.DisableClipping(true)
 			surface.SetTextPos(0, -15)
 			surface.SetTextColor(title_color)
 			surface.SetFont("ECSettingsFont")
 			surface.DrawText(name)
 		surface.DisableClipping(false)
+	end
+
+	if not EasyChat.UseDermaSkin then
+		text_entry.Paint = function(self, w, h)
+			surface.SetDrawColor(EasyChat.TabColor)
+			surface.DrawRect(0, 0, w, h)
+			surface.SetDrawColor(EasyChat.OutlayColor)
+			surface.DrawOutlinedRect(0, 0, w, h)
+			self:DrawTextEntryText(color_white, EasyChat.OutlayColor, color_white)
+		end
 	end
 
 	return text_entry
@@ -286,23 +295,23 @@ function SETTINGS:CreateColorSetting(panel, name)
 	color_setting:SetTitle(name)
 	color_setting:SetColor(color_white)
 
-	local function entry_paint(self, w, h, text_color)
-		surface.SetDrawColor(EasyChat.TabColor)
-		surface.DrawRect(0, 0, w, h)
-		surface.SetDrawColor(EasyChat.OutlayColor)
-		surface.DrawOutlinedRect(0, 0, w, h)
-		self:DrawTextEntryText(text_color, EasyChat.OutlayColor, color_white)
-	end
-
 	if not EasyChat.UseDermaSkin then
 		color_setting.Title:SetTextColor(EasyChat.TextColor)
-	end
 
-	color_setting.Paint = function() end
-	color_setting.Red.Paint = function(self, w, h) entry_paint(self, w, h, Color(200, 0, 50)) end
-	color_setting.Green.Paint = function(self, w, h) entry_paint(self, w, h, Color(0, 200, 70)) end
-	color_setting.Blue.Paint = function(self, w, h) entry_paint(self, w, h, Color(0, 50, 200)) end
-	color_setting.Alpha.Paint = function(self, w, h) entry_paint(self, w, h, color_white) end
+		local function entry_paint(self, w, h, text_color)
+			surface.SetDrawColor(EasyChat.TabColor)
+			surface.DrawRect(0, 0, w, h)
+			surface.SetDrawColor(EasyChat.OutlayColor)
+			surface.DrawOutlinedRect(0, 0, w, h)
+			self:DrawTextEntryText(text_color, EasyChat.OutlayColor, color_white)
+		end
+
+		color_setting.Paint = function() end
+		color_setting.Red.Paint = function(self, w, h) entry_paint(self, w, h, Color(200, 0, 50)) end
+		color_setting.Green.Paint = function(self, w, h) entry_paint(self, w, h, Color(0, 200, 70)) end
+		color_setting.Blue.Paint = function(self, w, h) entry_paint(self, w, h, Color(0, 50, 200)) end
+		color_setting.Alpha.Paint = function(self, w, h) entry_paint(self, w, h, color_white) end
+	end
 
 	return color_setting
 end
@@ -350,6 +359,7 @@ function SETTINGS:CreateListSetting(panel, name)
 			local line = old_AddLine(self, ...)
 			for _, column in pairs(line.Columns) do
 				column:SetTextColor(EasyChat.TextColor)
+				column:SetFont("ECSettingsFont")
 			end
 
 			return line
