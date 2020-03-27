@@ -12,6 +12,8 @@ function PANEL:Init()
 	self:SetHTML([[<html>
 		<body>
 			<style>
+				@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap');
+
 				html, body {
 					padding: 0;
 					margin: 0;
@@ -29,7 +31,7 @@ function PANEL:Init()
 					width: 100%;
 					border: none;
 					padding-left: 5px;
-					padding-top: 5px;
+					padding-top: 4px;
 					font-family: 'Roboto', sans-serif;
 					resize: none;
 				}

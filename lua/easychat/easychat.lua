@@ -464,6 +464,11 @@ if CLIENT then
 
 		EasyChat.GUI.ChatBox:Hide()
 
+		-- when easychat first initializes this doesnt exists
+		if IsValid(EasyChat.Settings) then
+			EasyChat.Settings:SetVisible(false)
+		end
+
 		safe_hook_run("ECClosed", LocalPlayer())
 
 		net.Start(NET_SET_TYPING)
@@ -1641,6 +1646,12 @@ if CLIENT then
 				close_chatbox()
 				gui.HideGameUI()
 			end
+		end)
+
+		hook.Add("GUIMousePressed", TAG, function(mouse_code)
+			if mouse_code ~= MOUSE_LEFT then return end
+			if not EasyChat.IsOpened() then return end
+			close_chatbox()
 		end)
 
 		-- we do that here so its available from modules
