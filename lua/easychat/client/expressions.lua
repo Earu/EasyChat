@@ -59,9 +59,6 @@ local expr_env = {
 
 	clamp = math.Clamp,
 	pow = math.pow,
-
-	t = RealTime,
-	time = RealTime,
 }
 
 local blacklist = { "repeat", "until", "function", "end", "\"", "\'" }
@@ -80,6 +77,11 @@ local function compile_expression(str)
 	for k,v in pairs(expr_env) do functions[k] = v end
 
 	functions.select = select
+
+	local start_time = os.clock()
+	functions.t = function() return os.clock() - start_time end
+	functions.time = function() return os.clock() - start_time end
+
 	str = "local IN = select(1, ...) return " .. str
 
 	local compiled, func = pcall(CompileString, str, "easychat_expression", false)
