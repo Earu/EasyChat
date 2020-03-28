@@ -337,7 +337,7 @@ if CLIENT then
 			end
 		end
 
-		return 1
+		return 0
 	end
 
 	local function open_chatbox(is_team, requested_mode)
@@ -375,10 +375,11 @@ if CLIENT then
 		EasyChat.GUI.ChatBox:Show()
 		EasyChat.GUI.ChatBox:MakePopup()
 
-		if EC_GLOBAL_ON_OPEN:GetBool() and EasyChat.GetActiveTab().Name == "Global" then
+		local active_tab = EasyChat.GetActiveTab()
+		if EC_GLOBAL_ON_OPEN:GetBool() and active_tab.Name == "Global" then
 			EasyChat.GUI.TextEntry:RequestFocus()
 		else
-			local cur_tab = EasyChat.GetActiveTab().Tab
+			local cur_tab = active_tab.Tab
 			if IsValid(cur_tab.FocusOn) then
 				cur_tab.FocusOn:RequestFocus()
 			end
