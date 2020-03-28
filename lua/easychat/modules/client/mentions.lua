@@ -21,6 +21,8 @@ hook.Add("OnPlayerChat", "EasyChatModuleMention", function(ply, msg, is_team, is
 	if not IsValid(lp) then return end
 	if ply == lp then return end
 
+	local original_msg = msg
+
 	msg = msg:lower()
 	local undec_nick = undecorate_nick(lp:Nick()):PatternSafe()
 	if not msg:match("^[%!%.%/]") and msg:match(undec_nick) then
@@ -57,7 +59,7 @@ hook.Add("OnPlayerChat", "EasyChatModuleMention", function(ply, msg, is_team, is
 		b = b and tonumber(b) or 66
 
 		table.insert(msg_components, Color(r, g, b))
-		table.insert(msg_components, msg)
+		table.insert(msg_components, original_msg)
 		chat.AddText(unpack(msg_components))
 
 		return true -- hide chat message
