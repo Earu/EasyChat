@@ -14,6 +14,11 @@ local LOOKUP_TABLE_URL = "https://api.frankerfacez.com/v1/set/global"
 local lookup = {}
 http.Fetch(LOOKUP_TABLE_URL, function(body)
 	local tbl = util.JSONToTable(body)
+	if not tbl then
+		EasyChat.Print(true, "Could not get the lookup table for FFZ")
+		return
+	end
+
 	for _, set in pairs(tbl.sets) do
 		for _, v in pairs(set.emoticons) do
 			local name = v.name
@@ -21,7 +26,7 @@ http.Fetch(LOOKUP_TABLE_URL, function(body)
 			cache[name] = UNCACHED
 		end
 	end
-end, function(err)
+end, function()
 	EasyChat.Print(true, "Could not get the lookup table for FFZ")
 end)
 
