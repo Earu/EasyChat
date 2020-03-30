@@ -1121,9 +1121,9 @@ end
 function chathud:NormalizeString(str, is_nick)
 	if not str or type(str) ~= "string" then return "" end
 
-	-- valve allows these in player names
 	if is_nick then
-		str = str:gsub("[\n\t]", "")
+		-- this will effectively remove all weird non displayable unicode oddities
+		str = EasyChat.Transliterator:Transliterate(str)
 	end
 
 	for _, part in pairs(self.Parts) do
