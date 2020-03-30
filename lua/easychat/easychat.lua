@@ -277,6 +277,7 @@ if CLIENT then
 	EasyChat.Mode = 0
 	EasyChat.Modes = { [0] = default_chat_mode }
 	EasyChat.Expressions = include("easychat/client/expressions.lua")
+	EasyChat.Transliterator = include("easychat/client/unicode_transliterator.lua")
 	EasyChat.ChatHUD = include("easychat/client/chathud.lua")
 	EasyChat.MacroProcessor = include("easychat/client/macro_processor.lua")
 	EasyChat.ModeCount = 0
@@ -674,6 +675,7 @@ if CLIENT then
 		EasyChat.Mode = 0
 		EasyChat.Modes = { [0] = default_chat_mode }
 		EasyChat.Expressions = include("easychat/client/expressions.lua")
+		EasyChat.Transliterator = include("easychat/client/unicode_transliterator.lua")
 		EasyChat.ChatHUD = include("easychat/client/chathud.lua")
 		EasyChat.MacroProcessor = include("easychat/client/macro_processor.lua")
 		EasyChat.ModeCount = 0
