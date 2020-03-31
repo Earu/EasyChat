@@ -36,6 +36,8 @@ function surface.CreateFont(fn, tbl)
 		badfonts[#badfonts + 1] = {font, debug.getinfo(2)}
 	end
 
+	tbl.extended = true -- why would you want ascii only?
+
 	local r = surface_CreateFont(fn, tbl)
 	local fnl = fn:lower()
 	created[fnl] = false
