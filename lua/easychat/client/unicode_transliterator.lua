@@ -1,5 +1,6 @@
 local LOOKUP_URL = "https://gist.githubusercontent.com/Earu/c53daf7627c105d057a5a67b79471033/raw/0fbcafb3538af6663ae558c70b0b4be1f4e61e56/transliteration_lookup.json"
 local LOOKUP_PATH = "easychat/transliteration_lookup.json"
+local MAX_SUPPORTED_UNICODE = 0xFFFF -- gmod cannot render anything above this codepoint
 
 local transliterator = {}
 
@@ -43,9 +44,9 @@ else
 	end)
 end
 
-function transliterator:IsAscii(input)
+function transliterator:IsRenderable(input)
 	for _, code_point in utf8.codes(input) do
-		if code_point >= 0x80 then
+		if code_point > MAX_SUPPORTED_UNICODE then
 			return false
 		end
 	end
@@ -61,12 +62,12 @@ function transliterator:Transliterate(input)
 	input = utf8.force(input)
 
 	-- if no character is "special" just return the input
-	if self:IsAscii(input) then return input end
+	if self:IsRenderable(input) then return input end
 	if not self.Ready then return input end
 
 	local output = ""
 	for _, code_point in utf8.codes(input) do
-		if code_point < 0x80 then
+		if code_point <= MAX_SUPPORTED_UNICODE then
 			output = output .. utf8.char(code_point)
 		else
 			local high = bit.rshift(code_point, 8)
