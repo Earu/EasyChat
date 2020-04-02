@@ -64,7 +64,7 @@ if SERVER then
 	util.AddNetworkString(NET_SET_TYPING)
 
 	function EasyChat.SendGlobalMessage(ply, str, is_team, is_local)
-		local msg = gamemode.Call("PlayerSay", ply, str, is_team)
+		local msg = gamemode.Call("PlayerSay", ply, str, is_team, is_local)
 		if type(msg) ~= "string" or msg:Trim() == "" then return end
 
 		local filter = {}
