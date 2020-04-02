@@ -16,6 +16,11 @@ local lookup = {}
 local lookup_gif = {}
 http.Fetch(LOOKUP_TABLE_URL, function(body)
     local tbl = util.JSONToTable(body)
+    if not tbl then
+        EasyChat.Print(true, "Could not get the lookup table for BTTV")
+        return
+    end
+
     for _, v in ipairs(tbl.emotes) do
         local name = v.code:Replace(":","_")
         if v.imageType == "gif" then
