@@ -162,6 +162,11 @@ local cache = {}
 local discord_lookup = {}
 http.Fetch(DISCORD_LOOKUP_TABLE_URL, function(body)
 	local tbl = util.JSONToTable(body)
+	if not tbl then
+		EasyChat.Print(true, "Could not get the lookup table for twemojis")
+		return
+	end
+
 	for _, v in ipairs(tbl) do
 		local name = v.name
 		discord_lookup[name] = v.codes:lower():Replace(" ", "-")
