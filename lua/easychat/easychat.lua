@@ -323,7 +323,7 @@ if CLIENT then
 
 	function EasyChat.GetDefaultBounds()
 		local coef_w, coef_h = (ScrW() / 2560), (ScrH() / 1440)
-		return 50 * coef_w, ScrH() - (320 + (coef_h * 250)), 550, 320
+		return 50 * coef_w, ScrH() - (320 + (coef_h * 300)), 550, 320
 	end
 
 	local function get_secondary_chat_mode()
