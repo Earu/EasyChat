@@ -7,8 +7,8 @@ if SERVER then
 		if not ply:IsAdmin() then return end
 
 		local msg = net.ReadString()
-		msg = msg:Trim()
-		if msg == "" then return end
+		msg = EasyChat.ExtendedStringTrim(msg)
+		if #msg == 0 then return end
 
 		local admins = {}
 		for _, p in ipairs(player.GetAll()) do
@@ -147,9 +147,10 @@ if CLIENT then
 					chat.Close()
 					gui.HideGameUI()
 				elseif code == KEY_ENTER or code == KEY_PAD_ENTER then
-					self:SetText(self:GetText():Replace("╚​", ""))
-					if self:GetText():Trim() ~= "" then
-						frame:SendMessage(self:GetText():sub(1, 3000))
+					local text = EasyChat.ExtendedStringTrim(self:GetText())
+					self:SetText(text)
+					if #text > 0 then
+						frame:SendMessage(text:sub(1, 3000))
 					end
 				end
 
@@ -158,7 +159,7 @@ if CLIENT then
 
 			if EC_HISTORY:GetBool() then
 				local history = EasyChat.ReadFromHistory("admin")
-				if history:Trim() == "" then
+				if EasyChat.IsStringEmpty(history) then
 					EasyChat.AddText(self.RichText, "Welcome to the admin chat!")
 				else
 					self.RichText:AppendText(history) -- so we do not log twice
