@@ -342,11 +342,14 @@ if CLIENT then
 	end
 
 	local function open_chatbox(is_team, requested_mode)
+		if not EC_ENABLE:GetBool() then return false end
+		if EasyChat.IsOpened() then return true end
+
 		local ok = safe_hook_run("ECShouldOpen")
-		if ok == false then return end
+		if ok == false then return false end
 
 		ok = safe_hook_run("StartChat", is_team)
-		if ok == true then return end
+		if ok == true then return false end
 
 		if EC_GLOBAL_ON_OPEN:GetBool() then
 			EasyChat.OpenTab("Global")
@@ -395,7 +398,10 @@ if CLIENT then
 		net.Start(NET_SET_TYPING)
 		net.WriteBool(true)
 		net.SendToServer()
+
+		return true
 	end
+	EasyChat.Open = open_chatbox
 
 	local function save_chatbox_tabs_data()
 		local tabs = EasyChat.GUI.ChatBox.Scroller.Panels
@@ -477,6 +483,7 @@ if CLIENT then
 		net.WriteBool(false)
 		net.SendToServer()
 	end
+	EasyChat.Close = close_chatbox
 
 	function EasyChat.IsURL(str)
 		local patterns = {
