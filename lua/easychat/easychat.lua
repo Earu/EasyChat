@@ -6,6 +6,7 @@ local print = _G._print or _G.print -- epoe compat
 local NET_BROADCAST_MSG = "EASY_CHAT_BROADCAST_MSG"
 local NET_SEND_MSG = "EASY_CHAT_RECEIVE_MSG"
 local NET_SET_TYPING = "EASY_CHAT_START_CHAT"
+local NET_ADD_TEXT = "EASY_CHAT_ADD_TEXT"
 
 local PLY = FindMetaTable("Player")
 local TAG = "EasyChat"
@@ -62,6 +63,13 @@ if SERVER then
 	util.AddNetworkString(NET_SEND_MSG)
 	util.AddNetworkString(NET_BROADCAST_MSG)
 	util.AddNetworkString(NET_SET_TYPING)
+	util.AddNetworkString(NET_ADD_TEXT)
+
+	function EasyChat.PlayerAddText(ply, ...)
+		net.Start(NET_ADD_TEXT)
+		net.WriteTable({ ... })
+		net.Send(ply)
+	end
 
 	function EasyChat.SendGlobalMessage(ply, str, is_team, is_local)
 		local msg = gamemode.Call("PlayerSay", ply, str, is_team, is_local)
@@ -104,12 +112,71 @@ if SERVER then
 		print(ply:Nick():gsub("<.->", "") .. ": " .. msg) -- shows in server console
 	end
 
+	local SPAM_STEP = 1 -- how many messages can be sent per second after burst
+	local SPAM_MAX = 5 -- max amount of messages per burst
+
+	local spam_watch_lookup = setmetatable({}, { __mode = "k" })
+	local function get_message_cost(msg, is_same_msg)
+		local _, real_msg_len = msg:gsub("[^\128-\193]", "")
+		if real_msg_len > 1024 then
+			return SPAM_MAX - 1
+		else
+			local is_same_msg_spam = is_same_msg and real_msg_len > 128
+			return is_same_msg_spam and 3 or 0
+		end
+	end
+
+	local function spam_watch(ply, msg)
+		local time = RealTime()
+		local last_msg = spam_watch_lookup[ply] or { Time = 0, Message = "" }
+
+		-- if the last_msg.Time is inferior to current time it means the player is not
+		-- being rate-limited (spamming) update its time to the current one
+		if last_msg.Time < time then
+			last_msg.Time = time
+		end
+
+		local is_same_msg = last_msg.Message == msg
+		last_msg.Message = msg
+
+		-- compute what time is appropriate for the current message
+		local new_msg_time = last_msg.Time + SPAM_STEP + get_message_cost(msg, is_same_msg)
+
+		-- if the computed time is superior to our limit then its spam, rate-limit the player
+		if new_msg_time > time + SPAM_MAX then
+			-- we dont want the rate limit to last forever, clamp the max new time
+			local max_new_time = time + SPAM_MAX + 3
+			if new_msg_time > max_new_time then
+				new_msg_time = max_new_time
+			end
+
+			spam_watch_lookup[ply] = { Time = new_msg_time, Message = msg }
+			return true
+		end
+
+		spam_watch_lookup[ply] = { Time = new_msg_time, Message = msg }
+		return false
+	end
+	EasyChat.SpamWatch = spam_watch
+
 	net.Receive(NET_SEND_MSG, function(len, ply)
 		local msg = net.ReadString()
 		local is_team = net.ReadBool()
 		local is_local = net.ReadBool()
 
-		EasyChat.SendGlobalMessage(ply, msg:sub(1, MAX_CHARS), is_team, is_local)
+		-- we sub the message len clientside if we receive something bigger here
+		-- it HAS to be malicious
+		if #msg > MAX_CHARS then
+			EasyChat.PlayerAddText(ply, Color(255, 0, 0), ("NOT SENT (TOO BIG): %s..."):format(msg:sub(1, 100)))
+			return
+		end
+
+		if spam_watch(ply, msg) then
+			EasyChat.PlayerAddText(ply, Color(255, 0, 0), ("NOT SENT (SPAM): %s..."):format(msg:sub(1, 100)))
+			return
+		end
+
+		EasyChat.SendGlobalMessage(ply, msg, is_team, is_local)
 	end)
 
 	net.Receive(NET_SET_TYPING, function(len, ply)
@@ -698,7 +765,7 @@ if CLIENT then
 		queued_upload = nil
 
 		function EasyChat.SendGlobalMessage(msg, is_team, is_local)
-			msg = EasyChat.MacroProcessor:ProcessString(msg:sub(1, MAX_CHARS))
+			msg = EasyChat.MacroProcessor:ProcessString(msg)
 
 			net.Start(NET_SEND_MSG)
 			net.WriteString(msg)
@@ -1893,6 +1960,11 @@ if CLIENT then
 		gamemode.Call("OnPlayerChat", ply, msg, is_team, dead, is_local)
 	end)
 
+	net.Receive(NET_ADD_TEXT, function()
+		local args = net.ReadTable()
+		chat.AddText(unpack(args))
+	end)
+
 	function EasyChat.AddNameTags(ply, msg_components)
 		msg_components = msg_components or {}
 
@@ -1939,6 +2011,16 @@ if CLIENT then
 	hook.Add("Initialize", TAG, function()
 		if EC_ENABLE:GetBool() then
 			EasyChat.Init()
+		end
+
+		-- we're making this the "default" behavior if people introduce hooks that change this
+		-- it shouldnt prevent it (ex: custom networking with different limits)
+		function GAMEMODE:ECShouldSendMessage(msg)
+			if #msg > MAX_CHARS then
+				surface.PlaySound("buttons/button11.wav")
+				EasyChat.GUI.TextEntry:TriggerBlink("TOO BIG")
+				return false
+			end
 		end
 
 		-- this is for the best
