@@ -9,8 +9,8 @@ if SERVER then
 		local target = net.ReadEntity()
 		local msg = net.ReadString()
 
-		msg = msg:Trim()
-		if not IsValid(target) or msg == "" then return end
+		msg = EasyChat.ExtendedStringTrim(msg)
+		if not IsValid(target) or #msg == 0 then return end
 
 		net.Start(EASYCHAT_DM)
 		net.WriteEntity(ply)
@@ -78,9 +78,9 @@ if CLIENT then
 					chat.Close()
 					gui.HideGameUI()
 				elseif code == KEY_ENTER or code == KEY_PAD_ENTER then
-					self:SetText(string.Replace(self:GetText(), "╚​", ""))
-					if string.Trim(self:GetText()) ~= "" then
-						frame:SendMessage(string.sub(self:GetText(), 1, 3000))
+					local text = EasyChat.ExtendedStringTrim(self:GetText())
+					if #text > 0 then
+						frame:SendMessage(text:sub(1, 3000))
 					end
 				end
 
