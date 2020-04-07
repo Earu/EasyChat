@@ -30,6 +30,31 @@ function EasyChat.Print(is_err, ...)
 	MsgC(color_print_head, "[EasyChat] ⮞ ", body_color, table.concat(args), "\n")
 end
 
+local ZERO_WIDTH_SPACE = utf8.char(0x200b)
+local ZERO_WIDTH_NON_JOINER = utf8.char(0x200c)
+local ZERO_WIDTH_JOINER = utf8.char(0x200d)
+local WORD_JOINER = utf8.char(0x2060)
+
+-- control_chars are newlines, tabs, etc...
+function EasyChat.ExtendedStringTrim(str, control_chars)
+	str = utf8.force(str)
+
+	if control_chars then
+		str = str:gsub("%c", "")
+	end
+
+	return str
+		:gsub(ZERO_WIDTH_SPACE, "")
+		:gsub(ZERO_WIDTH_JOINER, "")
+		:gsub(ZERO_WIDTH_NON_JOINER, "")
+		:gsub(WORD_JOINER, "")
+		:Trim()
+end
+
+function EasyChat.IsStringEmpty(str)
+	return #EasyChat.ExtendedStringTrim(str, true) == 0
+end
+
 local load_modules, get_modules = include("easychat/autoloader.lua")
 EasyChat.GetModules = get_modules -- maybe useful for modules?
 
@@ -73,7 +98,10 @@ if SERVER then
 
 	function EasyChat.SendGlobalMessage(ply, str, is_team, is_local)
 		local msg = gamemode.Call("PlayerSay", ply, str, is_team, is_local)
-		if type(msg) ~= "string" or msg:Trim() == "" then return end
+		if type(msg) ~= "string" then return end
+
+		msg = EasyChat.ExtendedStringTrim(msg)
+		if #msg == 0 then return end
 
 		local filter = {}
 		local broken_count = 1
@@ -603,7 +631,7 @@ if CLIENT then
 		text_entry:SetSize(180, 25)
 		text_entry:SetPos(10, 40)
 		text_entry.OnEnter = function(self)
-			if not can_be_empty and self:GetText():Trim() == "" then return end
+			if not can_be_empty and EasyChat.IsStringEmpty(self:GetText()) then return end
 
 			callback(self:GetText())
 			frame:Close()
@@ -615,7 +643,7 @@ if CLIENT then
 		btn:SetSize(100, 25)
 		btn:SetPos(50, 75)
 		btn.DoClick = function()
-			if not can_be_empty and text_entry:GetText():Trim() == "" then return end
+			if not can_be_empty and EasyChat.IsStringEmpty(text_entry:GetText()) == 0 then return end
 
 			callback(text_entry:GetText())
 			frame:Close()
@@ -1026,7 +1054,7 @@ if CLIENT then
 		local HISTORY_DIRECTORY = "easychat/history"
 		function EasyChat.SaveToHistory(name, content)
 			if not name or not content then return end
-			if content:Trim() == "" then return end
+			if EasyChat.IsStringEmpty(content) then return end
 
 			if not file.Exists(HISTORY_DIRECTORY, "DATA") then
 				file.CreateDir(HISTORY_DIRECTORY)
@@ -1356,7 +1384,7 @@ if CLIENT then
 			global_tab.RichText.HistoryName = "global"
 			if EC_HISTORY:GetBool() then
 				local history = EasyChat.ReadFromHistory("global")
-				if history:Trim() ~= "" then
+				if not EasyChat.IsStringEmpty(history) then
 					if EasyChat.UseDermaSkin then
 						local new_col = global_tab.RichText:GetSkin().text_normal
 						global_tab.RichText:InsertColorChange(new_col:Unpack())
@@ -1567,7 +1595,7 @@ if CLIENT then
 		function EasyChat.GUI.TextEntry:OnEnter()
 			if input.IsKeyDown(KEY_LSHIFT) or input.IsKeyDown(KEY_RSHIFT) then return end
 
-			local msg = self:GetText():Replace("╚​", ""):Trim()
+			local msg = EasyChat.ExtendedStringTrim(self:GetText())
 			self:SetText(msg)
 
 			if uploading and msg:match(UPLOADING_TEXT) and not queued_upload then
@@ -1601,7 +1629,7 @@ if CLIENT then
 
 			EasyChat.UploadToImgur(base64, function(url)
 				if not url then
-					local cur_text = self:GetText():Trim()
+					local cur_text = EasyChat.ExtendedStringTrim(self:GetText())
 					if cur_text:match(UPLOADING_TEXT) then
 						self:SetText(cur_text:Replace(UPLOADING_TEXT, ""))
 					end
@@ -1614,7 +1642,7 @@ if CLIENT then
 						queued_upload.Mode.Callback(msg)
 						queued_upload = nil
 					else
-						local cur_text = self:GetText():Trim()
+						local cur_text = EasyChat.ExtendedStringTrim(self:GetText())
 						if cur_text:match(UPLOADING_TEXT) then
 							self:SetText(cur_text:Replace(UPLOADING_TEXT, url))
 						end
@@ -1634,7 +1662,7 @@ if CLIENT then
 
 			if not EC_PEEK_COMPLETION:GetBool() then return end
 
-			if text:Trim() == "" then
+			if EasyChat.IsStringEmpty(text) then
 				self.TabCompletion = nil
 				self:SetCompletionText(nil)
 				return
