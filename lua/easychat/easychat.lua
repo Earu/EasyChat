@@ -348,6 +348,7 @@ if CLIENT then
 		local ok = safe_hook_run("ECShouldOpen")
 		if ok == false then return false end
 
+		is_team = is_team ~= nil and is_team or false
 		ok = safe_hook_run("StartChat", is_team)
 		if ok == true then return false end
 
@@ -365,6 +366,7 @@ if CLIENT then
 		if is_team then
 			EasyChat.Mode = get_secondary_chat_mode()
 		else
+			requested_mode = requested_mode or -1
 			if requested_mode ~= -1 then
 				EasyChat.Mode = requested_mode
 			else
