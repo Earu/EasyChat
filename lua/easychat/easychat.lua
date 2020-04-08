@@ -30,10 +30,30 @@ function EasyChat.Print(is_err, ...)
 	MsgC(color_print_head, "[EasyChat] ⮞ ", body_color, table.concat(args), "\n")
 end
 
-local ZERO_WIDTH_SPACE = utf8.char(0x200b)
-local ZERO_WIDTH_NON_JOINER = utf8.char(0x200c)
-local ZERO_WIDTH_JOINER = utf8.char(0x200d)
-local WORD_JOINER = utf8.char(0x2060)
+local trim_lookup = {
+	-- zero width chars
+	[utf8.char(0x200b)] = "", -- ZERO WIDTH SPACE
+	[utf8.char(0x200c)] = "", -- ZERO WIDTH NON JOINER
+	[utf8.char(0x200d)] = "", -- ZERO WIDTH JOINER
+	[utf8.char(0x2060)] = "", -- WORD JOINER
+
+	-- spaces
+	[utf8.char(0x00a0)] = " ",   -- NO BREAK SPACE
+	[utf8.char(0x2000)] = "  ",  -- EN QUAD
+	[utf8.char(0x2001)] = "   ", -- EM QUAD
+	[utf8.char(0x2002)] = "  ",  -- EN SPACE
+	[utf8.char(0x2003)] = "   ", -- EM SPACE
+	[utf8.char(0x2004)] = " ",   -- THREE PER EM SPACE
+	[utf8.char(0x2005)] = " ",   -- FOUR PER EM SPACE
+	[utf8.char(0x2006)] = " ",   -- SIX PER EM SPACE
+	[utf8.char(0x2007)] = "  ",  -- FIGURE SPACE
+	[utf8.char(0x2008)] = " ",   -- PUNCTUATION SPACE
+	[utf8.char(0x2009)] = " ",   -- THIN SPACE
+	[utf8.char(0x200a)] = " ",   -- HAIR SPACE
+	[utf8.char(0x2028)] = "\n",  -- LINE SEPARATOR
+	[utf8.char(0x205f)] = " ",   -- MEDIUM MATHEMATICAL SPACE
+	[utf8.char(0x3000)] = "   ", -- IDEOGRAPHIC SPACE
+}
 
 -- control_chars are newlines, tabs, etc...
 function EasyChat.ExtendedStringTrim(str, control_chars)
@@ -43,12 +63,7 @@ function EasyChat.ExtendedStringTrim(str, control_chars)
 		str = str:gsub("%c", "")
 	end
 
-	return str
-		:gsub(ZERO_WIDTH_SPACE, "")
-		:gsub(ZERO_WIDTH_JOINER, "")
-		:gsub(ZERO_WIDTH_NON_JOINER, "")
-		:gsub(WORD_JOINER, "")
-		:Trim()
+	return str:gsub(".*", trim_lookup):Trim()
 end
 
 function EasyChat.IsStringEmpty(str)
