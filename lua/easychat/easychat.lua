@@ -451,15 +451,15 @@ if CLIENT then
 		return 0
 	end
 
-	local function open_chatbox(is_team, requested_mode)
+	local function open_chatbox(is_secondary, requested_mode)
 		if not EC_ENABLE:GetBool() then return false end
 		if EasyChat.IsOpened() then return true end
 
 		local ok = safe_hook_run("ECShouldOpen")
 		if ok == false then return false end
 
-		is_team = is_team ~= nil and is_team or false
-		ok = safe_hook_run("StartChat", is_team)
+		is_secondary = is_secondary ~= nil and is_secondary or false
+		ok = safe_hook_run("StartChat", is_secondary)
 		if ok == true then return false end
 
 		if EC_GLOBAL_ON_OPEN:GetBool() then
@@ -473,7 +473,7 @@ if CLIENT then
 
 		EasyChat.GUI.TextEntry:SetText("")
 
-		if is_team then
+		if is_secondary then
 			EasyChat.Mode = get_secondary_chat_mode()
 		else
 			requested_mode = requested_mode or -1
