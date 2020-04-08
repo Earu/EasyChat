@@ -51,6 +51,8 @@ local trim_lookup = {
 	[utf8.char(0x2009)] = " ",   -- THIN SPACE
 	[utf8.char(0x200a)] = " ",   -- HAIR SPACE
 	[utf8.char(0x2028)] = "\n",  -- LINE SEPARATOR
+	[utf8.char(0x2029)] = "\n\n",-- PARAGRAPH SEPARATOR
+	[utf8.char(0x202f)] = " ",   -- NARROW NO BREAK SPACE
 	[utf8.char(0x205f)] = " ",   -- MEDIUM MATHEMATICAL SPACE
 	[utf8.char(0x3000)] = "   ", -- IDEOGRAPHIC SPACE
 }
@@ -63,7 +65,11 @@ function EasyChat.ExtendedStringTrim(str, control_chars)
 		str = str:gsub("%c", "")
 	end
 
-	return str:gsub(".*", trim_lookup):Trim()
+	for unicode, replacement in pairs(trim_lookup) do
+		str = str:gsub(unicode, replacement)
+	end
+
+	return str:Trim()
 end
 
 function EasyChat.IsStringEmpty(str)
