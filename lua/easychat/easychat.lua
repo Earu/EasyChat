@@ -1166,6 +1166,12 @@ if CLIENT then
 		end
 
 		function EasyChat.GlobalAddText(...)
+			-- somehow too early?
+			if not EasyChat.GUI or not EasyChat.ChatHUD then
+				EasyChat.Print(true, "attempting to AddText without a GUI??!!")
+				return { ... }
+			end
+
 			local data = {}
 
 			if EC_HUD_CUSTOM:GetBool() then
