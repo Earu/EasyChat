@@ -79,6 +79,14 @@ end
 local load_modules, get_modules = include("easychat/autoloader.lua")
 EasyChat.GetModules = get_modules -- maybe useful for modules?
 
+concommand.Add("easychat_show_modules", function()
+	MsgC(color_print_head, "---- EasyChat Modules ----\n")
+	for _, module in pairs(get_modules()) do
+		MsgC(color_print_good, ("%s\n"):format(module.Name))
+	end
+	MsgC(color_print_head, ("-"):rep(26) .. "\n")
+end, nil, "Shows all the loaded EasyChat modules")
+
 function PLY:ECIsEnabled()
 	return self:GetInfoNum("easychat_enable", 0) == 1
 end
