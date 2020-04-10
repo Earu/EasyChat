@@ -70,7 +70,7 @@ local function cache_nick(ply)
 end
 
 hook.Add("HUDPaint", "pac_in_editor", function()
-	for _, ply in ipairs(player.GetAll()) do
+	for _, ply in ipairs(player.GetHumans()) do
 		if ply ~= LocalPlayer() and ply:GetNW2Bool("pac_in_editor") then
 
 			if ply.pac_editor_cam_pos then
