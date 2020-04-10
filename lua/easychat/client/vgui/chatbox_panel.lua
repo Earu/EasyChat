@@ -49,6 +49,7 @@ local CHATBOX = {
 		self.BtnSettings:SetText("")
 		self.BtnSettings:SetImage("icon16/cog.png")
 		self.BtnSettings.DoClick = function()
+			if not EasyChat.OpenSettings then return end -- too early
 			EasyChat.OpenSettings()
 		end
 
