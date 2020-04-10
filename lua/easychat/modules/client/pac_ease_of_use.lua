@@ -43,4 +43,90 @@ hook.Add("ECHUDBoundsUpdate", "", function(x, y, w, h)
 	return pac_x + pac_w + 15, y, w, h
 end)
 
+surface.CreateFont("PacEditorFontOverride", {
+	size = 25,
+	font = "Tahoma",
+	weight = 1000,
+	extended = true,
+})
+
+local nick_cache = setmetatable({}, { __mode = "k" })
+local function cache_nick(ply)
+	local nick, team_color = ply:Nick(), team.GetColor(ply:Team())
+	local cache = nick_cache[ply]
+	if cache and cache.Nick == nick and cache.TeamColor == team_color then
+		return cache.Markup
+	end
+
+	local mk = ec_markup.AdvancedParse(("%s's PAC3 camera"):format(ply:Nick()), {
+		nick = true,
+		default_font = "PacEditorFontOverride",
+		default_color = color_white,
+		no_shadow = true,
+	})
+
+	nick_cache[ply] = { Markup = mk, Nick = nick, TeamColor = team_color }
+	return mk
+end
+
+hook.Add("HUDPaint", "pac_in_editor", function()
+	for _, ply in ipairs(player.GetAll()) do
+		if ply ~= LocalPlayer() and ply:GetNW2Bool("pac_in_editor") then
+
+			if ply.pac_editor_cam_pos then
+				if not IsValid(ply.pac_editor_camera) then
+					ply.pac_editor_camera = ClientsideModel("models/tools/camera/camera.mdl")
+					ply.pac_editor_camera:SetModelScale(0.25,0)
+					local ent = ply.pac_editor_camera
+					ply:CallOnRemove("pac_editor_camera", function()
+						SafeRemoveEntity(ent)
+					end)
+				end
+
+				local ent = ply.pac_editor_camera
+				local dt = math.Clamp(FrameTime() * 5, 0.0001, 0.5)
+
+				ent:SetPos(LerpVector(dt, ent:GetPos(), ply.pac_editor_cam_pos))
+				ent:SetAngles(LerpAngle(dt, ent:GetAngles(), ply.pac_editor_cam_ang))
+
+				local pos_3d = ent:GetPos()
+				local dist = pos_3d:Distance(EyePos())
+
+				if dist > 10 then
+					local pos_2d = pos_3d:ToScreen()
+					if pos_2d.visible then
+						local alpha = math.Clamp(pos_3d:Distance(EyePos()) * -1 + 500, 0, 500) / 500
+						if alpha > 0 then
+							local mk = cache_nick(ply)
+							surface.SetAlphaMultiplier(alpha)
+							mk:Draw(pos_2d.x, pos_2d.y)
+							surface.SetAlphaMultiplier(1)
+
+							if not ply.pac_editor_part_pos:IsZero() then
+								surface.SetDrawColor(255, 255, 255, alpha * 100)
+								local endpos = ply.pac_editor_part_pos:ToScreen()
+								if endpos.visible then
+									surface.DrawLine(pos_2d.x, pos_2d.y, endpos.x, endpos.y)
+								end
+							end
+						end
+					end
+				end
+			end
+
+			local pos_3d = ply:NearestPoint(ply:EyePos()) + Vector(0,0,5)
+			local alpha = math.Clamp(pos_3d:Distance(EyePos()) * -1 + 500, 0, 500)/500
+			if alpha > 0 then
+				local pos_2d = pos_3d:ToScreen()
+				draw.DrawText("In PAC3 Editor", "PacEditorFontOverride", pos_2d.x, pos_2d.y, Color(255, 255, 255, alpha * 255), 1)
+			end
+		else
+			if ply.pac_editor_camera then
+				SafeRemoveEntity(ply.pac_editor_camera)
+				ply.pac_editor_camera = nil
+			end
+		end
+	end
+end)
+
 return "PAC3 Ease of Use"
