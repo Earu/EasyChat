@@ -16,16 +16,16 @@ function panel:Think()
 	end
 end
 
-local nick_cache = {}
+local nick_cache = setmetatable({}, { __mode = "k" })
 local function cache_nick(ply)
 	local nick, team_color = ply:Nick(), team.GetColor(ply:Team())
-	local cache = nick_cache[nick]
-	if cache and cache.DefaultColor == team_color then
-		return cache
+	local cache = nick_cache[ply]
+	if cache and cache.Nick == nick and cache.TeamColor == team_color then
+		return cache.Markup
 	end
 
 	local mk = ec_markup.Parse(nick, nil, true, team_color, "EasyChatFont")
-	nick_cache[nick] = mk
+	nick_cache[ply] = { Markup = mk, Nick = nick, TeamColor = team_color }
 
 	return mk
 end

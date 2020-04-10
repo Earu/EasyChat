@@ -28,12 +28,12 @@ if CLIENT then
 	local PLY_COL = Color(255, 127, 127)
 	local EC_HISTORY = GetConVar("easychat_history")
 
-	local nick_cache = {}
+	local nick_cache = setmetatable({}, { __mode = "k" })
 	local function cache_nick(ply, maxwidth)
 		local nick, team_color = ply:Nick(), team.GetColor(ply:Team())
-		local cache = nick_cache[nick]
-		if cache and cache.DefaultColor == team_color then
-			return cache
+		local cache = nick_cache[ply]
+		if cache and cache.Nick == nick and cache.TeamColor == team_color then
+			return cache.Markup
 		end
 
 		local mk = ec_markup.AdvancedParse(nick, {
@@ -43,8 +43,8 @@ if CLIENT then
 			no_shadow = true,
 			maxwidth = maxwidth
 		})
-		nick_cache[nick] = mk
 
+		nick_cache[ply] = { Markup = mk, Nick = nick, TeamColor = team_color }
 		return mk
 	end
 
