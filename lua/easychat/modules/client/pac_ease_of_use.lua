@@ -43,13 +43,6 @@ hook.Add("ECHUDBoundsUpdate", "", function(x, y, w, h)
 	return pac_x + pac_w + 15, y, w, h
 end)
 
-surface.CreateFont("PacEditorFontOverride", {
-	size = 25,
-	font = "Tahoma",
-	weight = 1000,
-	extended = true,
-})
-
 local nick_cache = setmetatable({}, { __mode = "k" })
 local function cache_nick(ply)
 	local nick, team_color = ply:Nick(), team.GetColor(ply:Team())
@@ -60,7 +53,7 @@ local function cache_nick(ply)
 
 	local mk = ec_markup.AdvancedParse(("%s's PAC3 camera"):format(ply:Nick()), {
 		nick = true,
-		default_font = "PacEditorFontOverride",
+		default_font = "ChatFont",
 		default_color = color_white,
 		no_shadow = true,
 	})
@@ -118,7 +111,7 @@ hook.Add("HUDPaint", "pac_in_editor", function()
 			local alpha = math.Clamp(pos_3d:Distance(EyePos()) * -1 + 500, 0, 500)/500
 			if alpha > 0 then
 				local pos_2d = pos_3d:ToScreen()
-				draw.DrawText("In PAC3 Editor", "PacEditorFontOverride", pos_2d.x, pos_2d.y, Color(255, 255, 255, alpha * 255), 1)
+				draw.DrawText("In PAC3 Editor", "ChatFont", pos_2d.x, pos_2d.y, Color(255, 255, 255, alpha * 255), 1)
 			end
 		else
 			if ply.pac_editor_camera then
