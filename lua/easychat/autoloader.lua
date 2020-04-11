@@ -19,7 +19,7 @@ local function add_module(name, file_name, callback)
 end
 
 local function module_error(file_name, err, where)
-	ErrorNoHalt(err)
+	ErrorNoHalt(err .. "\n")
 	MsgC(color_default, "[EasyChat | " .. where .. "] ⮞ ", color_bad, "Couldn't load " .. file_name .. "\n")
 	module_failed_count = module_failed_count + 1
 end
