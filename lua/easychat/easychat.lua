@@ -106,12 +106,16 @@ local function safe_hook_run(hook_name, ...)
 	local succ, a, b, c, d, e, f = pcall(hook.Run, hook_name, ...)
 	if not succ then
 		EasyChat.Print(true, ("Hook callback error [%s]"):format(hook_name))
-		ErrorNoHalt(a)
+		ErrorNoHalt(a .. "\n")
 		return nil
 	end
 
 	return a, b, c, d, e, f
 end
+
+hook.Add("ECOpened", "test", function()
+	local a = 1 + "whatever"
+end)
 
 if SERVER then
 	util.AddNetworkString(NET_SEND_MSG)
@@ -1214,7 +1218,7 @@ if CLIENT then
 							table.Add(data, err)
 						end
 					else
-						ErrorNoHalt(err)
+						ErrorNoHalt(err .. "\n")
 					end
 				else
 					local str = tostring(arg)
