@@ -59,6 +59,7 @@ chathud:RegisterPart("c", color_hex_part)
 	Color modulation with HSV values.
 ]]-------------------------------------------------------------------------------
 local hsv_part = {
+	OkInNicks = false,
 	RunExpression = function() return 360, 1, 1 end
 }
 
@@ -94,6 +95,7 @@ chathud:RegisterPart("hsv", hsv_part)
 	Color modulation with HSV values on text background.
 ]]-------------------------------------------------------------------------------
 local bhsv_part = {
+	OkInNicks = false,
 	RunExpression = function() return 360, 1, 1 end
 }
 
