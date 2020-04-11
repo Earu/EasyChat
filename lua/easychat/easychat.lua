@@ -1163,16 +1163,20 @@ if CLIENT then
 						richtext:InsertColorChange(110, 247, 177)
 						append_text(richtext, "???")
 					else
-						if EC_USE_ME:GetBool() and arg == LocalPlayer() then
+						local team_color = EC_PLAYER_COLOR:GetBool() and team.GetColor(arg:Team()) or color_white
+						richtext:InsertColorChange(team_color.r, team_color.g, team_color.b, 255)
+
+						local nick = ec_markup and ec_markup.Parse(arg:Nick(), nil, true):GetText() or arg:Nick()
+						if EC_PLAYER_PASTEL:GetBool() then
+							local pastel_color = EasyChat.PastelizeNick(nick)
+							richtext:InsertColorChange(pastel_color.r, pastel_color.g, pastel_color.b, 255)
+						end
+
+						local lp = LocalPlayer()
+						if IsValid(lp) and lp == arg and EC_USE_ME:GetBool() then
 							append_text(richtext, "me")
 						else
-							-- this can happen if the function is ran early
-							if ec_markup then
-								local ply_nick = ec_markup.Parse(arg:Nick()):GetText()
-								append_text(richtext, ply_nick)
-							else
-								append_text(richtext, arg:Nick())
-							end
+							append_text(richtext, nick)
 						end
 					end
 				elseif type(arg) == "table" then
