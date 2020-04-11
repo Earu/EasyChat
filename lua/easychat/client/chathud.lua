@@ -1305,6 +1305,52 @@ end
 --[[-----------------------------------------------------------------------------
 	Input into ChatHUD
 ]]-------------------------------------------------------------------------------
+local EC_PLAYER_PASTEL = GetConVar("easychat_pastel")
+local EC_USE_ME = GetConVar("easychat_use_me")
+
+function chathud:AddText(...)
+	local args = { ... }
+	self:NewLine()
+
+	for _, arg in ipairs(args) do
+		local t = type(arg)
+		if t == "string" then
+			self:AppendText(arg)
+		elseif t == "Player" then
+			if not IsValid(arg) then
+				self:InsertColorChange(110, 247, 177)
+				self:AppendText("???")
+			else
+				local team_col = team.GetColor(arg:Team())
+				self:InsertColorChange(team_col.r, team_col.g, team_col.b)
+
+				if EC_PLAYER_PASTEL:GetBool() and ec_markup then
+					local nick = ec_markup.Parse(arg:Nick(), nil, true):GetText()
+					local pastel_col = EasyChat.PastelizeNick(nick)
+					self:InsertColorChange(pastel_col.r, pastel_col.g, pastel_col.b)
+				end
+
+				local lp = LocalPlayer()
+				if IsValid(lp) and lp == arg and EC_USE_ME:GetBool() then
+					self:AppendNick("me")
+				else
+					self:AppendNick(arg:Nick())
+				end
+			end
+
+			self:PushPartComponent("stop")
+		elseif t == "table" and arg.r and arg.g and arg.b then
+			self:InsertColorChange(arg.r, arg.g, arg.b)
+		else
+			arg = tostring(arg)
+			self:AppendText(arg)
+		end
+	end
+
+	self:PushPartComponent("stop")
+	self:InvalidateLayout()
+end
+
 function chathud:AppendText(txt)
 	self:PushString(txt, false)
 end
