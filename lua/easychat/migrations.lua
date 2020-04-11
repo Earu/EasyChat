@@ -8,7 +8,7 @@ for _, f in pairs(files) do
 	if timestamp then
 		table.insert(migrations, { timestamp, file_path })
 	else
-		local err = ("[ECMigrations] > migration \'%s\' did not have a timestamp and was discarded"):format(f)
+		local err = ("[ECMigrations] > migration \'%s\' did not have a timestamp and was discarded\n"):format(f)
 		ErrorNoHalt(err)
 	end
 end
