@@ -1047,8 +1047,8 @@ if CLIENT then
 			return math.fmod(counter, 4294967291) -- 2^32 - 5: Prime (and different from the prime in the loop)
 		end
 
-		local function pastelize_nick(nick, small_seed)
-			local hue = string_hash(nick) + (small_seed or 0)
+		function EasyChat.PastelizeNick(nick)
+			local hue = string_hash(nick)
 			local saturation, value = hue % 3 == 0, hue % 127 == 0
 			return HSVToColor(hue % 180 * 2, saturation and 0.3 or 0.6, value and 0.6 or 1)
 		end
@@ -1056,13 +1056,23 @@ if CLIENT then
 		EasyChat.SetAddTextTypeHandle("Player", function(ply)
 			local data = {}
 
+			if not IsValid(ply) then
+				global_insert_color_change(110, 247, 177)
+				global_append_text("???")
+
+				table.insert(data, Color(110, 247, 177))
+				table.insert(data, "???")
+
+				return data
+			end
+
 			local team_color = EC_PLAYER_COLOR:GetBool() and team.GetColor(ply:Team()) or color_white
 			global_insert_color_change(team_color.r, team_color.g, team_color.b, 255)
 			table.insert(data, team_color)
 
 			if EC_PLAYER_PASTEL:GetBool() and ec_markup then
 				local nick = ec_markup.Parse(ply:Nick(), nil, true):GetText()
-				local pastel_color = pastelize_nick(nick)
+				local pastel_color = EasyChat.PastelizeNick(nick)
 				global_insert_color_change(pastel_color.r, pastel_color.g, pastel_color.b, 255)
 				table.insert(data, pastel_color)
 			end
@@ -1149,15 +1159,20 @@ if CLIENT then
 				if type(arg) == "string" then
 					append_text_url(richtext, arg)
 				elseif type(arg) == "Player" then
-					if EC_USE_ME:GetBool() and arg == LocalPlayer() then
-						append_text(richtext, "me")
+					if not IsValid(arg) then
+						richtext:InsertColorChange(110, 247, 177)
+						append_text(richtext, "???")
 					else
-						-- this can happen if the function is ran early
-						if ec_markup then
-							local ply_nick = ec_markup.Parse(arg:Nick()):GetText()
-							append_text(richtext, ply_nick)
+						if EC_USE_ME:GetBool() and arg == LocalPlayer() then
+							append_text(richtext, "me")
 						else
-							append_text(richtext, arg:Nick())
+							-- this can happen if the function is ran early
+							if ec_markup then
+								local ply_nick = ec_markup.Parse(arg:Nick()):GetText()
+								append_text(richtext, ply_nick)
+							else
+								append_text(richtext, arg:Nick())
+							end
 						end
 					end
 				elseif type(arg) == "table" then
