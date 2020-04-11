@@ -19,9 +19,8 @@ local function add_module(name, file_name, callback)
 end
 
 local function module_error(file_name, err, where)
-	MsgC(color_default, "[EasyChat | " .. where .. "] ⮞ ", color_bad, "Couldn't load " .. file_name .. "\n")
 	ErrorNoHalt(err)
-
+	MsgC(color_default, "[EasyChat | " .. where .. "] ⮞ ", color_bad, "Couldn't load " .. file_name .. "\n")
 	module_failed_count = module_failed_count + 1
 end
 
@@ -32,22 +31,24 @@ local function load_modules(path)
 	for _, file_name in pairs((file.Find(path .. "*.lua", "LUA"))) do
 		AddCSLuaFile(path .. file_name)
 		local module = CompileFile(path .. file_name)
-		local succ, err = pcall(module)
-		if succ then
-			add_module(err, file_name, module)
-		else
+		local succ, module_name = xpcall(module, function(err)
 			module_error(file_name, err, "SH")
+		end)
+
+		if succ then
+			add_module(module_name, file_name, module)
 		end
 	end
 
 	if SERVER then
 		for _, file_name in pairs((file.Find(path .. "server/*.lua", "LUA"))) do
 			local module = CompileFile(path .. "server/" .. file_name)
-			local succ, err = pcall(module)
-			if succ then
-				add_module(err, file_name, module)
-			else
+			local succ, module_name = xpcall(module, function(err)
 				module_error(file_name, err, "SV")
+			end)
+
+			if succ then
+				add_module(module_name, file_name, module)
 			end
 		end
 
@@ -59,11 +60,12 @@ local function load_modules(path)
 	if CLIENT then
 		for _, file_name in pairs((file.Find(path .. "client/*.lua", "LUA"))) do
 			local module = CompileFile(path .. "client/" .. file_name)
-			local succ, err = pcall(module)
-			if succ then
-				add_module(err, file_name, module)
-			else
+			local succ, module_name = xpcall(module, function(err)
 				module_error(file_name, err, "CL")
+			end)
+
+			if succ then
+				add_module(module_name, file_name, module)
 			end
 		end
 	end

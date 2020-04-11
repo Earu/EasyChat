@@ -103,14 +103,14 @@ end
 -- lets not break the addon with bad third-party code but still notify the
 -- developers with an error
 local function safe_hook_run(hook_name, ...)
-	local succ, a, b, c, d, e, f, i, j, k = pcall(hook.Run, hook_name, ...)
+	local succ, a, b, c, d, e, f = pcall(hook.Run, hook_name, ...)
 	if not succ then
 		EasyChat.Print(true, ("Hook callback error [%s]"):format(hook_name))
 		ErrorNoHalt(a)
 		return nil
 	end
 
-	return a, b, c, d, e, f, i, j, k
+	return a, b, c, d, e, f
 end
 
 if SERVER then
