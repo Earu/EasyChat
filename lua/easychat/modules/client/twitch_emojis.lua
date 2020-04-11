@@ -27,9 +27,10 @@ for _, url in ipairs(LOOKUP_TABLES) do
         for _, v in ipairs(tbl.emotes) do
             -- skip shorthand emotes (for now? they'd have to be remapped)
             -- if we do plan to remap, do we also remap the turbo ones too?
-            if v.id < 15 then continue end
-            lookup[v.code] = v.id
-            cache[v.code] = UNCACHED
+            if v.id >= 15 then
+                lookup[v.code] = v.id
+                cache[v.code] = UNCACHED
+            end
         end
     end, function(err)
         EasyChat.Print(true, "Could not get the lookup table for Twitch")
