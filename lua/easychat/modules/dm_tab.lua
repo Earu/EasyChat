@@ -29,7 +29,6 @@ if CLIENT then
 	local EC_TIMESTAMPS = GetConVar("easychat_timestamps")
 	local EC_TIMESTAMPS_12 = GetConVar("easychat_timestamps_12")
 	local EC_HISTORY = GetConVar("easychat_history")
-	local PLY_COL = Color(255, 127, 127)
 
 	local DM_TAB = {
 		Chats = {},
@@ -204,7 +203,7 @@ if CLIENT then
 			local ply = line.Player
 			if IsValid(ply) then
 				local chat = self.Chats[ply]
-				EasyChat.AddText(chat.RichText, PLY_COL, LocalPlayer(), color_white, ": " .. message)
+				EasyChat.AddText(chat.RichText, LocalPlayer(), color_white, ": " .. message)
 				net.Start(EASYCHAT_DM)
 				net.WriteEntity(chat.Player)
 				net.WriteString(message)
@@ -218,7 +217,7 @@ if CLIENT then
 		Notify = function(self, chat, message)
 			chat.NewMessages = chat.NewMessages + 1
 			EasyChat.FlashTab("DM")
-			_G.chat.AddText(color_white, "[DM | ", PLY_COL, chat.Player, color_white, "] " .. message)
+			_G.chat.AddText(color_white, "[DM | ", chat.Player, color_white, "] " .. message)
 		end,
 		Think = function(self)
 			for _, chat in pairs(self.Chats) do
@@ -251,7 +250,7 @@ if CLIENT then
 		if not chat then
 			chat = dmtab:CreateChat(sender)
 		end
-		EasyChat.AddText(chat.RichText, PLY_COL, sender, color_white, ": " .. message)
+		EasyChat.AddText(chat.RichText, sender, color_white, ": " .. message)
 		if not EasyChat.IsOpened() then
 			dmtab:Notify(chat, message)
 		else

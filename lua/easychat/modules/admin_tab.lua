@@ -25,7 +25,6 @@ if SERVER then
 end
 
 if CLIENT then
-	local PLY_COL = Color(255, 127, 127)
 	local EC_HISTORY = GetConVar("easychat_history")
 
 	local nick_cache = setmetatable({}, { __mode = "k" })
@@ -197,7 +196,7 @@ if CLIENT then
 		local msg = net.ReadString()
 		if not IsValid(sender) then return end
 
-		EasyChat.AddText(admintab.RichText, team.GetColor(sender:Team()), sender, color_white, ": " .. msg)
+		EasyChat.AddText(admintab.RichText, sender, color_white, ": " .. msg)
 		if not EasyChat.IsOpened() then
 			admintab:Notify(sender, msg)
 		else
