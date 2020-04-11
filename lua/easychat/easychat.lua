@@ -113,10 +113,6 @@ local function safe_hook_run(hook_name, ...)
 	return a, b, c, d, e, f
 end
 
-hook.Add("ECOpened", "test", function()
-	local a = 1 + "whatever"
-end)
-
 if SERVER then
 	util.AddNetworkString(NET_SEND_MSG)
 	util.AddNetworkString(NET_BROADCAST_MSG)
