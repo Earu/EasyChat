@@ -178,6 +178,12 @@ local EDITOR = {
 		if file.Exists(file_path, "DATA") then
 			local json = file.Read(file_path, "DATA")
 			self.FontData = util.JSONToTable(json)
+
+			for prop_name, prop_default in pairs(default_font_data) do
+				if not self.FontData[prop_name] then
+					self.FontData[prop_name] = prop_default
+				end
+			end
 		else
 			self.FontData = default_font_data
 		end
