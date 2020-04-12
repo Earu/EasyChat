@@ -1118,12 +1118,39 @@ local function is_exception_pattern(str, patterns)
 	return false
 end
 
+-- transliterate only whats not handled (not in markup tags)
+local transliterate_tag_pattern = "<.-=%[?.-%]?>"
+local function transliterate(str)
+	local ret = ""
+
+	local old_end_pos = 1
+	local start_pos, end_pos = str:find(transliterate_tag_pattern)
+	local tag = str:sub(start_pos, end_pos)
+	while start_pos do
+		local str_chunk = str:sub(old_end_pos, start_pos - 1)
+		str_chunk = EasyChat.Transliterator:Transliterate(str_chunk)
+		ret = ret .. str_chunk .. tag
+
+		local tag_len = tag:len()
+		old_end_pos = start_pos + tag_len
+		start_pos, end_pos = str:find(transliterate_tag_pattern, start_pos + tag_len)
+
+		if start_pos then
+			tag = str:sub(start_pos, end_pos)
+		end
+	end
+
+	ret = ret .. EasyChat.Transliterator:Transliterate(str:sub(old_end_pos))
+
+	return ret
+end
+
 function chathud:NormalizeString(str, is_nick)
 	if not str or type(str) ~= "string" then return "" end
 
 	if is_nick then
-		-- this will effectively remove all weird non displayable unicode oddities
-		str = EasyChat.Transliterator:Transliterate(str)
+		-- remove new lines, tabs and uncessary spaces from names
+		str = str:gsub("[\r\n\t]", ""):Trim()
 	end
 
 	for _, part in pairs(self.Parts) do
@@ -1147,7 +1174,7 @@ function chathud:NormalizeString(str, is_nick)
 		end
 	end
 
-	return str
+	return transliterate(str)
 end
 
 function chathud:PushString(str, is_nick)
