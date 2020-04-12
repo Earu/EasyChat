@@ -1125,8 +1125,8 @@ local function transliterate(str)
 
 	local old_end_pos = 1
 	local start_pos, end_pos = str:find(transliterate_tag_pattern)
-	local tag = str:sub(start_pos, end_pos)
 	while start_pos do
+		local tag = str:sub(start_pos, end_pos)
 		local str_chunk = str:sub(old_end_pos, start_pos - 1)
 		str_chunk = EasyChat.Transliterator:Transliterate(str_chunk)
 		ret = ret .. str_chunk .. tag
@@ -1134,10 +1134,6 @@ local function transliterate(str)
 		local tag_len = tag:len()
 		old_end_pos = start_pos + tag_len
 		start_pos, end_pos = str:find(transliterate_tag_pattern, start_pos + tag_len)
-
-		if start_pos then
-			tag = str:sub(start_pos, end_pos)
-		end
 	end
 
 	ret = ret .. EasyChat.Transliterator:Transliterate(str:sub(old_end_pos))
