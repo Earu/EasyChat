@@ -63,7 +63,7 @@ local EDITOR = {
 
 		self.BaseFont:SetSize(width, 20)
 		self.BaseFont:SetPos(x, total_height)
-		self.BaseFont:SetValue(self.FontData.font)
+		self.BaseFont:SetValue(self.FontData.font or default_font_data.font)
 		total_height = total_height + self.BaseFont:GetTall() + 5
 
 		self.FontSize:SetSize(width, 20)
@@ -72,7 +72,7 @@ local EDITOR = {
 		self.FontSize:SetDecimals(0)
 		self.FontSize:SetMax(254)
 		self.FontSize:SetMin(5)
-		self.FontSize:SetValue(self.FontData.size)
+		self.FontSize:SetValue(self.FontData.size or default_font_data.size)
 		total_height = total_height + self.FontSize:GetTall() + 5
 
 		self.FontWeight:SetSize(width, 20)
@@ -81,7 +81,7 @@ local EDITOR = {
 		self.FontWeight:SetDecimals(0)
 		self.FontWeight:SetMax(1000)
 		self.FontWeight:SetMin(200)
-		self.FontWeight:SetValue(self.FontData.weight)
+		self.FontWeight:SetValue(self.FontData.weight or default_font_data.weight)
 		total_height = total_height + self.FontWeight:GetTall() + 5
 
 		self.FontScanlines:SetSize(width, 20)
@@ -90,7 +90,7 @@ local EDITOR = {
 		self.FontScanlines:SetDecimals(0)
 		self.FontScanlines:SetMin(0)
 		self.FontScanlines:SetMax(10)
-		self.FontScanlines:SetValue(self.FontData.scanlines)
+		self.FontScanlines:SetValue(self.FontData.scanlines or default_font_data.scanlines)
 		total_height = total_height + self.FontScanlines:GetTall() + 5
 
 		for prop_name, prop_default in pairs(props) do
