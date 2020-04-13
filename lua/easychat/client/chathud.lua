@@ -1146,7 +1146,7 @@ function chathud:NormalizeString(str, is_nick)
 
 	if is_nick then
 		-- remove new lines, tabs and uncessary spaces from names
-		str = str:gsub("[\r\n\t]", ""):Trim()
+		str = str:gsub("[\r\n\t]", "") --:Trim()
 	end
 
 	for _, part in pairs(self.Parts) do
