@@ -57,7 +57,7 @@ end
 -- Goal is to transliterate a unicode string "𝕊𝕙𝕦𝕝𝕝" to an ascii string "Shull"
 function transliterator:Transliterate(input)
 	if not input then return "" end
-	if input:Trim() == "" then return "" end
+	if #input:Trim() == 0 then return "" end
 
 	input = utf8.force(input)
 
