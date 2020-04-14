@@ -61,9 +61,7 @@ local function get_twitch_url(name)
 end
 
 local function get_twitch(name)
-    if not lookup[name] and not lookup_gif[name] then
-        return false
-    end
+    if not lookup[name] then return false end
 
     local c = cache[name]
     if c then
