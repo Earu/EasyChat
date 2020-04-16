@@ -174,7 +174,7 @@ if CLIENT then
 		end
 
 		local left_pos_set = false
-		local should_left_side = chat_x + (chat_w / 2) > (ScrW() / 2)
+		local should_left_side = EasyChat.IsOnRightSide()
 		if should_left_side then
 			pos_x = 0
 		end

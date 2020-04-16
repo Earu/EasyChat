@@ -252,7 +252,12 @@ if CLIENT then
 			self.CodeTabs:SetPos(0, 35)
 			self.CodeTabs:SetPadding(0)
 			self.CodeTabs:SetFadeTime(0)
-			self.CodeTabs.Paint = function() end -- remove ugly grey background when no tab is opened
+			self.CodeTabs.Paint = function(_, w, h)
+				surface.DisableClipping(true)
+				surface.SetDrawColor(EasyChat.TabColor)
+				surface.DrawRect(0, -10, w, h + 20)
+				surface.DisableClipping(false)
+			end
 			self.CodeTabs.tabScroller.Paint = function() end
 			self.CodeTabs.OnActiveTabChanged = function(_, _, new_tab)
 				new_tab.m_pPanel:RequestFocus()
