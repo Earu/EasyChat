@@ -9,7 +9,7 @@ function panel:Think()
 	local chat_x, chat_y, chat_w, _ = EasyChat.GUI.ChatBox:GetBounds()
 	local w = self:GetWide()
 
-	if chat_x + (chat_w / 2) > (ScrW() / 2) then
+	if EasyChat.IsOnRightSide() then
 		self:SetPos(chat_x - w, chat_y)
 	else
 		self:SetPos(chat_x + chat_w, chat_y)
