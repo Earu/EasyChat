@@ -77,6 +77,14 @@ local CHATBOX = {
 		self.BtnSettings:SetImage("icon16/cog.png")
 		self.BtnSettings.DoClick = function()
 			if not EasyChat.OpenSettings then return end -- too early
+			if not IsValid(EasyChat.Settings) then return end
+
+			-- if its already opened close it instead
+			if EasyChat.Settings:IsVisible() then
+				EasyChat.Settings:SetVisible(false)
+				return
+			end
+
 			EasyChat.OpenSettings()
 		end
 
