@@ -374,9 +374,9 @@ if CLIENT then
 	end
 
 	EasyChat.DefaultColors = {
-		outlay = Color(0, 0, 0, 250),
+		outlay = Color(0, 0, 0, 240),
 		outlayoutline = Color(0, 0, 0, 0),
-		tab = Color(0, 0, 0, 235),
+		tab = Color(0, 0, 0, 220),
 		taboutline = Color(0, 0, 0, 0),
 	}
 
