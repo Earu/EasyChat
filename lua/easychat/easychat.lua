@@ -373,19 +373,26 @@ if CLIENT then
 		return Color(tbl.r or 0, tbl.g or 0, tbl.b or 0, tbl.a or 0)
 	end
 
+	EasyChat.DefaultColors = {
+		outlay = Color(0, 0, 0, 250),
+		outlayoutline = Color(0, 0, 0, 0),
+		tab = Color(0, 0, 0, 235),
+		taboutline = Color(0, 0, 0, 0),
+	}
+
 	local function load_chatbox_colors()
 		local JSON_COLS = file.Read("easychat/colors.txt", "DATA")
 		if JSON_COLS then
 			local colors = util.JSONToTable(JSON_COLS)
 			EasyChat.OutlayColor = to_color(colors.outlay)
 			EasyChat.OutlayOutlineColor = to_color(colors.outlayoutline)
-			EasyChat.TabOutlineColor = to_color(colors.taboutline)
 			EasyChat.TabColor = to_color(colors.tab)
+			EasyChat.TabOutlineColor = to_color(colors.taboutline)
 		else
-			EasyChat.OutlayColor = Color(62, 62, 62, 235)
-			EasyChat.OutlayOutlineColor = Color(0, 0, 0, 0)
-			EasyChat.TabColor = Color(36, 36, 36, 235)
-			EasyChat.TabOutlineColor = Color(0, 0, 0, 0)
+			EasyChat.OutlayColor = EasyChat.DefaultColors.outlay
+			EasyChat.OutlayOutlineColor = EasyChat.DefaultColors.outlayoutline
+			EasyChat.TabColor = EasyChat.DefaultColors.tab
+			EasyChat.TabOutlineColor = EasyChat.DefaultColors.taboutline
 		end
 
 		EasyChat.TextColor = Color(255, 255, 255, 255)
@@ -448,6 +455,13 @@ if CLIENT then
 	function EasyChat.GetDefaultBounds()
 		local coef_w, coef_h = (ScrW() / 2560), (ScrH() / 1440)
 		return 50 * coef_w, ScrH() - (320 + (coef_h * 300)), 550, 320
+	end
+
+	function EasyChat.IsOnRightSide()
+		if not IsValid(EasyChat.GUI.ChatBox) then return false end
+
+		local x, _, w, _ = EasyChat.GUI.ChatBox:GetBounds()
+		return x + (w / 2) > (ScrW() / 2)
 	end
 
 	local function get_secondary_chat_mode()
@@ -1825,7 +1839,13 @@ if CLIENT then
 
 			settings:SetVisible(true)
 			settings:MakePopup()
-			settings:Center()
+
+			local x, y, w, _ = EasyChat.GUI.ChatBox:GetBounds()
+			if EasyChat.IsOnRightSide() then
+				settings:SetPos(x - settings:GetWide() - 5, y)
+			else
+				settings:SetPos(x + w + 5, y)
+			end
 
 			safe_hook_run("ECSettingsOpened")
 		end

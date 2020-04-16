@@ -160,12 +160,13 @@ local function create_default_settings()
 
 		if not EasyChat.UseDermaSkin then
 			local built_in_themes = {
-				Standard = {
+				Legacy = {
 					outlay        = Color(62, 62, 62, 235),
 					outlayoutline = Color(0, 0, 0, 0),
 					tab           = Color(36, 36, 36, 235),
 					taboutline    = Color(0, 0, 0, 0),
 				},
+				Standard = EasyChat.DefaultColors,
 				Crimson = {
 					outlay        = Color(62, 32, 32, 255),
 					outlayoutline = Color(0, 0, 0, 0),
@@ -282,10 +283,10 @@ local function create_default_settings()
 
 			local setting_reset_colors = settings:AddSetting(category_name, "action", "Reset Colors")
 			setting_reset_colors.DoClick = function()
-				local outlay_color = Color(62, 62, 62, 235)
-				local outlay_outline_color = Color(0, 0, 0, 0)
-				local tab_color = Color(36, 36, 36, 235)
-				local tab_outline_color = Color(0, 0, 0, 0)
+				local outlay_color = EasyChat.DefaultColors.outlay
+				local outlay_outline_color = EasyChat.DefaultColors.outlayoutline
+				local tab_color = EasyChat.DefaultColors.tab
+				local tab_outline_color = EasyChat.DefaultColors.taboutline
 
 				setting_outlay_color:SetColor(outlay_color)
 				setting_outlay_outline_color:SetColor(outlay_outline_color)

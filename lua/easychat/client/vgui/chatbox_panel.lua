@@ -1,3 +1,30 @@
+local surface_SetMaterial = _G.surface.SetMaterial
+local surface_SetDrawColor = _G.surface.SetDrawColor
+local surface_DrawTexturedRect = _G.surface.DrawTexturedRect
+local surface_DrawRect = _G.surface.DrawRect
+local surface_DrawOutlinedRect = _G.surface.DrawOutlinedRect
+
+local render_SetScissorRect = _G.render.SetScissorRect
+local render_UpdateScreenEffectTexture = _G.render.UpdateScreenEffectTexture
+
+local ScrW, ScrH = _G.ScrW, _G.ScrH
+
+local blur = Material("pp/blurscreen")
+local function blur_rect(x, y, w, h, layers, quality)
+    surface_SetMaterial(blur)
+    surface_SetDrawColor(255, 255, 255)
+
+	render_SetScissorRect(x, y, x + w, y + h, true)
+        for i = 1, layers do
+            blur:SetFloat("$blur", (i / layers) * quality)
+            blur:Recompute()
+
+            render_UpdateScreenEffectTexture()
+            surface_DrawTexturedRect(0, 0, ScrW(), ScrH())
+        end
+    render_SetScissorRect(0, 0, 0, 0, false)
+end
+
 local CHATBOX = {
 	Init = function(self)
 		local frame = self
@@ -160,11 +187,19 @@ local CHATBOX = {
 			self.BtnClose:SetTextColor(EasyChat.TextColor) --Color(200, 20, 20))
 			self.BtnMaxim:SetTextColor(EasyChat.TextColor) --Color(125, 125, 125))
 
+			hook.Add("HUDPaint", self, function()
+				if not self:IsVisible() then return end
+				if EasyChat.OutlayColor.a == 255 then return end
+
+				local x, y, w, h = self:GetBounds()
+				blur_rect(x + 6, y, w - 13, h - 5, 10, 2)
+			end)
+
 			self.Paint = function(self, w, h)
-				surface.SetDrawColor(EasyChat.OutlayColor)
-				surface.DrawRect(6, 0, w - 13, h - 5)
-				surface.SetDrawColor(EasyChat.OutlayOutlineColor)
-				surface.DrawOutlinedRect(6, 0, w - 13, h - 5)
+				surface_SetDrawColor(EasyChat.OutlayColor)
+				surface_DrawRect(6, 0, w - 13, 28)
+				surface_SetDrawColor(EasyChat.OutlayOutlineColor)
+				surface_DrawOutlinedRect(6, 0, w - 13, 28)
 			end
 
 			self.BtnMaxim.Paint = function() end
@@ -173,8 +208,8 @@ local CHATBOX = {
 
 			local no_color = Color(0, 0, 0, 0)
 			self.Tabs.Paint = function(self, w, h)
-				surface.SetDrawColor(no_color)
-				surface.DrawRect(0, 0, w, h)
+				surface_SetDrawColor(no_color)
+				surface_DrawRect(0, 0, w, h)
 			end
 		end
 	end,
