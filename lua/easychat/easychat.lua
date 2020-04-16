@@ -306,7 +306,7 @@ if CLIENT then
 	-- chathud
 	local EC_HUD_SMOOTH = CreateConVar("easychat_hud_smooth", "1", FCVAR_ARCHIVE, "Enables chat smoothing")
 	local EC_HUD_TTL = CreateConVar("easychat_hud_ttl", "16", FCVAR_ARCHIVE, "How long messages stay before vanishing")
-	local EC_HUD_FOLLOW = CreateConVar("easychat_hud_follow", "0", FCVAR_ARCHIVE, "Set the chat hud to follow the chatbox")
+	local EC_HUD_FOLLOW = CreateConVar("easychat_hud_follow", "1", FCVAR_ARCHIVE, "Set the chat hud to follow the chatbox")
 	local EC_HUD_TIMESTAMPS = CreateConVar("easychat_hud_timestamps", "0", FCVAR_ARCHIVE, "Display timestamps in the chat hud")
 	local EC_HUD_SH_CLEAR = CreateConVar("easychat_hud_sh_clear", "1", FCVAR_ARCHIVE, "Should \'sh\' clear the chat hud tags")
 	local EC_HUD_CUSTOM = CreateConVar("easychat_hud_custom", "1", FCVAR_ARCHIVE, "Use EasyChat's custom chat hud")
@@ -2023,6 +2023,9 @@ if CLIENT then
 				screen_resolution_changed(old_scrw, old_scrh)
 				old_scrw, old_scrh = scrw, scrh
 			end
+
+			-- dont show if we have follow on, and the gui is opened
+			if EC_HUD_FOLLOW:GetBool() and EasyChat.IsOpened() then return end
 
 			if EC_HUD_CUSTOM:GetBool() then
 				chathud:Draw()
