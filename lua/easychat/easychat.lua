@@ -483,7 +483,7 @@ if CLIENT then
 		if not EC_ENABLE:GetBool() then return false end
 		if EasyChat.IsOpened() then return true end
 
-		local ok = safe_hook_run("ECShouldOpen")
+		local ok = safe_hook_run("ECShouldOpen", is_secondary, requested_mode)
 		if ok == false then return false end
 
 		is_secondary = is_secondary ~= nil and is_secondary or false
