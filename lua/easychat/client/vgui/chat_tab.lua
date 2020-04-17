@@ -189,8 +189,9 @@ local MAIN_TAB = {
 					text_entry_fix:SetTall(self.TextEntry:GetTall() - 4)
 				end
 
+				local selection_color = Color(255, 0, 0, 127)
 				text_entry_fix.Paint = function()
-					self.TextEntry:DrawTextEntryText(EasyChat.TextColor, EasyChat.OutlayColor, EasyChat.TextColor)
+					self.TextEntry:DrawTextEntryText(EasyChat.TextColor, selection_color, EasyChat.TextColor)
 				end
 			end
 
