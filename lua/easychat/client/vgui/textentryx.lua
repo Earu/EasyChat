@@ -21,6 +21,11 @@ function PANEL:Init()
 					overflow: hidden;
 				}
 
+				::selection {
+					background-color: rgba(255, 0, 0, 0.5);
+					color: gray;
+				}
+
 				::-webkit-scrollbar {
 					display: none;
 				}
@@ -34,6 +39,10 @@ function PANEL:Init()
 					padding-top: 4px;
 					font-family: 'Roboto', sans-serif;
 					resize: none;
+					text-shadow: -1px 1px 4px #000,
+						1px 1px 4px #000,
+					  	1px -1px 4px #000;
+					  	-1px -1px 4px #000;
 				}
 			</style>
 			<textarea

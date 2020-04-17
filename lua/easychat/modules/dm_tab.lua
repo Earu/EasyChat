@@ -87,16 +87,14 @@ if CLIENT then
 			end
 
 			if not EasyChat.UseDermaSkin then
+				local selection_color = Color(255, 0, 0, 127)
 				self.TextEntry.Paint = function(self, w, h)
-					surface.SetDrawColor(EasyChat.TabColor)
-					surface.DrawRect(0, 0, w, h)
-
 					local border_color = EasyChat.TabOutlineColor.a == 0
 						and EasyChat.OutlayColor or EasyChat.TabOutlineColor
 					surface.SetDrawColor(border_color)
 					surface.DrawLine(0, 0, w, 0)
 
-					self:DrawTextEntryText(EasyChat.TextColor, EasyChat.OutlayColor, EasyChat.TextColor)
+					self:DrawTextEntryText(EasyChat.TextColor, selection_color, EasyChat.TextColor)
 				end
 
 				self.DMList.Paint = function(self, w, h)
