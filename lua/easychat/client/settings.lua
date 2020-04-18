@@ -35,6 +35,7 @@ local EC_LEGACY_TEXT = GetConVar("easychat_legacy_text")
 -- chathud
 local EC_HUD_FOLLOW = GetConVar("easychat_hud_follow")
 local EC_HUD_TTL = GetConVar("easychat_hud_ttl")
+local EC_HUD_FADELEN = GetConVar("easychat_hud_fadelen")
 local EC_HUD_SMOOTH = GetConVar("easychat_hud_smooth")
 local EC_HUD_TIMESTAMPS = GetConVar("easychat_hud_timestamps")
 local EC_HUD_SH_CLEAR = GetConVar("easychat_hud_sh_clear")
@@ -446,6 +447,8 @@ local function create_default_settings()
 			local default_duration = tonumber(EC_HUD_TTL:GetDefault())
 			EC_HUD_TTL:SetInt(default_duration)
 		end
+
+		settings:AddConvarSettings(category_name, "number", EC_HUD_FADELEN, "Message Fadeout Time", 5, 1)
 	end
 end
 
