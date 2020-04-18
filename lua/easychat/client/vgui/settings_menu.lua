@@ -139,12 +139,13 @@ function SETTINGS:CreateNumberSetting(panel, name, max, min)
 	number_wang:SetMax(max)
 	number_wang:SetMin(min)
 	number_wang:Dock(TOP)
+	number_wang:SetFont("ECSettingsFont")
 	number_wang:DockMargin(10, 10, 10, 10)
 
 	local title_color = EasyChat.UseDermaSkin and self:GetSkin().text_normal or EasyChat.TextColor
 	number_wang.PaintOver = function(self, w, h)
 		surface.DisableClipping(true)
-			surface.SetTextPos(0, -15)
+			surface.SetTextPos(0, -draw.GetFontHeight("ECSettingsFont") - 2)
 			surface.SetTextColor(title_color)
 			surface.SetFont("ECSettingsFont")
 			surface.DrawText(name)
@@ -168,11 +169,12 @@ function SETTINGS:CreateStringSetting(panel, name)
 	local text_entry = panel:Add("DTextEntry")
 	text_entry:Dock(TOP)
 	text_entry:DockMargin(10, 10, 10, 10)
+	text_entry:SetFont("ECSettingsFont")
 
 	local title_color = EasyChat.UseDermaSkin and self:GetSkin().text_normal or EasyChat.TextColor
 	text_entry.PaintOver = function(self, w, h)
 		surface.DisableClipping(true)
-			surface.SetTextPos(0, -15)
+			surface.SetTextPos(0, -draw.GetFontHeight("ECSettingsFont") - 2)
 			surface.SetTextColor(title_color)
 			surface.SetFont("ECSettingsFont")
 			surface.DrawText(name)
@@ -245,11 +247,13 @@ end
 local COLOR_SETTING = {
 	Init = function(self)
 		self.Color = Color(0, 0, 0, 0)
-		self:SetTall(30)
+		local font_height = draw.GetFontHeight("ECSettingsFont")
+
+		self:SetTall(font_height + 25)
 
 		self.Title = self:Add("DLabel")
 		self.Title:SetFont("ECSettingsFont")
-		self.Title:SetTall(10)
+		self.Title:SetTall(font_height)
 		self.Title:SetText("Unknown")
 		self.Title:Dock(TOP)
 		self.Title:DockMargin(0, 0, 0, 5)
@@ -298,6 +302,7 @@ local COLOR_SETTING = {
 		wang:Dock(LEFT)
 		wang:DockMargin(0, 0, 10, 0)
 		wang:SetSize(50, 30)
+		wang:SetFont("ECSettingsFont")
 
 		return wang
 	end,
