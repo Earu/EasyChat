@@ -317,6 +317,7 @@ if CLIENT then
 	local EC_HUD_POS_X = CreateConVar("easychat_hud_pos_x", "0", FCVAR_ARCHIVE, "Changes the position of the chat hud on the x axis")
 	local EC_HUD_POS_Y = CreateConVar("easychat_hud_pos_y", "0", FCVAR_ARCHIVE, "Changes the position of the chat hud on the y axis")
 	local EC_HUD_WIDTH = CreateConVar("easychat_hud_width", "0", FCVAR_ARCHIVE, "Changes the width of the chat hud")
+	local EC_HUD_FADELEN = CreateConVar("easychat_hud_fadelen", "1", FCVAR_ARCHIVE, "Changes the amount of time it takes for the hud to fade")
 
 	EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
 
