@@ -104,6 +104,7 @@ engine_fonts_info["dermadefaultbold"] = {
 
 local chathud = {
 	FadeTime = 16,
+	FadeTimeEnd = 3,
 	-- default bounds for EasyChat
 	Pos = { X = 0, Y = 0 },
 	Size = { W = 400, H = 0 },
@@ -119,6 +120,7 @@ local chathud = {
 }
 
 local EC_HUD_TTL = GetConVar("easychat_hud_ttl")
+local EC_HUD_FADELEN = GetConVar("easychat_hud_fadelen")
 local EC_HUD_SMOOTH = GetConVar("easychat_hud_smooth")
 
 chathud.FadeTime = EC_HUD_TTL:GetInt()
@@ -126,15 +128,13 @@ cvars.AddChangeCallback(EC_HUD_TTL:GetName(), function()
 	chathud.FadeTime = EC_HUD_TTL:GetInt()
 end)
 
-cvars.AddChangeCallback("easychat_hud_follow", function()
-	chathud:InvalidateLayout()
+chathud.FadeTimeEnd = math_clamp(EC_HUD_FADELEN:GetInt(), 0, 5)
+cvars.AddChangeCallback(EC_HUD_FADELEN:GetName(), function()
+	chathud.FadeTimeEnd = math_clamp(EC_HUD_FADELEN:GetInt(), 0, 5)
 end)
 
-local EC_HUD_FADELEN = GetConVar("easychat_hud_fadelen")
-chathud.FadeTimeEnd = EC_HUD_FADELEN:GetInt()
-
-cvars.AddChangeCallback(EC_HUD_FADELEN:GetName(), function()
-	chathud.FadeTimeEnd = EC_HUD_FADELEN:GetFloat()
+cvars.AddChangeCallback("easychat_hud_follow", function()
+	chathud:InvalidateLayout()
 end)
 
 function chathud:ApplyCustomFontSettings()
@@ -977,7 +977,7 @@ function base_line:Update()
 	if not self.Fading then return end
 
 	if self.LifeTime < RealTime() then
-		self.Alpha = math_max(self.Alpha + chathud.FadeTimeEnd - RealTime(), 0) * 255
+		self.Alpha = (math_max(self.LifeTime + self.HUD.FadeTimeEnd - RealTime(), 0) * 255) / self.HUD.FadeTimeEnd
 
 		if self.Alpha == 0 then
 			self.ShouldRemove = true
@@ -989,6 +989,7 @@ end
 function base_line:Draw(ctx)
 	self:Update()
 	ctx.Alpha = self.Alpha
+
 	for _, component in ipairs(self.Components) do
 		component:Draw(ctx)
 
