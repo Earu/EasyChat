@@ -68,7 +68,7 @@ end
 
 EasyChat.GUI.LocalPanel = panel
 
-hook.Add("ECDestroyed", "EasyChatModuleLocalUI", function()
+hook.Add("ECPostDestroy", "EasyChatModuleLocalUI", function()
 	if IsValid(panel) then panel:Remove() end
 end)
 
