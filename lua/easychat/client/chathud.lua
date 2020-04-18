@@ -119,10 +119,15 @@ local chathud = {
 }
 
 local EC_HUD_TTL = GetConVar("easychat_hud_ttl")
-chathud.FadeTime = EC_HUD_TTL:GetInt()
+local EC_HUD_SMOOTH = GetConVar("easychat_hud_smooth")
 
+chathud.FadeTime = EC_HUD_TTL:GetInt()
 cvars.AddChangeCallback(EC_HUD_TTL:GetName(), function()
 	chathud.FadeTime = EC_HUD_TTL:GetInt()
+end)
+
+cvars.AddChangeCallback("easychat_hud_follow", function()
+	chathud:InvalidateLayout()
 end)
 
 function chathud:ApplyCustomFontSettings()
@@ -249,18 +254,6 @@ local function utf8_sub(str, i, j)
 
 	return string_sub(str, start_byte, end_byte)
 end
-
-local EC_HUD_TTL = GetConVar("easychat_hud_ttl")
-local EC_HUD_SMOOTH = GetConVar("easychat_hud_smooth")
-
-chathud.FadeTime = EC_HUD_TTL:GetInt()
-cvars.AddChangeCallback("easychat_hud_ttl", function(_, _, new)
-	chathud.FadeTime = new
-end)
-
-cvars.AddChangeCallback("easychat_hud_follow", function()
-	chathud:InvalidateLayout()
-end)
 
 local default_part = {
 	Type = "default",
