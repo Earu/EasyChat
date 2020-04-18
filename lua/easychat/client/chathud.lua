@@ -977,8 +977,7 @@ function base_line:Update()
 	if not self.Fading then return end
 
 	if self.LifeTime < RealTime() then
-		self.Alpha = self.ShouldRemove and 0
-			or math_floor(math_max(self.Alpha - (RealFrameTime() * 100), 0))
+		self.Alpha = math_max(self.Alpha + 1 - RealTime(), 0) * 255
 
 		if self.Alpha == 0 then
 			self.ShouldRemove = true
