@@ -1,6 +1,6 @@
 if gmod.GetGamemode().Name ~= "DarkRP" then return "DarkRP Compat" end
 
-hook.Add("ECPostInitialize", "EasyChatModuleDarkRP", function()
+hook.Add("ECPostInitialized", "EasyChatModuleDarkRP", function()
 	local EC_ENABLE = GetConVar("easychat_enable")
 	local EC_TIMESTAMPS = GetConVar("easychat_timestamps")
 	local EC_TEAMS = GetConVar("easychat_teams")
