@@ -261,7 +261,11 @@ if SERVER then
 		end
 	end
 
-	hook.Add("Initialize", TAG, EasyChat.Init)
+	hook.Add("Initialize", TAG, function()
+		EasyChat.Init()
+		safe_hook_run("ECPostInitialized")
+	end)
+
 	hook.Add("PlayerCanSeePlayersChat", TAG, EasyChat.PlayerCanSeePlayersChat)
 end
 
@@ -2166,7 +2170,7 @@ if CLIENT then
 			return true
 		end
 
-		safe_hook_run("ECPostInitialize")
+		safe_hook_run("ECPostInitialized")
 	end)
 end
 
@@ -2208,7 +2212,7 @@ function EasyChat.Destroy()
 		end
 	end
 
-	safe_hook_run("ECDestroyed")
+	safe_hook_run("ECPostDestroy")
 end
 
 function EasyChat.Reload()
