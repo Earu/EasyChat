@@ -84,17 +84,13 @@ local function compile_expression(str)
 
 	str = "local IN = select(1, ...) return " .. str
 
-	local compiled, func = pcall(CompileString, str, "easychat_expression", false)
-	if not compiled then
+	local func = CompileString(str, "easychat_expression", false)
+	if isstring(func) then
 		return false, func
 	end
 
-	if type(func) == "string" then
-		return false, func
-	else
-		setfenv(func, functions)
-		return true, func
-	end
+	setfenv(func, functions)
+	return true, func
 end
 
 return { Compile = compile_expression }
