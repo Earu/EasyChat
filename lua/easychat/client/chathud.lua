@@ -130,6 +130,13 @@ cvars.AddChangeCallback("easychat_hud_follow", function()
 	chathud:InvalidateLayout()
 end)
 
+local EC_HUD_FADELEN = GetConVar("easychat_hud_fadelen")
+chathud.FadeTimeEnd = EC_HUD_FADELEN:GetInt()
+
+cvars.AddChangeCallback(EC_HUD_FADELEN:GetName(), function()
+	chathud.FadeTimeEnd = EC_HUD_FADELEN:GetFloat()
+end)
+
 function chathud:ApplyCustomFontSettings()
 	if not file.Exists(CUSTOM_FONT_SETTINGS_PATH, "DATA") then return end
 
@@ -970,8 +977,7 @@ function base_line:Update()
 	if not self.Fading then return end
 
 	if self.LifeTime < RealTime() then
-		self.Alpha = self.ShouldRemove and 0
-			or math_floor(math_max(self.Alpha - (RealFrameTime() * 100), 0))
+		self.Alpha = math_max(self.Alpha + chathud.FadeTimeEnd - RealTime(), 0) * 255
 
 		if self.Alpha == 0 then
 			self.ShouldRemove = true
