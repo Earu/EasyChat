@@ -136,9 +136,8 @@ end
 function macro_processor:CompileLuaMacro(macro)
 	macro.Env = table.Copy(macro_env)
 
-	local compiled, func = pcall(CompileString, macro.Value, "easychat_macro_processor", false)
-	if not compiled then return false end
-	if type(func) == "string" then return false end
+	local func = CompileString(macro.Value, "easychat_macro_processor", false)
+	if isstring(func) then return false end
 
 	setfenv(func, macro.Env)
 	macro.Run = func
