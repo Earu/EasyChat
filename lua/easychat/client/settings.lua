@@ -43,6 +43,7 @@ local EC_HUD_CUSTOM = GetConVar("easychat_hud_custom")
 local EC_HUD_POS_X = GetConVar("easychat_hud_pos_x")
 local EC_HUD_POS_Y = GetConVar("easychat_hud_pos_y")
 local EC_HUD_WIDTH = GetConVar("easychat_hud_width")
+local EC_HUD_FADELEN = GetConVar("easychat_hud_fadelen")
 
 local function create_option_set(settings, category_name, options)
 	for cvar, description in pairs(options) do
@@ -440,15 +441,17 @@ local function create_default_settings()
 
 		settings:AddSpacer(category_name)
 
-		settings:AddConvarSetting(category_name, "number", EC_HUD_TTL, "Message Duration", 60, 2)
+		settings:AddConvarSetting(category_name, "number", EC_HUD_TTL, "Message Life Time", 60, 2)
+		settings:AddConvarSetting(category_name, "number", EC_HUD_FADELEN, "Message Fadeout Time", 5, 1)
 
-		local setting_reset_duration = settings:AddSetting(category_name, "action", "Reset Duration")
+		local setting_reset_duration = settings:AddSetting(category_name, "action", "Reset Message Life/Fadeout Time")
 		setting_reset_duration.DoClick = function()
 			local default_duration = tonumber(EC_HUD_TTL:GetDefault())
 			EC_HUD_TTL:SetInt(default_duration)
-		end
 
-		settings:AddConvarSettings(category_name, "number", EC_HUD_FADELEN, "Message Fadeout Time", 5, 1)
+			local default_fadelen = tonumber(EC_HUD_FADELEN:GetDefault())
+			EC_HUD_FADELEN:SetInt(default_fadelen)
+		end
 	end
 end
 
