@@ -977,7 +977,7 @@ function base_line:Update()
 	if not self.Fading then return end
 
 	if self.LifeTime < RealTime() then
-		self.Alpha = math_max(self.Alpha + easychat.FadeTimeEnd - RealTime(), 0) * 255
+		self.Alpha = math_max(self.Alpha + chathud.FadeTimeEnd - RealTime(), 0) * 255
 
 		if self.Alpha == 0 then
 			self.ShouldRemove = true
