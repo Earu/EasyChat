@@ -476,8 +476,10 @@ local convar_type_callbacks = {
 	["number"] = function(self, panel, cvar, name, max, min)
 		local number_wang = self:CreateNumberSetting(panel, name, max, min)
 		number_wang:SetValue(cvar:GetInt())
-		number_wang.OnValueChanged = function(_, new_value)
-			cvar:SetInt(new_value)
+		number_wang.OnEnter = function(self)
+			local new_val = self:GetValue()
+			cvar:SetInt(new_val)
+			notification.AddLegacy(("Applied setting changes: %s -> %d"):format(cvar:GetName(), new_val), NOTIFY_HINT, 5)
 		end
 
 		self:AddChangeCallback(cvar, function()
@@ -491,7 +493,9 @@ local convar_type_callbacks = {
 		local text_entry = self:CreateStringSetting(panel, name)
 		text_entry:SetText(cvar:GetString())
 		text_entry.OnEnter = function(self)
-			cvar:SetString(self:GetText():Trim())
+			local new_val = self:GetText():Trim()
+			cvar:SetString(new_val)
+			notification.AddLegacy(("Applied setting changes: %s -> %s"):format(cvar:GetName(), new_val), NOTIFY_HINT, 5)
 		end
 
 		self:AddChangeCallback(cvar, function()
