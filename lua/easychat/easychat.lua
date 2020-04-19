@@ -103,13 +103,12 @@ end
 -- lets not break the addon with bad third-party code but still notify the
 -- developers with an error
 local function safe_hook_run(hook_name, ...)
-	local succ, a, b, c, d, e, f = pcall(hook.Run, hook_name, ...)
-	if not succ then
+	local succ, a, b, c, d, e, f = xpcall(hook.Run, function(err)
 		EasyChat.Print(true, ("Hook callback error [%s]"):format(hook_name))
-		ErrorNoHalt(a .. "\n")
-		return nil
-	end
+		ErrorNoHalt("%s\n%s\n"):format(err, debug.Trace())
+	end, hook_name, ...)
 
+	if not succ then return nil end
 	return a, b, c, d, e, f
 end
 
@@ -1256,15 +1255,16 @@ if CLIENT then
 			for _, arg in ipairs(args) do
 				local callback = ec_addtext_handles[type(arg)]
 				if callback then
-					local succ, err = pcall(callback, arg)
-					if succ and err then
-						if is_color(err) or isstring(err) then
-							table.insert(data, err)
-						elseif istable(err) then
-							table.Add(data, err)
+					local succ, ret = xpcall(callback, function(err)
+						ErrorNoHalt(("%s\n%s\n"):format(err, debug.Trace()))
+					end, arg)
+
+					if succ and ret then
+						if is_color(ret) or isstring(ret) then
+							table.insert(data, ret)
+						elseif istable(ret) then
+							table.Add(data, ret)
 						end
-					else
-						ErrorNoHalt(err .. "\n")
 					end
 				else
 					local str = tostring(arg)
