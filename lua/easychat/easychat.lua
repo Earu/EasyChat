@@ -1048,8 +1048,17 @@ if CLIENT then
 			return Color(r, g, b, a)
 		end
 
+		local function is_color(tbl)
+			if type(tbl) ~= "table" then return false end
+			return tbl.r and tbl.g and tbl.b and tbl.a
+		end
+
 		EasyChat.SetAddTextTypeHandle("table", function(col)
-			return global_insert_color_change(col:Unpack())
+			if is_color(col) then
+				return global_insert_color_change(col:Unpack())
+			end
+
+			return color_white
 		end)
 
 		EasyChat.SetAddTextTypeHandle("string", function(str) return global_append_text_url(str) end)
@@ -1177,7 +1186,7 @@ if CLIENT then
 
 			local args = {...}
 			for _, arg in ipairs(args) do
-				if type(arg) == "string" then
+				if isstring(arg) then
 					append_text_url(richtext, arg)
 				elseif type(arg) == "Player" then
 					if not IsValid(arg) then
@@ -1200,17 +1209,14 @@ if CLIENT then
 							append_text(richtext, nick)
 						end
 					end
-				elseif type(arg) == "table" then
+				elseif is_color(arg) then
 					richtext:InsertColorChange(arg.r or 255, arg.g or 255, arg.b or 255, arg.a or 255)
+				else
+					append_text(richtext, tostring(arg))
 				end
 			end
 
 			save_text(richtext)
-		end
-
-		local function is_color(tbl)
-			if type(tbl) ~= "table" then return false end
-			return tbl.r and tbl.g and tbl.b and tbl.a
 		end
 
 		function EasyChat.GlobalAddText(...)
