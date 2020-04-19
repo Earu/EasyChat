@@ -1082,7 +1082,10 @@ if CLIENT then
 		function EasyChat.PastelizeNick(nick)
 			local hue = string_hash(nick)
 			local saturation, value = hue % 3 == 0, hue % 127 == 0
-			return HSVToColor(hue % 180 * 2, saturation and 0.3 or 0.6, value and 0.6 or 1)
+
+			-- HSVToColor doesnt return a color with the color metatable...
+			local bad_col = HSVToColor(hue % 180 * 2, saturation and 0.3 or 0.6, value and 0.6 or 1)
+			return Color(bad_col.r, bad_col.g, bad_col.b, bad_col.a)
 		end
 
 		EasyChat.SetAddTextTypeHandle("Player", function(ply)
