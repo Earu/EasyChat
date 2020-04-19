@@ -1593,6 +1593,7 @@ if CLIENT then
 					local perc = #match / #nick
 					local consider_match = (perc > 0.5 or #match >= 3)
 					if prioritize_nicks then consider_match = true end
+					if perc == 1 then consider_match = false end -- we dont want to complete things that already are
 					if consider_match and perc > max_perc then
 						max_perc = perc
 						res = nick
