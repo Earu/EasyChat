@@ -104,8 +104,7 @@ end
 -- developers with an error
 local function safe_hook_run(hook_name, ...)
 	local succ, a, b, c, d, e, f = xpcall(hook.Run, function(err)
-		EasyChat.Print(true, ("Hook callback error [%s]"):format(hook_name))
-		ErrorNoHalt("%s\n%s\n"):format(err, debug.Trace())
+		EasyChat.Print(true, ("Hook callback error [%s]\n%s\n%s\n"):format(hook_name, err, debug.Trace()))
 	end, hook_name, ...)
 
 	if not succ then return nil end
@@ -1256,7 +1255,7 @@ if CLIENT then
 				local callback = ec_addtext_handles[type(arg)]
 				if callback then
 					local succ, ret = xpcall(callback, function(err)
-						ErrorNoHalt(("%s\n%s\n"):format(err, debug.Trace()))
+						EasyChat.Print(true, (("%s\n%s\n"):format(err, debug.Trace())))
 					end, arg)
 
 					if succ and ret then
