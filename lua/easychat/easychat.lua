@@ -1050,7 +1050,11 @@ if CLIENT then
 
 		local function is_color(tbl)
 			if type(tbl) ~= "table" then return false end
-			return tbl.r and tbl.g and tbl.b and tbl.a
+			if tbl.r and tbl.g and tbl.b and tbl.a and tbl.Unpack then
+				return true
+			end
+
+			return false
 		end
 
 		EasyChat.SetAddTextTypeHandle("table", function(col)
