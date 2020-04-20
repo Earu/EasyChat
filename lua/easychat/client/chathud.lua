@@ -329,8 +329,8 @@ function chathud:RegisterPart(name, part, pattern, exception_patterns)
 		local cvar_name = "easychat_tag_" .. name
 		local cvar = CreateClientConVar(cvar_name, new_part.Enabled and "1" or "0", true, false)
 		new_part.Enabled = cvar:GetBool()
-		cvars.AddChangeCallback(cvar_name, function(_, _, new)
-			new_part.Enabled = new
+		cvars.AddChangeCallback(cvar_name, function()
+			new_part.Enabled = cvar:GetBool()
 		end)
 	end
 
