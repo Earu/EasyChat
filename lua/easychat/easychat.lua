@@ -292,6 +292,7 @@ if CLIENT then
 	local EC_GM_COMPLETE = CreateConVar("easychat_gm_complete", "0", FCVAR_ARCHIVE, "Use the gamemode bad auto-completion")
 	local EC_NICK_COMPLETE = CreateConVar("easychat_nick_complete", "1", FCVAR_ARCHIVE, "Auto-completes player names")
 	local EC_NICK_PRIORITIZE = CreateConVar("easychat_nick_prioritize", "0", FCVAR_ARCHIVE, "Prioritize player nick completion over everything else")
+	local EC_OUT_CLICK_CLOSE = CreateConVar("easychat_out_click_close", "1", FCVAR_ARCHIVE, "Clicking outside the chatbox closes it")
 
 	-- chatbox panel
 	local EC_GLOBAL_ON_OPEN = CreateConVar("easychat_global_on_open", "1", FCVAR_ARCHIVE, "Set the chat to always open global chat tab on open")
@@ -1844,6 +1845,7 @@ if CLIENT then
 		end)
 
 		hook.Add("GUIMousePressed", TAG, function(mouse_code)
+			if not EC_OUT_CLICK_CLOSE:GetBool() then return end
 			if mouse_code ~= MOUSE_LEFT then return end
 			if not EasyChat.IsOpened() then return end
 			close_chatbox()
