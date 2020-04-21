@@ -165,10 +165,6 @@ local MAIN_TAB = {
 				self.TextEntry:SetTextColor(EasyChat.TextColor)
 			else
 				self.TextEntry.Paint = function(_, w, h)
-					surface.SetDrawColor(EasyChat.TabColor)
-					surface.DrawRect(0, 0, w, h)
-
-
 					local border_color = EasyChat.TabOutlineColor.a == 0
 						and EasyChat.OutlayColor or EasyChat.TabOutlineColor
 					surface.SetDrawColor(border_color)
