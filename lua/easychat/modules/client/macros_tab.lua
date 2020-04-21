@@ -240,10 +240,12 @@ local MACRO_TAB = {
 
 		if not EasyChat.UseDermaSkin then
 			self.Search.Paint = function(self, w, h)
-				surface.SetDrawColor(color_white)
+				surface.SetDrawColor(EasyChat.OutlayColor)
 				surface.DrawRect(0, 0, w, h)
+				surface.SetDrawColor(EasyChat.TabOutlineColor)
+				surface.DrawOutlinedRect(0, 0, w, h)
 
-				self:DrawTextEntryText(black_color, EasyChat.OutlayColor, black_color)
+				self:DrawTextEntryText(color_white, EasyChat.OutlayColor, color_white)
 			end
 
 			self.AddMacro:SetTextColor(EasyChat.TextColor)
