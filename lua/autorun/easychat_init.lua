@@ -3,6 +3,7 @@ AddCSLuaFile("easychat/easychat.lua")
 AddCSLuaFile("easychat/autoloader.lua")
 
 AddCSLuaFile("easychat/client/font_extensions.lua")
+AddCSLuaFile("easychat/client/blur_rect.lua")
 AddCSLuaFile("easychat/client/unicode_transliterator.lua")
 AddCSLuaFile("easychat/client/expressions.lua")
 AddCSLuaFile("easychat/client/chathud.lua")
