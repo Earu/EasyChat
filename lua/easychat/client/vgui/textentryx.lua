@@ -39,10 +39,11 @@ function PANEL:Init()
 					padding-top: 4px;
 					font-family: 'Roboto', sans-serif;
 					resize: none;
-					text-shadow: -1px 1px 4px #000,
+					text-shadow: ]] .. (EasyChat.UseDermaSkin and "none;" or [[-1px 1px 4px #000,
 						1px 1px 4px #000,
-					  	1px -1px 4px #000;
-					  	-1px -1px 4px #000;
+					   	1px -1px 4px #000;
+						-1px -1px 4px #000;]])
+					.. [[
 				}
 			</style>
 			<textarea
