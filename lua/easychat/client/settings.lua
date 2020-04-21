@@ -20,6 +20,7 @@ local EC_LINKS_CLIPBOARD = GetConVar("easychat_links_to_clipboard")
 local EC_GM_COMPLETE = GetConVar("easychat_gm_complete")
 local EC_NICK_COMPLETE = GetConVar("easychat_nick_complete")
 local EC_NICK_PRIORITIZE = GetConVar("easychat_nick_prioritize")
+local EC_OUT_CLICK_CLOSE = GetConVar("easychat_out_click_close")
 
 -- chatbox
 local EC_USE_DERMASKIN = GetConVar("easychat_use_dermaskin")
@@ -79,7 +80,8 @@ local function create_default_settings()
 			[EC_USE_ME] = "Replaces your name in the chat with \"me\"",
 			[EC_GM_COMPLETE] = "Uses the default gamemode name auto-completion",
 			[EC_NICK_COMPLETE] = "Auto-complete player names",
-			[EC_NICK_PRIORITIZE] = "Prioritize player nick completion over everything else"
+			[EC_NICK_PRIORITIZE] = "Prioritize player nick completion over everything else",
+			[EC_OUT_CLICK_CLOSE] = "Clicking outside the chat closes it",
 		})
 
 		settings:AddSpacer(category_name)
