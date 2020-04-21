@@ -1,3 +1,5 @@
+local blur_rect = include("easychat/client/blur_rect.lua")
+
 local file_path = "easychat/chud_font_settings.txt"
 local default_font_data = {
 	font = "Roboto",
@@ -125,14 +127,14 @@ local EDITOR = {
 			self:SaveFontData()
 		end
 
-		self.Canvas:SetSize(200, 200)
-		self.Canvas:SetPos(350, 140)
+		self.Canvas:SetSize(300, 200)
+		self.Canvas:SetPos(250, 140)
 
 		local mk = ec_markup.Parse("Hello World!")
 		local black_color = Color(0, 0, 0)
 		self.Canvas.Paint = function(_, w, h)
-			surface.SetDrawColor(black_color)
-			surface.DrawRect(0, 0, w, h)
+			surface.SetDrawColor(color_white)
+			surface.DrawOutlinedRect(0, 0, w, h)
 			mk:Draw(w / 2 - mk:GetWide() / 2, h / 2 - mk:GetTall() / 2)
 		end
 
@@ -140,6 +142,41 @@ local EDITOR = {
 			self.lblTitle:SetTextColor(EasyChat.TextColor)
 			self.btnClose:SetTextColor(EasyChat.TextColor)
 			self.btnClose.Paint = function() end
+
+			self.BaseFont.Paint = function(self, w, h)
+				surface.SetDrawColor(EasyChat.TabColor)
+				surface.DrawRect(0, 0, w, h)
+				surface.SetDrawColor(EasyChat.OutlayColor)
+				surface.DrawOutlinedRect(0, 0, w, h)
+				self:DrawTextEntryText(color_white, EasyChat.OutlayColor, color_white)
+			end
+
+			self.FontSize.TextArea:SetTextColor(EasyChat.TextColor)
+			self.FontSize.Label:SetTextColor(EasyChat.TextColor)
+			self.FontWeight.TextArea:SetTextColor(EasyChat.TextColor)
+			self.FontWeight.Label:SetTextColor(EasyChat.TextColor)
+			self.FontScanlines.TextArea:SetTextColor(EasyChat.TextColor)
+			self.FontScanlines.Label:SetTextColor(EasyChat.TextColor)
+
+			self.Paint = function(self, w, h)
+				surface.SetDrawColor(EasyChat.OutlayColor)
+				surface.DrawRect(0, 0, w, 25)
+
+				local r, g, b, a = EasyChat.TabColor:Unpack()
+				surface.SetDrawColor(r, g, b, a)
+				surface.DrawRect(0, 25, w, h - 25)
+
+				surface.SetDrawColor(EasyChat.OutlayOutlineColor)
+				surface.DrawOutlinedRect(0, 0, w, h)
+			end
+
+			hook.Add("HUDPaint", self, function()
+				if not self:IsVisible() then return end
+				if EasyChat.OutlayColor.a == 255 then return end
+
+				local x, y, w, h = self:GetBounds()
+				blur_rect(x, y, w, h, 10, 2)
+			end)
 
 			self.ResetFont:SetTextColor(EasyChat.TextColor)
 			self.ApplyFont:SetTextColor(EasyChat.TextColor)
@@ -162,6 +199,7 @@ local EDITOR = {
 
 			for prop_name, _ in pairs(props) do
 				local checkbox = self[prop_name]
+				checkbox:SetTextColor(EasyChat.TextColor)
 				checkbox.Button.Paint = function(self, w, h)
 					surface.SetDrawColor(EasyChat.OutlayColor)
 					surface.DrawRect(0, 0, w, h)
@@ -229,15 +267,6 @@ local EDITOR = {
 		if file.Exists(file_path, "DATA") then
 			file.Delete(file_path)
 		end
-	end,
-	Paint = function(self, w, h)
-		local r, g, b = EasyChat.TabColor:Unpack()
-		surface.SetDrawColor(r, g, b)
-		surface.DrawRect(0, 0, w, h)
-		surface.SetDrawColor(EasyChat.OutlayColor)
-		surface.DrawRect(0, 0, w, 25)
-		surface.SetDrawColor(EasyChat.OutlayOutlineColor)
-		surface.DrawOutlinedRect(0, 0, w, h)
 	end,
 }
 
