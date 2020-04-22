@@ -113,7 +113,7 @@ end
 
 function PANEL:SetBGColor(r, g, b)
 	local color = istable(r) and r or Color(r, g, b)
-	local css_color = ("rgb(%d,%d,%d)"):format(color:Unpack())
+	local css_color = ("rgb(%d,%d,%d)"):format(color.r, color.g, color.b)
 	self:QueueJavascript(("RICHTEXT.style.background = `%s`;"):format(css_color))
 end
 
@@ -133,7 +133,7 @@ end
 
 function PANEL:AppendText(text)
 	text = text:JavascriptSafe()
-	local css_color = ("rgb(%d,%d,%d)"):format(self.CurrentColor:Unpack())
+	local css_color = ("rgb(%d,%d,%d)"):format(self.CurrentColor.r, self.CurrentColor.g, self.CurrentColor.b)
 	local js = (self.ClickableTextValue and [[
 		span = document.createElement("span");
 		span.onclick = () => RichTextX.OnClick(`]] .. self.ClickableTextValue .. [[`);
