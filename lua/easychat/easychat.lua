@@ -1031,7 +1031,7 @@ if CLIENT then
 		end
 
 		local function global_insert_color_change(r, g, b, a)
-			r, g, b, a = r or 255, g or 255, b or 255, isnumber(a) or 255
+			r, g, b, a = r or 255, g or 255, b or 255, isnumber(a) and a or 255
 
 			if EasyChat.UseDermaSkin and r == 255 and g == 255 and b == 255 then
 				local new_col = EasyChat.GUI.RichText:GetSkin().text_normal
