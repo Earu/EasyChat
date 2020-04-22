@@ -1031,7 +1031,7 @@ if CLIENT then
 		end
 
 		local function global_insert_color_change(r, g, b, a)
-			r, g, b, a = r or 255, g or 255, b or 255, a or 255
+			r, g, b, a = r or 255, g or 255, b or 255, isnumber(a) or 255
 
 			if EasyChat.UseDermaSkin and r == 255 and g == 255 and b == 255 then
 				local new_col = EasyChat.GUI.RichText:GetSkin().text_normal
@@ -1049,7 +1049,7 @@ if CLIENT then
 
 		local function is_color(tbl)
 			if type(tbl) ~= "table" then return false end
-			if isnumber(tbl.r) and isnumber(tbl.g) and isnumber(tbl.b) and isnumber(tbl.a) then
+			if isnumber(tbl.r) and isnumber(tbl.g) and isnumber(tbl.b) then
 				return true
 			end
 
@@ -1216,7 +1216,7 @@ if CLIENT then
 						end
 					end
 				elseif is_color(arg) then
-					richtext:InsertColorChange(arg.r or 255, arg.g or 255, arg.b or 255, arg.a or 255)
+					richtext:InsertColorChange(arg.r or 255, arg.g or 255, arg.b or 255, isnumber(arg.a) or 255)
 				else
 					append_text(richtext, tostring(arg))
 				end
