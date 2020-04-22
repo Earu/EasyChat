@@ -1035,7 +1035,7 @@ if CLIENT then
 
 			if EasyChat.UseDermaSkin and r == 255 and g == 255 and b == 255 then
 				local new_col = EasyChat.GUI.RichText:GetSkin().text_normal
-				EasyChat.GUI.RichText:InsertColorChange(new_col:Unpack())
+				EasyChat.GUI.RichText:InsertColorChange(new_col.r, new_col.g, new_col.b, new_col.a)
 			else
 				EasyChat.GUI.RichText:InsertColorChange(r, g, b, a)
 			end
@@ -1049,7 +1049,7 @@ if CLIENT then
 
 		local function is_color(tbl)
 			if type(tbl) ~= "table" then return false end
-			if tbl.r and tbl.g and tbl.b and tbl.a and tbl.Unpack then
+			if isnumber(tbl.r) and isnumber(tbl.g) and isnumber(tbl.b) and isnumber(tbl.a) then
 				return true
 			end
 
@@ -1058,7 +1058,7 @@ if CLIENT then
 
 		EasyChat.SetAddTextTypeHandle("table", function(col)
 			if is_color(col) then
-				return global_insert_color_change(col:Unpack())
+				return global_insert_color_change(col.r, col.g, col.b, col.a)
 			end
 
 			return color_white
@@ -1475,7 +1475,7 @@ if CLIENT then
 				if not EasyChat.IsStringEmpty(history) then
 					if EasyChat.UseDermaSkin then
 						local new_col = global_tab.RichText:GetSkin().text_normal
-						global_tab.RichText:InsertColorChange(new_col:Unpack())
+						global_tab.RichText:InsertColorChange(new_col.r, new_col.g, new_col.b, new_col.a)
 					end
 
 					global_tab.RichText:AppendText(history)
