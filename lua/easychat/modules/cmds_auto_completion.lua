@@ -97,7 +97,7 @@ if CLIENT then
 				aowl_cmds[chat_cmd] = {}
 			end
 
-			initialize("[!|/|%.]", aowl_cmds)
+			initialize("[!/%.]", aowl_cmds)
 		end)
 
 		hook.Add("StartChat", hook_name, function()
@@ -105,6 +105,13 @@ if CLIENT then
 			net.SendToServer()
 			hook.Remove("StartChat", hook_name)
 		end)
+	elseif Mercury and Mercury.Commands and Mercury.Commands.CommandTable then
+		local mercury_cmds = {}
+		for cmd_name, _ in pairs(Mercury.Commands.CommandTable) do
+			mercury_cmds[cmd_name] = {}
+		end
+
+		initialize("[!/@]", mercury_cmds)
 	end
 
 	hook.Add("ChatTextChanged", hook_name, function(text)
