@@ -1216,7 +1216,7 @@ if CLIENT then
 						end
 					end
 				elseif is_color(arg) then
-					richtext:InsertColorChange(arg.r or 255, arg.g or 255, arg.b or 255, isnumber(arg.a) or 255)
+					richtext:InsertColorChange(arg.r, arg.g, arg.b, isnumber(arg.a) and arg.a or 255)
 				else
 					append_text(richtext, tostring(arg))
 				end
