@@ -32,6 +32,7 @@ end
 
 panel:SetWide(150)
 panel.old_paint = panel.Paint
+local panel_title = "Message Receivers"
 function panel:Paint(w, h)
 	if not EasyChat.IsOpened() then return end
 	if EasyChat.GetActiveTab().Name ~= "Global" then return end
@@ -47,22 +48,27 @@ function panel:Paint(w, h)
 	end
 
 	surface.SetFont("EasyChatFont")
-	surface.SetTextPos(15, 5)
+	local tw, th = surface.GetTextSize(panel_title)
+	surface.SetTextPos(w / 2 - tw / 2, 5)
 	surface.SetTextColor(EasyChat.TextColor)
-	surface.DrawText("Message Receivers")
+	surface.DrawText(panel_title)
 
-	local i = 1
+	local i = 0
 	for _, ply in pairs(player.GetAll()) do
 		if ply ~= LocalPlayer()
 			and ply:GetPos():Distance(LocalPlayer():GetPos()) <= GetConVar("easychat_local_msg_distance"):GetInt()
 		then
-			self:SetTall(5 + (20 * (i + 1)))
-
 			local mk = cache_nick(ply)
-			mk:Draw(15, 5 + (20 * i))
+
+			self:SetTall(5 + th + 5 + ((mk:GetTall() + 10) * i))
+			mk:Draw(15, 5 + th + 5 + (mk:GetTall() * i))
 
 			i = i + 1
 		end
+	end
+
+	if i == 0 then
+		self:SetTall(5 + th + 5)
 	end
 end
 
