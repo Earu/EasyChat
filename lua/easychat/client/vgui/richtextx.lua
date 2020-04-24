@@ -61,9 +61,17 @@ function PANEL:Init()
 		self:ActionSignal("TextClicked", signal_value)
 	end)
 
+	local function find_text()
+		EasyChat.AskForInput("Find", function(input)
+			self:QueueJavascript(("window.find(%q);"):format(input:JavascriptSafe()))
+		end, false)
+	end
+
+	self:AddFunction("RichTextX", "Find", find_text)
 	self:AddFunction("RichTextX", "OnRightClick", function(selected_text)
 		local copy_menu = DermaMenu()
 		copy_menu:AddOption("copy", function() SetClipboardText(selected_text) end)
+		copy_menu:AddOption("find", find_text)
 		copy_menu:AddSpacer()
 		-- setting the textContent node of the richtext clears all the children and replaces it
 		-- with a single text node, it also doesnt invoke chromium HTML parser which is relatively fast
@@ -92,6 +100,14 @@ function PANEL:Init()
 
 			let selection = window.getSelection();
 			RichTextX.OnRightClick(selection.toString());
+		});
+
+		window.addEventListener("keydown", (ev) => {
+			if (ev.which === 70 && ev.ctrlKey) {
+				RichTextX.Find();
+				ev.preventDefault();
+				return false;
+			}
 		});
 
 		let span = null;

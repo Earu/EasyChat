@@ -663,15 +663,17 @@ if CLIENT then
 		local frame = vgui.Create("DFrame")
 		frame:SetTitle(title)
 		frame:SetSize(200,110)
-		frame:Center()
-		frame.Paint = function(self, w, h)
-			Derma_DrawBackgroundBlur(self, 0)
+		frame:SetDrawOnTop(true)
+		frame:SetDraggable(false)
 
-			surface.SetDrawColor(EasyChat.OutlayColor)
-			surface.DrawRect(0, 0, w, h)
+		frame.btnMinim:Hide()
+		frame.btnMaxim:Hide()
 
-			surface.SetDrawColor(EasyChat.TabColor)
-			surface.DrawRect(0, 0, w, 25)
+		if EasyChat.GUI and IsValid(EasyChat.GUI.ChatBox) then
+			local x, y, w, h = EasyChat.GUI.ChatBox:GetBounds()
+			frame:SetPos(x + w / 2 - 100, y + h / 2 - 55)
+		else
+			frame:Center()
 		end
 
 		local text_entry = frame:Add("DTextEntry")
@@ -690,23 +692,55 @@ if CLIENT then
 		btn:SetSize(100, 25)
 		btn:SetPos(50, 75)
 		btn.DoClick = function()
-			if not can_be_empty and EasyChat.IsStringEmpty(text_entry:GetText()) == 0 then return end
+			if not can_be_empty and EasyChat.IsStringEmpty(text_entry:GetText()) then return end
 
 			callback(text_entry:GetText())
 			frame:Close()
 		end
-		btn.Paint = function(self, w, h)
-			surface.SetDrawColor(EasyChat.TabColor)
-			surface.DrawRect(0, 0, w, h)
 
-			if self:IsHovered() then
-				surface.SetDrawColor(color_white)
-				surface.DrawOutlinedRect(0, 0, w, h)
+		if not EasyChat.UseDermaSkin then
+			frame.lblTitle:SetTextColor(EasyChat.TextColor)
+			frame.btnClose:SetTextColor(EasyChat.TextColor)
+			frame.btnClose:SetText("X")
+			frame.btnClose.Paint = function() end
+
+			frame.Paint = function(self, w, h)
+				Derma_DrawBackgroundBlur(self, 0)
+
+				surface.SetDrawColor(EasyChat.OutlayColor)
+				surface.DrawRect(0, 0, w, 25)
+
+				surface.SetDrawColor(EasyChat.TabColor)
+				surface.DrawRect(0, 25, w, h - 25)
+			end
+
+			btn.Paint = function(self, w, h)
+				surface.SetDrawColor(EasyChat.TabColor)
+				surface.DrawRect(0, 0, w, h)
+
+				if self:IsHovered() then
+					surface.SetDrawColor(color_white)
+					surface.DrawOutlinedRect(0, 0, w, h)
+				end
 			end
 		end
 
 		frame:MakePopup()
 		text_entry:RequestFocus()
+
+		hook.Add("GUIMousePressed", frame, function()
+			frame:MakePopup()
+			text_entry:RequestFocus()
+			return true
+		end)
+
+		hook.Add("VGUIMousePressed", frame, function(self, pnl)
+			if pnl == self then return end
+
+			frame:MakePopup()
+			text_entry:RequestFocus()
+			return true
+		end)
 	end
 
 	local BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
