@@ -28,19 +28,25 @@ local MAIN_TAB = {
 		self.BtnSwitch:SetFont("EasyChatFont")
 		self.BtnSwitch:SetTall(25)
 		self.BtnSwitch:SizeToContentsX(20)
+
+		local old_font_size = draw.GetFontHeight("EasyChatFont")
 		self.BtnSwitch.Think = function(self)
 			local cur_mode = EasyChat.GetCurrentMode()
 			local cur_text = self:GetText()
-			if cur_text ~= cur_mode.Name then
+			local cur_font_size = draw.GetFontHeight("EasyChatFont")
+			if cur_font_size ~= old_font_size or cur_text ~= cur_mode.Name then
+				old_font_size = cur_font_size
 				self:SetText(cur_mode.Name)
 				self:SizeToContentsX(20)
 				self:InvalidateParent()
 			end
 		end
+
 		self.BtnSwitch.DoClick = function()
 			local next_mode = EasyChat.Mode + 1
 			EasyChat.Mode = next_mode > EasyChat.ModeCount and 0 or next_mode
 		end
+
 		self.BtnSwitch.DoRightClick = function()
 			local switch_menu = DermaMenu()
 			for mode_index, mode in pairs(EasyChat.Modes) do
