@@ -12,10 +12,10 @@ function PANEL:Init()
 				html, body, span {
 					padding: 0;
 					margin: 0;
-					text-shadow: ]] .. (EasyChat.UseDermaSkin and "none;" or [[-1px 1px 4px #000,
-						1px 1px 4px #000,
-				   		1px -1px 4px #000;
-						-1px -1px 4px #000;]])
+					text-shadow: ]] .. (EasyChat.UseDermaSkin and "none;" or [[-1px 1px 2px #000,
+						1px 1px 2px #000,
+				   		1px -1px 2px #000;
+						-1px -1px 2px #000;]])
 					.. [[
 				}
 
