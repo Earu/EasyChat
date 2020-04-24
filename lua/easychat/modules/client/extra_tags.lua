@@ -15,6 +15,7 @@ local cam_PushModelMatrix = cam.PushModelMatrix
 local cam_PopModelMatrix = cam.PopModelMatrix
 
 local math_sin = math.sin
+local math_abs = math.abs
 --[[-----------------------------------------------------------------------------
 	Color Component
 
@@ -132,6 +133,80 @@ function bhsv_part:Draw(ctx)
 end
 
 chathud:RegisterPart("bhsv", bhsv_part)
+
+--[[-----------------------------------------------------------------------------
+	Horizontal Scan Component
+
+	Color modulation with HSV values on text background.
+]]-------------------------------------------------------------------------------
+local hscan_part = {
+	Speed = 1,
+	Color = Color(9, 155, 234),
+}
+
+function hscan_part:Ctor(str)
+	local hscan_components = string.Explode("%s*,%s*", str, true)
+	self.Speed = math.Clamp(tonumber(hscan_components[1]) or 1, 1, 5)
+	self.Color = Color(
+		tonumber(hscan_components[2]) or self.Color.r,
+		tonumber(hscan_components[3]) or self.Color.g,
+		tonumber(hscan_components[4]) or self.Color.b
+	)
+
+	return self
+end
+
+function hscan_part:PostTextDraw(ctx, x, y, w, h)
+	self.Color.a = ctx.Alpha
+
+	local half_width = w / 2
+	surface_SetDrawColor(self.Color)
+	surface_DrawRect(x + half_width + (math_sin(RealTime() * self.Speed) * half_width), y, 10, h)
+	surface_SetDrawColor(ctx.Color)
+end
+
+function hscan_part:Draw(ctx)
+	ctx:PushPostTextDraw(self)
+end
+
+chathud:RegisterPart("hscan", hscan_part, "%<(hscan)%>")
+
+--[[-----------------------------------------------------------------------------
+	Vertical Scan Component
+
+	Color modulation with HSV values on text background.
+]]-------------------------------------------------------------------------------
+local vscan_part = {
+	Speed = 1,
+	Color = Color(234, 9, 61),
+}
+
+function vscan_part:Ctor(str)
+	local hscan_components = string.Explode("%s*,%s*", str, true)
+	self.Speed = math.Clamp(tonumber(hscan_components[1]) or 1, 1, 5)
+	self.Color = Color(
+		tonumber(hscan_components[2]) or self.Color.r,
+		tonumber(hscan_components[3]) or self.Color.g,
+		tonumber(hscan_components[4]) or self.Color.b
+	)
+
+	return self
+end
+
+function vscan_part:PostTextDraw(ctx, x, y, w, h)
+	self.Color.a = ctx.Alpha
+
+	local half_height = h / 2
+	surface_SetDrawColor(self.Color)
+	surface_DrawRect(x, y + half_height + (math_sin(RealTime() * self.Speed) * half_height), w, 3)
+	surface_SetDrawColor(ctx.Color)
+end
+
+function vscan_part:Draw(ctx)
+	ctx:PushPostTextDraw(self)
+end
+
+chathud:RegisterPart("vscan", vscan_part, "%<(vscan)%>")
 
 --[[-----------------------------------------------------------------------------
 	Scale Component
@@ -282,7 +357,7 @@ chathud:RegisterPart("zrotate", z_rotate_part)
 local texture_part = {}
 
 function texture_part:Ctor(str)
-	local texture_components = string.Explode(str, "%s*,%s*", true)
+	local texture_components = string.Explode("%s*,%s*", str, true)
 
 	local path = texture_components[1]
 	local mat = Material(path, (path:EndsWith(".png") and "nocull noclamp" or nil))
