@@ -1,6 +1,8 @@
 local TAG = "EasyChat"
 local NET_SEND_CONFIG = "EASY_CHAT_SEND_SERVER_CONFIG"
-local NET_USER_GROUP = "EASY_CHAT_WRITE_USER_GROUP"
+local NET_WRITE_USER_GROUP = "EASY_CHAT_SERVER_CONFIG_WRITE_USER_GROUP"
+local NET_DEL_USER_GROUP = "EASY_CHAT_SERVER_CONFIG_DEL_USER_GROUP"
+local NET_WRITE_SETTING_OVERRIDE = "EASYCHAT_SERVER_SETTING_WRITE_OVERRIDE"
 
 local config = {}
 EasyChat.Config = config
@@ -9,7 +11,7 @@ local default_config = {
 	OverrideClientSettings = true,
 	UserGroups = {
 		--[[["players"] = {
-			EmoteName = "image16/user.png",
+			EmoteName = "user",
 			Tag = "[<hscan>Plebian<stop>]"
 		}]]
 	}
@@ -17,8 +19,11 @@ local default_config = {
 
 if SERVER then
 	util.AddNetworkString(NET_SEND_CONFIG)
+	util.AddNetworkString(NET_WRITE_USER_GROUP)
+	util.AddNetworkString(NET_DEL_USER_GROUP)
+	util.AddNetworkString(NET_WRITE_SETTING_OVERRIDE)
 
-	local CONFIG_PATH = "easychat/config.json"
+	local CONFIG_PATH = "easychat/server_config.json"
 	function config:Save()
 		if not file.Exists("easychat", "DATA") then
 			file.CreateDir("easychat")
@@ -26,6 +31,7 @@ if SERVER then
 
 		-- util.TableToJSON ignores functions so its fine
 		file.Write(CONFIG_PATH, util.TableToJSON(self, true))
+		hook.Run("ECServerConfigUpdate", self)
 	end
 
 	-- make this as user proof as possible
@@ -63,13 +69,49 @@ if SERVER then
 			net.Send(ply)
 		end)
 
-		already_sent[ply] = true
+		if not force_send then
+			already_sent[ply] = true
+		end
 	end
 
 	config:Load()
 
 	net.Receive(NET_SEND_CONFIG, function(_, ply)
 		config:Send(ply, false)
+	end)
+
+	net.Receive(NET_WRITE_USER_GROUP, function(_, ply)
+		if not ply:IsAdmin() then return end
+
+		local user_group = net.ReadString()
+		local tag = net.ReadString()
+		local emote_name net.ReadString()
+
+		config.UserGroups[user_group] = {
+			Tag = tag,
+			EmoteName = emote_name,
+		}
+
+		config:Save()
+		config:Send(player.GetAll(), true)
+	end)
+
+	net.Receive(NET_DEL_USER_GROUP, function(_, ply)
+		if not ply:IsAdmin() then return end
+
+		local user_group = net.ReadString()
+		config.UserGroups[user_group] = nil
+
+		config:Save()
+		config:Send(player.GetAll(), true)
+	end)
+
+	net.Receive(NET_WRITE_SETTING_OVERRIDE, function(_, ply)
+		if not ply:IsAdmin() then return end
+
+		config.OverrideClientSettings = net.ReadBool()
+		config:Save()
+		config:Send(player.GetAll(), true)
 	end)
 end
 
@@ -86,5 +128,33 @@ if CLIENT then
 		for k, v in pairs(config) do
 			EasyChat.Config[k] = v
 		end
+
+		hook.Run("ECServerConfigUpdate", EasyChat.Config)
 	end)
+
+	function config:WriteUserGroup(user_group, tag, emote_name)
+		if not LocalPlayer():IsAdmin() then return end
+
+		net.Start(NET_WRITE_USER_GROUP)
+		net.WriteString(user_group)
+		net.WriteString(tag)
+		net.WriteString(emote_name)
+		net.SendToServer()
+	end
+
+	function config:DeleteUserGroup(user_group)
+		if not LocalPlayer():IsAdmin() then return end
+
+		net.Start(NET_DEL_USER_GROUP)
+		net.WriteString(user_group)
+		net.SendToServer()
+	end
+
+	function config:WriteSettingOverride(should_override)
+		if not LocalPlayer():IsAdmin() then return end
+
+		net.Start(NET_WRITE_SETTING_OVERRIDE)
+		net.WriteBool(should_override)
+		net.SendToServer()
+	end
 end
