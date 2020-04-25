@@ -1157,6 +1157,10 @@ if CLIENT then
 			end
 
 			if should_use_server_settings(ply) then
+				-- dont forget to reset color to white by default
+				EasyChat.GUI.RichText:InsertColorChange(255, 255, 255, 255)
+				table.insert(data, Color(255, 255, 255))
+
 				local usergroup_prefix = EasyChat.Config.UserGroups[ply:GetUserGroup()]
 				local tags_data = extract_tags_data(usergroup_prefix.Tag)
 				for _, tag_data in ipairs(tags_data) do
