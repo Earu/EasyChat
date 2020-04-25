@@ -4,9 +4,6 @@ local NET_WRITE_USER_GROUP = "EASY_CHAT_SERVER_CONFIG_WRITE_USER_GROUP"
 local NET_DEL_USER_GROUP = "EASY_CHAT_SERVER_CONFIG_DEL_USER_GROUP"
 local NET_WRITE_SETTING_OVERRIDE = "EASYCHAT_SERVER_SETTING_WRITE_OVERRIDE"
 
-local config = {}
-EasyChat.Config = config
-
 local default_config = {
 	OverrideClientSettings = true,
 	UserGroups = {
@@ -18,6 +15,9 @@ local default_config = {
 }
 
 if SERVER then
+	local config = default_config
+	EasyChat.Config = config
+
 	util.AddNetworkString(NET_SEND_CONFIG)
 	util.AddNetworkString(NET_WRITE_USER_GROUP)
 	util.AddNetworkString(NET_DEL_USER_GROUP)
@@ -85,7 +85,7 @@ if SERVER then
 
 		local user_group = net.ReadString()
 		local tag = net.ReadString()
-		local emote_name net.ReadString()
+		local emote_name = net.ReadString()
 
 		config.UserGroups[user_group] = {
 			Tag = tag,
@@ -116,7 +116,8 @@ if SERVER then
 end
 
 if CLIENT then
-	EasyChat.Config = default_config
+	local config = default_config
+	EasyChat.Config = config
 
 	hook.Add("InitPostEntity", TAG, function()
 		net.Start(NET_SEND_CONFIG)
