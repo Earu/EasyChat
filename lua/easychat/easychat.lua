@@ -852,6 +852,14 @@ if CLIENT then
 		return ec_addtext_handles[type]
 	end
 
+	local function should_use_server_settings(ply)
+		local usergroup_prefix = EasyChat.Config.UserGroups[ply:GetUserGroup()]
+		if EasyChat.Config.OverrideClientSettings and usergroup_prefix then return true end
+		if not EasyChat.Config.OverrideClientSettings and EC_TEAMS:GetBool() and usergroup_prefix then return true end
+
+		return false
+	end
+
 	function EasyChat.Init()
 		load_chatbox_colors()
 
@@ -1110,14 +1118,6 @@ if CLIENT then
 		end)
 
 		EasyChat.SetAddTextTypeHandle("string", function(str) return global_append_text_url(str) end)
-
-		local function should_use_server_settings(ply)
-			local usergroup_prefix = EasyChat.Config.UserGroups[ply:GetUserGroup()]
-			if EasyChat.Config.OverrideClientSettings and usergroup_prefix then return true end
-			if not EasyChat.Config.OverrideClientSettings and EC_TEAMS:GetBool() and usergroup_prefix then return true end
-
-			return false
-		end
 
 		local function string_hash(text)
 			local counter = 1
