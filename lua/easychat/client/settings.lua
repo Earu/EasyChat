@@ -354,11 +354,7 @@ local function create_default_settings()
 		end
 
 		build_tab_list()
-
 		hook.Add("ECSettingsOpened", tab_list, build_tab_list)
-		tab_list.OnRemove = function(self)
-			hook.Remove("ECSettingsOpened", self)
-		end
 
 		local setting_apply_tab = settings:AddSetting(category_name, "action", "Hide / Show Tab")
 		setting_apply_tab.DoClick = function()
@@ -454,6 +450,29 @@ local function create_default_settings()
 			local default_fadelen = tonumber(EC_HUD_FADELEN:GetDefault())
 			EC_HUD_FADELEN:SetInt(default_fadelen)
 		end
+	end
+
+	-- ranks / usergroups settings
+	do
+		local category_name = "Ranks Config"
+		settings:AddCategory(category_name)
+
+		local setting_override_client_settings = settings:AddSetting(category_name, "boolean", "Server settings override client settings")
+		setting_override_client_settings.OnChange = function(_, enabled)
+			if not EasyChat.Config:WriteSettingOverride(enabled) then
+				notification.AddLegacy("You need to be an admin to do that", NOTIFY_ERROR, 3)
+				surface.PlaySound("buttons/button11.wav")
+				self:SetChecked(config.OverrideClientSettings)
+			end
+		end
+
+		settings:AddSpacer(category_name)
+
+
+
+		hook.Add("ECServerConfigUpdate", settings, function(_, config)
+			setting_override_client_settings:SetChecked(config.OverrideClientSettings)
+		end)
 	end
 end
 
