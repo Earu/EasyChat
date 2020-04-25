@@ -103,13 +103,12 @@ end
 -- lets not break the addon with bad third-party code but still notify the
 -- developers with an error
 local function safe_hook_run(hook_name, ...)
-	local succ, a, b, c, d, e, f = xpcall(hook.Run, function(err)
-		EasyChat.Print(true, ("Hook callback error [%s]\n%s\n%s\n"):format(hook_name, err, debug.Trace()))
-	end, hook_name, ...)
-
+	local succ, a, b, c, d, e, f = xpcall(hook.Run, debug.traceback, hook_name, ...)
 	if not succ then return nil end
 	return a, b, c, d, e, f
 end
+
+include("easychat/server_config.lua")
 
 if SERVER then
 	util.AddNetworkString(NET_SEND_MSG)
@@ -1028,26 +1027,48 @@ if CLIENT then
 			return data
 		end
 
-		local function global_append_nick(str)
+		local function is_color(tbl)
+			if type(tbl) ~= "table" then return false end
+			if isnumber(tbl.r) and isnumber(tbl.g) and isnumber(tbl.b) then
+				return true
+			end
+
+			return false
+		end
+
+		local function extract_tags_data(str, is_nick)
 			local data = {}
 
 			if not ec_markup then
-				append_text(EasyChat.GUI.RichText, str)
 				table.insert(data, str)
 			else
-				-- use markup to get text and colors out of nicks
-				local mk = ec_markup.Parse(str, nil, true)
+				-- use markup to get text and colors out of the string
+				local mk = ec_markup.Parse(str, nil, is_nick)
 				for _, line in ipairs(mk.Lines) do
 					for _, component in ipairs(line.Components) do
 						if component.Color then
-							local c = component.Color
-							EasyChat.GUI.RichText:InsertColorChange(c.r, c.g, c.b, 255)
-							table.insert(data, c)
+							table.insert(data, component.Color)
 						elseif component.Type == "text" then
-							append_text(EasyChat.GUI.RichText, component.Content)
 							table.insert(data, component.Content)
 						end
 					end
+				end
+			end
+
+			return data
+		end
+
+		local function global_append_nick(str)
+			local data = {}
+
+			local tags_data = extract_tags_data(str, true)
+			for _, tag_data in ipairs(tags_data) do
+				if is_color(tag_data) then
+					EasyChat.GUI.RichText:InsertColorChange(tag_data.r, tag_data.g, tag_data.b, 255)
+					table.insert(data, tag_data)
+				elseif isstring(tag_data) then
+					append_text(EasyChat.GUI.RichText, tag_data)
+					table.insert(data, tag_data)
 				end
 			end
 
@@ -1056,9 +1077,8 @@ if CLIENT then
 
 			if EC_HUD_CUSTOM:GetBool() then
 				-- let the chathud do its own thing
-				local chathud = EasyChat.ChatHUD
-				chathud:AppendNick(str)
-				chathud:PushPartComponent("stop")
+				EasyChat.ChatHUD:AppendNick(str)
+				EasyChat.ChatHUD:PushPartComponent("stop")
 			end
 
 			return data
@@ -1081,15 +1101,6 @@ if CLIENT then
 			return Color(r, g, b, a)
 		end
 
-		local function is_color(tbl)
-			if type(tbl) ~= "table" then return false end
-			if isnumber(tbl.r) and isnumber(tbl.g) and isnumber(tbl.b) then
-				return true
-			end
-
-			return false
-		end
-
 		EasyChat.SetAddTextTypeHandle("table", function(col)
 			if is_color(col) then
 				return global_insert_color_change(col.r, col.g, col.b, col.a)
@@ -1099,6 +1110,14 @@ if CLIENT then
 		end)
 
 		EasyChat.SetAddTextTypeHandle("string", function(str) return global_append_text_url(str) end)
+
+		local function should_use_server_settings(ply)
+			local usergroup_prefix = EasyChat.Config.UserGroups[ply:GetUserGroup()]
+			if EasyChat.Config.OverrideClientSettings and usergroup_prefix then return true end
+			if not EasyChat.Config.OverrideClientSettings and EC_TEAMS:GetBool() and usergroup_prefix then return true end
+
+			return false
+		end
 
 		local function string_hash(text)
 			local counter = 1
@@ -1134,6 +1153,34 @@ if CLIENT then
 				table.insert(data, "???")
 
 				return data
+			end
+
+			if should_use_server_settings(ply) then
+				local usergroup_prefix = EasyChat.Config.UserGroups[ply:GetUserGroup()]
+				local tags_data = extract_tags_data(usergroup_prefix.Tag)
+				for _, tag_data in ipairs(tags_data) do
+					if is_color(tag_data) then
+						EasyChat.GUI.RichText:InsertColorChange(tag_data.r, tag_data.g, tag_data.b, 255)
+						table.insert(data, tag_data)
+					elseif isstring(tag_data) then
+						append_text(EasyChat.GUI.RichText, tag_data)
+						table.insert(data, tag_data)
+					end
+				end
+
+				append_text(EasyChat.GUI.RichText, " ")
+				table.insert(data, " ")
+
+				if EC_HUD_CUSTOM:GetBool() then
+					EasyChat.ChatHUD:AppendText(usergroup_prefix.Tag)
+					EasyChat.ChatHUD:PushPartComponent("stop")
+
+					if usergroup_prefix.EmoteName and #usergroup_prefix.EmoteName:Trim() > 0 then
+						EasyChat.ChatHUD:AppendText((" :%s:"):format(usergroup_prefix.EmoteName:Trim()))
+					end
+
+					EasyChat.ChatHUD:AppendText(" ")
+				end
 			end
 
 			local team_color = EC_PLAYER_COLOR:GetBool() and team.GetColor(ply:Team()) or color_white
@@ -1292,10 +1339,7 @@ if CLIENT then
 			for _, arg in ipairs(args) do
 				local callback = ec_addtext_handles[type(arg)]
 				if callback then
-					local succ, ret = xpcall(callback, function(err)
-						EasyChat.Print(true, (("%s\n%s\n"):format(err, debug.Trace())))
-					end, arg)
-
+					local succ, ret = xpcall(callback, debug.traceback, arg)
 					if succ and ret then
 						if is_color(ret) or isstring(ret) then
 							table.insert(data, ret)
@@ -2130,12 +2174,17 @@ if CLIENT then
 		msg_components = msg_components or {}
 
 		if EC_ENABLE:GetBool() then
-			if IsValid(ply) and EC_TEAMS:GetBool() then
-				if EC_TEAMS_COLOR:GetBool() then
-					local team_color = team.GetColor(ply:Team())
-					table.insert(msg_components, team_color)
+			if IsValid(ply) then
+				if should_use_server_settings(ply) then
+					-- dont do anything here, we want to process this more deeply so
+					-- usergroup prefixes can be fancy (rainbow, etc...)
+				elseif EC_TEAMS:GetBool() then
+					if EC_TEAMS_COLOR:GetBool() then
+						local team_color = team.GetColor(ply:Team())
+						table.insert(msg_components, team_color)
+					end
+					table.insert(msg_components, "[" .. team.GetName(ply:Team()) .. "] - ")
 				end
-				table.insert(msg_components, "[" .. team.GetName(ply:Team()) .. "] - ")
 			end
 		end
 
