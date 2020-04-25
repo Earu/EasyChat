@@ -54,6 +54,11 @@ local MACRO_PANEL = {
 			if self.Markup then
 				self.Markup:Draw(w / 2 - self.Markup:GetWide() / 2, h / 2 - self.Markup:GetTall() / 2)
 			end
+
+			if not EasyChat.UseDermaSkin then
+				surface.SetDrawColor(EasyChat.TabOutlineColor)
+				surface.DrawOutlinedRect(0, 0, w, h)
+			end
 		end
 
 		self.PerChar = self:Add("DCheckBoxLabel")
@@ -89,6 +94,7 @@ local MACRO_PANEL = {
 			self.Paint = function(self, w, h)
 				surface.SetDrawColor(EasyChat.OutlayColor)
 				surface.DrawRect(0, 0, w, h)
+
 				surface.SetDrawColor(EasyChat.TabOutlineColor)
 				surface.DrawOutlinedRect(0, 0, w, h)
 			end
@@ -112,6 +118,9 @@ local MACRO_PANEL = {
 					surface.SetDrawColor(EasyChat.TextColor)
 					surface.DrawRect(2, 2, w - 4, h - 4)
 				end
+
+				surface.SetDrawColor(EasyChat.TabOutlineColor)
+				surface.DrawOutlinedRect(0, 0, w, h)
 			end
 
 			local function button_paint(self, w, h)
