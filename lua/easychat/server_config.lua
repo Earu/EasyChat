@@ -134,28 +134,34 @@ if CLIENT then
 	end)
 
 	function config:WriteUserGroup(user_group, tag, emote_name)
-		if not LocalPlayer():IsAdmin() then return end
+		if not LocalPlayer():IsAdmin() then return false end
 
 		net.Start(NET_WRITE_USER_GROUP)
 		net.WriteString(user_group)
 		net.WriteString(tag)
 		net.WriteString(emote_name)
 		net.SendToServer()
+
+		return true
 	end
 
 	function config:DeleteUserGroup(user_group)
-		if not LocalPlayer():IsAdmin() then return end
+		if not LocalPlayer():IsAdmin() then return false end
 
 		net.Start(NET_DEL_USER_GROUP)
 		net.WriteString(user_group)
 		net.SendToServer()
+
+		return true
 	end
 
 	function config:WriteSettingOverride(should_override)
-		if not LocalPlayer():IsAdmin() then return end
+		if not LocalPlayer():IsAdmin() then return false end
 
 		net.Start(NET_WRITE_SETTING_OVERRIDE)
 		net.WriteBool(should_override)
 		net.SendToServer()
+
+		return true
 	end
 end
