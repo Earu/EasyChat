@@ -1173,6 +1173,7 @@ if CLIENT then
 				table.insert(data, " ")
 
 				if EC_HUD_CUSTOM:GetBool() then
+					EasyChat.ChatHUD:PushPartComponent("stop")
 					EasyChat.ChatHUD:AppendText(usergroup_prefix.Tag)
 					EasyChat.ChatHUD:PushPartComponent("stop")
 
@@ -1281,8 +1282,10 @@ if CLIENT then
 						richtext:InsertColorChange(110, 247, 177)
 						append_text(richtext, "???")
 					else
-						local team_color = EC_PLAYER_COLOR:GetBool() and team.GetColor(arg:Team()) or color_white
-						richtext:InsertColorChange(team_color.r, team_color.g, team_color.b, 255)
+						if not should_use_server_settings(arg) then
+							local team_color = EC_PLAYER_COLOR:GetBool() and team.GetColor(arg:Team()) or color_white
+							richtext:InsertColorChange(team_color.r, team_color.g, team_color.b, 255)
+						end
 
 						local nick = ec_markup and ec_markup.Parse(arg:Nick(), nil, true):GetText() or arg:Nick()
 						if EC_PLAYER_PASTEL:GetBool() then
