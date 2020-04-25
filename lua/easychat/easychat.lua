@@ -416,6 +416,7 @@ if CLIENT then
 	EasyChat.MacroProcessor = include("easychat/client/macro_processor.lua")
 	EasyChat.ModeCount = 0
 
+	include("easychat/client/blur_panel.lua")
 	include("easychat/client/settings.lua")
 	include("easychat/client/markup.lua")
 

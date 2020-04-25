@@ -134,7 +134,12 @@ if CLIENT then
 	end)
 
 	function config:WriteUserGroup(user_group, tag, emote_name)
-		if not LocalPlayer():IsAdmin() then return false end
+		if not LocalPlayer():IsAdmin() then return false, "You need to be an admin to do that" end
+
+		user_group = (user_group or ""):Trim()
+		tag = (tag or ""):Trim()
+		emote_name = (emote_name or ""):Trim()
+		if #user_group == 0 then return false, "No usergroup specified" end
 
 		net.Start(NET_WRITE_USER_GROUP)
 		net.WriteString(user_group)
@@ -146,7 +151,10 @@ if CLIENT then
 	end
 
 	function config:DeleteUserGroup(user_group)
-		if not LocalPlayer():IsAdmin() then return false end
+		if not LocalPlayer():IsAdmin() then return false, "You need to be an admin to do that" end
+
+		user_group = (user_group or ""):Trim()
+		if #user_group == 0 then return false, "No usergroup specified" end
 
 		net.Start(NET_DEL_USER_GROUP)
 		net.WriteString(user_group)
@@ -156,10 +164,10 @@ if CLIENT then
 	end
 
 	function config:WriteSettingOverride(should_override)
-		if not LocalPlayer():IsAdmin() then return false end
+		if not LocalPlayer():IsAdmin() then return false, "You need to be an admin to do that" end
 
 		net.Start(NET_WRITE_SETTING_OVERRIDE)
-		net.WriteBool(should_override)
+		net.WriteBool(should_override or false)
 		net.SendToServer()
 
 		return true
