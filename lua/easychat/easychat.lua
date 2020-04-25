@@ -1059,6 +1059,8 @@ if CLIENT then
 							table.insert(data, component.Color)
 						elseif component.Type == "text" then
 							table.insert(data, component.Content)
+						elseif component.Type == "stop" then
+							table.insert(data, color_white)
 						end
 					end
 				end
