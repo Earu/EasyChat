@@ -141,13 +141,13 @@ chathud:RegisterPart("bhsv", bhsv_part)
 ]]-------------------------------------------------------------------------------
 local hscan_part = {
 	Speed = 1,
-	Color = Color(9, 155, 234),
+	ScanColor = Color(9, 155, 234),
 }
 
 function hscan_part:Ctor(str)
 	local hscan_components = string.Explode("%s*,%s*", str, true)
 	self.Speed = math.Clamp(tonumber(hscan_components[1]) or 1, 1, 5)
-	self.Color = Color(
+	self.ScanColor = Color(
 		tonumber(hscan_components[2]) or self.Color.r,
 		tonumber(hscan_components[3]) or self.Color.g,
 		tonumber(hscan_components[4]) or self.Color.b
@@ -157,10 +157,10 @@ function hscan_part:Ctor(str)
 end
 
 function hscan_part:PostTextDraw(ctx, x, y, w, h)
-	self.Color.a = ctx.Alpha
+	self.ScanColor.a = ctx.Alpha
 
 	local half_width = w / 2
-	surface_SetDrawColor(self.Color)
+	surface_SetDrawColor(self.ScanColor)
 	surface_DrawRect(x + half_width + (math_sin(RealTime() * self.Speed) * half_width), y, 10, h)
 	surface_SetDrawColor(ctx.Color)
 end
@@ -178,13 +178,13 @@ chathud:RegisterPart("hscan", hscan_part, "%<(hscan)%>")
 ]]-------------------------------------------------------------------------------
 local vscan_part = {
 	Speed = 1,
-	Color = Color(234, 9, 61),
+	ScanColor = Color(234, 9, 61),
 }
 
 function vscan_part:Ctor(str)
 	local hscan_components = string.Explode("%s*,%s*", str, true)
 	self.Speed = math.Clamp(tonumber(hscan_components[1]) or 1, 1, 5)
-	self.Color = Color(
+	self.ScanColor = Color(
 		tonumber(hscan_components[2]) or self.Color.r,
 		tonumber(hscan_components[3]) or self.Color.g,
 		tonumber(hscan_components[4]) or self.Color.b
@@ -194,10 +194,10 @@ function vscan_part:Ctor(str)
 end
 
 function vscan_part:PostTextDraw(ctx, x, y, w, h)
-	self.Color.a = ctx.Alpha
+	self.ScanColor.a = ctx.Alpha
 
 	local half_height = h / 2
-	surface_SetDrawColor(self.Color)
+	surface_SetDrawColor(self.ScanColor)
 	surface_DrawRect(x, y + half_height + (math_sin(RealTime() * self.Speed) * half_height), w, 3)
 	surface_SetDrawColor(ctx.Color)
 end
