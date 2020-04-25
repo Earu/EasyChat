@@ -1,5 +1,3 @@
-local blur_rect = include("easychat/client/blur_rect.lua")
-
 local file_path = "easychat/chud_font_settings.txt"
 local default_font_data = {
 	font = "Roboto",
@@ -158,6 +156,7 @@ local EDITOR = {
 			self.FontScanlines.TextArea:SetTextColor(EasyChat.TextColor)
 			self.FontScanlines.Label:SetTextColor(EasyChat.TextColor)
 
+			EasyChat.BlurPanel(self, 0, 0, 0, 0)
 			self.Paint = function(self, w, h)
 				surface.SetDrawColor(EasyChat.OutlayColor)
 				surface.DrawRect(0, 0, w, 25)
@@ -169,14 +168,6 @@ local EDITOR = {
 				surface.SetDrawColor(EasyChat.OutlayOutlineColor)
 				surface.DrawOutlinedRect(0, 0, w, h)
 			end
-
-			hook.Add("HUDPaint", self, function()
-				if not self:IsVisible() then return end
-				if EasyChat.OutlayColor.a == 255 then return end
-
-				local x, y, w, h = self:GetBounds()
-				blur_rect(x, y, w, h, 10, 2)
-			end)
 
 			self.ResetFont:SetTextColor(EasyChat.TextColor)
 			self.ApplyFont:SetTextColor(EasyChat.TextColor)

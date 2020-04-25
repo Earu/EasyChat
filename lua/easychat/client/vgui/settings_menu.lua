@@ -1,6 +1,3 @@
-local blur_rect = include("easychat/client/blur_rect.lua")
-
-local black_color = Color(0, 0, 0)
 local function update_settings_font(name, size)
 	surface.CreateFont("ECSettingsFont", {
 		font = name,
@@ -86,14 +83,7 @@ function SETTINGS:Init()
 			surface.DrawLine(nagivation_w, 0, nagivation_w, h)
 		end
 
-		hook.Add("HUDPaint", self, function()
-			if not self:IsVisible() then return end
-			if EasyChat.OutlayColor.a == 255 then return end
-
-			local x, y, w, h = self:GetBounds()
-			blur_rect(x, y, w, h, 10, 2)
-		end)
-
+		EasyChat.BlurPanel(self, 0, 0, 0, 0)
 		self.Paint = function(self, w, h)
 			surface.SetDrawColor(EasyChat.OutlayColor)
 			surface.DrawRect(0, 0, w, 25)
