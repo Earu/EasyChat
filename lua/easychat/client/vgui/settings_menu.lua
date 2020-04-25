@@ -131,8 +131,13 @@ function SETTINGS:CreateNumberSetting(panel, name, max, min)
 		number_wang.Paint = function(self, w, h)
 			surface.SetDrawColor(EasyChat.TabColor)
 			surface.DrawRect(0, 0, w, h)
+
 			surface.SetDrawColor(EasyChat.OutlayColor)
 			surface.DrawOutlinedRect(0, 0, w, h)
+
+			surface.SetDrawColor(EasyChat.TabOutlineColor)
+			surface.DrawOutlinedRect(0, 0, w, h)
+
 			self:DrawTextEntryText(color_white, EasyChat.OutlayColor, color_white)
 		end
 	end
@@ -160,8 +165,13 @@ function SETTINGS:CreateStringSetting(panel, name)
 		text_entry.Paint = function(self, w, h)
 			surface.SetDrawColor(EasyChat.TabColor)
 			surface.DrawRect(0, 0, w, h)
+
 			surface.SetDrawColor(EasyChat.OutlayColor)
 			surface.DrawOutlinedRect(0, 0, w, h)
+
+			surface.SetDrawColor(EasyChat.TabOutlineColor)
+			surface.DrawOutlinedRect(0, 0, w, h)
+
 			self:DrawTextEntryText(color_white, EasyChat.OutlayColor, color_white)
 		end
 	end
@@ -186,6 +196,9 @@ function SETTINGS:CreateBooleanSetting(panel, description)
 				surface.SetDrawColor(EasyChat.TextColor)
 				surface.DrawRect(2, 2, w - 4, h - 4)
 			end
+
+			surface.SetDrawColor(EasyChat.TabOutlineColor)
+			surface.DrawOutlinedRect(0, 0, w, h)
 		end
 	end
 
@@ -265,7 +278,7 @@ local COLOR_SETTING = {
 			surface.SetDrawColor(self.Color:Unpack())
 			surface.DrawRect(0, 0, w, h)
 
-			surface.SetDrawColor(black_color)
+			surface.SetDrawColor(EasyChat.TabOutlineColor)
 			surface.DrawOutlinedRect(0, 0, w, h)
 		end
 	end,
@@ -312,8 +325,13 @@ function SETTINGS:CreateColorSetting(panel, name)
 		local function entry_paint(self, w, h, text_color)
 			surface.SetDrawColor(EasyChat.TabColor)
 			surface.DrawRect(0, 0, w, h)
+
 			surface.SetDrawColor(EasyChat.OutlayColor)
 			surface.DrawOutlinedRect(0, 0, w, h)
+
+			surface.SetDrawColor(EasyChat.TabOutlineColor)
+			surface.DrawOutlinedRect(0, 0, w, h)
+
 			self:DrawTextEntryText(text_color, EasyChat.OutlayColor, color_white)
 		end
 
@@ -350,6 +368,9 @@ function SETTINGS:CreateListSetting(panel, name)
 		list_view.Paint = function(self, w, h)
 			surface.SetDrawColor(EasyChat.OutlayColor)
 			surface.DrawOutlinedRect(0, 0, w, h)
+
+			surface.SetDrawColor(EasyChat.TabOutlineColor)
+			surface.DrawOutlinedRect(0, 0, w, h)
 		end
 
 		local old_AddColumn = list_view.AddColumn
@@ -360,6 +381,9 @@ function SETTINGS:CreateListSetting(panel, name)
 			column.Header.Paint = function(self, w, h)
 				surface.SetDrawColor(EasyChat.OutlayColor)
 				surface.DrawRect(0, 0, w, h)
+
+				surface.SetDrawColor(EasyChat.TabOutlineColor)
+				surface.DrawOutlinedRect(0, 0, w, h)
 			end
 
 			return column
