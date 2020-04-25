@@ -584,7 +584,7 @@ local function create_default_settings()
 					input_str = ("%s :%s:"):format(input_str, emote_name)
 				end
 
-				input_str = ("%s %s: Hello!"):format(input_str, LocalPlayer():Nick())
+				input_str = ("%s %s<stop>: Hello!"):format(input_str, LocalPlayer():Nick())
 				mk = ec_markup.Parse(input_str)
 			end
 
