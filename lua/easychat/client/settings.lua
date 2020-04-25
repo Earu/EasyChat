@@ -458,7 +458,8 @@ local function create_default_settings()
 		settings:AddCategory(category_name)
 
 		local setting_override_client_settings = settings:AddSetting(category_name, "boolean", "Server settings override client settings")
-		setting_override_client_settings.OnChange = function(_, enabled)
+		setting_override_client_settings:SetChecked(config.OverrideClientSettings)
+		setting_override_client_settings.OnChange = function(self, enabled)
 			if not EasyChat.Config:WriteSettingOverride(enabled) then
 				notification.AddLegacy("You need to be an admin to do that", NOTIFY_ERROR, 3)
 				surface.PlaySound("buttons/button11.wav")
@@ -468,10 +469,52 @@ local function create_default_settings()
 
 		settings:AddSpacer(category_name)
 
+		local setting_usergroups = settings:AddSetting(category_name, "list", "Rank Prefixes")
+		local prefix_list = setting_usergroups.List
+		prefix_list:SetMultiSelect(false)
+		prefix_list:AddColumn("Usergroup")
+		prefix_list:AddColumn("Emote Name")
+		prefix_list:AddColumn("Tag")
 
+		local function build_usergroup_list()
+			prefix_list:Clear()
+
+			for usergroup, prefix_data in pairs(EasyChat.Config.UserGroups) do
+				prefix_list:AddLine(usergroup, prefix_data.EmoteName, prefix_data.Tag)
+			end
+		end
+
+		build_usergroup_list()
+
+		local setting_add_usergroup = settings:AddSetting(category_name, "action", "Setup New Rank")
+		setting_add_usergroup.DoClick = function()
+			EasyChat.AskForInput("New Rank", function(usergroup)
+				if not EasyChat.Config:WriteUserGroup(usergroup:Trim(), "", "") then
+					notification.AddLegacy("You need to be an admin to do that", NOTIFY_ERROR, 3)
+					surface.PlaySound("buttons/button11.wav")
+				end
+			end, false)
+		end
+
+		local setting_modify_usergroup = settings:AddSetting(category_name, "action", "Modify Rank")
+		setting_modify_usergroup .DoClick = function()
+		end
+
+		local setting_del_usergroup = settings:AddSetting(category_name, "action", "Delete Rank")
+		setting_del_usergroup.DoClick = function()
+			local selected_line = prefix_list:GetSelected()[1]
+			if not IsValid(selected_line) then return end
+
+			local usergroup = selected_line:GetColumnText(1)
+			if not EasyChat.Config:DeleteUserGroup(usergroup) then
+				notification.AddLegacy("You need to be an admin to do that", NOTIFY_ERROR, 3)
+				surface.PlaySound("buttons/button11.wav")
+			end
+		end
 
 		hook.Add("ECServerConfigUpdate", settings, function(_, config)
 			setting_override_client_settings:SetChecked(config.OverrideClientSettings)
+			build_usergroup_list()
 		end)
 	end
 end
