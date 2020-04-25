@@ -2,8 +2,6 @@ local surface_SetDrawColor = _G.surface.SetDrawColor
 local surface_DrawRect = _G.surface.DrawRect
 local surface_DrawOutlinedRect = _G.surface.DrawOutlinedRect
 
-local blur_rect = include("easychat/client/blur_rect.lua")
-
 local CHATBOX = {
 	Init = function(self)
 		local frame = self
@@ -174,14 +172,7 @@ local CHATBOX = {
 			self.BtnClose:SetTextColor(EasyChat.TextColor) --Color(200, 20, 20))
 			self.BtnMaxim:SetTextColor(EasyChat.TextColor) --Color(125, 125, 125))
 
-			hook.Add("HUDPaint", self, function()
-				if not self:IsVisible() then return end
-				if EasyChat.OutlayColor.a == 255 then return end
-
-				local x, y, w, h = self:GetBounds()
-				blur_rect(x + 6, y, w - 13, h - 5, 10, 2)
-			end)
-
+			EasyChat.BlurPanel(self, 6, 0, -13, -5)
 			self.Paint = function(self, w, h)
 				surface_SetDrawColor(EasyChat.OutlayColor)
 				surface_DrawRect(6, 0, w - 13, 28)

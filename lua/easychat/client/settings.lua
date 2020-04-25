@@ -458,12 +458,13 @@ local function create_default_settings()
 		settings:AddCategory(category_name)
 
 		local setting_override_client_settings = settings:AddSetting(category_name, "boolean", "Server settings override client settings")
-		setting_override_client_settings:SetChecked(config.OverrideClientSettings)
+		setting_override_client_settings:SetChecked(EasyChat.Config.OverrideClientSettings)
 		setting_override_client_settings.OnChange = function(self, enabled)
-			if not EasyChat.Config:WriteSettingOverride(enabled) then
-				notification.AddLegacy("You need to be an admin to do that", NOTIFY_ERROR, 3)
+			local succ, err = EasyChat.Config:WriteSettingOverride(enabled)
+			if not succ then
+				notification.AddLegacy(err, NOTIFY_ERROR, 3)
 				surface.PlaySound("buttons/button11.wav")
-				self:SetChecked(config.OverrideClientSettings)
+				self:SetChecked(EasyChat.Config.OverrideClientSettings)
 			end
 		end
 
@@ -486,18 +487,130 @@ local function create_default_settings()
 
 		build_usergroup_list()
 
+		local function setup_rank(usergroup)
+			-- sanity check to see if wanted usergroup actually exists
+			if usergroup and not EasyChat.Config.UserGroups[usergroup] then return end
+
+			local frame = vgui.Create("DFrame")
+			frame:SetSize(400, 400)
+			frame:SetTitle(usergroup and "Modify Rank" or "New Rank")
+			frame.lblTitle:SetFont("EasyChatFont")
+
+			local setting_usergroup = settings:AddSetting(category_name, "string", "Usergroup")
+			setting_usergroup:SetParent(frame)
+			setting_usergroup:Dock(TOP)
+			setting_usergroup:DockMargin(5, 20, 5, 10)
+			if usergroup then
+				setting_usergroup:SetText(usergroup)
+			end
+
+			local setting_emote_name = settings:AddSetting(category_name, "string", "Emote Name")
+			setting_emote_name:SetParent(frame)
+			setting_emote_name:Dock(TOP)
+			setting_emote_name:DockMargin(5, 15, 5, 10)
+			if usergroup then
+				setting_emote_name:SetText(EasyChat.Config.UserGroups[usergroup].EmoteName)
+			end
+
+			local setting_tag = settings:AddSetting(category_name, "string", "Tag")
+			setting_tag:SetParent(frame)
+			setting_tag:Dock(TOP)
+			setting_tag:DockMargin(5, 15, 5, 10)
+			if usergroup then
+				setting_tag:SetText(EasyChat.Config.UserGroups[usergroup].Tag)
+			end
+
+			local setting_save = settings:AddSetting(category_name, "action", "Save")
+			setting_save:SetParent(frame)
+			setting_save:Dock(BOTTOM)
+			setting_save:DockMargin(5, 10, 5, 5)
+			setting_save.DoClick = function()
+				local succ, err = EasyChat.Config:WriteUserGroup(
+					setting_usergroup:GetText():Trim(),
+					setting_tag:GetText():Trim(),
+					setting_emote_name:GetText():Trim()
+				)
+
+				if not succ then
+					notification.AddLegacy(err, NOTIFY_ERROR, 3)
+					surface.PlaySound("buttons/button11.wav")
+				else
+					frame:Close()
+				end
+			end
+
+			local mk = nil
+			local function build_mk()
+				if not IsValid(frame) then return end
+
+				local input_str = ("%s<stop>"):format(setting_tag:GetText():Trim())
+				local emote_name = setting_emote_name:GetText():Trim()
+				if #emote_name > 0 then
+					input_str = ("%s :%s:"):format(input_str, emote_name)
+				end
+
+				input_str = ("%s %s: Hello!"):format(input_str, LocalPlayer():Nick())
+				mk = ec_markup.Parse(input_str)
+			end
+
+			build_mk()
+			setting_emote_name.OnChange = function()
+				timer.Create("ECUserGroupPrefixSetup", 0.25, 1, build_mk)
+			end
+
+			setting_tag.OnChange = function()
+				timer.Create("ECUserGroupPrefixSetup", 0.25, 1, build_mk)
+			end
+
+			local setting_canvas = frame:Add("DPanel")
+			setting_canvas:Dock(FILL)
+			setting_canvas:DockMargin(5, 10, 5, 5)
+			setting_canvas.Paint = function(_, w, h)
+				surface.SetDrawColor(color_white)
+				surface.DrawOutlinedRect(0, 0, w, h)
+
+				if mk then
+					local mk_w, mk_h = mk:GetWide(), mk:GetTall()
+					mk:Draw(w / 2 - mk_w / 2, h / 2 - mk_h / 2)
+				end
+			end
+
+			if not EasyChat.UseDermaSkin then
+				frame.lblTitle:SetTextColor(EasyChat.TextColor)
+
+				frame.btnMaxim:Hide()
+				frame.btnMinim:Hide()
+				frame.btnClose:SetText("x")
+				frame.btnClose:SetFont("DermaDefaultBold")
+				frame.btnClose:SetTextColor(EasyChat.TextColor)
+				frame.btnClose.Paint = function() end
+
+				EasyChat.BlurPanel(frame, 0, 0, 0, 0)
+				frame.Paint = function(self, w, h)
+					surface.SetDrawColor(EasyChat.OutlayColor)
+					surface.DrawRect(0, 0, w, 25)
+
+					surface.SetDrawColor(EasyChat.TabColor)
+					surface.DrawRect(0, 25, w, h - 25)
+				end
+			end
+
+			frame:MakePopup()
+			frame:Center()
+		end
+
 		local setting_add_usergroup = settings:AddSetting(category_name, "action", "Setup New Rank")
 		setting_add_usergroup.DoClick = function()
-			EasyChat.AskForInput("New Rank", function(usergroup)
-				if not EasyChat.Config:WriteUserGroup(usergroup:Trim(), "", "") then
-					notification.AddLegacy("You need to be an admin to do that", NOTIFY_ERROR, 3)
-					surface.PlaySound("buttons/button11.wav")
-				end
-			end, false)
+			setup_rank()
 		end
 
 		local setting_modify_usergroup = settings:AddSetting(category_name, "action", "Modify Rank")
-		setting_modify_usergroup .DoClick = function()
+		setting_modify_usergroup.DoClick = function()
+			local selected_line = prefix_list:GetSelected()[1]
+			if not IsValid(selected_line) then return end
+
+			local usergroup = selected_line:GetColumnText(1)
+			setup_rank(usergroup)
 		end
 
 		local setting_del_usergroup = settings:AddSetting(category_name, "action", "Delete Rank")
@@ -506,8 +619,9 @@ local function create_default_settings()
 			if not IsValid(selected_line) then return end
 
 			local usergroup = selected_line:GetColumnText(1)
-			if not EasyChat.Config:DeleteUserGroup(usergroup) then
-				notification.AddLegacy("You need to be an admin to do that", NOTIFY_ERROR, 3)
+			local succ, err = EasyChat.Config:DeleteUserGroup(usergroup)
+			if not succ then
+				notification.AddLegacy(err, NOTIFY_ERROR, 3)
 				surface.PlaySound("buttons/button11.wav")
 			end
 		end
