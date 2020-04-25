@@ -272,8 +272,11 @@ local function create_default_settings()
 			setting_save_colors.DoClick = function()
 				local text_entry = EasyChat.GUI.TextEntry
 				if IsValid(text_entry) and text_entry.ClassName == "TextEntryX" then
+					local border_color = EasyChat.TabOutlineColor.a == 0
+						and EasyChat.OutlayColor or EasyChat.TabOutlineColor
+
 					text_entry:SetBackgroundColor(EasyChat.TabColor)
-					text_entry:SetBorderColor(EasyChat.OutlayColor)
+					text_entry:SetBorderColor(border_color)
 					text_entry:SetTextColor(EasyChat.TextColor)
 				end
 
@@ -454,7 +457,7 @@ local function create_default_settings()
 
 	-- ranks / usergroups settings
 	do
-		local category_name = "Ranks Config"
+		local category_name = "Ranks"
 		settings:AddCategory(category_name)
 
 		local setting_override_client_settings = settings:AddSetting(category_name, "boolean", "Server settings override client settings")
@@ -481,7 +484,39 @@ local function create_default_settings()
 			prefix_list:Clear()
 
 			for usergroup, prefix_data in pairs(EasyChat.Config.UserGroups) do
-				prefix_list:AddLine(usergroup, prefix_data.EmoteName, prefix_data.Tag)
+				local line = prefix_list:AddLine(usergroup, prefix_data.EmoteName, prefix_data.Tag)
+
+				local input_str = ("%s<stop>"):format(prefix_data.Tag)
+				local emote_name = prefix_data.EmoteName
+				if #emote_name > 0 then
+					input_str = ("%s :%s:"):format(input_str, emote_name)
+				end
+
+				input_str = ("%s %s"):format(input_str, LocalPlayer():Nick())
+				local mk = ec_markup.Parse(input_str)
+				local mk_w, mk_h = mk:GetWide(), mk:GetTall()
+
+				local tooltip = vgui.Create("Panel")
+				tooltip:SetVisible(false)
+				tooltip:SetDrawOnTop(true)
+				tooltip:SetWide(mk_w + 10)
+				tooltip:SetTall(mk_h + 10)
+				tooltip.Paint = function(_, w, h)
+					if not settings:IsVisible() then return end
+					mk:Draw(w / 2 - mk_w / 2, h / 2 - mk_h / 2)
+				end
+
+				line.Think = function(self)
+					local is_hovered = self:IsHovered()
+					tooltip:SetVisible(is_hovered)
+					local mx, my = gui.MousePos()
+					tooltip:SetPos(mx, my)
+				end
+
+				line.OnRemove = function()
+					if not IsValid(tooltip) then return end
+					tooltip:Remove()
+				end
 			end
 		end
 
@@ -592,6 +627,12 @@ local function create_default_settings()
 
 					surface.SetDrawColor(EasyChat.TabColor)
 					surface.DrawRect(0, 25, w, h - 25)
+
+					surface.SetDrawColor(EasyChat.TabOutlineColor)
+					surface.DrawOutlinedRect(0, 0, w, 25)
+
+					surface.SetDrawColor(EasyChat.OutlayOutlineColor)
+					surface.DrawOutlinedRect(0, 0, w, h)
 				end
 			end
 
