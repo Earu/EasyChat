@@ -62,6 +62,20 @@ function SETTINGS:Init()
 		self:OnCategoryChanged(old_btn, btn)
 	end
 
+	local old_add_sheet = self.Categories.AddSheet
+	self.Categories.AddSheet = function(self, label, panel, material)
+		local sheet = old_add_sheet(self, label, panel, material)
+		if not EasyChat.UseDermaSkin then
+			sheet.Button:SetTextColor(self:GetSkin().text_normal)
+
+			if #self.Items == 1 then
+				sheet.Button:SetTextColor(EasyChat.TextColor)
+			end
+		end
+
+		return sheet
+	end
+
 	if not EasyChat.UseDermaSkin then
 		self.lblTitle:SetTextColor(EasyChat.TextColor)
 
