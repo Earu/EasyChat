@@ -148,9 +148,9 @@ function hscan_part:Ctor(str)
 	local hscan_components = string.Explode("%s*,%s*", str, true)
 	self.Speed = math.Clamp(tonumber(hscan_components[1]) or 1, 1, 5)
 	self.ScanColor = Color(
-		tonumber(hscan_components[2]) or self.Color.r,
-		tonumber(hscan_components[3]) or self.Color.g,
-		tonumber(hscan_components[4]) or self.Color.b
+		tonumber(hscan_components[2]) or self.ScanColor.r,
+		tonumber(hscan_components[3]) or self.ScanColor.g,
+		tonumber(hscan_components[4]) or self.ScanColor.b
 	)
 
 	return self
@@ -185,9 +185,9 @@ function vscan_part:Ctor(str)
 	local hscan_components = string.Explode("%s*,%s*", str, true)
 	self.Speed = math.Clamp(tonumber(hscan_components[1]) or 1, 1, 5)
 	self.ScanColor = Color(
-		tonumber(hscan_components[2]) or self.Color.r,
-		tonumber(hscan_components[3]) or self.Color.g,
-		tonumber(hscan_components[4]) or self.Color.b
+		tonumber(hscan_components[2]) or self.ScanColor.r,
+		tonumber(hscan_components[3]) or self.ScanColor.g,
+		tonumber(hscan_components[4]) or self.ScanColor.b
 	)
 
 	return self
