@@ -139,7 +139,7 @@ local PICKER = {
                                 surface_DrawTexturedRect(0, 0, w, h)
                             end
                             emote_panel.DoClick = function()
-                                self:OnEmoteClicked(emote_name)
+                                self:OnEmoteClicked(emote_name, lookup_name)
                             end
 
 							i = i + 1
