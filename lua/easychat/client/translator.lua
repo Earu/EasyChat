@@ -3,16 +3,23 @@ local translator = {
 	CurrentID = 1
 }
 
+local red_col = Color(255, 0, 0)
 local function create_translation_panel(self)
 	local tr_panel = vgui.Create("DHTML")
 	tr_panel:SetHTML("<html><head></head><body></body></html>")
 	tr_panel:SetAllowLua(true)
 	tr_panel:AddFunction("Translate", "Print", print)
-	tr_panel:AddFunction("Translate", "Callback", function(id, success, json)
+	tr_panel:AddFunction("Translate", "Callback", function(id, status, json)
 		local callback = self.OnGoing[id]
 		if not callback then return end
 
-		if not success then
+		if status ~= 200 then
+			if status == 429 then
+				chat.AddText(red_col, "[WARN] It seems that you have been blocked from using the translation service for a while.")
+				chat.AddText(red_col, "This is most likely the result of spam. Disabling translation to prevent a longer waiting time.")
+				self.Disabled = true
+			end
+
 			callback(false)
 			self.OnGoing[id] = nil
 			return
@@ -36,11 +43,15 @@ local function create_translation_panel(self)
 		request.open("GET", url);
 		request.send();
 
+		request.onerror = function() {
+			Translate.Callback(id, 0);
+		};
+
 		request.onreadystatechange = function() {
 			if (this.readyState == 4) {
-				Translate.Callback(id, this.status == 200, request.responseText);
+				Translate.Callback(id, this.status, request.responseText);
 			}
-		}
+		};
 	}]])
 
 	return tr_panel
@@ -66,6 +77,11 @@ function translator:Destroy()
 end
 
 function translator:Translate(text, source_lang, target_lang, on_finish)
+	if self.Disabled then
+		on_finish(false)
+		return
+	end
+
 	if not IsValid(self.Panel) then
 		self.Panel = create_translation_panel(self)
 	end
