@@ -670,7 +670,7 @@ local emote_part = {
 
 function emote_part:Ctor(str)
 	local em_components = string.Explode("%s*,%s*", str, true)
-	local name, size = em_components[1], tonumber(em_components[2])
+	local name, size, requested_provider = em_components[1], tonumber(em_components[2]), em_components[3]
 	if size then
 		size = math_clamp(size, 16, 64)
 		self.Height = size
@@ -679,7 +679,7 @@ function emote_part:Ctor(str)
 		self.Height = draw_GetFontHeight(self.HUD.DefaultFont)
 	end
 
-	self:TryGetEmote(name)
+	self:TryGetEmote(name, requested_provider)
 	self:ComputeSize()
 
 	return self
@@ -735,36 +735,50 @@ function chathud:RegisterEmoteProvider(provider_name, provider_func, priority)
 	list.Set("EasyChatEmoticonProviders", provider_name, provider_func)
 end
 
-function emote_part:TryGetEmote(name)
+function emote_part:TryGetProviderEmote(provider, name)
+	local succ, emote = pcall(provider, name)
+	if not succ then EasyChat.Print(true, emote) end
+
+	-- false indicates that the emote name does not exist for the provider
+	if succ and emote ~= false then
+		-- material was cached
+		if type(emote) == "IMaterial" then
+			self.SetEmoteMaterial = function() surface_SetMaterial(emote) end
+
+			return true
+		-- we're still requesting
+		elseif emote == nil then
+			self.SetEmoteMaterial = function()
+				local mat = provider(name)
+				if mat then
+					surface_SetMaterial(mat)
+				end
+			end
+
+			return true
+		end
+	end
+
+	return false
+end
+
+function emote_part:TryGetEmote(name, requested_provider)
 	local providers = list.Get("EasyChatEmoticonProviders")
 	local found = false
+
+	if requested_provider and providers[requested_provider] then
+		if not self:TryGetProviderEmote(providers[requested_provider], name) then
+			self.Invalid = true
+			return
+		end
+	end
 
 	-- look for providers with a priority set
 	for _, provider in ipairs(self.HUD.EmotePriorities) do
 		if providers[provider] then
-			local succ, emote = pcall(providers[provider], name)
-			if not succ then EasyChat.Print(true, emote) end
-
-			-- false indicates that the emote name does not exist for the provider
-			if succ and emote ~= false then
-				-- material was cached
-				if type(emote) == "IMaterial" then
-					self.SetEmoteMaterial = function() surface_SetMaterial(emote) end
-
-					found = true
-					break
-				-- we're still requesting
-				elseif emote == nil then
-					self.SetEmoteMaterial = function()
-						local mat = providers[provider](name)
-						if mat then
-							surface_SetMaterial(mat)
-						end
-					end
-
-					found = true
-					break
-				end
+			if self:TryGetProviderEmote(providers[provider], name) then
+				found = true
+				break
 			end
 		end
 	end
