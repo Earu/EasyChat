@@ -3,7 +3,7 @@ local translator = {
 	CurrentID = 1
 }
 
-local function create_translation_panel()
+local function create_translation_panel(self)
 	local tr_panel = vgui.Create("DHTML")
 	tr_panel:SetHTML("<html><head></head><body></body></html>")
 	tr_panel:SetAllowLua(true)
@@ -47,7 +47,7 @@ local function create_translation_panel()
 end
 
 function translator:Initialize()
-	self.Panel = create_translation_panel()
+	self.Panel = create_translation_panel(self)
 	self.OnGoing = {}
 	self.CurrentID = 1
 end
@@ -67,7 +67,7 @@ end
 
 function translator:Translate(text, source_lang, target_lang, on_finish)
 	if not IsValid(self.Panel) then
-		self.Panel = create_translation_panel()
+		self.Panel = create_translation_panel(self)
 	end
 
 	self.OnGoing[self.CurrentID] = on_finish
