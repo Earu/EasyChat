@@ -485,19 +485,37 @@ local function create_default_settings()
 		local prefix_list = setting_usergroups.List
 		prefix_list:SetMultiSelect(false)
 		prefix_list:AddColumn("Usergroup")
-		prefix_list:AddColumn("Emote Name")
+		prefix_list:AddColumn("Emote")
 		prefix_list:AddColumn("Tag")
+
+		local function build_emote_tag(emote_name, emote_size, emote_provider)
+			local emote_tag = ""
+			if #emote_name > 0 then
+				emote_tag = ("<emote=%s"):format(emote_name)
+				if emote_size ~= -1 then
+					emote_tag = ("%s,%d"):format(emote_tag, emote_size)
+				end
+
+				if #emote_provider > 0 then
+					emote_tag = ("%s,%s"):format(emote_tag, emote_provider)
+				end
+
+				emote_tag = ("%s>"):format(emote_tag)
+			end
+
+			return emote_tag
+		end
 
 		local function build_usergroup_list()
 			prefix_list:Clear()
 
 			for usergroup, prefix_data in pairs(EasyChat.Config.UserGroups) do
-				local line = prefix_list:AddLine(usergroup, prefix_data.EmoteName, prefix_data.Tag)
+				local emote_display = build_emote_tag(prefix_data.EmoteName, prefix_data.EmoteSize or -1, prefix_data.EmoteProvider or "")
+				local line = prefix_list:AddLine(usergroup, emote_display, prefix_data.Tag)
 
 				local input_str = ("%s<stop>"):format(prefix_data.Tag)
-				local emote_name = prefix_data.EmoteName
-				if #emote_name > 0 then
-					input_str = ("%s :%s:"):format(input_str, emote_name)
+				if #emote_display > 0 then
+					input_str = ("%s %s"):format(input_str, emote_display)
 				end
 
 				input_str = ("%s %s"):format(input_str, LocalPlayer():Nick())
@@ -552,7 +570,9 @@ local function create_default_settings()
 			setting_emote_name:Dock(TOP)
 			setting_emote_name:DockMargin(5, 15, 5, 10)
 			if usergroup then
-				setting_emote_name:SetText(EasyChat.Config.UserGroups[usergroup].EmoteName)
+				local prefix_data = EasyChat.Config.UserGroups[usergroup]
+				local text = build_emote_tag(prefix_data.EmoteName, prefix_data.EmoteSize, prefix_data.EmoteProvider):match("<emote=(.*)>")
+				setting_emote_name:SetText(text)
 			end
 
 			local setting_tag = settings:AddSetting(category_name, "string", "Tag")
@@ -568,10 +588,15 @@ local function create_default_settings()
 			setting_save:Dock(BOTTOM)
 			setting_save:DockMargin(5, 10, 5, 5)
 			setting_save.DoClick = function()
+				local emote_components = setting_emote_name:GetText():Trim():Split(",")
+				-- emote_name, emote_size, emote_provider
+
 				local succ, err = EasyChat.Config:WriteUserGroup(
-					setting_usergroup:GetText():Trim(),
-					setting_tag:GetText():Trim(),
-					setting_emote_name:GetText():Trim()
+					setting_usergroup:GetText(),
+					setting_tag:GetText(),
+					emote_components[1], -- emote name
+					emote_components[2], -- emote size
+					emote_components[3] -- emote provider
 				)
 
 				if not succ then
@@ -587,9 +612,15 @@ local function create_default_settings()
 				if not IsValid(frame) then return end
 
 				local input_str = ("%s<stop>"):format(setting_tag:GetText():Trim())
-				local emote_name = setting_emote_name:GetText():Trim()
-				if #emote_name > 0 then
-					input_str = ("%s :%s:"):format(input_str, emote_name)
+				local emote_components =  setting_emote_name:GetText():Split(",")
+				local emote_tag = build_emote_tag(
+					emote_components[1]:Trim(), -- emote name
+					tonumber(emote_components[2]) or -1, -- emote size
+					(emote_components[3] or ""):Trim() -- emote provider
+				)
+
+				if #emote_tag > 0 then
+					input_str = ("%s %s"):format(input_str, emote_tag)
 				end
 
 				input_str = ("%s %s<stop>: Hello!"):format(input_str, LocalPlayer():Nick())
