@@ -576,7 +576,7 @@ local function create_default_settings()
 			setting_emote_name:DockMargin(5, 15, 5, 10)
 			if usergroup then
 				local prefix_data = EasyChat.Config.UserGroups[usergroup]
-				local text = build_emote_tag(prefix_data.EmoteName, prefix_data.EmoteSize, prefix_data.EmoteProvider):match("<emote=(.*)>")
+				local text = build_emote_tag(prefix_data.EmoteName, prefix_data.EmoteSize or -1, prefix_data.EmoteProvider or ""):match("<emote=(.*)>")
 				setting_emote_name:SetText(text)
 			end
 
