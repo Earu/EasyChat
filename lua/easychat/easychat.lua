@@ -1213,17 +1213,22 @@ if CLIENT then
 					end
 
 					if #usergroup_prefix.EmoteName > 0 then
-						local tag = "<emote=" .. usergroup_prefix.EmoteName
+						local tag = ("<emote=%s"):format(usergroup_prefix.EmoteName)
 
 						if usergroup_prefix.EmoteSize ~= -1 then
-							tag = tag .. "," .. usergroup_prefix.EmoteSize
+							tag = ("%s,%s"):format(tag, usergroup_prefix.EmoteSize)
 						end
 
 						if #usergroup_prefix.EmoteProvider > 0 then
-							tag = tag .. "," .. usergroup_prefix.EmoteProvider
+							-- add a comma here for proper markup parsing
+							if usergroup_prefix.EmoteSize == -1 then
+								tag = ("%s,"):format(tag)
+							end
+
+							tag = ("%s,%s"):format(tag, usergroup_prefix.EmoteProvider)
 						end
 
-						tag = tag .. "> "
+						tag = ("%s>"):format(tag)
 						EasyChat.ChatHUD:AppendText(tag)
 					end
 				end
