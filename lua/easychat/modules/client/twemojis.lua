@@ -284,7 +284,7 @@ local twemoji_part = table.Copy(EasyChat.ChatHUD.Parts.emote)
 twemoji_part.HasSetHeight = nil
 
 function twemoji_part:Ctor(str)
-	local em_components = string.Explode("%s*,%s*", str, true)
+	local em_components = str:Split(",")
 	local name = em_components[1]
 	self.Height = draw.GetFontHeight(self.HUD.DefaultFont)
 

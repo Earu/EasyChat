@@ -9,6 +9,8 @@ local default_config = {
 	UserGroups = {
 		--[[["players"] = {
 			EmoteName = "user",
+			EmoteSize = 16,
+			EmoteProvider = silkicons,
 			Tag = "[<hscan>Plebian<stop>]"
 		}]]
 	}
@@ -86,10 +88,14 @@ if SERVER then
 		local user_group = net.ReadString()
 		local tag = net.ReadString()
 		local emote_name = net.ReadString()
+		local emote_size = net.ReadInt(32)
+		local emote_provider = net.ReadString()
 
 		config.UserGroups[user_group] = {
 			Tag = tag,
 			EmoteName = emote_name,
+			EmoteSize = emote_size,
+			EmoteProvider = emote_provider,
 		}
 
 		config:Save()
@@ -133,18 +139,22 @@ if CLIENT then
 		hook.Run("ECServerConfigUpdate", EasyChat.Config)
 	end)
 
-	function config:WriteUserGroup(user_group, tag, emote_name)
+	function config:WriteUserGroup(user_group, tag, emote_name, emote_size, emote_provider)
 		if not LocalPlayer():IsAdmin() then return false, "You need to be an admin to do that" end
 
 		user_group = (user_group or ""):Trim()
 		tag = (tag or ""):Trim()
 		emote_name = (emote_name or ""):Trim()
+		emote_size = tonumber(emote_size) or -1
+		emote_provider = (emote_provider or ""):Trim()
 		if #user_group == 0 then return false, "No usergroup specified" end
 
 		net.Start(NET_WRITE_USER_GROUP)
 		net.WriteString(user_group)
 		net.WriteString(tag)
 		net.WriteString(emote_name)
+		net.WriteInt(emote_size, 32)
+		net.WriteString(emote_provider)
 		net.SendToServer()
 
 		return true

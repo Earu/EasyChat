@@ -669,14 +669,22 @@ local emote_part = {
 }
 
 function emote_part:Ctor(str)
-	local em_components = string.Explode("%s*,%s*", str, true)
-	local name, size, requested_provider = em_components[1], tonumber(em_components[2]), em_components[3]
+	local em_components = str:Split(",")
+	local name, size, requested_provider =
+		em_components[1]:Trim(),
+		tonumber(em_components[2]),
+		em_components[3]
+
 	if size then
 		size = math_clamp(size, 16, 64)
 		self.Height = size
 		self.HasSetHeight = true
 	else
 		self.Height = draw_GetFontHeight(self.HUD.DefaultFont)
+	end
+
+	if requested_provider then
+		requested_provider = requested_provider:Trim()
 	end
 
 	self:TryGetEmote(name, requested_provider)
@@ -762,21 +770,22 @@ function emote_part:TryGetProviderEmote(provider, name)
 	return false
 end
 
-function emote_part:TryGetEmote(name, requested_provider)
+function emote_part:TryGetEmote(name, requested_provider_name)
 	local providers = list.Get("EasyChatEmoticonProviders")
-	local found = false
 
-	if requested_provider and providers[requested_provider] then
-		if not self:TryGetProviderEmote(providers[requested_provider], name) then
+	if requested_provider_name and providers[requested_provider_name] then
+		if not self:TryGetProviderEmote(providers[requested_provider_name], name) then
 			self.Invalid = true
-			return
 		end
+
+		return -- stop there anyway
 	end
 
 	-- look for providers with a priority set
-	for _, provider in ipairs(self.HUD.EmotePriorities) do
-		if providers[provider] then
-			if self:TryGetProviderEmote(providers[provider], name) then
+	local found = false
+	for _, provider_name in ipairs(self.HUD.EmotePriorities) do
+		if providers[provider_name] then
+			if self:TryGetProviderEmote(providers[provider_name], name) then
 				found = true
 				break
 			end
