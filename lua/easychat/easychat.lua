@@ -1228,7 +1228,7 @@ if CLIENT then
 							tag = ("%s,%s"):format(tag, usergroup_prefix.EmoteProvider)
 						end
 
-						tag = ("%s>"):format(tag)
+						tag = ("%s> "):format(tag)
 						EasyChat.ChatHUD:AppendText(tag)
 					end
 				end
