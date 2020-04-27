@@ -896,11 +896,11 @@ if CLIENT then
 		function EasyChat.SendGlobalMessage(msg, is_team, is_local)
 			msg = EasyChat.MacroProcessor:ProcessString(msg)
 
-			if EC_TRANSLATE_OUT_MSG:GetBool() then
-				local source, target =
-					EC_TRANSLATE_OUT_SRC_LANG:GetString(),
-					EC_TRANSLATE_OUT_TARGET_LANG:GetString()
+			local source, target =
+				EC_TRANSLATE_OUT_SRC_LANG:GetString(),
+				EC_TRANSLATE_OUT_TARGET_LANG:GetString()
 
+			if EC_TRANSLATE_OUT_MSG:GetBool() and source ~= target then
 				EasyChat.Translator:Translate(msg, source, target, function(success, _, translation)
 					net.Start(NET_SEND_MSG)
 					net.WriteString(success and translation or msg)
@@ -1206,14 +1206,26 @@ if CLIENT then
 
 				if EC_HUD_CUSTOM:GetBool() then
 					EasyChat.ChatHUD:PushPartComponent("stop")
-					EasyChat.ChatHUD:AppendText(usergroup_prefix.Tag)
-					EasyChat.ChatHUD:PushPartComponent("stop")
 
-					if usergroup_prefix.EmoteName and #usergroup_prefix.EmoteName:Trim() > 0 then
-						EasyChat.ChatHUD:AppendText((" :%s:"):format(usergroup_prefix.EmoteName:Trim()))
+					if #usergroup_prefix.Tag > 0 then
+						EasyChat.ChatHUD:AppendText(usergroup_prefix.Tag .. " ")
+						EasyChat.ChatHUD:PushPartComponent("stop")
 					end
 
-					EasyChat.ChatHUD:AppendText(" ")
+					if #usergroup_prefix.EmoteName > 0 then
+						local tag = "<emote=" .. usergroup_prefix.EmoteName
+
+						if usergroup_prefix.EmoteSize ~= -1 then
+							tag = tag .. "," .. usergroup_prefix.EmoteSize
+						end
+
+						if #usergroup_prefix.EmoteProvider > 0 then
+							tag = tag .. "," .. usergroup_prefix.EmoteProvider
+						end
+
+						tag = tag .. "> "
+						EasyChat.ChatHUD:AppendText(tag)
+					end
 				end
 			end
 
@@ -2198,11 +2210,11 @@ if CLIENT then
 			is_team = false
 		end
 
-		if EC_TRANSLATE_INC_MSG:GetBool() and ply ~= LocalPlayer() then
-			local source, target =
-				EC_TRANSLATE_INC_SRC_LANG:GetString(),
-				EC_TRANSLATE_INC_TARGET_LANG:GetString()
+		local source, target =
+			EC_TRANSLATE_INC_SRC_LANG:GetString(),
+			EC_TRANSLATE_INC_TARGET_LANG:GetString()
 
+		if EC_TRANSLATE_INC_MSG:GetBool() and source ~= target and ply ~= LocalPlayer() then
 			EasyChat.Translator:Translate(msg, source, target, function(success, base_msg, translation)
 				local final_msg = base_msg ~= translation and ("%s (%s)"):format(translation, base_msg) or base_msg
 				gamemode.Call("OnPlayerChat", ply, final_msg, is_team, dead, is_local)

@@ -145,7 +145,7 @@ local hscan_part = {
 }
 
 function hscan_part:Ctor(str)
-	local hscan_components = string.Explode("%s*,%s*", str, true)
+	local hscan_components = str:Split(",")
 	self.Speed = math.Clamp(tonumber(hscan_components[1]) or 1, 1, 5)
 	self.ScanColor = Color(
 		tonumber(hscan_components[2]) or self.ScanColor.r,
@@ -182,7 +182,7 @@ local vscan_part = {
 }
 
 function vscan_part:Ctor(str)
-	local hscan_components = string.Explode("%s*,%s*", str, true)
+	local hscan_components = str:Split(",")
 	self.Speed = math.Clamp(tonumber(hscan_components[1]) or 1, 1, 5)
 	self.ScanColor = Color(
 		tonumber(hscan_components[2]) or self.ScanColor.r,
@@ -357,9 +357,9 @@ chathud:RegisterPart("zrotate", z_rotate_part)
 local texture_part = {}
 
 function texture_part:Ctor(str)
-	local texture_components = string.Explode("%s*,%s*", str, true)
+	local texture_components = str:Split(",")
 
-	local path = texture_components[1]
+	local path = texture_components[1]:Trim()
 	local mat = Material(path, (path:EndsWith(".png") and "nocull noclamp" or nil))
 	local shader = mat:GetShader()
 	if shader == "VertexLitGeneric" or shader == "Cable" then
@@ -515,7 +515,7 @@ chathud:RegisterPart("wrong", wrong_part, "%<(wrong)%>")
 local background_part = {}
 
 function background_part:Ctor(str)
-	local col_components = string.Explode("%s*,%s*", str, true)
+	local col_components = str:Split(",")
 	local r, g, b =
 		tonumber(col_components[1]) or 255,
 		tonumber(col_components[2]) or 255,
