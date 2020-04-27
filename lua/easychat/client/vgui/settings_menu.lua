@@ -479,10 +479,32 @@ local convar_type_callbacks = {
 	["number"] = function(self, panel, cvar, name, max, min)
 		local number_wang = self:CreateNumberSetting(panel, name, max, min)
 		number_wang:SetValue(cvar:GetInt())
+
+		local btn = number_wang:Add("DImageButton")
+		btn:SetImage("icon16/bullet_disk.png")
+		local btn_size = number_wang:GetTall()
+		btn:SetSize(btn_size, btn_size)
+		btn:Dock(RIGHT)
+		btn:SetVisible(false)
+
+		local old_value = number_wang:GetValue()
+		number_wang.Think = function(self)
+			local cur_value = self:GetValue()
+			if cur_value ~= old_value then
+				btn:SetVisible(true)
+			end
+		end
+
 		number_wang.OnEnter = function(self)
-			local new_val = self:GetValue()
-			cvar:SetInt(new_val)
-			notification.AddLegacy(("Applied setting changes: %s -> %d"):format(cvar:GetName(), new_val), NOTIFY_HINT, 5)
+			local new_value = self:GetValue()
+			cvar:SetInt(new_value)
+			btn:SetVisible(false)
+			old_value = new_value
+			notification.AddLegacy(("Applied setting changes: %s -> %d"):format(cvar:GetName(), new_value), NOTIFY_HINT, 5)
+		end
+
+		btn.DoClick = function(self)
+			number_wang:OnEnter()
 		end
 
 		self:AddChangeCallback(cvar, function()
@@ -495,10 +517,32 @@ local convar_type_callbacks = {
 	["string"] = function(self, panel, cvar, name)
 		local text_entry = self:CreateStringSetting(panel, name)
 		text_entry:SetText(cvar:GetString())
+
+		local btn = text_entry:Add("DImageButton")
+		btn:SetImage("icon16/bullet_disk.png")
+		local btn_size = text_entry:GetTall()
+		btn:SetSize(btn_size, btn_size)
+		btn:Dock(RIGHT)
+		btn:SetVisible(false)
+
+		local old_value = text_entry:GetText():Trim()
+		text_entry.Think = function(self)
+			local cur_value = self:GetText()
+			if cur_value ~= old_value then
+				btn:SetVisible(true)
+			end
+		end
+
 		text_entry.OnEnter = function(self)
-			local new_val = self:GetText():Trim()
-			cvar:SetString(new_val)
-			notification.AddLegacy(("Applied setting changes: %s -> %s"):format(cvar:GetName(), new_val), NOTIFY_HINT, 5)
+			local new_value = self:GetText():Trim()
+			cvar:SetString(new_value)
+			btn:SetVisible(false)
+			old_value = new_value
+			notification.AddLegacy(("Applied setting changes: %s -> %s"):format(cvar:GetName(), new_value), NOTIFY_HINT, 5)
+		end
+
+		btn.DoClick = function(self)
+			text_entry:OnEnter()
 		end
 
 		self:AddChangeCallback(cvar, function()
