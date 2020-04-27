@@ -46,6 +46,14 @@ local EC_HUD_POS_Y = GetConVar("easychat_hud_pos_y")
 local EC_HUD_WIDTH = GetConVar("easychat_hud_width")
 local EC_HUD_FADELEN = GetConVar("easychat_hud_fadelen")
 
+-- translation
+local EC_TRANSLATE_INC_MSG = GetConVar("easychat_translate_inc_msg")
+local EC_TRANSLATE_INC_SRC_LANG = GetConVar("easychat_translate_inc_source_lang")
+local EC_TRANSLATE_INC_TARGET_LANG = GetConVar("easychat_translate_inc_target_lang")
+local EC_TRANSLATE_OUT_MSG = GetConVar("easychat_translate_out_msg")
+local EC_TRANSLATE_OUT_SRC_LANG = GetConVar("easychat_translate_out_source_lang")
+local EC_TRANSLATE_OUT_TARGET_LANG = GetConVar("easychat_translate_out_target_lang")
+
 local function create_option_set(settings, category_name, options)
 	for cvar, description in pairs(options) do
 		settings:AddConvarSetting(category_name, "boolean", cvar, description)
@@ -671,6 +679,22 @@ local function create_default_settings()
 			setting_override_client_settings:SetChecked(config.OverrideClientSettings)
 			build_usergroup_list()
 		end)
+	end
+
+	-- translation
+	do
+		local category_name = "Translation"
+		settings:AddCategory(category_name)
+
+		settings:AddConvarSetting(category_name, "boolean", EC_TRANSLATE_OUT_MSG, "Translate your chat messages")
+		settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_OUT_SRC_LANG, "Your language")
+		settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_OUT_TARGET_LANG, "Their language")
+
+		settings:AddSpacer(category_name)
+
+		settings:AddConvarSetting(category_name, "boolean", EC_TRANSLATE_INC_MSG, "Translate other's chat messages")
+		settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_INC_TARGET_LANG, "Your language")
+		settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_INC_SRC_LANG, "Their language")
 	end
 end
 

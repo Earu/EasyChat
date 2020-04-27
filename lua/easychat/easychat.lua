@@ -317,6 +317,14 @@ if CLIENT then
 	local EC_HUD_WIDTH = CreateConVar("easychat_hud_width", "0", FCVAR_ARCHIVE, "Changes the width of the chat hud")
 	local EC_HUD_FADELEN = CreateConVar("easychat_hud_fadelen", "1", FCVAR_ARCHIVE, "Changes the amount of time it takes for the hud to fade")
 
+	-- translation
+	local EC_TRANSLATE_INC_MSG = CreateConVar("easychat_translate_inc_msg", "0", FCVAR_ARCHIVE, "Translates incoming chat messages")
+	local EC_TRANSLATE_INC_SRC_LANG = CreateConVar("easychat_translate_inc_source_lang", "auto", FCVAR_ARCHIVE, "Language used in incoming chat messages")
+	local EC_TRANSLATE_INC_TARGET_LANG = CreateConVar("easychat_translate_inc_target_lang", "en", FCVAR_ARCHIVE, "Language to translate incoming chat messages to")
+	local EC_TRANSLATE_OUT_MSG = CreateConVar("easychat_translate_out_msg", "0", FCVAR_ARCHIVE, "Translates your chat messages")
+	local EC_TRANSLATE_OUT_SRC_LANG = CreateConVar("easychat_translate_out_source_lang", "auto", FCVAR_ARCHIVE, "Language used in your chat messages")
+	local EC_TRANSLATE_OUT_TARGET_LANG = CreateConVar("easychat_translate_out_target_lang", "en", FCVAR_ARCHIVE, "Language to translate your chat messages to")
+
 	EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
 
 	cvars.AddChangeCallback(EC_ENABLE:GetName(), function()
@@ -412,6 +420,7 @@ if CLIENT then
 	EasyChat.Modes = { [0] = default_chat_mode }
 	EasyChat.Expressions = include("easychat/client/expressions.lua")
 	EasyChat.Transliterator = include("easychat/client/unicode_transliterator.lua")
+	EasyChat.Translator = include("easychat/client/translator.lua")
 	EasyChat.ChatHUD = include("easychat/client/chathud.lua")
 	EasyChat.MacroProcessor = include("easychat/client/macro_processor.lua")
 	EasyChat.ModeCount = 0
@@ -869,9 +878,12 @@ if CLIENT then
 		EasyChat.Modes = { [0] = default_chat_mode }
 		EasyChat.Expressions = include("easychat/client/expressions.lua")
 		EasyChat.Transliterator = include("easychat/client/unicode_transliterator.lua")
+		EasyChat.Translator = include("easychat/client/translator.lua")
 		EasyChat.ChatHUD = include("easychat/client/chathud.lua")
 		EasyChat.MacroProcessor = include("easychat/client/macro_processor.lua")
 		EasyChat.ModeCount = 0
+
+		EasyChat.Translator:Initialize()
 
 		include("easychat/client/settings.lua")
 		include("easychat/client/markup.lua")
@@ -884,11 +896,25 @@ if CLIENT then
 		function EasyChat.SendGlobalMessage(msg, is_team, is_local)
 			msg = EasyChat.MacroProcessor:ProcessString(msg)
 
-			net.Start(NET_SEND_MSG)
-			net.WriteString(msg)
-			net.WriteBool(is_team)
-			net.WriteBool(is_local)
-			net.SendToServer()
+			if EC_TRANSLATE_OUT_MSG:GetBool() then
+				local source, target =
+					EC_TRANSLATE_OUT_SRC_LANG:GetString(),
+					EC_TRANSLATE_OUT_TARGET_LANG:GetString()
+
+				EasyChat.Translator:Translate(msg, source, target, function(success, _, translation)
+					net.Start(NET_SEND_MSG)
+					net.WriteString(success and translation or msg)
+					net.WriteBool(is_team)
+					net.WriteBool(is_local)
+					net.SendToServer()
+				end)
+			else
+				net.Start(NET_SEND_MSG)
+				net.WriteString(msg)
+				net.WriteBool(is_team)
+				net.WriteBool(is_local)
+				net.SendToServer()
+			end
 		end
 
 		EasyChat.AddMode("Team", function(text)
@@ -2172,7 +2198,18 @@ if CLIENT then
 			is_team = false
 		end
 
-		gamemode.Call("OnPlayerChat", ply, msg, is_team, dead, is_local)
+		if EC_TRANSLATE_INC_MSG:GetBool() then
+			local source, target =
+				EC_TRANSLATE_INC_SRC_LANG:GetString(),
+				EC_TRANSLATE_INC_TARGET_LANG:GetString()
+
+			EasyChat.Translator:Translate(msg, source, target, function(success, base_msg, translation)
+				local final_msg = ("%s (%s)"):format(translation, base_msg)
+				gamemode.Call("OnPlayerChat", ply, final_msg, is_team, dead, is_local)
+			end)
+		else
+			gamemode.Call("OnPlayerChat", ply, msg, is_team, dead, is_local)
+		end
 	end)
 
 	net.Receive(NET_ADD_TEXT, function()
@@ -2307,6 +2344,7 @@ function EasyChat.Destroy()
 		EasyChat.ModeCount = 0
 		EasyChat.Mode = 0
 		EasyChat.Modes = { [0] = default_chat_mode }
+		EasyChat.Translator:Destroy()
 
 		if EasyChat.GUI and IsValid(EasyChat.GUI.ChatBox) then
 			EasyChat.GUI.ChatBox:Remove()
