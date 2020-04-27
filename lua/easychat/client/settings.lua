@@ -570,7 +570,7 @@ local function create_default_settings()
 				setting_usergroup:SetText(usergroup)
 			end
 
-			local setting_emote_name = settings:AddSetting(category_name, "string", "Emote Name")
+			local setting_emote_name = settings:AddSetting(category_name, "string", "Emote")
 			setting_emote_name:SetParent(frame)
 			setting_emote_name:Dock(TOP)
 			setting_emote_name:DockMargin(5, 15, 5, 10)
