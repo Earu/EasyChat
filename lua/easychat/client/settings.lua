@@ -497,6 +497,11 @@ local function create_default_settings()
 				end
 
 				if #emote_provider > 0 then
+					-- add a comma for proper markup parsing
+					if emote_size == -1 then
+						emote_tag = ("%s,"):format(emote_tag)
+					end
+
 					emote_tag = ("%s,%s"):format(emote_tag, emote_provider)
 				end
 
@@ -588,7 +593,7 @@ local function create_default_settings()
 			setting_save:Dock(BOTTOM)
 			setting_save:DockMargin(5, 10, 5, 5)
 			setting_save.DoClick = function()
-				local emote_components = setting_emote_name:GetText():Trim():Split(",")
+				local emote_components = setting_emote_name:GetText():Split(",")
 				-- emote_name, emote_size, emote_provider
 
 				local succ, err = EasyChat.Config:WriteUserGroup(
