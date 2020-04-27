@@ -2198,13 +2198,13 @@ if CLIENT then
 			is_team = false
 		end
 
-		if EC_TRANSLATE_INC_MSG:GetBool() then
+		if EC_TRANSLATE_INC_MSG:GetBool() and ply ~= LocalPlayer() then
 			local source, target =
 				EC_TRANSLATE_INC_SRC_LANG:GetString(),
 				EC_TRANSLATE_INC_TARGET_LANG:GetString()
 
 			EasyChat.Translator:Translate(msg, source, target, function(success, base_msg, translation)
-				local final_msg = ("%s (%s)"):format(translation, base_msg)
+				local final_msg = base_msg ~= translation and ("%s (%s)"):format(translation, base_msg) or base_msg
 				gamemode.Call("OnPlayerChat", ply, final_msg, is_team, dead, is_local)
 			end)
 		else

@@ -686,15 +686,78 @@ local function create_default_settings()
 		local category_name = "Translation"
 		settings:AddCategory(category_name)
 
+		local valid_languages = {
+			["Automatic"] = "auto",
+
+			["Afrikaans"] = "af", ["Irish"] = "ga", ["Albanian"] = "sq", ["Italian"] = "it", ["Arabic"] = "ar", ["Japanese"] = "ja",
+			["Azerbaijani"] = "az", ["Kannada"] = "kn", ["Basque"] = "eu", ["Korean"] = "ko", ["Bengali"] = "bn", ["Latin"] = "la",
+			["Belarusian"] = "be", ["Latvian"] = "lv", ["Bulgarian"] =	"bg", ["Lithuanian"] = "lt", ["Catalan"] = "ca",
+			["Macedonian"] = "mk", ["Chinese Simplified"] = "zh-CN", ["Malay"] =	"ms", ["Chinese Traditional"] = "zh-TW", ["Maltese"] = "mt",
+			["Croatian"] = "hr", ["Norwegian"] = "no", ["Czech"] = "cs", ["Persian"] = "fa", ["Danish"] = "da", ["Polish"] = "pl", ["Dutch"] = "nl",
+			["Portuguese"] = "pt", ["English"] = "en", ["Romanian"] = "ro", ["Esperanto"] =	"eo", ["Russian"] = "ru", ["Estonian"] = "et", ["Serbian"] = "sr",
+			["Filipino"] = "tl", ["Slovak"] = "sk", ["Finnish"] = "fi", ["Slovenian"] =	"sl", ["French"] = "fr", ["Spanish"] = "es", ["Galician"] = "gl",
+			["Swahili"] = "sw", ["Georgian"] = "ka", ["Swedish"] = "sv", ["German"] = "de", ["Tamil"] =	"ta", ["Greek"] = "el", ["Telugu"] = "te",
+			["Gujarati"] = "gu", ["Thai"] = "th", ["Haitian Creole"] = "ht", ["Turkish"] = "tr", ["Hebrew"] = "iw", ["Ukrainian"] =	"uk", ["Hindi"] = "hi",
+			["Urdu"] = "ur", ["Hungarian"] = "hu", ["Vietnamese"] = "vi", ["Icelandic"] = "is", ["Welsh"] = "cy", ["Indonesian"] = "id", ["Yiddish"] = "yi",
+		}
+
+		local language_count = table.Count(valid_languages)
+
+		local function build_translation_auto_complete(text_entry)
+			text_entry.GetAutoComplete = function(self, text)
+				text = text:lower()
+
+				local suggestions = {}
+				for complete_name, shortcut in pairs(valid_languages) do
+					if complete_name:lower():match(text) or shortcut:match(text) then
+						table.insert(suggestions, ("%s (%s)"):format(shortcut, complete_name))
+					end
+				end
+
+				return suggestions
+			end
+
+			local language_selection = 1
+			local language_input = ""
+			text_entry.OnKeyCodeTyped = function(self, key_code)
+				if key_code == KEY_TAB then
+					local suggestion = self:GetAutoComplete(language_input)[language_selection]
+					if suggestion then
+						local country_code = suggestion:match("^(.+)%s%(")
+						self:SetText(country_code)
+						timer.Simple(0, function()
+							self:RequestFocus()  -- keep focus
+							self:SetCaretPos(#self:GetText())
+						end)
+					end
+
+					language_selection = language_selection + 1
+					if language_selection > language_count then
+						language_selection = 1
+					end
+				elseif key_code == KEY_ENTER or key_code == KEY_PAD_ENTER then
+					if IsValid(self.Menu) then self.Menu:Remove() end
+					self:OnEnter()
+					timer.Simple(0, function()
+						self:RequestFocus()  -- keep focus
+						self:SetCaretPos(#self:GetText())
+					end)
+				else
+					language_input = self:GetText()
+					language_selection = 1
+				end
+			end
+		end
+
 		settings:AddConvarSetting(category_name, "boolean", EC_TRANSLATE_OUT_MSG, "Translate your chat messages")
-		settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_OUT_SRC_LANG, "Your language")
-		settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_OUT_TARGET_LANG, "Their language")
+		build_translation_auto_complete(settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_OUT_SRC_LANG, "Your language"))
+		build_translation_auto_complete(settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_OUT_TARGET_LANG, "Their language"))
 
 		settings:AddSpacer(category_name)
 
 		settings:AddConvarSetting(category_name, "boolean", EC_TRANSLATE_INC_MSG, "Translate other's chat messages")
-		settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_INC_TARGET_LANG, "Your language")
-		settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_INC_SRC_LANG, "Their language")
+		build_translation_auto_complete(settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_INC_TARGET_LANG, "Your language"))
+		build_translation_auto_complete(settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_INC_SRC_LANG, "Their language"))
 	end
 end
 
