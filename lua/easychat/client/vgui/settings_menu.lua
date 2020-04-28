@@ -475,30 +475,43 @@ function SETTINGS:AddChangeCallback(cvar, on_change)
 	cvars.AddChangeCallback(cvar_name, on_change, callback_name)
 end
 
+local orange_color = Color(244, 135, 2)
 local convar_type_callbacks = {
 	["number"] = function(self, panel, cvar, name, max, min)
 		local number_wang = self:CreateNumberSetting(panel, name, max, min)
 		number_wang:SetValue(cvar:GetInt())
 
-		local btn = number_wang:Add("DImageButton")
+		local btn = number_wang:Add("DButton")
+		btn:SetText("Save")
 		btn:SetImage("icon16/bullet_disk.png")
-		local btn_size = number_wang:GetTall()
-		btn:SetSize(btn_size, btn_size)
+		btn:SetFont("ECSettingsFont")
+		btn:SetTall(number_wang:GetTall())
+		btn:SetWide(100)
 		btn:Dock(RIGHT)
-		btn:SetVisible(false)
+
+		if not EasyChat.UseDermaSkin then
+			btn:SetTextColor(color_white)
+			btn.Paint = function() end
+		end
 
 		local old_value = number_wang:GetValue()
-		number_wang.Think = function(self)
+		local old_paint = number_wang.Paint
+		number_wang.Paint = function(self, w, h)
+			old_paint(self, w, h)
+
 			local cur_value = self:GetValue()
 			if cur_value ~= old_value then
+				surface.SetDrawColor(orange_color)
+				surface.DrawOutlinedRect(0, 0, w, h)
 				btn:SetVisible(true)
+			else
+				btn:SetVisible(false)
 			end
 		end
 
 		number_wang.OnEnter = function(self)
 			local new_value = self:GetValue()
 			cvar:SetInt(new_value)
-			btn:SetVisible(false)
 			old_value = new_value
 			notification.AddLegacy(("Applied setting changes: %s -> %d"):format(cvar:GetName(), new_value), NOTIFY_HINT, 5)
 		end
@@ -518,25 +531,37 @@ local convar_type_callbacks = {
 		local text_entry = self:CreateStringSetting(panel, name)
 		text_entry:SetText(cvar:GetString())
 
-		local btn = text_entry:Add("DImageButton")
+		local btn = text_entry:Add("DButton")
+		btn:SetText("Save")
 		btn:SetImage("icon16/bullet_disk.png")
-		local btn_size = text_entry:GetTall()
-		btn:SetSize(btn_size, btn_size)
+		btn:SetFont("ECSettingsFont")
+		btn:SetTall(text_entry:GetTall())
+		btn:SetWide(100)
 		btn:Dock(RIGHT)
-		btn:SetVisible(false)
+
+		if not EasyChat.UseDermaSkin then
+			btn:SetTextColor(color_white)
+			btn.Paint = function() end
+		end
 
 		local old_value = text_entry:GetText():Trim()
-		text_entry.Think = function(self)
+		local old_paint = text_entry.Paint
+		text_entry.Paint = function(self, w, h)
+			old_paint(self, w, h)
+
 			local cur_value = self:GetText()
 			if cur_value ~= old_value then
+				surface.SetDrawColor(orange_color)
+				surface.DrawOutlinedRect(0, 0, w, h)
 				btn:SetVisible(true)
+			else
+				btn:SetVisible(false)
 			end
 		end
 
 		text_entry.OnEnter = function(self)
 			local new_value = self:GetText():Trim()
 			cvar:SetString(new_value)
-			btn:SetVisible(false)
 			old_value = new_value
 			notification.AddLegacy(("Applied setting changes: %s -> %s"):format(cvar:GetName(), new_value), NOTIFY_HINT, 5)
 		end
