@@ -1,4 +1,6 @@
 local function count(a, n)
+	if not a then return 0 end
+
 	local x = 0
 	local pos = 1
 	for i = 1, #a do
