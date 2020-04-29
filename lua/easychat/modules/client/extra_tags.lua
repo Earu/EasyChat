@@ -16,6 +16,14 @@ local cam_PopModelMatrix = cam.PopModelMatrix
 
 local math_sin = math.sin
 local math_abs = math.abs
+local math_max = math.max
+local math_min = math.min
+local math_clamp = math.Clamp
+local math_EaseInOut = math.EaseInOut
+
+local MAX_TEXT_OFFSET = 400
+local SMOOTHING_SPEED = 1000
+local EC_HUD_SMOOTH = GetConVar("easychat_hud_smooth")
 --[[-----------------------------------------------------------------------------
 	Color Component
 
@@ -354,7 +362,9 @@ chathud:RegisterPart("zrotate", z_rotate_part)
 
 	Shows a texture in the chat.
 ]]-------------------------------------------------------------------------------
-local texture_part = {}
+local texture_part = {
+	RealPos = { X = 0, Y = 0 },
+}
 
 function texture_part:Ctor(str)
 	local texture_components = str:Split(",")
@@ -383,22 +393,57 @@ function texture_part:Ctor(str)
 	return self
 end
 
-function texture_part:ComputeSize()
-	self.Size = { W = self.TextureSize, H = self.TextureSize }
-end
-
 function texture_part:LineBreak()
 	local new_line = self.HUD:NewLine()
 	new_line:PushComponent(self)
 end
 
+function texture_part:ComputeSize()
+	if self.Invalid then
+		self.Size = { W = 0, H = 0 }
+	else
+		self.Size = { W = self.TextureSize, H = self.TextureSize }
+	end
+end
+
+function texture_part:ComputePos()
+	if not EC_HUD_SMOOTH:GetBool() then
+		self.RealPos.Y = self.Pos.Y
+		return
+	end
+
+    if self.RealPos.Y ~= self.Pos.Y then
+        if self.RealPos.Y > self.Pos.Y then
+            local factor = math_EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
+            self.RealPos.Y = math_max(self.RealPos.Y - math_max(math_abs(factor), 0.15), self.Pos.Y)
+        else
+            local factor = math_EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
+            self.RealPos.Y = math_min(self.RealPos.Y + math_max(math_abs(factor), 0.15), self.Pos.Y)
+        end
+    end
+end
+
+function texture_part:GetDrawPos(ctx)
+	local offsex_x, offset_y =
+		math_clamp(ctx.TextOffset.X, -MAX_TEXT_OFFSET, MAX_TEXT_OFFSET),
+		math_clamp(ctx.TextOffset.Y, -MAX_TEXT_OFFSET, MAX_TEXT_OFFSET)
+	return self.Pos.X + offsex_x, self.RealPos.Y + offset_y
+end
+
 function texture_part:Draw(ctx)
 	if self.Invalid then return end
 
-	surface_SetMaterial(self.Material)
-	surface_DrawTexturedRect(self.Pos.X, self.Pos.Y, self.TextureSize, self.TextureSize)
+	self:ComputePos()
 
-	draw_NoTexture()
+    local x, y = self:GetDrawPos(ctx)
+
+    ctx:CallPreTextDrawFunctions(x, y, self.Size.W, self.Size.H)
+
+    surface_SetMaterial(self.Material)
+	surface_DrawTexturedRect(x, y, self.Size.W, self.Size.H)
+    draw_NoTexture()
+
+    ctx:CallPostTextDrawFunctions(x, y, self.Size.W, self.Size.H)
 end
 
 chathud:RegisterPart("texture", texture_part)
