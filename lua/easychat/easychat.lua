@@ -754,6 +754,10 @@ if CLIENT then
 
 	local BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 	function EasyChat.DecodeBase64(base64)
+		if util.Base64Decode then
+			return util.Base64Decode
+		end
+
 		base64 = string.gsub(base64, "[^" .. BASE64 .. "=]", "")
 		return (base64:gsub(".", function(x)
 			if (x == "=") then return "" end
