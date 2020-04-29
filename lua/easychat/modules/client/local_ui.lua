@@ -53,21 +53,21 @@ function panel:Paint(w, h)
 	surface.SetTextColor(EasyChat.TextColor)
 	surface.DrawText(panel_title)
 
-	local i = 0
+	local i = 1
 	for _, ply in pairs(player.GetAll()) do
 		if ply ~= LocalPlayer()
 			and ply:GetPos():Distance(LocalPlayer():GetPos()) <= GetConVar("easychat_local_msg_distance"):GetInt()
 		then
-			local mk = cache_nick(ply)
+			self:SetTall(5 + (20 * (i + 1)))
 
-			self:SetTall(5 + th + 5 + ((mk:GetTall() + 10) * i))
-			mk:Draw(15, 5 + th + 5 + (mk:GetTall() * i))
+			local mk = cache_nick(ply)
+			mk:Draw(15, 5 + (20 * i))
 
 			i = i + 1
 		end
 	end
 
-	if i == 0 then
+	if i == 1 then
 		self:SetTall(5 + th + 5)
 	end
 end
