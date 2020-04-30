@@ -900,12 +900,12 @@ if CLIENT then
 		function EasyChat.SendGlobalMessage(msg, is_team, is_local)
 			msg = EasyChat.MacroProcessor:ProcessString(msg)
 
-			local source, target =
+			local source_lang, target_lang =
 				EC_TRANSLATE_OUT_SRC_LANG:GetString(),
 				EC_TRANSLATE_OUT_TARGET_LANG:GetString()
 
-			if EC_TRANSLATE_OUT_MSG:GetBool() and source ~= target then
-				EasyChat.Translator:Translate(msg, source, target, function(success, _, translation)
+			if EC_TRANSLATE_OUT_MSG:GetBool() and source_lang ~= target_lang then
+				EasyChat.Translator:Translate(msg, source_lang, target_lang, function(success, _, translation)
 					net.Start(NET_SEND_MSG)
 					net.WriteString(success and translation or msg)
 					net.WriteBool(is_team)
@@ -2210,7 +2210,7 @@ if CLIENT then
 	net.Receive(NET_BROADCAST_MSG, function()
 		local ply = net.ReadEntity()
 		local msg = net.ReadString()
-		local dead = net.ReadBool()
+		local is_dead = net.ReadBool()
 		local is_team = net.ReadBool()
 		local is_local = net.ReadBool()
 
@@ -2219,19 +2219,24 @@ if CLIENT then
 			is_team = false
 		end
 
-		local source, target =
+		local source_lang, target_lang =
 			EC_TRANSLATE_INC_SRC_LANG:GetString(),
 			EC_TRANSLATE_INC_TARGET_LANG:GetString()
 
-		if EC_TRANSLATE_INC_MSG:GetBool() and source ~= target and ply ~= LocalPlayer() then
-			EasyChat.Translator:Translate(msg, source, target, function(success, base_msg, translation)
-				local suppress = gamemode.Call("OnPlayerChat", ply, base_msg, is_team, dead, is_local)
-				if not suppress and base_msg ~= translation then
-					chat.AddText(ply, ("▲ %s ▲"):format(translation))
+		if EC_TRANSLATE_INC_MSG:GetBool() and source_lang ~= target_lang and ply ~= LocalPlayer() then
+			EasyChat.Translator:Translate(msg, source_lang, target_lang, function(success, _, translation)
+				-- dont use the gamemode default function here as it always returns true
+				local suppress = hook.Call("OnPlayerChat", nil, ply, msg, is_team, is_dead, is_local)
+				if not suppress then
+					-- call the gamemode function if we're not suppressed otherwise it wont display
+					GAMEMODE:OnPlayerChat(ply, msg, is_team, is_dead, is_local)
+					if msg ~= translation then
+						chat.AddText(ply, ("▲ %s ▲"):format(translation))
+					end
 				end
 			end)
 		else
-			gamemode.Call("OnPlayerChat", ply, msg, is_team, dead, is_local)
+			gamemode.Call("OnPlayerChat", ply, msg, is_team, is_dead, is_local)
 		end
 	end)
 
