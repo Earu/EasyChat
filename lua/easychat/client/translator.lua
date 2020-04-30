@@ -1,3 +1,5 @@
+local cached_translations = {}
+
 local translator = {
 	OnGoing = {},
 	CurrentID = 1
@@ -9,7 +11,7 @@ local function create_translation_panel(self)
 	tr_panel:SetHTML("<html><head></head><body></body></html>")
 	tr_panel:SetAllowLua(true)
 	tr_panel:AddFunction("Translate", "Print", print)
-	tr_panel:AddFunction("Translate", "Callback", function(id, status, json)
+	tr_panel:AddFunction("Translate", "Callback", function(id, status, json, target_lang)
 		local callback = self.OnGoing[id]
 		if not callback then return end
 
@@ -33,12 +35,16 @@ local function create_translation_panel(self)
 		end
 
 		local translation, source = data[1][1][1], data[1][1][2]
+
+		cached_translations[source] = cached_translations[source] or {}
+		cached_translations[source][target_lang] = translation
+
 		callback(true, source, translation)
 		self.OnGoing[id] = nil
 	end)
 
 	tr_panel:QueueJavascript([[
-	function TranslateRequest(url, id) {
+	function TranslateRequest(url, id, targetLang) {
 		var request = new XMLHttpRequest();
 		request.open("GET", url);
 		request.send();
@@ -49,7 +55,7 @@ local function create_translation_panel(self)
 
 		request.onreadystatechange = function() {
 			if (this.readyState == 4) {
-				Translate.Callback(id, this.status, request.responseText);
+				Translate.Callback(id, this.status, request.responseText, targetLang);
 			}
 		};
 	}]])
@@ -77,6 +83,11 @@ function translator:Destroy()
 end
 
 function translator:Translate(text, source_lang, target_lang, on_finish)
+	if cached_translations[text] and cached_translations[text][target_lang] then
+		on_finish(true, text, cached_translations[text][target_lang])
+		return
+	end
+
 	if self.Disabled then
 		on_finish(false)
 		return
@@ -90,7 +101,7 @@ function translator:Translate(text, source_lang, target_lang, on_finish)
 
 	local url = ("https://translate.googleapis.com/translate_a/single?client=gtx&sl=%s&tl=%s&dt=t&q=%s")
 		:format(source_lang, target_lang, text)
-	self.Panel:QueueJavascript(("TranslateRequest(%q,%d);"):format(url, self.CurrentID))
+	self.Panel:QueueJavascript(("TranslateRequest(%q,%d,%q);"):format(url, self.CurrentID, target_lang))
 
 	self.CurrentID = self.CurrentID + 1
 end
