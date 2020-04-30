@@ -2225,8 +2225,10 @@ if CLIENT then
 
 		if EC_TRANSLATE_INC_MSG:GetBool() and source ~= target and ply ~= LocalPlayer() then
 			EasyChat.Translator:Translate(msg, source, target, function(success, base_msg, translation)
-				local final_msg = base_msg ~= translation and ("%s (%s)"):format(translation, base_msg) or base_msg
-				gamemode.Call("OnPlayerChat", ply, final_msg, is_team, dead, is_local)
+				local suppress = gamemode.Call("OnPlayerChat", ply, base_msg, is_team, dead, is_local)
+				if not suppress and base_msg ~= translation then
+					chat.AddText(ply, ("▲ %s ▲"):format(translation))
+				end
 			end)
 		else
 			gamemode.Call("OnPlayerChat", ply, msg, is_team, dead, is_local)
