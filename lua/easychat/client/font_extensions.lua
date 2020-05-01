@@ -5,11 +5,11 @@ if not CLIENT then return end
 local fonts = {}
 local created = {}
 local processed = {}
-local badfonts = {}
+local bad_fonts = {}
 local surface_CreateFont = surface.CreateFont
 local surface_SetFont = surface.SetFont
 
-local bad = {
+local blacklisted_fonts = {
 	defaultbold = true,
 	trebuchet18 = true,
 	["clear sans medium"] = true, -- might be real
@@ -27,57 +27,53 @@ local bad = {
 	monospace = true -- might be real?
 }
 
-function surface.CreateFont(fn, tbl)
-	fn = tostring(fn)
+function surface.CreateFont(font_name, font_data)
+	font_name = tostring(font_name)
 
-	if tbl.font and bad[tbl.font:lower()] then
-		local font = tbl.font
-		tbl.font = nil
-		badfonts[#badfonts + 1] = {font, debug.getinfo(2)}
+	if font_data.font and (blacklisted_fonts[font_data.font:lower()] or #font_data.font > 31) then
+		local font = font_data.font
+		font_data.font = nil
+		bad_fonts[#bad_fonts + 1] = { font, debug.getinfo(2) }
 	end
 
-	tbl.extended = true -- why would you want ascii only?
+	font_data.extended = true -- why would you want ascii only?
 
-	local r = surface_CreateFont(fn, tbl)
-	local fnl = fn:lower()
-	created[fnl] = false
-	fonts[fnl] = tbl
-	tbl.name = fn
+	local result = surface_CreateFont(font_name, font_data)
+	local font_name_lower = font_name:lower()
+	created[font_name_lower] = false
+	fonts[font_name_lower] = font_data
+	font_data.name = font_name
 
-	for k, v in next, processed do
-		if tostring(k):lower() == fnl then
+	for k, _ in pairs(processed) do
+		if tostring(k):lower() == font_name_lower then
 			processed[k] = nil
 		end
 	end
-	-- processed={} -- last measure?
 
-	return r
+	return result
 end
 
-local function proc(fn)
-	if processed[fn] == nil then
-		processed[fn] = true
+local function process_font(font_name)
+	if processed[font_name] == nil then
+		processed[font_name] = true
 
-		if not created[fn:lower()] and fonts[fn:lower()] then
-			created[fn:lower()] = true
-			--surface_CreateFont(fn,fonts[fn:lower()])
+		if not created[font_name:lower()] and fonts[font_name:lower()] then
+			created[font_name:lower()] = true
 		end
 	end
 end
 
-function surface.SetFont(fn)
-	proc(fn)
-
-	return surface_SetFont(fn)
+function surface.SetFont(font_name)
+	process_font(font_name)
+	return surface_SetFont(font_name)
 end
 
 local META = FindMetaTable("Panel")
 local SetFontInternal = META.SetFontInternal
 if SetFontInternal then
-	META.SetFontInternal = function(self, fn)
-		proc(fn)
-
-		return SetFontInternal(self, fn)
+	META.SetFontInternal = function(self, font_name)
+		process_font(font_name)
+		return SetFontInternal(self, font_name)
 	end
 end
 
