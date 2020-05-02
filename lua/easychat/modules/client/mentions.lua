@@ -80,10 +80,8 @@ local function create_mention_panel()
 end
 
 local function show_missed_mentions()
-	print("showing mentions")
 	if not IsValid(mentions_frame) then return end
 
-	print("showing panel")
 	mentions_frame:SetVisible(true)
 	mentions_frame:Center()
 	mentions_frame:MakePopup()
@@ -159,7 +157,6 @@ hook.Add("OnPlayerChat", "EasyChatModuleMention", function(ply, msg, is_team, is
 				create_mention_panel()
 			end
 
-			print("added mention")
 			EasyChat.AddText(mentions_frame.RichText, unpack(msg_components))
 		end
 
