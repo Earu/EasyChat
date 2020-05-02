@@ -1,10 +1,44 @@
 local EC_MENTION = CreateConVar("easychat_mentions", "1", FCVAR_ARCHIVE, "Highlights messages containing your name")
-local EC_MENTION_FLASH = CreateConVar("easychat_mentions_flash_window", "1", "Flashes your window when you get mentioned")
-local EC_MENTION_COLOR = CreateConVar("easychat_mentions_color", "244 167 66", "Color of the mentions")
+local EC_MENTION_FLASH = CreateConVar("easychat_mentions_flash_window", "1", FCVAR_ARCHIVE, "Flashes your window when you get mentioned")
+local EC_MENTION_COLOR = CreateConVar("easychat_mentions_color", "244 167 66", FCVAR_ARCHIVE, "Color of the mentions")
+local EC_MENTION_SHOW_MISSED = CreateConVar("easychat_mentions_show_missed", "1", FCVAR_ARCHIVE, "Show mentions you have missed when AFK / tabbed out")
 local EC_TIMESTAMPS_12 = GetConVar("easychat_timestamps_12")
 
-EasyChat.RegisterConvar(EC_MENTION, "Color messages containing your name")
-EasyChat.RegisterConvar(EC_MENTION_FLASH, "Flashes your game when you are mentioned")
+local mentions = {}
+EasyChat.Mentions = mentions
+
+function mentions:GetColor()
+	local r, g, b = EC_MENTION_COLOR:GetString():match("^(%d%d?%d?) (%d%d?%d?) (%d%d?%d?)")
+	r = r and tonumber(r) or 244
+	g = g and tonumber(g) or 167
+	b = b and tonumber(b) or 66
+
+	return Color(r, g, b)
+end
+
+do
+	local settings = EasyChat.Settings
+	local category_name = "Mentions"
+
+	settings:AddCategory(category_name)
+
+	settings:AddConvarSettingsSet(category_name, {
+		[EC_MENTION] = "Color messages containing your name",
+		[EC_MENTION_FLASH] = "Flashes your game when you are mentioned",
+		[EC_MENTION_SHOW_MISSED] = "Show mentions you have missed when AFK / tabbed out"
+	})
+
+	settings:AddSpacer(category_name)
+
+	local setting_mention_color = settings:AddSetting(category_name, "color", "Mention Color")
+	setting_mention_color:SetColor(mentions:GetColor())
+
+	local setting_save_color = settings:AddSetting(category_name, "action", "Save Mention Color")
+	setting_save_color.DoClick = function()
+		local color = setting_mention_color:GetColor()
+		EC_MENTION_COLOR:SetString(("%d %d %d"):format(color.r, color.g, color.b))
+	end
+end
 
 local function undecorate_nick(nick)
 	if ec_markup then
@@ -86,7 +120,7 @@ local function create_mention_panel()
 	mentions_frame = frame
 end
 
-local function show_missed_mentions()
+function mentions:ShowMissedMentions()
 	if not IsValid(mentions_frame) then return end
 
 	mentions_frame:SetVisible(true)
@@ -94,20 +128,22 @@ local function show_missed_mentions()
 	mentions_frame:MakePopup()
 end
 
+function mentions:AddMissedMention(data)
+	if not IsValid(mentions_frame) then
+		create_mention_panel()
+	end
+
+	EasyChat.AddText(mentions_frame.RichText, unpack(data))
+end
+
 local old_focus = true
 hook.Add("Think", "EasyChatModuleMention", function()
 	local has_focus = system.HasFocus()
 	if old_focus ~= has_focus and has_focus then
-		show_missed_mentions()
+		mentions:ShowMissedMentions()
 	end
 
 	old_focus = has_focus
-end)
-
-hook.Add("AFK", "EasyChatModuleMention", function(ply, is_afk)
-	if ply == LocalPlayer() and not is_afk then
-		show_missed_mentions()
-	end
 end)
 
 hook.Add("OnPlayerChat", "EasyChatModuleMention", function(ply, msg, is_team, is_dead, is_local)
@@ -150,21 +186,15 @@ hook.Add("OnPlayerChat", "EasyChatModuleMention", function(ply, msg, is_team, is
 		table.insert(msg_components, color_white)
 		table.insert(msg_components, ": ")
 
-		local r, g, b = EC_MENTION_COLOR:GetString():match("^(%d%d?%d?) (%d%d?%d?) (%d%d?%d?)")
-		r = r and tonumber(r) or 244
-		g = g and tonumber(g) or 167
-		b = b and tonumber(b) or 66
-
-		table.insert(msg_components, Color(r, g, b))
+		table.insert(msg_components, mentions:GetColor())
 		table.insert(msg_components, original_msg)
 		chat.AddText(unpack(msg_components))
 
-		if not system.HasFocus() or (lp.IsAFK and lp:IsAFK()) then
-			if not IsValid(mentions_frame) then
-				create_mention_panel()
-			end
-
-			EasyChat.AddText(mentions_frame.RichText, unpack(msg_components))
+		if not system.HasFocus() then
+			mentions:AddMissedMention(msg_components)
+		else
+			-- fire something for third-party scripts to handle this
+			hook.Run("ECPlayerMention", msg_components)
 		end
 
 		return true -- hide chat message

@@ -54,20 +54,6 @@ local EC_TRANSLATE_OUT_MSG = GetConVar("easychat_translate_out_msg")
 local EC_TRANSLATE_OUT_SRC_LANG = GetConVar("easychat_translate_out_source_lang")
 local EC_TRANSLATE_OUT_TARGET_LANG = GetConVar("easychat_translate_out_target_lang")
 
-local function create_option_set(settings, category_name, options)
-	for cvar, description in pairs(options) do
-		settings:AddConvarSetting(category_name, "boolean", cvar, description)
-	end
-
-	local setting_reset_options = settings:AddSetting(category_name, "action", "Reset Options")
-	setting_reset_options.DoClick = function()
-		for cvar, _ in pairs(options) do
-			local default_value = tobool(cvar:GetDefault())
-			cvar:SetBool(default_value)
-		end
-	end
-end
-
 local function create_default_settings()
 	local settings = EasyChat.Settings
 
@@ -76,7 +62,7 @@ local function create_default_settings()
 		local category_name = "General"
 		settings:AddCategory(category_name)
 
-		create_option_set(settings, category_name, {
+		settings:AddConvarSettingsSet(category_name, {
 			[EC_ALWAYS_LOCAL] = "Always talk in local mode by default",
 			[EC_LINKS_CLIPBOARD] = "Automatically copy links to your clipboard",
 			[EC_TIMESTAMPS_12] = "12 hours mode timestamps",
@@ -160,7 +146,7 @@ local function create_default_settings()
 		local category_name = "Chatbox"
 		settings:AddCategory(category_name)
 
-		create_option_set(settings, category_name, {
+		settings:AddConvarSettingsSet(category_name, {
 			[EC_GLOBAL_ON_OPEN] = "Open in the global tab",
 			[EC_TIMESTAMPS] = "Display timestamps",
 			[EC_HISTORY] = "Enable history",
@@ -427,7 +413,7 @@ local function create_default_settings()
 
 		settings:AddSpacer(category_name)
 
-		create_option_set(settings, category_name, {
+		settings:AddConvarSettingsSet(category_name, {
 			[EC_HUD_FOLLOW] = "Follow chatbox window",
 			[EC_HUD_TIMESTAMPS] = "Display timestamps",
 			[EC_HUD_SMOOTH] = "Smooth message transitions",
@@ -811,7 +797,7 @@ local function add_chathud_markup_settings()
 		end
 	end
 
-	create_option_set(settings, category_name, tag_options)
+	settings:AddConvarSettingsSet(category_name, tag_options)
 end
 
 local function add_legacy_settings()
@@ -823,7 +809,7 @@ local function add_legacy_settings()
 		options[registered_cvar.Convar] = registered_cvar.Description
 	end
 
-	create_option_set(EasyChat.Settings, "Others", options)
+	settings:AddConvarSettingsSet("Others", options)
 end
 
 hook.Add("ECPreLoadModules", "EasyChatDefaultSettings", create_default_settings)
