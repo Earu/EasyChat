@@ -603,6 +603,20 @@ function SETTINGS:AddConvarSetting(category_name, type, cvar, ...)
 	return setting_panel
 end
 
+function SETTINGS:AddConvarSettingsSet(category_name, options)
+	for cvar, description in pairs(options) do
+		self:AddConvarSetting(category_name, "boolean", cvar, description)
+	end
+
+	local setting_reset_options = self:AddSetting(category_name, "action", "Reset Options")
+	setting_reset_options.DoClick = function()
+		for cvar, _ in pairs(options) do
+			local default_value = tobool(cvar:GetDefault())
+			cvar:SetBool(default_value)
+		end
+	end
+end
+
 local type_callbacks = {
 	["number"] = SETTINGS.CreateNumberSetting,
 	["string"] = SETTINGS.CreateStringSetting,
