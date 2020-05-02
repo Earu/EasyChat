@@ -37,6 +37,13 @@ local function create_mention_panel()
 	local richtext = frame:Add("RichText")
 	richtext:Dock(FILL)
 	richtext:DockMargin(5, 5, 5, 5)
+	richtext.PerformLayout = function(self)
+		self:SetFontInternal("EasyChatFont")
+		if not EasyChat.UseDermaSkin then
+			self:SetFGColor(EasyChat.TextColor)
+		end
+	end
+
 	frame.RichText = richtext
 
 	if not EasyChat.UseDermaSkin then
