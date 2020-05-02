@@ -1,13 +1,10 @@
 local EC_MENTION = CreateConVar("easychat_mentions", "1", FCVAR_ARCHIVE, "Highlights messages containing your name")
-local EC_MENTION_FLASH = CreateConVar("easychat_mentions_flash_window", "1", FCVAR_ARCHIVE, "Flashes your window when you get mentioned")
-local EC_MENTION_COLOR = CreateConVar("easychat_mentions_color", "244 167 66", FCVAR_ARCHIVE, "Color of the mentions")
-local EC_MENTION_SHOW_MISSED = CreateConVar("easychat_show_missed_mentions", "1", FCVAR_ARCHIVE, "Show missed mentions")
-
+local EC_MENTION_FLASH = CreateConVar("easychat_mentions_flash_window", "1", "Flashes your window when you get mentioned")
+local EC_MENTION_COLOR = CreateConVar("easychat_mentions_color", "244 167 66", "Color of the mentions")
 local EC_TIMESTAMPS_12 = GetConVar("easychat_timestamps_12")
 
 EasyChat.RegisterConvar(EC_MENTION, "Color messages containing your name")
 EasyChat.RegisterConvar(EC_MENTION_FLASH, "Flashes your game when you are mentioned")
-EasyChat.RegisterConvar(EC_MENTION_SHOW_MISSED, "Shows missed mentions after AFK/tabbing out")
 
 local function undecorate_nick(nick)
 	if ec_markup then
@@ -31,6 +28,7 @@ local function create_mention_panel()
 	frame.lblTitle:SetFont("EasyChatFont")
 
 	local btn_ok = frame:Add("DButton")
+	btn_ok:SetText("Ok")
 	btn_ok:SetTall(30)
 	btn_ok:Dock(BOTTOM)
 	btn_ok:DockMargin(5, 5, 5, 5)
@@ -76,15 +74,17 @@ local function create_mention_panel()
 	end
 
 	frame:SetSize(400, 400)
-	frame:Hide()
+	frame:SetVisible(false)
 
 	mentions_frame = frame
 end
 
 local function show_missed_mentions()
+	print("showing mentions")
 	if not IsValid(mentions_frame) then return end
 
-	mentions_frame:Show()
+	print("showing panel")
+	mentions_frame:SetVisible(true)
 	mentions_frame:Center()
 	mentions_frame:MakePopup()
 end
@@ -94,8 +94,9 @@ hook.Add("Think", "EasyChatModuleMention", function()
 	local has_focus = system.HasFocus()
 	if old_focus ~= has_focus and has_focus then
 		show_missed_mentions()
-		old_focus = has_focus
 	end
+
+	old_focus = has_focus
 end)
 
 hook.Add("AFK", "EasyChatModuleMention", function(ply, is_afk)
@@ -153,12 +154,13 @@ hook.Add("OnPlayerChat", "EasyChatModuleMention", function(ply, msg, is_team, is
 		table.insert(msg_components, original_msg)
 		chat.AddText(unpack(msg_components))
 
-		if EC_MENTION_SHOW_MISSED:GetBool() and (not system.HasFocus() or (lp.IsAFK and lp:IsAFK())) then
+		if not system.HasFocus() or (lp.IsAFK and lp:IsAFK()) then
 			if not IsValid(mentions_frame) then
 				create_mention_panel()
 			end
 
-			EasyChat.AddText(mentions_frame.RichText, msg_components)
+			print("added mention")
+			EasyChat.AddText(mentions_frame.RichText, unpack(msg_components))
 		end
 
 		return true -- hide chat message
