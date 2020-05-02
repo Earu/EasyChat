@@ -39,7 +39,7 @@ local EDITOR = {
 		self:LoadFontData()
 
 		self:SetSize(600, 410)
-		self:SetPos(ScrW() / 2 - 300, ScrH() / 2 - 200)
+		self:Center()
 		self:SetTitle("EC ChatHUD Font Editor")
 		self.lblTitle:SetFont("EasyChatFont")
 		self.btnMaxim:Hide()
