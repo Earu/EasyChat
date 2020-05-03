@@ -20,6 +20,7 @@ local CHATBOX = {
 		self.BtnClose = self:Add("DButton")
 		self.BtnMaxim = self:Add("DButton")
 		self.BtnSettings = self:Add("DButton")
+		self.BtnDonate = self:Add("DButton")
 		self.Tabs = self:Add("DPropertySheet")
 		self.Scroller = self.Tabs.tabScroller
 		self.OldTab = NULL
@@ -28,11 +29,13 @@ local CHATBOX = {
 		self.BtnClose:SetZPos(10)
 		self.BtnClose:SetFont("DermaDefaultBold")
 		self.BtnClose:SetText("X")
+		self.BtnClose:SetToolTip("Close")
 
 		self.BtnMaxim:SetSize(30, 33)
 		self.BtnMaxim:SetZPos(10)
 		self.BtnMaxim:SetFont("DermaLarge")
 		self.BtnMaxim:SetText("▭")
+		self.BtnMaxim:SetToolTip("Maximize")
 		self.BtnMaxim.IsFullScreen = false
 		self.BtnMaxim.DoClick = function(self)
 			if not self.IsFullScreen then
@@ -51,6 +54,7 @@ local CHATBOX = {
 		self.BtnSettings:SetSize(30, 29)
 		self.BtnSettings:SetZPos(10)
 		self.BtnSettings:SetText("")
+		self.BtnSettings:SetToolTip("Settings")
 		self.BtnSettings:SetImage("icon16/cog.png")
 		self.BtnSettings.DoClick = function()
 			if not EasyChat.OpenSettings then return end -- too early
@@ -63,6 +67,29 @@ local CHATBOX = {
 			end
 
 			EasyChat.OpenSettings()
+		end
+
+		self.BtnDonate:SetSize(30, 29)
+		self.BtnDonate:SetZPos(10)
+		self.BtnDonate:SetText("")
+		self.BtnDonate:SetToolTip("Donate")
+		self.BtnDonate:SetImage("icon16/heart.png")
+		self.BtnDonate.DoClick = function()
+			gui.OpenURL("https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=ZM98A8Y5C87XQ&source=url")
+		end
+
+		self.BtnDonate.DoRightClick = function(self)
+			local donate_menu = DermaMenu()
+			donate_menu:AddOption("Hide", function()
+				cookie.Set("ECShowDonateButton", "1")
+				self:Hide()
+			end)
+
+			donate_menu:Open()
+		end
+
+		if cookie.GetNumber("ECShowDonateButton") == 1 then
+			self.BtnDonate:Hide()
 		end
 
 		self.Tabs:SetPos(6, 6)
@@ -183,6 +210,7 @@ local CHATBOX = {
 			self.BtnMaxim.Paint = function() end
 			self.BtnClose.Paint = function() end
 			self.BtnSettings.Paint = function() end
+			self.BtnDonate.Paint = function() end
 
 			local no_color = Color(0, 0, 0, 0)
 			self.Tabs.Paint = function(self, w, h)
@@ -193,6 +221,7 @@ local CHATBOX = {
 	end,
 	PerformLayout = function(self, w, h)
 		self.Tabs:SetSize(w - 13, h - 11)
+		self.BtnDonate:SetPos(w - self.BtnDonate:GetWide() - 93, -1)
 		self.BtnSettings:SetPos(w - self.BtnSettings:GetWide() - 64, -1)
 		self.BtnMaxim:SetPos(w - self.BtnMaxim:GetWide() - 35, -5)
 		self.BtnClose:SetPos(w - self.BtnClose:GetWide() - 6, -2)
