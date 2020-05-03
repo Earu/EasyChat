@@ -809,7 +809,7 @@ local function add_legacy_settings()
 		options[registered_cvar.Convar] = registered_cvar.Description
 	end
 
-	settings:AddConvarSettingsSet("Others", options)
+	EasyChat.Settings:AddConvarSettingsSet("Others", options)
 end
 
 hook.Add("ECPreLoadModules", "EasyChatDefaultSettings", create_default_settings)
