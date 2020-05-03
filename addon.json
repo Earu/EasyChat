@@ -9,7 +9,7 @@
     "*.md",
 	".git/*",
 	".gitignore",
-	"workshop_update.bat",
+	"update.bat",
 	".gma"
   ]
 }
