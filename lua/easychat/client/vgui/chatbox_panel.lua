@@ -75,7 +75,7 @@ local CHATBOX = {
 		self.BtnDonate:SetToolTip("Donate")
 		self.BtnDonate:SetImage("icon16/heart.png")
 		self.BtnDonate.DoClick = function()
-			gui.OpenURL("https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=ZM98A8Y5C87XQ&source=url")
+			gui.OpenURL("https://paypal.me/easychat")
 		end
 
 		self.BtnDonate.DoRightClick = function(self)
