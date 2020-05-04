@@ -163,7 +163,10 @@ if SERVER then
 		net.WriteBool(is_local)
 		net.Send(filter)
 
-		print(ply:Nick():gsub("<.->", "") .. ": " .. msg) -- shows in server console
+		if game.IsDedicated() then
+			-- shows in server console
+			print(("%s: %s"):format(ply:Nick():gsub("<.->", ""), msg))
+		end
 	end
 
 	local SPAM_STEP = 1 -- how many messages can be sent per second after burst
