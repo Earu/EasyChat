@@ -105,12 +105,12 @@ local function get_steam_emote(name)
 	end
 
 	http.Fetch(url, function(data, len, hdr, code)
-		if code ~= 200 or len <= 222 then
+		if code ~= 200 or len <= 222 or not data then
 			return fail(code)
 		end
 
 		local start, ending = data:find([[src="data:image/png;base64,]], 1, true)
-		if not data then
+		if not start then
 			return fail("ending")
 		end
 
