@@ -129,7 +129,7 @@ function mentions:ShowMissedMentions()
 end
 
 function mentions:AddMissedMention(data)
-	if EC_MENTION_SHOW_MISSED:GetBool() then return end
+	if not EC_MENTION_SHOW_MISSED:GetBool() then return end
 
 	if not IsValid(mentions_frame) then
 		create_mention_panel()
