@@ -408,7 +408,7 @@ function SETTINGS:CreateListSetting(panel, name)
 	return list_setting
 end
 
-function SETTINGS:AddCategory(category_name)
+function SETTINGS:AddCategory(category_name, icon)
 	category_name = category_name or "???"
 	if self.CategoryList[category_name] then return end
 
@@ -437,6 +437,10 @@ function SETTINGS:AddCategory(category_name)
 	local new_category = self.Categories:AddSheet(category_name, panel)
 	new_category.Button:SetFont("ECSettingsFont")
 	new_category.Button:DockPadding(0, 20, 0, 20)
+
+	if icon then
+		new_category.Button:SetImage(icon)
+	end
 
 	if not EasyChat.UseDermaSkin then
 		new_category.Button.Paint = function(self, w, h)
@@ -650,6 +654,8 @@ function SETTINGS:AddSpacer(category_name)
 	else
 		spacer.Paint = function() end
 	end
+
+	return spacer
 end
 
 vgui.Register("ECSettingsMenu", SETTINGS, "DFrame")

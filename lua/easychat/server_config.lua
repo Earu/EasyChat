@@ -2,6 +2,7 @@ local TAG = "EasyChat"
 local NET_SEND_CONFIG = "EASY_CHAT_SEND_SERVER_CONFIG"
 local NET_WRITE_USER_GROUP = "EASY_CHAT_SERVER_CONFIG_WRITE_USER_GROUP"
 local NET_DEL_USER_GROUP = "EASY_CHAT_SERVER_CONFIG_DEL_USER_GROUP"
+local NET_WRITE_TAB = "EASY_CHAT_SERVER_CONFIG_WRITE_TAB"
 local NET_WRITE_SETTING_OVERRIDE = "EASYCHAT_SERVER_SETTING_WRITE_OVERRIDE"
 
 local default_config = {
@@ -13,6 +14,9 @@ local default_config = {
 			EmoteProvider = silkicons,
 			Tag = "[<hscan>Plebian<stop>]"
 		}]]
+	},
+	Tabs = {
+		--["Lua"] = false
 	}
 }
 
@@ -23,6 +27,7 @@ if SERVER then
 	util.AddNetworkString(NET_SEND_CONFIG)
 	util.AddNetworkString(NET_WRITE_USER_GROUP)
 	util.AddNetworkString(NET_DEL_USER_GROUP)
+	util.AddNetworkString(NET_WRITE_TAB)
 	util.AddNetworkString(NET_WRITE_SETTING_OVERRIDE)
 
 	local CONFIG_PATH = "easychat/server_config.json"
@@ -112,6 +117,17 @@ if SERVER then
 		config:Send(player.GetAll(), true)
 	end)
 
+	net.Receive(NET_WRITE_TAB, function(_, ply)
+		if not ply:IsAdmin() then return end
+
+		local tab_name = net.ReadString()
+		local is_allowed = net.ReadBool()
+		config.Tabs[tab_name] = is_allowed
+
+		config:Save()
+		config:Send(player.GetAll(), true)
+	end)
+
 	net.Receive(NET_WRITE_SETTING_OVERRIDE, function(_, ply)
 		if not ply:IsAdmin() then return end
 
@@ -130,12 +146,31 @@ if CLIENT then
 		net.SendToServer()
 	end)
 
+	local function process_tabs_config()
+		local newly_allowed_tabs = {}
+		for tab_name, is_allowed in pairs(EasyChat.Config.Tabs) do
+			local tab_data = EasyChat.GetTab(tab_name)
+			if tab_data and not is_allowed then
+				EasyChat.RemoveTab(tab_name)
+			elseif not tab_data and is_allowed then
+				table.insert(newly_allowed_tabs, tab_name)
+			end
+		end
+
+		if #newly_allowed_tabs > 0 then
+			local msg = ("[WARN] Chat tabs (%s) got unrestricted. Reload the chatbox to get access to them.")
+				:format(table.concat(newly_allowed_tabs, ", "))
+			chat.AddText(Color(255, 0, 0), msg)
+		end
+	end
+
 	net.Receive(NET_SEND_CONFIG, function()
 		local config = net.ReadTable()
 		for k, v in pairs(config) do
 			EasyChat.Config[k] = v
 		end
 
+		process_tabs_config()
 		hook.Run("ECServerConfigUpdate", EasyChat.Config)
 	end)
 
@@ -168,6 +203,20 @@ if CLIENT then
 
 		net.Start(NET_DEL_USER_GROUP)
 		net.WriteString(user_group)
+		net.SendToServer()
+
+		return true
+	end
+
+	function config:WriteTab(tab_name, allowed)
+		if not LocalPlayer():IsAdmin() then return false, "You need to be an admin to do that" end
+
+		tab_name = (tab_name or ""):Trim()
+		if #tab_name == 0 then return false, "No tab specified" end
+
+		net.Start(NET_WRITE_TAB)
+		net.WriteString(tab_name)
+		net.WriteBool(allowed)
 		net.SendToServer()
 
 		return true
