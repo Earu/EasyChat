@@ -671,15 +671,45 @@ if CLIENT then
 		gui.OpenURL(url)
 	end
 
-	function EasyChat.AskForInput(title, callback, can_be_empty)
+	function EasyChat.CreateFrame()
 		local frame = vgui.Create("DFrame")
+		frame.btnMaxim:Hide()
+		frame.btnMinim:Hide()
+		frame.lblTitle:SetFont("EasyChatFont")
+
+		if not EasyChat.UseDermaSkin then
+			frame.lblTitle:SetTextColor(EasyChat.TextColor)
+
+			frame.btnClose:SetText("x")
+			frame.btnClose:SetFont("DermaDefaultBold")
+			frame.btnClose:SetTextColor(EasyChat.TextColor)
+			frame.btnClose.Paint = function() end
+
+			EasyChat.BlurPanel(frame, 0, 0, 0, 0)
+			frame.Paint = function(self, w, h)
+				surface.SetDrawColor(EasyChat.OutlayColor)
+				surface.DrawRect(0, 0, w, 25)
+
+				surface.SetDrawColor(EasyChat.TabColor)
+				surface.DrawRect(0, 25, w, h - 25)
+
+				surface.SetDrawColor(EasyChat.TabOutlineColor)
+				surface.DrawOutlinedRect(0, 0, w, 25)
+
+				surface.SetDrawColor(EasyChat.OutlayOutlineColor)
+				surface.DrawOutlinedRect(0, 0, w, h)
+			end
+		end
+
+		return frame
+	end
+
+	function EasyChat.AskForInput(title, callback, can_be_empty)
+		local frame = EasyChat.CreateFrame()
 		frame:SetTitle(title)
 		frame:SetSize(200,110)
 		frame:SetDrawOnTop(true)
 		frame:SetDraggable(false)
-
-		frame.btnMinim:Hide()
-		frame.btnMaxim:Hide()
 
 		if EasyChat.GUI and IsValid(EasyChat.GUI.ChatBox) then
 			local x, y, w, h = EasyChat.GUI.ChatBox:GetBounds()
@@ -711,21 +741,6 @@ if CLIENT then
 		end
 
 		if not EasyChat.UseDermaSkin then
-			frame.lblTitle:SetTextColor(EasyChat.TextColor)
-			frame.btnClose:SetTextColor(EasyChat.TextColor)
-			frame.btnClose:SetText("X")
-			frame.btnClose.Paint = function() end
-
-			frame.Paint = function(self, w, h)
-				Derma_DrawBackgroundBlur(self, 0)
-
-				surface.SetDrawColor(EasyChat.OutlayColor)
-				surface.DrawRect(0, 0, w, 25)
-
-				surface.SetDrawColor(EasyChat.TabColor)
-				surface.DrawRect(0, 25, w, h - 25)
-			end
-
 			btn.Paint = function(self, w, h)
 				surface.SetDrawColor(EasyChat.TabColor)
 				surface.DrawRect(0, 0, w, h)
@@ -1508,6 +1523,11 @@ if CLIENT then
 			end
 
 			function EasyChat.AddTab(name, panel, icon)
+				if EasyChat.Config.Tabs[name] == false then
+					panel:Hide()
+					return
+				end
+
 				-- in case we get overriden
 				EasyChat.RemoveTab(name)
 
@@ -2401,6 +2421,8 @@ function EasyChat.Reload()
 		for _, v in ipairs(player.GetAll()) do
 			v:SendLua([[EasyChat.Reload()]])
 		end
+
+		EasyChat.Config:Send(player.GetAll(), true)
 	end
 end
 
