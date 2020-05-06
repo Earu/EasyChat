@@ -161,7 +161,7 @@ hook.Add("OnPlayerChat", "EasyChatModuleMention", function(ply, msg, is_team, is
 	msg = msg:lower()
 	local undec_nick = undecorate_nick(lp:Nick()):PatternSafe()
 	local match = msg:match(undec_nick)
-	if not msg:match("^[%!%.%/]") and #match > 1 then
+	if not msg:match("^[%!%.%/]") and match and #match > 1 then
 		if EC_MENTION_FLASH:GetBool() then
 			system.FlashWindow()
 		end
