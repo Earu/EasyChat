@@ -70,9 +70,12 @@ if SERVER then
 			end
 		end
 
+		local data = util.Compress(util.TableToJSON(config_copy))
+		local data_len = #data
 		timer.Simple(0, function()
 			net.Start(NET_SEND_CONFIG)
-			net.WriteTable(config_copy)
+			net.WriteDouble(data_len)
+			net.WriteData(data, data_len)
 			net.Send(ply)
 		end)
 
@@ -146,6 +149,11 @@ if CLIENT then
 		net.SendToServer()
 	end)
 
+	local red_color = Color(255, 0, 0)
+	local function chat_warning(text)
+		chat.AddText(red_color, "[WARN] " .. text)
+	end
+
 	local function process_tabs_config()
 		local newly_allowed_tabs = {}
 		for tab_name, is_allowed in pairs(EasyChat.Config.Tabs) do
@@ -158,14 +166,23 @@ if CLIENT then
 		end
 
 		if #newly_allowed_tabs > 0 then
-			local msg = ("[WARN] Chat tabs (%s) got unrestricted. Reload the chatbox to get access to them.")
+			local msg = ("Chat tabs (%s) got unrestricted. Reload the chatbox to get access to them.")
 				:format(table.concat(newly_allowed_tabs, ", "))
-			chat.AddText(Color(255, 0, 0), msg)
+			chat_warning(msg)
 		end
 	end
 
 	net.Receive(NET_SEND_CONFIG, function()
-		local config = net.ReadTable()
+		local data_len = net.ReadDouble()
+		local data = net.ReadData(data_len)
+		if #data < data_len then
+			chat_warning("EasyChat's server config is TOO BIG, tell the admin(s) / owner(s).")
+			return
+		end
+
+		local config = util.JSONToTable(util.Decompress(data))
+		if not config then return end
+
 		for k, v in pairs(config) do
 			EasyChat.Config[k] = v
 		end
