@@ -335,6 +335,40 @@ local function create_default_settings()
 		tab_list:AddColumn("Name")
 		tab_list:AddColumn("Hidden")
 
+		local function show_or_hide_tab(selected_line)
+			local tab_name = selected_line:GetColumnText(1)
+			local tab_data = EasyChat.GetTab(tab_name)
+			if tab_data then
+				local is_visible = tab_data.Tab:IsVisible()
+				tab_data.Tab:SetVisible(not is_visible)
+
+				-- this is inverted, because we get IsVisible before setting it
+				selected_line:SetColumnText(2, is_visible and "Yes" or "No")
+			end
+		end
+
+		tab_list.DoDoubleClick = function(_, _, line)
+			show_or_hide_tab(line)
+		end
+
+		tab_list.OnRowRightClick = function(_, _, line)
+			local tab_menu = DermaMenu()
+
+			tab_menu:AddOption(line:GetColumnText(2) == "Yes" and "Show" or "Hide", function()
+				show_or_hide_tab(line)
+			end)
+			tab_menu:AddSpacer()
+			tab_menu:AddOption("Restrict", function()
+				local succ, err = EasyChat.Config:WriteTab(line:GetColumnText(1), false)
+				if not succ then
+					notification.AddLegacy(err, NOTIFY_ERROR, 3)
+					surface.PlaySound("buttons/button11.wav")
+				end
+			end):SetImage("icon16/shield.png")
+
+			tab_menu:Open()
+		end
+
 		local tab_class_blacklist = {
 			["ECChatTab"] = true,
 			["ECSettingsTab"] = true,
@@ -357,16 +391,75 @@ local function create_default_settings()
 		setting_apply_tab.DoClick = function()
 			local selected_lines = tab_list:GetSelected()
 			for _, selected_line in pairs(selected_lines) do
-				local tab_name = selected_line:GetColumnText(1)
-				local tab_data = EasyChat.GetTab(tab_name)
-				if tab_data then
-					local is_visible = tab_data.Tab:IsVisible()
-					tab_data.Tab:SetVisible(not is_visible)
+				show_or_hide_tab(selected_line)
+			end
+		end
 
-					-- this is inverted, because we get IsVisible before setting it
-					selected_line:SetColumnText(2, is_visible and "Yes" or "No")
+		local setting_manage_tabs = settings:AddSetting(category_name, "action", "Manage Tabs")
+		setting_manage_tabs:SetImage("icon16/shield.png")
+		setting_manage_tabs.DoClick = function()
+			local frame = EasyChat.CreateFrame()
+			frame:SetSize(400, 285)
+			frame:SetTitle("Manage Tabs")
+
+			local setting_restricted_tabs = settings:AddSetting(category_name, "list", "Restricted Tabs")
+			setting_restricted_tabs:SetParent(frame)
+
+			local tab_list = setting_restricted_tabs.List
+			tab_list:SetMultiSelect(true)
+			tab_list:AddColumn("Tab Name")
+
+			local function build_tab_list()
+				tab_list:Clear()
+
+				for tab_name, is_allowed in pairs(EasyChat.Config.Tabs) do
+					if not is_allowed then
+						tab_list:AddLine(tab_name)
+					end
 				end
 			end
+
+			build_tab_list()
+			hook.Add("ECServerConfigUpdate", frame, build_tab_list)
+
+			local setting_unrestrict_tab = settings:AddSetting(category_name, "action", "Unrestrict Tab")
+			setting_unrestrict_tab:SetParent(frame)
+			setting_unrestrict_tab:SetImage("icon16/shield.png")
+			setting_unrestrict_tab.DoClick = function()
+				local lines = tab_list:GetSelected()
+				for _, line in pairs(lines) do
+					local succ, err = EasyChat.Config:WriteTab(line:GetColumnText(1), true)
+					if not succ then
+						notification.AddLegacy(err, NOTIFY_ERROR, 3)
+						surface.PlaySound("buttons/button11.wav")
+						break
+					end
+				end
+			end
+
+			local spacer = settings:AddSpacer(category_name)
+			spacer:SetParent(frame)
+			spacer:DockMargin(10, 0, 10, 20)
+
+			local setting_restrict_tab_name = settings:AddSetting(category_name, "string", "Tab Name")
+			setting_restrict_tab_name:SetParent(frame)
+			setting_restrict_tab_name.OnEnter = function(self)
+				local succ, err = EasyChat.Config:WriteTab(self:GetText(), false)
+				if not succ then
+					notification.AddLegacy(err, NOTIFY_ERROR, 3)
+					surface.PlaySound("buttons/button11.wav")
+				end
+			end
+
+			local setting_restrict_tab = settings:AddSetting(category_name, "action", "Restrict Tab")
+			setting_restrict_tab:SetParent(frame)
+			setting_restrict_tab:SetImage("icon16/shield.png")
+			setting_restrict_tab.DoClick = function()
+				setting_restrict_tab_name:OnEnter()
+			end
+
+			frame:Center()
+			frame:MakePopup()
 		end
 
 		settings:AddSpacer(category_name)
@@ -469,7 +562,7 @@ local function create_default_settings()
 
 		local setting_usergroups = settings:AddSetting(category_name, "list", "Rank Prefixes")
 		local prefix_list = setting_usergroups.List
-		prefix_list:SetMultiSelect(false)
+		prefix_list:SetMultiSelect(true)
 		prefix_list:AddColumn("Usergroup")
 		prefix_list:AddColumn("Emote")
 		prefix_list:AddColumn("Tag")
@@ -497,60 +590,16 @@ local function create_default_settings()
 			return emote_tag
 		end
 
-		local function build_usergroup_list()
-			prefix_list:Clear()
-
-			for usergroup, prefix_data in pairs(EasyChat.Config.UserGroups) do
-				local emote_display = build_emote_tag(prefix_data.EmoteName, prefix_data.EmoteSize or -1, prefix_data.EmoteProvider or "")
-				local line = prefix_list:AddLine(usergroup, emote_display, prefix_data.Tag)
-
-				local input_str = ("%s<stop>"):format(prefix_data.Tag)
-				if #emote_display > 0 then
-					input_str = ("%s %s"):format(input_str, emote_display)
-				end
-
-				input_str = ("%s %s"):format(input_str, LocalPlayer():Nick())
-				local mk = ec_markup.Parse(input_str)
-				local mk_w, mk_h = mk:GetWide(), mk:GetTall()
-
-				local tooltip = vgui.Create("Panel")
-				tooltip:SetVisible(false)
-				tooltip:SetDrawOnTop(true)
-				tooltip:SetWide(mk_w + 10)
-				tooltip:SetTall(mk_h + 10)
-				tooltip.Paint = function(_, w, h)
-					if not settings:IsVisible() then return end
-					mk:Draw(w / 2 - mk_w / 2, h / 2 - mk_h / 2)
-				end
-
-				line.Think = function(self)
-					local is_hovered = self:IsHovered()
-					tooltip:SetVisible(is_hovered)
-					local mx, my = gui.MousePos()
-					tooltip:SetPos(mx, my)
-				end
-
-				line.OnRemove = function()
-					if not IsValid(tooltip) then return end
-					tooltip:Remove()
-				end
-			end
-		end
-
-		build_usergroup_list()
-
 		local function setup_rank(usergroup)
 			-- sanity check to see if wanted usergroup actually exists
 			if usergroup and not EasyChat.Config.UserGroups[usergroup] then return end
 
-			local frame = vgui.Create("DFrame")
+			local frame = EasyChat.CreateFrame()
 			frame:SetSize(400, 400)
 			frame:SetTitle(usergroup and "Modify Rank" or "New Rank")
-			frame.lblTitle:SetFont("EasyChatFont")
 
 			local setting_usergroup = settings:AddSetting(category_name, "string", "Usergroup")
 			setting_usergroup:SetParent(frame)
-			setting_usergroup:Dock(TOP)
 			setting_usergroup:DockMargin(5, 20, 5, 10)
 			if usergroup then
 				setting_usergroup:SetText(usergroup)
@@ -558,7 +607,6 @@ local function create_default_settings()
 
 			local setting_emote_name = settings:AddSetting(category_name, "string", "Emote")
 			setting_emote_name:SetParent(frame)
-			setting_emote_name:Dock(TOP)
 			setting_emote_name:DockMargin(5, 15, 5, 10)
 			if usergroup then
 				local prefix_data = EasyChat.Config.UserGroups[usergroup]
@@ -568,7 +616,6 @@ local function create_default_settings()
 
 			local setting_tag = settings:AddSetting(category_name, "string", "Tag")
 			setting_tag:SetParent(frame)
-			setting_tag:Dock(TOP)
 			setting_tag:DockMargin(5, 15, 5, 10)
 			if usergroup then
 				setting_tag:SetText(EasyChat.Config.UserGroups[usergroup].Tag)
@@ -640,62 +687,97 @@ local function create_default_settings()
 				end
 			end
 
-			if not EasyChat.UseDermaSkin then
-				frame.lblTitle:SetTextColor(EasyChat.TextColor)
-
-				frame.btnMaxim:Hide()
-				frame.btnMinim:Hide()
-				frame.btnClose:SetText("x")
-				frame.btnClose:SetFont("DermaDefaultBold")
-				frame.btnClose:SetTextColor(EasyChat.TextColor)
-				frame.btnClose.Paint = function() end
-
-				EasyChat.BlurPanel(frame, 0, 0, 0, 0)
-				frame.Paint = function(self, w, h)
-					surface.SetDrawColor(EasyChat.OutlayColor)
-					surface.DrawRect(0, 0, w, 25)
-
-					surface.SetDrawColor(EasyChat.TabColor)
-					surface.DrawRect(0, 25, w, h - 25)
-
-					surface.SetDrawColor(EasyChat.TabOutlineColor)
-					surface.DrawOutlinedRect(0, 0, w, 25)
-
-					surface.SetDrawColor(EasyChat.OutlayOutlineColor)
-					surface.DrawOutlinedRect(0, 0, w, h)
-				end
-			end
-
 			frame:MakePopup()
 			frame:Center()
 		end
 
+		local function modify_rank()
+			local selected_lines = prefix_list:GetSelected()
+			for _, line in pairs(selected_lines) do
+				local usergroup = line:GetColumnText(1)
+				setup_rank(usergroup)
+			end
+		end
+
+		local function delete_rank()
+			local selected_lines = prefix_list:GetSelected()
+			for _, line in pairs(selected_lines) do
+				local usergroup = line:GetColumnText(1)
+				local succ, err = EasyChat.Config:DeleteUserGroup(usergroup)
+				if not succ then
+					notification.AddLegacy(err, NOTIFY_ERROR, 3)
+					surface.PlaySound("buttons/button11.wav")
+					break
+				end
+			end
+		end
+
+		prefix_list.DoDoubleClick = function(_, _, line)
+			setup_rank(line:GetColumnText(1))
+		end
+
+		prefix_list.OnRowRightClick = function()
+			local prefix_menu = DermaMenu()
+			prefix_menu:AddOption("Modify", modify_rank):SetImage("icon16/shield.png")
+			prefix_menu:AddOption("Delete", delete_rank):SetImage("icon16/shield.png")
+			prefix_menu:Open()
+		end
+
+		local function build_usergroup_list()
+			prefix_list:Clear()
+
+			for usergroup, prefix_data in pairs(EasyChat.Config.UserGroups) do
+				local emote_display = build_emote_tag(prefix_data.EmoteName, prefix_data.EmoteSize or -1, prefix_data.EmoteProvider or "")
+				local line = prefix_list:AddLine(usergroup, emote_display, prefix_data.Tag)
+
+				local input_str = ("%s<stop>"):format(prefix_data.Tag)
+				if #emote_display > 0 then
+					input_str = ("%s %s"):format(input_str, emote_display)
+				end
+
+				input_str = ("%s %s"):format(input_str, LocalPlayer():Nick())
+				local mk = ec_markup.Parse(input_str)
+				local mk_w, mk_h = mk:GetWide(), mk:GetTall()
+
+				local tooltip = vgui.Create("Panel")
+				tooltip:SetVisible(false)
+				tooltip:SetDrawOnTop(true)
+				tooltip:SetWide(mk_w + 10)
+				tooltip:SetTall(mk_h + 10)
+				tooltip.Paint = function(_, w, h)
+					if not settings:IsVisible() then return end
+					mk:Draw(w / 2 - mk_w / 2, h / 2 - mk_h / 2)
+				end
+
+				line.Think = function(self)
+					local is_hovered = self:IsHovered()
+					tooltip:SetVisible(is_hovered)
+					local mx, my = gui.MousePos()
+					tooltip:SetPos(mx, my)
+				end
+
+				line.OnRemove = function()
+					if not IsValid(tooltip) then return end
+					tooltip:Remove()
+				end
+			end
+		end
+
+		build_usergroup_list()
+
 		local setting_add_usergroup = settings:AddSetting(category_name, "action", "Setup New Rank")
+		setting_add_usergroup:SetImage("icon16/shield.png")
 		setting_add_usergroup.DoClick = function()
 			setup_rank()
 		end
 
 		local setting_modify_usergroup = settings:AddSetting(category_name, "action", "Modify Rank")
-		setting_modify_usergroup.DoClick = function()
-			local selected_line = prefix_list:GetSelected()[1]
-			if not IsValid(selected_line) then return end
-
-			local usergroup = selected_line:GetColumnText(1)
-			setup_rank(usergroup)
-		end
+		setting_modify_usergroup:SetImage("icon16/shield.png")
+		setting_modify_usergroup.DoClick = modify_rank
 
 		local setting_del_usergroup = settings:AddSetting(category_name, "action", "Delete Rank")
-		setting_del_usergroup.DoClick = function()
-			local selected_line = prefix_list:GetSelected()[1]
-			if not IsValid(selected_line) then return end
-
-			local usergroup = selected_line:GetColumnText(1)
-			local succ, err = EasyChat.Config:DeleteUserGroup(usergroup)
-			if not succ then
-				notification.AddLegacy(err, NOTIFY_ERROR, 3)
-				surface.PlaySound("buttons/button11.wav")
-			end
-		end
+		setting_del_usergroup:SetImage("icon16/shield.png")
+		setting_del_usergroup.DoClick = delete_rank
 
 		hook.Add("ECServerConfigUpdate", settings, function(_, config)
 			setting_override_client_settings:SetChecked(config.OverrideClientSettings)
