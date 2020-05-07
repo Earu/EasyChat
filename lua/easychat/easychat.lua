@@ -10,7 +10,7 @@ local NET_ADD_TEXT = "EASY_CHAT_ADD_TEXT"
 
 local PLY = FindMetaTable("Player")
 local TAG = "EasyChat"
-local MAX_CHARS = 3000
+local MAX_CHARS = 500
 
 local color_print_head = Color(244, 167, 66)
 local color_print_good = Color(0, 160, 220)
