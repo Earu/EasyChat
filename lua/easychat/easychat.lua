@@ -10,8 +10,10 @@ local NET_ADD_TEXT = "EASY_CHAT_ADD_TEXT"
 
 local PLY = FindMetaTable("Player")
 local TAG = "EasyChat"
-local MAX_CHARS = 3000
 
+local EC_MAX_CHARS = CreateConVar("easychat_max_chars", "3000", { FCVAR_REPLICATED, SERVER and FCVAR_ARCHIVE or nil }, "Max characters per messages", 50)
+
+local color_red = Color(255, 0, 0)
 local color_print_head = Color(244, 167, 66)
 local color_print_good = Color(0, 160, 220)
 local color_print_bad = Color(255, 127, 127)
@@ -216,27 +218,27 @@ if SERVER then
 	end
 	EasyChat.SpamWatch = spam_watch
 
-	net.Receive(NET_SEND_MSG, function(len, ply)
+	net.Receive(NET_SEND_MSG, function(_, ply)
 		local msg = net.ReadString()
 		local is_team = net.ReadBool()
 		local is_local = net.ReadBool()
 
 		-- we sub the message len clientside if we receive something bigger here
 		-- it HAS to be malicious
-		if #msg > MAX_CHARS then
-			EasyChat.PlayerAddText(ply, Color(255, 0, 0), ("NOT SENT (TOO BIG): %s..."):format(msg:sub(1, 100)))
+		if #msg > EC_MAX_CHARS:GetInt() then
+			EasyChat.PlayerAddText(ply, color_red, ("NOT SENT (TOO BIG): %s..."):format(msg:sub(1, 100)))
 			return
 		end
 
 		if spam_watch(ply, msg) then
-			EasyChat.PlayerAddText(ply, Color(255, 0, 0), ("NOT SENT (SPAM): %s..."):format(msg:sub(1, 100)))
+			EasyChat.PlayerAddText(ply, color_red, ("NOT SENT (SPAM): %s..."):format(msg:sub(1, 100)))
 			return
 		end
 
 		EasyChat.SendGlobalMessage(ply, msg, is_team, is_local)
 	end)
 
-	net.Receive(NET_SET_TYPING, function(len, ply)
+	net.Receive(NET_SET_TYPING, function(_, ply)
 		local is_opened = net.ReadBool()
 		ply:SetNWBool("ec_is_typing", is_opened)
 		safe_hook_run(is_opened and "ECOpened" or "ECClosed", ply)
@@ -2221,8 +2223,8 @@ if CLIENT then
 
 		if jit.arch == "x64" and not cookie.GetString("ECChromiumWarn") then
 			-- warn related to chromium regression
-			EasyChat.AddText(EasyChat.GUI.RichText, Color(255, 0, 0), "IF YOU ARE HAVING TROUBLES TO TYPE SOME CHARACTERS PLEASE TYPE", color_white, " easychat_legacy_entry 1 ",
-			Color(255,0,0), "IN YOUR CONSOLE. THE ISSUE IS DUE TO A REGRESSION IN CHROMIUM. MORE INFO HERE: https://github.com/Facepunch/garrysmod-issues/issues/4414\n"
+			EasyChat.AddText(EasyChat.GUI.RichText, color_red, "IF YOU ARE HAVING TROUBLES TO TYPE SOME CHARACTERS PLEASE TYPE", color_white, " easychat_legacy_entry 1 ",
+			color_red, "IN YOUR CONSOLE. THE ISSUE IS DUE TO A REGRESSION IN CHROMIUM. MORE INFO HERE: https://github.com/Facepunch/garrysmod-issues/issues/4414\n"
 			.. "IF YOU STILL HAVE ISSUES PLEASE DO REPORT IT HERE: https://github.com/Earu/EasyChat/issues")
 			cookie.Set("ECChromiumWarn", "1")
 		end
@@ -2324,7 +2326,7 @@ if CLIENT then
 		-- we're making this the "default" behavior if people introduce hooks that change this
 		-- it shouldnt prevent it (ex: custom networking with different limits)
 		function GAMEMODE:ECShouldSendMessage(msg)
-			if #msg > MAX_CHARS then
+			if #msg > EC_MAX_CHARS:GetInt() then
 				surface.PlaySound("buttons/button11.wav")
 				EasyChat.GUI.TextEntry:TriggerBlink("TOO BIG")
 				return false
