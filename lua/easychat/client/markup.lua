@@ -185,5 +185,39 @@ function ec_markup.Parse(str, maxwidth, is_ply_nick, default_color, default_font
 	})
 end
 
+local player_cache = {}
+local function clear_cache(id)
+	local sub_cache = player_cache[id]
+	for ply, _ in pairs(sub_cache) do
+		if not ply:IsValid() then
+			sub_cache[ply] = nil
+		end
+	end
+end
+
+function ec_markup.CachePlayer(id, ply, callback)
+	local sub_cache
+	if not player_cache[id] then
+		sub_cache = {}
+		player_cache[id] = sub_cache
+	else
+		sub_cache = player_cache[id]
+	end
+
+	local nick, team_color = ply:Nick(), team.GetColor(ply:Team())
+	local cache = sub_cache[ply]
+	if cache and cache.Nick == nick and cache.TeamColor == team_color then
+		return cache.Markup
+	end
+
+	clear_cache(id)
+	local mk = callback()
+	if not mk then return end
+
+	sub_cache[ply] = { Markup = mk, Nick = nick, TeamColor = team_color }
+
+	return mk
+end
+
 _G.ECMarkup = ec_markup.Parse
 _G.ec_markup = ec_markup

@@ -1370,8 +1370,8 @@ function chathud:AddText(...)
 				local team_col = team.GetColor(arg:Team())
 				self:InsertColorChange(team_col.r, team_col.g, team_col.b)
 
-				if EC_PLAYER_PASTEL:GetBool() and ec_markup then
-					local nick = ec_markup.Parse(arg:Nick(), nil, true):GetText()
+				if EC_PLAYER_PASTEL:GetBool() then
+					local nick = EasyChat.GetProperNick(arg)
 					local pastel_col = EasyChat.PastelizeNick(nick)
 					self:InsertColorChange(pastel_col.r, pastel_col.g, pastel_col.b)
 				end
