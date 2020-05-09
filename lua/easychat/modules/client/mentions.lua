@@ -40,14 +40,6 @@ do
 	end
 end
 
-local function undecorate_nick(nick)
-	if ec_markup then
-		return ec_markup.Parse(nick, nil, true):GetText():lower()
-	else
-		return nick:gsub("<.->", ""):lower()
-	end
-end
-
 local mentions_frame = nil
 local function create_mention_panel()
 	local frame = vgui.Create("DFrame")
@@ -159,7 +151,7 @@ hook.Add("OnPlayerChat", "EasyChatModuleMention", function(ply, msg, is_team, is
 	local original_msg = msg
 
 	msg = msg:lower()
-	local undec_nick = undecorate_nick(lp:Nick()):PatternSafe()
+	local undec_nick = EasyChat.GetProperNick(lp):PatternSafe()
 	local nick_mention = msg:match(undec_nick)
 	if not msg:match("^[%!%.%/]") and nick_mention then
 		if #nick_mention <= 1 then return end

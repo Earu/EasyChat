@@ -59,7 +59,15 @@ if SERVER then
 		end
 	end
 
-	local already_sent = setmetatable({}, { __mode = "k" })
+	local already_sent = {}
+	local function clear_cache()
+		for ply, _ in pairs(already_sent) do
+			if not IsValid(ply) then
+				already_sent[ply] = nil
+			end
+		end
+	end
+
 	function config:Send(ply, force_send)
 		if not force_send and already_sent[ply] then return end
 
@@ -81,6 +89,7 @@ if SERVER then
 
 		if not force_send then
 			already_sent[ply] = true
+			clear_cache()
 		end
 	end
 
