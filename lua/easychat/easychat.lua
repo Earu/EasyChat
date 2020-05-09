@@ -174,7 +174,7 @@ if SERVER then
 	local SPAM_STEP = 1 -- how many messages can be sent per second after burst
 	local SPAM_MAX = 5 -- max amount of messages per burst
 
-	local spam_watch_lookup = setmetatable({}, { __mode = "k" })
+	local spam_watch_lookup = {}
 	local function get_message_cost(msg, is_same_msg)
 		local _, real_msg_len = msg:gsub("[^\128-\193]", "")
 		if real_msg_len > 1024 then
@@ -226,11 +226,13 @@ if SERVER then
 		-- we sub the message len clientside if we receive something bigger here
 		-- it HAS to be malicious
 		if #msg > EC_MAX_CHARS:GetInt() then
+			safe_hook_run("ECBlockedMessage", ply, msg, is_local, is_local, "too big")
 			EasyChat.PlayerAddText(ply, color_red, ("NOT SENT (TOO BIG): %s..."):format(msg:sub(1, 100)))
 			return
 		end
 
 		if spam_watch(ply, msg) then
+			safe_hook_run("ECBlockedMessage", ply, msg, is_local, is_local, "spam")
 			EasyChat.PlayerAddText(ply, color_red, ("NOT SENT (SPAM): %s..."):format(msg:sub(1, 100)))
 			return
 		end
@@ -269,6 +271,7 @@ if SERVER then
 	end)
 
 	hook.Add("PlayerCanSeePlayersChat", TAG, EasyChat.PlayerCanSeePlayersChat)
+	hook.Add("PlayerDisconnected", TAG, function(ply) spam_watch_lookup[ply] = nil end)
 end
 
 if CLIENT then
@@ -1186,6 +1189,17 @@ if CLIENT then
 			return math.fmod(counter, 4294967291) -- 2^32 - 5: Prime (and different from the prime in the loop)
 		end
 
+		function EasyChat.GetProperNick(ply)
+			local ply_nick = ply:Nick()
+
+			if not ec_markup then return ply_nick end
+			local mk = ec_markup.CachePlayer("EasyChat", ply, function()
+				return ec_markup.Parse(ply_nick, nil, true)
+			end)
+
+			return mk and mk:GetText() or ply_nick
+		end
+
 		function EasyChat.PastelizeNick(nick)
 			local hue = string_hash(nick)
 			local saturation, value = hue % 3 == 0, hue % 127 == 0
@@ -1262,8 +1276,8 @@ if CLIENT then
 			global_insert_color_change(team_color.r, team_color.g, team_color.b, 255)
 			table.insert(data, team_color)
 
-			if EC_PLAYER_PASTEL:GetBool() and ec_markup then
-				local nick = ec_markup.Parse(ply:Nick(), nil, true):GetText()
+			if EC_PLAYER_PASTEL:GetBool() then
+				local nick = EasyChat.GetProperNick(ply)
 				local pastel_color = EasyChat.PastelizeNick(nick)
 				global_insert_color_change(pastel_color.r, pastel_color.g, pastel_color.b, 255)
 				table.insert(data, pastel_color)
@@ -1360,7 +1374,7 @@ if CLIENT then
 							richtext:InsertColorChange(team_color.r, team_color.g, team_color.b, 255)
 						end
 
-						local nick = ec_markup and ec_markup.Parse(arg:Nick(), nil, true):GetText() or arg:Nick()
+						local nick = EasyChat.GetProperNick(arg)
 						if EC_PLAYER_PASTEL:GetBool() then
 							local pastel_color = EasyChat.PastelizeNick(nick)
 							richtext:InsertColorChange(pastel_color.r, pastel_color.g, pastel_color.b, 255)
@@ -1748,7 +1762,7 @@ if CLIENT then
 			local max_perc = 0
 			local res
 			for _, ply in ipairs(player.GetAll()) do
-				local nick = ec_markup.Parse(ply:Nick(), nil, true):GetText()
+				local nick = EasyChat.GetProperNick(ply)
 				local match = nick:lower():match(last_word:lower():PatternSafe())
 				if match then
 					local perc = #match / #nick

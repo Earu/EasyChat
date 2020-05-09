@@ -43,25 +43,6 @@ hook.Add("ECHUDBoundsUpdate", "", function(x, y, w, h)
 	return pac_x + pac_w + 15, y, w, h
 end)
 
-local nick_cache = setmetatable({}, { __mode = "k" })
-local function cache_nick(ply)
-	local nick, team_color = ply:Nick(), team.GetColor(ply:Team())
-	local cache = nick_cache[ply]
-	if cache and cache.Nick == nick and cache.TeamColor == team_color then
-		return cache.Markup
-	end
-
-	local mk = ec_markup.AdvancedParse(("%s's PAC3 camera"):format(ply:Nick()), {
-		nick = true,
-		default_font = "ChatFont",
-		default_color = color_white,
-		no_shadow = true,
-	})
-
-	nick_cache[ply] = { Markup = mk, Nick = nick, TeamColor = team_color }
-	return mk
-end
-
 hook.Add("HUDPaint", "pac_in_editor", function()
 	for _, ply in ipairs(player.GetHumans()) do
 		if ply ~= LocalPlayer() and ply:GetNW2Bool("pac_in_editor") then
@@ -90,7 +71,15 @@ hook.Add("HUDPaint", "pac_in_editor", function()
 					if pos_2d.visible then
 						local alpha = math.Clamp(pos_3d:Distance(EyePos()) * -1 + 500, 0, 500) / 500
 						if alpha > 0 then
-							local mk = cache_nick(ply)
+							local mk = ec_markup.CachePlayer("PAC3", ply, function()
+								return ec_markup.AdvancedParse(("%s's PAC3 camera"):format(ply:Nick()), {
+									nick = true,
+									default_font = "ChatFont",
+									default_color = color_white,
+									no_shadow = true,
+								})
+							end)
+
 							surface.SetAlphaMultiplier(alpha)
 							mk:Draw(pos_2d.x, pos_2d.y)
 							surface.SetAlphaMultiplier(1)
