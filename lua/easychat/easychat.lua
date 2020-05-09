@@ -226,13 +226,13 @@ if SERVER then
 		-- we sub the message len clientside if we receive something bigger here
 		-- it HAS to be malicious
 		if #msg > EC_MAX_CHARS:GetInt() then
-			safe_hook_run("ECBlockedMessage", ply, msg, is_local, is_local, "too big")
+			safe_hook_run("ECBlockedMessage", ply, msg, is_team, is_local, "too big")
 			EasyChat.PlayerAddText(ply, color_red, ("NOT SENT (TOO BIG): %s..."):format(msg:sub(1, 100)))
 			return
 		end
 
 		if spam_watch(ply, msg) then
-			safe_hook_run("ECBlockedMessage", ply, msg, is_local, is_local, "spam")
+			safe_hook_run("ECBlockedMessage", ply, msg, is_team, is_local, "spam")
 			EasyChat.PlayerAddText(ply, color_red, ("NOT SENT (SPAM): %s..."):format(msg:sub(1, 100)))
 			return
 		end
