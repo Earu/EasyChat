@@ -16,20 +16,6 @@ function panel:Think()
 	end
 end
 
-local nick_cache = setmetatable({}, { __mode = "k" })
-local function cache_nick(ply)
-	local nick, team_color = ply:Nick(), team.GetColor(ply:Team())
-	local cache = nick_cache[ply]
-	if cache and cache.Nick == nick and cache.TeamColor == team_color then
-		return cache.Markup
-	end
-
-	local mk = ec_markup.Parse(nick, nil, true, team_color, "EasyChatFont")
-	nick_cache[ply] = { Markup = mk, Nick = nick, TeamColor = team_color }
-
-	return mk
-end
-
 panel:SetWide(150)
 panel.old_paint = panel.Paint
 local panel_title = "Message Receivers"
@@ -60,8 +46,13 @@ function panel:Paint(w, h)
 		then
 			self:SetTall(5 + (20 * (i + 1)))
 
-			local mk = cache_nick(ply)
-			mk:Draw(15, 5 + (20 * i))
+			ec_markup.CachePlayer("LocalUI", ply, function()
+				return ec_markup.AdvancedParse(ply:Nick(), {
+					nick = true,
+					default_font = "EasyChatFont",
+					default_color = team.GetColor(ply:Team()),
+				})
+			end):Draw(15, 5 + (20 * i))
 
 			i = i + 1
 		end
