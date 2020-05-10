@@ -1190,8 +1190,9 @@ if CLIENT then
 		end
 
 		function EasyChat.GetProperNick(ply)
-			local ply_nick = ply:Nick()
+			if not IsValid(ply) then return "???" end
 
+			local ply_nick = ply:Nick()
 			if not ec_markup then return ply_nick end
 			local mk = ec_markup.CachePlayer("EasyChat", ply, function()
 				return ec_markup.Parse(ply_nick, nil, true)
