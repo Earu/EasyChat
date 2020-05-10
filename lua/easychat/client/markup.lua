@@ -195,7 +195,12 @@ local function clear_cache(id)
 	end
 end
 
+local default_mk = ec_markup.Parse("???", nil, true)
 function ec_markup.CachePlayer(id, ply, callback)
+	if not id or not IsValid(ply) or not isfunction(callback) then
+		return default_mk
+	end
+
 	local sub_cache
 	if not player_cache[id] then
 		sub_cache = {}
@@ -212,7 +217,7 @@ function ec_markup.CachePlayer(id, ply, callback)
 
 	clear_cache(id)
 	local mk = callback()
-	if not mk then return end
+	if not mk then return default_mk end
 
 	sub_cache[ply] = { Markup = mk, Nick = nick, TeamColor = team_color }
 
