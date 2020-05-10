@@ -140,6 +140,12 @@ hook.Add("Think", "EasyChatModuleMention", function()
 	old_focus = has_focus
 end)
 
+function GAMEMODE:ECPlayerMention(ply, msg, is_team, is_dead, is_local, data)
+	if not system.HasFocus() then
+		mentions:AddMissedMention(data)
+	end
+end
+
 hook.Add("OnPlayerChat", "EasyChatModuleMention", function(ply, msg, is_team, is_dead, is_local)
 	if not EC_MENTION:GetBool() then return end
 
@@ -187,13 +193,7 @@ hook.Add("OnPlayerChat", "EasyChatModuleMention", function(ply, msg, is_team, is
 		table.insert(msg_components, original_msg)
 		chat.AddText(unpack(msg_components))
 
-		if not system.HasFocus() then
-			mentions:AddMissedMention(msg_components)
-		else
-			-- fire something for third-party scripts to handle this
-			hook.Run("ECPlayerMention", msg_components)
-		end
-
+		hook.Run("ECPlayerMention", ply, msg, is_team, is_dead, is_local, msg_components)
 		return true -- hide chat message
 	end
 end)
