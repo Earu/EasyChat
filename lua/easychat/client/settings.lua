@@ -851,6 +851,23 @@ local function create_default_settings()
 					language_selection = 1
 				end
 			end
+
+			local old_enter = text_entry.OnEnter
+			function text_entry.OnEnter(self)
+				local country_code = self:GetText():match("^(.+)%s%(")
+				if country_code then
+					self:SetText(country_code)
+				end
+
+				country_code = self:GetText():Trim()
+				if not table.HasValue(valid_languages, country_code) then
+					notification.AddLegacy("Invalid country code", NOTIFY_ERROR, 3)
+					surface.PlaySound("buttons/button11.wav")
+					return
+				end
+
+				old_enter(self)
+			end
 		end
 
 		settings:AddConvarSetting(category_name, "boolean", EC_TRANSLATE_OUT_MSG, "Translate your chat messages")
