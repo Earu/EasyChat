@@ -1,25 +1,19 @@
 @echo off
 title EasyChat Update
 set /p changes="Changes: "
-set location=./
-set id=1182471500
 
 git commit -a -m "%changes%"
 git push
 
-if exist "%location%" (
-	gmad.exe create -folder "%location%" -out "%location%.gma"
-	if exist "%location%.gma" (
-		gmpublish.exe update -addon "%location%.gma" -id "%id%" -changes "%changes%"
-	) else (
-		echo Could not create gma archive, aborting
-	)
+gmad.exe create -folder "./" -out ".gma"
+if exist ".gma" (
+	gmpublish.exe update -addon ".gma" -id "1182471500" -changes "%changes%"
 ) else (
-	echo Could not find the specified path
+	echo Could not create gma archive, aborting
 )
 
-if exist "%location%.gma" (
-	del /Q "%location.gma"
+if exist ".gma" (
+	del /Q ".gma"
 )
 
 pause
