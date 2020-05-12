@@ -888,6 +888,11 @@ local function add_chathud_markup_settings()
 
 	settings:AddSpacer(category_name)
 
+	local setting_help = settings:AddSetting(category_name, "action", "Show Help & Examples")
+	setting_help.DoClick = function()
+		RunConsoleCommand("easychat_hud_examples")
+	end
+
 	local tag_options = {}
 	for part_name, _ in pairs(EasyChat.ChatHUD.Parts) do
 		local cvar = GetConVar("easychat_tag_" .. part_name)

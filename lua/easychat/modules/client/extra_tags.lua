@@ -29,7 +29,13 @@ local EC_HUD_SMOOTH = GetConVar("easychat_hud_smooth")
 
 	Color modulation with hexadecimal values.
 ]]-------------------------------------------------------------------------------
-local color_hex_part = {}
+local color_hex_part = {
+	Usage = "<c=hexadecimal>",
+	Examples = {
+		"<c=f00>red text!",
+		"<c=00ff00>green text!"
+	}
+}
 
 function color_hex_part:HexToRGB(hex)
 	local hex = string.Replace(hex, "#","")
@@ -69,7 +75,11 @@ chathud:RegisterPart("c", color_hex_part)
 ]]-------------------------------------------------------------------------------
 local hsv_part = {
 	OkInNicks = false,
-	RunExpression = function() return 360, 1, 1 end
+	RunExpression = function() return 360, 1, 1 end,
+	Usage = "<hsv=expression> or <hsv=hue,saturation,value>",
+	Examples = {
+		"<hsv=t()*300>Rainbow text"
+	}
 }
 
 function hsv_part:Ctor(expr)
@@ -105,7 +115,11 @@ chathud:RegisterPart("hsv", hsv_part)
 ]]-------------------------------------------------------------------------------
 local bhsv_part = {
 	OkInNicks = false,
-	RunExpression = function() return 360, 1, 1 end
+	RunExpression = function() return 360, 1, 1 end,
+	Usage = "<bhsv=expression> or <bhsv=hue,saturation,value>",
+	Examples = {
+		"<bhsv=t()*300>Rainbow background"
+	}
 }
 
 function bhsv_part:Ctor(expr)
@@ -150,6 +164,11 @@ chathud:RegisterPart("bhsv", bhsv_part)
 local flash_part = {
 	TargetColor = Color(255, 0, 0),
 	Color = Color(255, 0, 0),
+	Usage = "<flash> or <flash=r,g,b>",
+	Examples = {
+		"<flash=255,0,0>Red flashing text",
+		"<flash=0,255,255>Cyan flashing text",
+	}
 }
 
 function flash_part:Ctor(str)
@@ -177,7 +196,7 @@ function flash_part:Draw(ctx)
 	ctx:UpdateColor(self.Color)
 end
 
-EasyChat.ChatHUD:RegisterPart("flash", flash_part, "%<(flash)%>")
+chathud:RegisterPart("flash", flash_part, "%<(flash)%>")
 
 --[[-----------------------------------------------------------------------------
 	Horizontal Scan Component
@@ -187,6 +206,11 @@ EasyChat.ChatHUD:RegisterPart("flash", flash_part, "%<(flash)%>")
 local hscan_part = {
 	Speed = 1,
 	ScanColor = Color(9, 155, 234),
+	Usage = "<hscan> or <hscan=speed,r,g,b>",
+	Examples = {
+		"<hscan>normal horizonal scan",
+		"<hscan=3,0,255,0>fast green scan"
+	}
 }
 
 function hscan_part:Ctor(str)
@@ -224,6 +248,11 @@ chathud:RegisterPart("hscan", hscan_part, "%<(hscan)%>")
 local vscan_part = {
 	Speed = 1,
 	ScanColor = Color(234, 9, 61),
+	Usage = "<vscan> or <vscan=speed,r,g,b>",
+	Examples = {
+		"<vscan>normal vertical scan",
+		"<vscan=3,0,255,0>fast green scan"
+	}
 }
 
 function vscan_part:Ctor(str)
@@ -262,6 +291,11 @@ local scale_part = {
 	OkInNicks = false,
 	RunExpression = function() return 1 end,
 	Enabled = false,
+	Usage = "<scale=size> or <scale=expression>",
+	Examples = {
+		"<scale=3>Big text",
+		"<scale=sin(t()*3)>Size changing text"
+	}
 }
 
 function scale_part:Ctor(expr)
@@ -308,7 +342,12 @@ chathud:RegisterPart("scale", scale_part)
 ]]-------------------------------------------------------------------------------
 local rotate_part = {
 	OkInNicks = false,
-	RunExpression = function() return 1 end
+	RunExpression = function() return 1 end,
+	Usage = "<rotate=angle> or <rotate=expression>",
+	Examples = {
+		"<rotate=90>:) :D",
+		"<rotate=t()*300>zoom zoom I rotate"
+	}
 }
 
 function rotate_part:Ctor(expr)
@@ -355,7 +394,12 @@ chathud:RegisterPart("rotate", rotate_part)
 ]]-------------------------------------------------------------------------------
 local z_rotate_part = {
 	OkInNicks = false,
-	RunExpression = function() return 1 end
+	RunExpression = function() return 1 end,
+	Usage = "<zrotate=angle> or <zrotate=expression>",
+	Examples = {
+		"<zrotate=90>:) :D",
+		"<zrotate=t()*300>zoom zoom I rotate"
+	}
 }
 
 function z_rotate_part:Ctor(expr)
@@ -401,6 +445,10 @@ chathud:RegisterPart("zrotate", z_rotate_part)
 ]]-------------------------------------------------------------------------------
 local texture_part = {
 	RealPos = { X = 0, Y = 0 },
+	Usage = "<texture=path, size?>",
+	Examples = {
+	--	"<texture=,16>"
+	}
 }
 
 function texture_part:Ctor(str)
@@ -493,7 +541,12 @@ chathud:RegisterPart("texture", texture_part)
 local translate_part = {
 	OkInNicks = false,
 	RunExpression = function() return 0, 0 end,
-	Offset = { X = 0, Y = 0 }
+	Offset = { X = 0, Y = 0 },
+	Usage = "<translate=x,y> or <translate=expression>",
+	Examples = {
+		"<translate=100,0>To the right",
+		"<translate=rand()*10,rand()*10>Im angry!"
+	}
 }
 
 function translate_part:Ctor(expr)
@@ -541,7 +594,13 @@ local carat_colors = {
 	["15"] = Color(255, 0, 255),
 }
 
-local carat_color_part = {}
+local carat_color_part = {
+	Usage = "^number or <caratcol=number>",
+	Examples = {
+		"^5this is blue",
+		"^13this is red"
+	}
+}
 
 function carat_color_part:Ctor(num)
 	local col = carat_colors[string.Trim(num)]
@@ -568,7 +627,12 @@ chathud:RegisterPart("caratcol", carat_color_part, "%^([0-9][1-5]?)", {
 
 	Marks text as "wrong".
 ]]-------------------------------------------------------------------------------
-local wrong_part = {}
+local wrong_part = {
+	Usage = "<wrong>",
+	Examples = {
+		"<wrong>This text is wrong"
+	}
+}
 
 function wrong_part:Ctor()
 	return self
@@ -594,7 +658,12 @@ chathud:RegisterPart("wrong", wrong_part, "%<(wrong)%>")
 
 	Draws text background a certain color.
 ]]-------------------------------------------------------------------------------
-local background_part = {}
+local background_part = {
+	Usage = "<background=r,g,b>",
+	Examples = {
+		"<background=0,255,255>Cyan background",
+	}
+}
 
 function background_part:Ctor(str)
 	local col_components = str:Split(",")
@@ -645,7 +714,13 @@ local mc_colors = {
     ["r"] = Color(255, 255, 255),
 }
 
-local mc_color_part = {}
+local mc_color_part = {
+	Usage = "&value or <mccol=value>",
+	Examples = {
+		"&6this is orange",
+		"&ethis is yellow"
+	}
+}
 
 function mc_color_part:Ctor(num)
     local col = mc_colors[string.Trim(num)]
