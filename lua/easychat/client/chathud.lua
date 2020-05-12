@@ -345,7 +345,12 @@ end
 	This guarantees all matrixes and generally every change made
 	to the drawing context is set back to a "default" state.
 ]]-------------------------------------------------------------------------------
-local stop_part = {}
+local stop_part = {
+	Usage = "<stop>",
+	Examples = {
+		"<color=255,0,0>Hello <stop>World!"
+	}
+}
 
 function stop_part:Draw(ctx)
 	ctx:ResetColors()
@@ -361,7 +366,13 @@ chathud:RegisterPart("stop", stop_part, "%<(stop)%>")
 
 	Color modulation with rgb values.
 ]]-------------------------------------------------------------------------------
-local color_part = {}
+local color_part = {
+	Usage = "<color=r,g,b>",
+	Examples = {
+		"<color=255,0,255>I am pink",
+		"<color=255,0,0>Red!"
+	}
+}
 
 function color_part:Ctor(str)
 	local col_components = string_explode("%s*,%s*", str, true)
@@ -385,7 +396,12 @@ chathud:RegisterPart("color", color_part)
 
 	Font changes.
 ]]-------------------------------------------------------------------------------
-local font_part = {}
+local font_part = {
+	Usage = "<font=font_name>",
+	Examples = {
+		"<font=DermaLarge>I am big!"
+	}
+}
 
 function font_part:Ctor(str)
 	local succ, _ = pcall(surface_SetFont, str) -- only way to check if a font is valid
@@ -666,6 +682,11 @@ local emote_part = {
 	RealPos = { X = 0, Y = 0 },
 	Height = 32,
 	HasSetHeight = false,
+	Usage = "<emote=name,size?,provider?> or :name:",
+	Examples = {
+		"I am an <emote=shield,32,silkicons> admin",
+		"There is a :dragon:!"
+	}
 }
 
 function emote_part:Ctor(str)
@@ -1416,6 +1437,97 @@ end
 function chathud:InsertColorChange(r, g, b)
 	local expr = ("%d,%d,%d"):format(r, g, b)
 	self:PushPartComponent("color", expr)
+end
+
+-- examples & help
+do
+	concommand.Add("easychat_hud_examples", function()
+		local frame = EasyChat.CreateFrame()
+		frame:SetSize(640, 480)
+		frame:SetTitle("EasyChat Tag Examples")
+		frame:Center()
+		frame:MakePopup()
+
+		local scroll_panel = frame:Add("DScrollPanel")
+		scroll_panel:Dock(FILL)
+
+		local processed = {}
+		for part_name, part in pairs(chathud.Parts) do
+			if not processed[part_name] and isstring(part.Usage) then
+				local p = scroll_panel:Add("DPanel")
+				p:Dock(TOP)
+				p:DockMargin(5, 5, 5, 5)
+				p.Paint = function(_, w, h)
+					surface.SetDrawColor(EasyChat.UseDermaSkin and color_white or EasyChat.OutlayColor)
+					surface.DrawOutlinedRect(0, 0, w, h)
+				end
+
+				local title = p:Add("DLabel")
+				title:SetText(("Name: %s"):format(part_name))
+				title:Dock(TOP)
+				title:DockMargin(5, 5, 5, 0)
+				title:SetFont("EasyChatFont")
+				title:SetTextColor(color_white)
+
+				local usage = p:Add("DLabel")
+				usage:SetText(("Usage: %s"):format(part.Usage))
+				usage:Dock(TOP)
+				usage:DockMargin(5, 0, 5, 0)
+				usage:SetFont("EasyChatFont")
+				usage:SetTextColor(color_white)
+
+				if istable(part.Examples) and #part.Examples > 0 then
+					local examples = p:Add("DLabel")
+					examples:SetText("Examples:")
+					examples:Dock(TOP)
+					examples:DockMargin(5, 0, 5, 5)
+					examples:SetFont("EasyChatFont")
+					examples:SetTextColor(color_white)
+
+					for _, example in ipairs(part.Examples) do
+						local example_text = p:Add("DLabel")
+						example_text:SetText(example)
+						example_text:Dock(TOP)
+						example_text:DockMargin(20, 0, 5, 0)
+						example_text:SetFont("EasyChatFont")
+						example_text:SetTextColor(color_white)
+
+						local canvas = p:Add("DPanel")
+						canvas:Dock(TOP)
+						canvas:SetTall(30)
+						canvas:DockMargin(5, 0, 5, 10)
+
+						local mk = ec_markup.Parse(example)
+						canvas.Paint = function(_, _, h)
+							mk:Draw(20, h / 2 - mk:GetTall() / 2)
+						end
+					end
+				end
+
+				p:InvalidateLayout(true)
+				p:SizeToChildren(false, true)
+
+				processed[part_name] = true
+			end
+		end
+
+		if not EasyChat.UseDermaSkin then
+			local scrollbar = scroll_panel:GetVBar()
+			scrollbar:SetHideButtons(true)
+			scrollbar.Paint = function(_, _, h)
+				surface.SetDrawColor(EasyChat.OutlayColor)
+				surface.DrawLine(0, 0, 0, h)
+			end
+
+			scrollbar.btnGrip.Paint = function(_, w, h)
+				local r, g, b = EasyChat.OutlayColor:Unpack()
+				surface.SetDrawColor(r, g, b, 150)
+				DisableClipping(true)
+				surface.DrawRect(0, 0, w + 5, h)
+				DisableClipping(false)
+			end
+		end
+	end, nil, "Shows help & examples on how to use chat tags")
 end
 
 return chathud

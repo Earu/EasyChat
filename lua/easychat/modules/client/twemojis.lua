@@ -282,6 +282,8 @@ local surface_SetMaterial = surface.SetMaterial
 
 local twemoji_part = table.Copy(EasyChat.ChatHUD.Parts.emote)
 twemoji_part.HasSetHeight = nil
+twemoji_part.Usage = nil
+twemoji_part.Examples = nil
 
 function twemoji_part:Ctor(str)
 	local em_components = str:Split(",")
