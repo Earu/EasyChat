@@ -17,4 +17,9 @@ if exist "%location%" (
 ) else (
 	echo Could not find the specified path
 )
+
+if exist "%location%.gma" (
+	del /Q "%location.gma"
+)
+
 pause
