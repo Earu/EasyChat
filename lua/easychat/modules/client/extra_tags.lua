@@ -143,9 +143,46 @@ end
 chathud:RegisterPart("bhsv", bhsv_part)
 
 --[[-----------------------------------------------------------------------------
+	Flash Component
+
+	Color modulation between 0,0,0 and the input
+]]-------------------------------------------------------------------------------
+local flash_part = {
+	TargetColor = Color(255, 0, 0),
+	Color = Color(255, 0, 0),
+}
+
+function flash_part:Ctor(str)
+	local flash_components = str:Split(",")
+	self.TargetColor = Color(
+		tonumber(flash_components[1]) or self.TargetColor.r,
+		tonumber(flash_components[2]) or self.TargetColor.g,
+		tonumber(flash_components[3]) or self.TargetColor.b
+	)
+
+	self.Color = Color(self.TargetColor:Unpack())
+
+	return self
+end
+
+function flash_part:ComputeColor()
+	local coef = math_sin(CurTime() * 3)
+	self.Color.r = (self.TargetColor.r / 2) + (coef * (self.TargetColor.r / 2))
+	self.Color.g = (self.TargetColor.g / 2) + (coef * (self.TargetColor.g / 2))
+	self.Color.b = (self.TargetColor.b / 2) + (coef * (self.TargetColor.b / 2))
+end
+
+function flash_part:Draw(ctx)
+	self:ComputeColor()
+	ctx:UpdateColor(self.Color)
+end
+
+EasyChat.ChatHUD:RegisterPart("flash", flash_part, "%<(flash)%>")
+
+--[[-----------------------------------------------------------------------------
 	Horizontal Scan Component
 
-	Color modulation with HSV values on text background.
+	Horizontal scanning thingy.
 ]]-------------------------------------------------------------------------------
 local hscan_part = {
 	Speed = 1,
@@ -182,7 +219,7 @@ chathud:RegisterPart("hscan", hscan_part, "%<(hscan)%>")
 --[[-----------------------------------------------------------------------------
 	Vertical Scan Component
 
-	Color modulation with HSV values on text background.
+	Vertical scanning thingy.
 ]]-------------------------------------------------------------------------------
 local vscan_part = {
 	Speed = 1,
