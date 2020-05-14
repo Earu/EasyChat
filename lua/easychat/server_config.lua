@@ -296,7 +296,7 @@ if CLIENT then
 		steam_id = (steam_id or ""):Trim()
 		if #steam_id == 0 then return false, "Invalid SteamID" end
 
-		net.Start(NET_WRITE_PLY_TITLE)
+		net.Start(NET_DEL_PLY_TITLE)
 		net.WriteString(steam_id)
 		net.SendToServer()
 
