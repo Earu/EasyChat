@@ -1,5 +1,6 @@
 local PANEL = {
 	CurrentColor = Color(255, 255, 255),
+	RichTextXBackgroundColor = Color(0, 0, 0, 0), -- stupid name or it overrides other stuff (?)
 }
 
 function PANEL:Init()
@@ -70,12 +71,14 @@ function PANEL:Init()
 	self:AddFunction("RichTextX", "Find", find_text)
 	self:AddFunction("RichTextX", "OnRightClick", function(selected_text)
 		local copy_menu = DermaMenu()
-		copy_menu:AddOption("copy", function() SetClipboardText(selected_text) end)
-		copy_menu:AddOption("find", find_text)
+		copy_menu:AddOption("Copy", function() SetClipboardText(selected_text) end)
+		copy_menu:AddOption("Find", find_text)
 		copy_menu:AddSpacer()
 		-- setting the textContent node of the richtext clears all the children and replaces it
 		-- with a single text node, it also doesnt invoke chromium HTML parser which is relatively fast
-		copy_menu:AddOption("clear chatlog", function() self:QueueJavascript([[RICHTEXT.textContent = "";]]) end)
+		copy_menu:AddOption("Clear Chatlog", function() self:QueueJavascript([[RICHTEXT.textContent = "";]]) end)
+		copy_menu:AddSpacer()
+		copy_menu:AddOption("Cancel", function() copy_menu:Remove() end)
 		copy_menu:Open()
 	end)
 
@@ -127,10 +130,19 @@ function PANEL:SetFGColor(r, g, b)
 	self.CurrentColor = color
 end
 
+function PANEL:GetFGColor()
+	return self.CurrentColor
+end
+
 function PANEL:SetBGColor(r, g, b)
 	local color = istable(r) and r or Color(r, g, b)
 	local css_color = ("rgb(%d,%d,%d)"):format(color.r, color.g, color.b)
 	self:QueueJavascript(("RICHTEXT.style.background = `%s`;"):format(css_color))
+	self.RichTextXBackgroundColor = color
+end
+
+function PANEL:GetBGColor()
+	return self.RichTextXBackgroundColor
 end
 
 -- this sadly relies on surface.GetLuaFonts
@@ -141,6 +153,10 @@ function PANEL:SetFontInternal(lua_font)
 	if not font_data then return end
 
 	self:SetFontData(font_data)
+end
+
+-- compat placeholder
+function PANEL:SetUnderlineFont(lua_font)
 end
 
 -- for overrides
@@ -155,7 +171,7 @@ function PANEL:AppendText(text)
 		span.onclick = () => RichTextX.OnClick(`]] .. self.ClickableTextValue .. [[`);
 		span.clickableText = true;
 		span.style.cursor = "pointer";
-		span.style.color = "4497CE";
+		span.style.color = `]] .. css_color .. [[`;
 	]] or [[
 		span = document.createElement("span");
 		span.style.color = `]] .. css_color .. [[`;
