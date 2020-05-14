@@ -127,6 +127,10 @@ if SERVER then
 		net.Send(ply)
 	end
 
+	function EasyChat.Warn(ply, msg)
+		EasyChat.PlayerAddText(ply, color_red, "[WARN] " ..  msg)
+	end
+
 	function EasyChat.SendGlobalMessage(ply, str, is_team, is_local)
 		local msg = gamemode.Call("PlayerSay", ply, str, is_team, is_local)
 		if type(msg) ~= "string" then return end
@@ -230,13 +234,13 @@ if SERVER then
 		-- it HAS to be malicious
 		if #msg > EC_MAX_CHARS:GetInt() then
 			safe_hook_run("ECBlockedMessage", ply, msg, is_team, is_local, "too big")
-			EasyChat.PlayerAddText(ply, color_red, ("NOT SENT (TOO BIG): %s..."):format(msg:sub(1, 100)))
+			EasyChat.Warn(ply, ("NOT SENT (TOO BIG): %s..."):format(msg:sub(1, 100)))
 			return
 		end
 
 		if spam_watch(ply, msg) then
 			safe_hook_run("ECBlockedMessage", ply, msg, is_team, is_local, "spam")
-			EasyChat.PlayerAddText(ply, color_red, ("NOT SENT (SPAM): %s..."):format(msg:sub(1, 100)))
+			EasyChat.Warn(ply, ("NOT SENT (SPAM): %s..."):format(msg:sub(1, 100)))
 			return
 		end
 
@@ -450,6 +454,10 @@ if CLIENT then
 	include("easychat/client/vgui/chat_tab.lua")
 	include("easychat/client/vgui/settings_menu.lua")
 	include("easychat/client/vgui/chathud_font_editor_panel.lua")
+
+	function EasyChat.Warn(msg)
+		chat.AddText(color_red, "[WARN] " .. msg)
+	end
 
 	function EasyChat.RegisterConvar(convar, desc)
 		table.insert(ec_convars, {
@@ -715,9 +723,9 @@ if CLIENT then
 	function EasyChat.AskForInput(title, callback, can_be_empty)
 		local frame = EasyChat.CreateFrame()
 		frame:SetTitle(title)
-		frame:SetSize(200,110)
 		frame:SetDrawOnTop(true)
 		frame:SetDraggable(false)
+		frame:SetSize(200, 90)
 
 		if EasyChat.GUI and IsValid(EasyChat.GUI.ChatBox) then
 			local x, y, w, h = EasyChat.GUI.ChatBox:GetBounds()
@@ -727,26 +735,28 @@ if CLIENT then
 		end
 
 		local text_entry = frame:Add("DTextEntry")
-		text_entry:SetSize(180, 25)
-		text_entry:SetPos(10, 40)
+		text_entry:SetTall(25)
+		text_entry:Dock(TOP)
 		text_entry.OnEnter = function(self)
 			if not can_be_empty and EasyChat.IsStringEmpty(self:GetText()) then return end
 
 			callback(self:GetText())
 			frame:Close()
 		end
+		frame.TextEntry = text_entry
 
 		local btn = frame:Add("DButton")
-		btn:SetText("Ok")
+		btn:SetText("Confirm")
 		btn:SetTextColor(EasyChat.TextColor)
-		btn:SetSize(100, 25)
-		btn:SetPos(50, 75)
+		btn:SetTall(25)
+		btn:Dock(BOTTOM)
 		btn.DoClick = function()
 			if not can_be_empty and EasyChat.IsStringEmpty(text_entry:GetText()) then return end
 
 			callback(text_entry:GetText())
 			frame:Close()
 		end
+		frame.Button = btn
 
 		if not EasyChat.UseDermaSkin then
 			btn.Paint = function(self, w, h)
@@ -776,6 +786,8 @@ if CLIENT then
 			text_entry:RequestFocus()
 			return true
 		end)
+
+		return frame
 	end
 
 	local BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
@@ -1043,6 +1055,7 @@ if CLIENT then
 			return false
 		end
 
+		local link_color = Color(68, 151, 206)
 		local function global_append_text_url(text)
 			local data = {}
 
@@ -1052,6 +1065,9 @@ if CLIENT then
 			else
 				local url = text:sub(start_pos, end_pos)
 				table.Add(data, global_append_text(text:sub(1, start_pos - 1)))
+
+				local previous_color = EasyChat.GUI.RichText:GetLastColorChange()
+				EasyChat.GUI.RichText:InsertColorChange(link_color)
 
 				if is_image_url(url) then
 					EasyChat.GUI.RichText:InsertClickableTextStart(url)
@@ -1079,7 +1095,11 @@ if CLIENT then
 					EasyChat.GUI.RichText:AppendText(" ")
 				end
 
+				EasyChat.GUI.RichText:InsertColorChange(previous_color)
+
+				table.insert(data, link_color)
 				table.insert(data, url)
+				table.insert(data, previous_color)
 
 				if EC_LINKS_CLIPBOARD:GetBool() and EasyChat.GUI.RichText:IsVisible() then
 					SetClipboardText(url)
@@ -1216,6 +1236,10 @@ if CLIENT then
 		EasyChat.SetAddTextTypeHandle("Player", function(ply)
 			local data = {}
 
+			-- dont forget to reset color to white by default
+			EasyChat.GUI.RichText:InsertColorChange(255, 255, 255, 255)
+			table.insert(data, color_white)
+
 			if not IsValid(ply) then
 				global_insert_color_change(110, 247, 177)
 				global_append_text("???")
@@ -1227,10 +1251,6 @@ if CLIENT then
 			end
 
 			if should_use_server_settings(ply) then
-				-- dont forget to reset color to white by default
-				EasyChat.GUI.RichText:InsertColorChange(255, 255, 255, 255)
-				table.insert(data, Color(255, 255, 255))
-
 				local usergroup_prefix = EasyChat.Config.UserGroups[ply:GetUserGroup()]
 				local tags_data = extract_tags_data(usergroup_prefix.Tag)
 				for _, tag_data in ipairs(tags_data) do
@@ -1276,6 +1296,29 @@ if CLIENT then
 				end
 			end
 
+			local ply_title = EasyChat.Config.Titles[ply:SteamID()]
+			if ply_title then
+				local tags_data = extract_tags_data(ply_title)
+				for _, tag_data in ipairs(tags_data) do
+					if is_color(tag_data) then
+						EasyChat.GUI.RichText:InsertColorChange(tag_data.r, tag_data.g, tag_data.b, 255)
+						table.insert(data, tag_data)
+					elseif isstring(tag_data) then
+						append_text(EasyChat.GUI.RichText, tag_data)
+						table.insert(data, tag_data)
+					end
+				end
+
+				append_text(EasyChat.GUI.RichText, " ")
+				table.insert(data, " ")
+
+				if EC_HUD_CUSTOM:GetBool() then
+					EasyChat.ChatHUD:PushPartComponent("stop")
+					EasyChat.ChatHUD:AppendText(ply_title .. " ")
+					EasyChat.ChatHUD:PushPartComponent("stop")
+				end
+			end
+
 			local team_color = EC_PLAYER_COLOR:GetBool() and team.GetColor(ply:Team()) or color_white
 			global_insert_color_change(team_color.r, team_color.g, team_color.b, 255)
 			table.insert(data, team_color)
@@ -1287,6 +1330,8 @@ if CLIENT then
 				table.insert(data, pastel_color)
 			end
 
+			EasyChat.GUI.RichText:InsertClickableTextStart(("ECPlayerActions: %s"):format(ply:SteamID()))
+
 			local lp = LocalPlayer()
 			if IsValid(lp) and lp == ply and EC_USE_ME:GetBool() then
 				global_append_text("me")
@@ -1295,6 +1340,8 @@ if CLIENT then
 				local nick_data = global_append_nick(ply:Nick())
 				table.Add(data, nick_data)
 			end
+
+			EasyChat.GUI.RichText:InsertClickableTextEnd()
 
 			return data
 		end)
@@ -1940,8 +1987,73 @@ if CLIENT then
 			self:SetCompletionText(completion)
 		end
 
+		local function handle_player_actions(steam_id)
+			local ply = player.GetBySteamID(steam_id)
+			if not IsValid(ply) then return end
+
+			local ply_menu = DermaMenu()
+			ply_menu:AddOption("Set Title", function()
+				local frame = EasyChat.AskForInput("Set Title", function(title)
+					local succ, err = EasyChat.Config:WritePlayerTitle(steam_id, title)
+					if not succ then
+						notification.AddLegacy(err, NOTIFY_ERROR, 3)
+						surface.PlaySound("buttons/button11.wav")
+					end
+				end, false)
+
+				frame:SetTall(200)
+
+				local mk
+				frame.TextEntry.OnKeyCodeTyped = function(self)
+					timer.Create("ECSetPlayerTitle", 0.25, 1, function()
+						mk = ec_markup.Parse(self:GetText())
+					end)
+				end
+
+				local canvas = frame:Add("DPanel")
+				canvas:Dock(BOTTOM)
+				canvas:DockMargin(0, 7, 0, 7)
+				canvas:SetTall(100)
+				canvas.Paint = function(_, w, h)
+					surface.SetDrawColor(color_white)
+					surface.DrawOutlinedRect(0, 0, w, h)
+
+					if mk then
+						mk:Draw(w / 2 - mk:GetWide() / 2, h / 2 - mk:GetTall() / 2)
+					end
+				end
+			end):SetImage("icon16/shield.png")
+
+			ply_menu:AddOption("Remove Title", function()
+				local succ, err = EasyChat.Config:DeletePlayerTitle(steam_id)
+				if not succ then
+					notification.AddLegacy(err, NOTIFY_ERROR, 3)
+					surface.PlaySound("buttons/button11.wav")
+				end
+			end):SetImage("icon16/shield.png")
+
+			ply_menu:AddSpacer()
+
+			ply_menu:AddOption("Open Steam Profile", function() EasyChat.OpenURL("https://steamcommunity.com/profiles/" .. ply:SteamID64()) end)
+			ply_menu:AddOption("Copy Name", function() SetClipboardText(ply:Nick()) end)
+			ply_menu:AddOption("Copy SteamID", function() SetClipboardText(steam_id) end)
+			ply_menu:AddOption("Copy SteamID64", function() SetClipboardText(ply:SteamID64()) end)
+
+			ply_menu:AddSpacer()
+
+			ply_menu:AddOption("Cancel", function() ply_menu:Remove() end)
+
+			ply_menu:Open()
+		end
+
 		function EasyChat.GUI.RichText:ActionSignal(name, value)
 			if name ~= "TextClicked" then return end
+			local steam_id = value:match("^ECPlayerActions%: (STEAM_%d%:%d%:%d+)")
+			if steam_id then
+				handle_player_actions(steam_id)
+				return
+			end
+
 			EasyChat.OpenURL(value)
 		end
 
