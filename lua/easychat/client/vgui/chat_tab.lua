@@ -20,8 +20,18 @@ local MAIN_TAB = {
 
 		self.RichText.PerformLayout = function(self)
 			self:SetFontInternal("EasyChatFont")
+			self:SetUnderlineFont("EasyChatFont")
 			self:SetFGColor(EasyChat.UseDermaSkin and EasyChat.TextColor or Color(0, 0, 0, 255))
 		end
+
+		local last_color = self.RichText:GetFGColor()
+		local old_insert_color_change = self.RichText.InsertColorChange
+		self.RichText.InsertColorChange = function(self, r, g, b, a)
+			last_color = istable(r) and Color(r.r, r.g, r.b) or Color(r, g, b)
+			old_insert_color_change(self, last_color.r, last_color.g, last_color.b, last_color.a)
+		end
+
+		self.RichText.GetLastColorChange = function(self) return last_color end
 
 		self.BtnSwitch = self:Add("DButton")
 		self.BtnSwitch:SetText("Say")
@@ -54,6 +64,8 @@ local MAIN_TAB = {
 					EasyChat.Mode = mode_index
 				end)
 			end
+			switch_menu:AddSpacer()
+			switch_menu:AddOption("Cancel", function() switch_menu:Remove() end)
 			switch_menu:Open()
 		end
 
