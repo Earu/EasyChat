@@ -84,6 +84,8 @@ local CHATBOX = {
 				cookie.Set("ECShowDonateButton", "1")
 				self:Hide()
 			end)
+			donate_menu:AddSpacer()
+			donate_menu:AddOption("Cancel", function() donate_menu:Remove() end)
 
 			donate_menu:Open()
 		end
@@ -135,6 +137,8 @@ local CHATBOX = {
 				end
 			end
 
+			tabs_menu:AddSpacer()
+			tabs_menu:AddOption("Cancel", function() tabs_menu:Remove() end)
 			tabs_menu:Open()
 		end
 
