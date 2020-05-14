@@ -24,8 +24,7 @@ for _, country_code in pairs(language_lookup) do
 end
 
 function translator:Translate(text, source_lang, target_lang, on_finish)
-	local apiKey = EC_TRANSLATE_API_KEY:GetString()
-	if not valid_languages[source_lang] or not valid_languages[target_lang] or not apiKey:find("trnsl.1.1.") then
+	if not valid_languages[source_lang] or not valid_languages[target_lang] or not EC_TRANSLATE_API_KEY:GetString():find("trnsl.1.1.") then
 		on_finish(false)
 		return
 	end
@@ -35,14 +34,11 @@ function translator:Translate(text, source_lang, target_lang, on_finish)
 		return
 	end
 
-	text = text:gsub("[^%w]", function(char)
-		return string.format("%%%02X", char:byte())
-	end)
+	local language = (source_lang ~= "auto" and source_lang.."-" or "")..target_lang
+	local url_encoded_text = text:gsub("[^%w]", function(char) return string.format("%%%02X", char:byte()) end)
+	local request_url = string.format("https://translate.yandex.net/api/v1.5/tr.json/translate?key=%s&text=%s&lang=%s", EC_TRANSLATE_API_KEY:GetString(), url_encoded_text, language)
 
-	local langStr = (source_lang ~= "auto" and source_lang.."-" or "")..target_lang
-	local reqUrl = string.format("https://translate.yandex.net/api/v1.5/tr.json/translate?key=%s&text=%s&lang=%s", apiKey, text, langStr)
-
-	http.Fetch(reqUrl, function(body, size)
+	http.Fetch(request_url, function(body, size)
 		local translated = util.JSONToTable(body)
 
 		if translated.text and translated.text[1] then
