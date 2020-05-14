@@ -96,7 +96,15 @@ if CLIENT then
 					local cur_y = 20
 					for _, ply in ipairs(player.GetAll()) do
 						if ply:IsAdmin() then
-							local mk = cache_nick(ply, self:GetWide() - 20)
+							local mk = ec_markup.CachePlayer("AdminTab", ply, function()
+								return ec_markup.AdvancedParse(ply:Nick(), {
+									default_font = "EasyChatFont",
+									default_color = team.GetColor(ply:Team()),
+									nick = true,
+									no_shadow = true,
+									maxwidth = self:GetWide() - 20
+								})
+							end)
 							mk:Draw(10, cur_y)
 							cur_y = cur_y + mk:GetTall() + 5
 						end

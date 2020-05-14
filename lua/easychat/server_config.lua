@@ -3,6 +3,8 @@ local NET_SEND_CONFIG = "EASY_CHAT_SEND_SERVER_CONFIG"
 local NET_WRITE_USER_GROUP = "EASY_CHAT_SERVER_CONFIG_WRITE_USER_GROUP"
 local NET_DEL_USER_GROUP = "EASY_CHAT_SERVER_CONFIG_DEL_USER_GROUP"
 local NET_WRITE_TAB = "EASY_CHAT_SERVER_CONFIG_WRITE_TAB"
+local NET_WRITE_PLY_TITLE = "EASY_CHAT_SERVER_CONFIG_WRITE_PLY_TITLE"
+local NET_DEL_PLY_TITLE = "EASY_CHAT_SERVER_CONFIG_DEL_PLY_TITLE"
 local NET_WRITE_SETTING_OVERRIDE = "EASYCHAT_SERVER_SETTING_WRITE_OVERRIDE"
 
 local default_config = {
@@ -14,6 +16,9 @@ local default_config = {
 			EmoteProvider = silkicons,
 			Tag = "[<hscan>Plebian<stop>]"
 		}]]
+	},
+	Titles = {
+		--["STEAM_0:0:80006525"] = "EasyChat Dev"
 	},
 	Tabs = {
 		--["Lua"] = false
@@ -28,6 +33,8 @@ if SERVER then
 	util.AddNetworkString(NET_WRITE_USER_GROUP)
 	util.AddNetworkString(NET_DEL_USER_GROUP)
 	util.AddNetworkString(NET_WRITE_TAB)
+	util.AddNetworkString(NET_WRITE_PLY_TITLE)
+	util.AddNetworkString(NET_DEL_PLY_TITLE)
 	util.AddNetworkString(NET_WRITE_SETTING_OVERRIDE)
 
 	local CONFIG_PATH = "easychat/server_config.json"
@@ -140,6 +147,27 @@ if SERVER then
 		config:Send(player.GetAll(), true)
 	end)
 
+	net.Receive(NET_WRITE_PLY_TITLE, function(_, ply)
+		if not ply:IsAdmin() then return end
+
+		local steam_id = net.ReadString()
+		local title = net.ReadString()
+		config.Titles[steam_id] = title
+
+		config:Save()
+		config:Send(player.GetAll(), true)
+	end)
+
+	net.Receive(NET_DEL_PLY_TITLE, function(_, ply)
+		if not ply:IsAdmin() then return end
+
+		local steam_id = net.ReadString()
+		config.Titles[steam_id] = nil
+
+		config:Save()
+		config:Send(player.GetAll(), true)
+	end)
+
 	net.Receive(NET_WRITE_SETTING_OVERRIDE, function(_, ply)
 		if not ply:IsAdmin() then return end
 
@@ -150,6 +178,8 @@ if SERVER then
 end
 
 if CLIENT then
+	local ADMIN_WARN = "You need to be an admin to do that"
+
 	local config = default_config
 	EasyChat.Config = config
 
@@ -157,11 +187,6 @@ if CLIENT then
 		net.Start(NET_SEND_CONFIG)
 		net.SendToServer()
 	end)
-
-	local red_color = Color(255, 0, 0)
-	local function chat_warning(text)
-		chat.AddText(red_color, "[WARN] " .. text)
-	end
 
 	local function process_tabs_config()
 		local newly_allowed_tabs = {}
@@ -177,7 +202,7 @@ if CLIENT then
 		if #newly_allowed_tabs > 0 then
 			local msg = ("Chat tabs (%s) got unrestricted. Reload the chatbox to get access to them.")
 				:format(table.concat(newly_allowed_tabs, ", "))
-			chat_warning(msg)
+			EasyChat.Warn(msg)
 		end
 	end
 
@@ -185,7 +210,7 @@ if CLIENT then
 		local data_len = net.ReadDouble()
 		local data = net.ReadData(data_len)
 		if #data < data_len then
-			chat_warning("EasyChat's server config is TOO BIG, tell the admin(s) / owner(s).")
+			EasyChat.Warn("EasyChat's server config is TOO BIG, tell the admin(s) / owner(s).")
 			return
 		end
 
@@ -201,7 +226,7 @@ if CLIENT then
 	end)
 
 	function config:WriteUserGroup(user_group, tag, emote_name, emote_size, emote_provider)
-		if not LocalPlayer():IsAdmin() then return false, "You need to be an admin to do that" end
+		if not LocalPlayer():IsAdmin() then return false, ADMIN_WARN end
 
 		user_group = (user_group or ""):Trim()
 		tag = (tag or ""):Trim()
@@ -222,7 +247,7 @@ if CLIENT then
 	end
 
 	function config:DeleteUserGroup(user_group)
-		if not LocalPlayer():IsAdmin() then return false, "You need to be an admin to do that" end
+		if not LocalPlayer():IsAdmin() then return false, ADMIN_WARN end
 
 		user_group = (user_group or ""):Trim()
 		if #user_group == 0 then return false, "No usergroup specified" end
@@ -235,7 +260,7 @@ if CLIENT then
 	end
 
 	function config:WriteTab(tab_name, allowed)
-		if not LocalPlayer():IsAdmin() then return false, "You need to be an admin to do that" end
+		if not LocalPlayer():IsAdmin() then return false, ADMIN_WARN end
 
 		tab_name = (tab_name or ""):Trim()
 		if #tab_name == 0 then return false, "No tab specified" end
@@ -248,8 +273,38 @@ if CLIENT then
 		return true
 	end
 
+	function config:WritePlayerTitle(steam_id, title)
+		if not LocalPlayer():IsAdmin() then return false, ADMIN_WARN end
+
+		steam_id = (steam_id or ""):Trim()
+		if #steam_id == 0 then return false, "Invalid SteamID" end
+
+		title = (title or ""):Trim()
+		if #title == 0 then return false, "No title specified" end
+
+		net.Start(NET_WRITE_PLY_TITLE)
+		net.WriteString(steam_id)
+		net.WriteString(title)
+		net.SendToServer()
+
+		return true
+	end
+
+	function config:DeletePlayerTitle(steam_id)
+		if not LocalPlayer():IsAdmin() then return false, ADMIN_WARN end
+
+		steam_id = (steam_id or ""):Trim()
+		if #steam_id == 0 then return false, "Invalid SteamID" end
+
+		net.Start(NET_WRITE_PLY_TITLE)
+		net.WriteString(steam_id)
+		net.SendToServer()
+
+		return true
+	end
+
 	function config:WriteSettingOverride(should_override)
-		if not LocalPlayer():IsAdmin() then return false, "You need to be an admin to do that" end
+		if not LocalPlayer():IsAdmin() then return false, ADMIN_WARN end
 
 		net.Start(NET_WRITE_SETTING_OVERRIDE)
 		net.WriteBool(should_override or false)
