@@ -865,6 +865,10 @@ local function create_default_settings()
 					notification.AddLegacy("Invalid country code", NOTIFY_ERROR, 3)
 					surface.PlaySound("buttons/button11.wav")
 					return
+				elseif not EC_TRANSLATE_API_KEY:GetString():find("trnsl.1.1.") then
+					notification.AddLegacy("You do not have a Yandex API Key.", NOTIFY_ERROR, 3)
+					surface.PlaySound("buttons/button11.wav")
+					return
 				end
 
 				old_enter(self)
@@ -878,7 +882,7 @@ local function create_default_settings()
 		yandex_link:DockMargin(10, 0, 10, 5)
 		yandex_link:SetColor(Color(220, 0, 0))
 
-		settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_API_KEY, "Yandex API Key (Required)")
+		settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_API_KEY, "Yandex API Key")
 
 		settings:AddSpacer(category_name)
 
