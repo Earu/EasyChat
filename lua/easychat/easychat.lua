@@ -335,6 +335,7 @@ if CLIENT then
 	local EC_TRANSLATE_OUT_MSG = CreateConVar("easychat_translate_out_msg", "0", FCVAR_ARCHIVE, "Translates your chat messages")
 	local EC_TRANSLATE_OUT_SRC_LANG = CreateConVar("easychat_translate_out_source_lang", "auto", FCVAR_ARCHIVE, "Language used in your chat messages")
 	local EC_TRANSLATE_OUT_TARGET_LANG = CreateConVar("easychat_translate_out_target_lang", "en", FCVAR_ARCHIVE, "Language to translate your chat messages to")
+	local EC_TRANSLATE_API_KEY = CreateConVar("easychat_translate_api_key", "", FCVAR_ARCHIVE, "Yandex provided API key")
 
 	EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
 
@@ -913,7 +914,6 @@ if CLIENT then
 		EasyChat.MacroProcessor = include("easychat/client/macro_processor.lua")
 		EasyChat.ModeCount = 0
 
-		EasyChat.Translator:Initialize()
 
 		include("easychat/client/settings.lua")
 		include("easychat/client/markup.lua")
@@ -2415,7 +2415,6 @@ function EasyChat.Destroy()
 		EasyChat.ModeCount = 0
 		EasyChat.Mode = 0
 		EasyChat.Modes = { [0] = default_chat_mode }
-		EasyChat.Translator:Destroy()
 
 		if EasyChat.GUI and IsValid(EasyChat.GUI.ChatBox) then
 			EasyChat.GUI.ChatBox:Remove()
