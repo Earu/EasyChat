@@ -1330,7 +1330,8 @@ if CLIENT then
 				table.insert(data, pastel_color)
 			end
 
-			EasyChat.GUI.RichText:InsertClickableTextStart(("ECPlayerActions: %s"):format(ply:SteamID()))
+			EasyChat.GUI.RichText:InsertClickableTextStart(("ECPlayerActions: %s|%s")
+				:format(ply:SteamID(), EasyChat.GetProperNick(ply)))
 
 			local lp = LocalPlayer()
 			if IsValid(lp) and lp == ply and EC_USE_ME:GetBool() then
@@ -1987,10 +1988,10 @@ if CLIENT then
 			self:SetCompletionText(completion)
 		end
 
-		local function handle_player_actions(steam_id)
-			local ply = player.GetBySteamID(steam_id)
-			if not IsValid(ply) then return end
+		local function handle_player_actions(steam_id, ply_name)
+			if steam_id == "BOT" then return end
 
+			local steam_id64 = util.SteamIDTo64(steam_id)
 			local ply_menu = DermaMenu()
 			ply_menu:AddOption("Set Title", function()
 				local frame = EasyChat.AskForInput("Set Title", function(title)
@@ -2034,10 +2035,10 @@ if CLIENT then
 
 			ply_menu:AddSpacer()
 
-			ply_menu:AddOption("Open Steam Profile", function() EasyChat.OpenURL("https://steamcommunity.com/profiles/" .. ply:SteamID64()) end)
-			ply_menu:AddOption("Copy Name", function() SetClipboardText(ply:Nick()) end)
+			ply_menu:AddOption("Open Steam Profile", function() EasyChat.OpenURL("https://steamcommunity.com/profiles/" .. steam_id64) end)
+			ply_menu:AddOption("Copy Name", function() SetClipboardText(ply_name) end)
 			ply_menu:AddOption("Copy SteamID", function() SetClipboardText(steam_id) end)
-			ply_menu:AddOption("Copy SteamID64", function() SetClipboardText(ply:SteamID64()) end)
+			ply_menu:AddOption("Copy SteamID64", function() SetClipboardText(steam_id64) end)
 
 			ply_menu:AddSpacer()
 
@@ -2048,9 +2049,9 @@ if CLIENT then
 
 		function EasyChat.GUI.RichText:ActionSignal(name, value)
 			if name ~= "TextClicked" then return end
-			local steam_id = value:match("^ECPlayerActions%: (STEAM_%d%:%d%:%d+)")
-			if steam_id then
-				handle_player_actions(steam_id)
+			local steam_id, ply_name = value:match("^ECPlayerActions%: (STEAM_%d%:%d%:%d+)|(.+)")
+			if steam_id and ply_name then
+				handle_player_actions(steam_id, ply_name)
 				return
 			end
 
