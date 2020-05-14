@@ -870,8 +870,15 @@ local function create_default_settings()
 				old_enter(self)
 			end
 		end
+		
+		local yandex_link = settings:GetCategory(category_name):Add("DLabelURL")
+		yandex_link:SetText("Click here for a key to use our thirdparty translation provider.")
+		yandex_link:SetURL("https://translate.yandex.com/developers/keys")
+		yandex_link:Dock(TOP)
+		yandex_link:DockMargin(10, 0, 10, 5)
+		yandex_link:SetColor(Color(220, 0, 0))
 
-		settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_API_KEY, "Yandex API Key")
+		settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_API_KEY, "Yandex API Key (Required)")
 
 		settings:AddSpacer(category_name)
 
