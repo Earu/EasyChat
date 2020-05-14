@@ -53,6 +53,7 @@ local EC_TRANSLATE_INC_TARGET_LANG = GetConVar("easychat_translate_inc_target_la
 local EC_TRANSLATE_OUT_MSG = GetConVar("easychat_translate_out_msg")
 local EC_TRANSLATE_OUT_SRC_LANG = GetConVar("easychat_translate_out_source_lang")
 local EC_TRANSLATE_OUT_TARGET_LANG = GetConVar("easychat_translate_out_target_lang")
+local EC_TRANSLATE_API_KEY = GetConVar("easychat_translate_api_key")
 
 local function create_default_settings()
 	local settings = EasyChat.Settings
@@ -871,11 +872,26 @@ local function create_default_settings()
 					notification.AddLegacy("Invalid country code", NOTIFY_ERROR, 3)
 					surface.PlaySound("buttons/button11.wav")
 					return
+				elseif not EC_TRANSLATE_API_KEY:GetString():find("trnsl.1.1.") then
+					notification.AddLegacy("You do not have a Yandex API Key.", NOTIFY_ERROR, 3)
+					surface.PlaySound("buttons/button11.wav")
+					return
 				end
 
 				old_enter(self)
 			end
 		end
+		
+		local yandex_link = settings:GetCategory(category_name):Add("DLabelURL")
+		yandex_link:SetText("Click here for a key to use our thirdparty translation provider.")
+		yandex_link:SetURL("https://translate.yandex.com/developers/keys")
+		yandex_link:Dock(TOP)
+		yandex_link:DockMargin(10, 0, 10, 5)
+		yandex_link:SetColor(Color(220, 0, 0))
+
+		settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_API_KEY, "Yandex API Key (Required)")
+
+		settings:AddSpacer(category_name)
 
 		settings:AddConvarSetting(category_name, "boolean", EC_TRANSLATE_OUT_MSG, "Translate your chat messages")
 		build_translation_auto_complete(settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_OUT_SRC_LANG, "Your language"))
