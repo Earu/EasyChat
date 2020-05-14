@@ -24,7 +24,7 @@ for _, country_code in pairs(language_lookup) do
 end
 
 function translator:Translate(text, source_lang, target_lang, on_finish)
-	if not valid_languages[source_lang] or not valid_languages[target_lang] or not EC_TRANSLATE_API_KEY:GetString():find("trnsl.1.1.") then
+	if not text or not valid_languages[source_lang] or not valid_languages[target_lang] or not EC_TRANSLATE_API_KEY:GetString():find("trnsl.1.1.") then
 		on_finish(false)
 		return
 	end
@@ -40,6 +40,10 @@ function translator:Translate(text, source_lang, target_lang, on_finish)
 
 	http.Fetch(request_url, function(body, size)
 		local translated = util.JSONToTable(body)
+		if not translated then
+			on_finish(false)
+			return
+		end
 
 		if translated.text and translated.text[1] then
 			cached_translations[text] = cached_translations[text] or {}
@@ -49,7 +53,7 @@ function translator:Translate(text, source_lang, target_lang, on_finish)
 			on_finish(false)
 		end
 	end, function(error)
-		on_finish(false)	
+		on_finish(false)
 	end)
 end
 
