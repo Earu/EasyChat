@@ -882,7 +882,7 @@ local function create_default_settings()
 		yandex_link:DockMargin(10, 0, 10, 5)
 		yandex_link:SetColor(Color(220, 0, 0))
 
-		settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_API_KEY, "Yandex API Key")
+		settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_API_KEY, "Yandex API Key (Required)")
 
 		settings:AddSpacer(category_name)
 
