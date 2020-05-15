@@ -2005,6 +2005,12 @@ if CLIENT then
 				frame:SetTall(200)
 
 				local mk
+				local ply_title = EasyChat.Config.Titles[steam_id]
+				if ply_title then
+					mk = ec_markup.Parse(ply_title)
+					frame.TextEntry:SetText(ply_title)
+				end
+
 				frame.TextEntry.OnKeyCodeTyped = function(self)
 					timer.Create("ECSetPlayerTitle", 0.25, 1, function()
 						mk = ec_markup.Parse(self:GetText())
