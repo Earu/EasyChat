@@ -2011,7 +2011,12 @@ if CLIENT then
 					frame.TextEntry:SetText(ply_title)
 				end
 
-				frame.TextEntry.OnKeyCodeTyped = function(self)
+				frame.TextEntry.OnKeyCodeTyped = function(self, key_code)
+					if key_code == KEY_ENTER or key_code == KEY_PAD_ENTER then
+						self:OnEnter()
+						return
+					end
+
 					timer.Create("ECSetPlayerTitle", 0.25, 1, function()
 						mk = ec_markup.Parse(self:GetText())
 					end)
