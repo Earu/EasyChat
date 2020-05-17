@@ -893,7 +893,6 @@ local image_part = {
 
 function image_part:Ctor(url)
 	local browser = vgui.Create("DHTML")
-	browser:OpenURL(url)
 	browser:SetAllowLua(true)
 	browser:SetSize(0, 0)
 	browser:AddFunction("Img", "Size", function(w, h)
@@ -913,24 +912,21 @@ function image_part:Ctor(url)
 		self:OnRemove()
 	end)
 
-	function browser:OnDocumentReady()
-		self:QueueJavascript([[
-			if (!document.rootElement) {
-				document.body.style.background = "rgba(0,0,0,0)";
-				var img = document.body.getElementsByTagName("img")[0];
-				img.style.width = "100%";
-				if (img) {
-					Img.Size(img.naturalWidth, img.naturalHeight);
-				} else {
-					Img.Remove();
-				}
-			} else {
-				Img.Remove();
-			}
-		]])
-	end
+	browser:SetHTML([[<html style="background: rgba(0,0,0,0); overflow: hidden;">
+		<head></head>
+		<body style="background: rgba(0,0,0,0);">
+			<img src="]] .. url .. [[" style="width: 100%;" onload="Img.Size(this.naturalWidth, this.naturalHeight);" onerror="Img.Remove();"/>
+		</body>
+	</html>]])
 
-	function browser:Paint() end
+	browser.Paint = function()
+		local wep = LocalPlayer():GetActiveWeapon()
+		if IsValid(wep) then
+			if wep:GetClass() == "gmod_camera" then
+				self:OnRemove()
+			end
+		end
+	end
 
 	-- last measure in case its not called somehow?
 	timer.Simple(self.HUD.FadeTime + 4, function()
