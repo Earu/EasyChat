@@ -460,6 +460,13 @@ if CLIENT then
 		chat.AddText(color_red, "[WARN] " .. msg)
 	end
 
+	-- TODO: Figure out how to check keyboard IME
+	function EasyChat.CanUseCEFFeatures()
+		if not system.IsWindows() then return false end -- cef is awfully broken on linux / mac
+		if jit.arch == "x64" then return true end -- when x64 and chromium are finally pushed to stable
+		return BRANCH == "x86-64" or BRANCH == "chromium" -- chromium also exists in x86 and on the chromium branch
+	end
+
 	function EasyChat.RegisterConvar(convar, desc)
 		table.insert(ec_convars, {
 			Convar = convar,
