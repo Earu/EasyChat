@@ -127,6 +127,7 @@ local macro_env = {
 	AngleRand = true,
 	print = true,
 	ec_markup = true, -- easychat markup
+	language = true,
 }
 
 for global_name, _ in pairs(macro_env) do
