@@ -7,12 +7,12 @@ include("easychat/client/vgui/color_picker.lua")
 local NEW_LINE_PATTERN = "\n"
 local EC_LEGACY_ENTRY = GetConVar("easychat_legacy_entry")
 local EC_LEGACY_TEXT = GetConVar("easychat_legacy_text")
-local HAS_CHROMIUM = jit.arch == "x64"
 local MAIN_TAB = {
 	Init = function(self)
+		local can_use_cef = EasyChat.CanUseCEFFeatures()
 		local use_new_richtext = (EC_LEGACY_TEXT and not EC_LEGACY_TEXT:GetBool()) or not EC_LEGACY_TEXT
-		self.RichText = self:Add((HAS_CHROMIUM and use_new_richtext) and "RichTextX" or "RichText")
-		if not HAS_CHROMIUM or not use_new_richtext then
+		self.RichText = self:Add((can_use_cef and use_new_richtext) and "RichTextX" or "RichText")
+		if not can_use_cef or not use_new_richtext then
 			-- compat for RichTextX
 			self.RichText.AppendImageURL = function(self, url)
 			end
@@ -70,7 +70,7 @@ local MAIN_TAB = {
 		end
 
 		local use_new_text_entry = (EC_LEGACY_ENTRY and not EC_LEGACY_ENTRY:GetBool()) or not EC_LEGACY_ENTRY
-		self.TextEntry = self:Add((HAS_CHROMIUM and use_new_text_entry) and "TextEntryX" or "TextEntryLegacy")
+		self.TextEntry = self:Add((can_use_cef and use_new_text_entry) and "TextEntryX" or "TextEntryLegacy")
 		self.TextEntry:SetPlaceholderText("type something...")
 
 		self.EmotePicker = vgui.Create("ECEmotePicker")
@@ -174,7 +174,7 @@ local MAIN_TAB = {
 			local text_color = EasyChat.TextColor
 			local placeholder_color = Color(text_color.r - 100, text_color.g - 100, text_color.b - 100)
 			self.TextEntry:SetPlaceholderColor(placeholder_color)
-			if HAS_CHROMIUM and use_new_text_entry then
+			if can_use_cef and use_new_text_entry then
 				self.TextEntry:SetBackgroundColor(EasyChat.TabColor)
 
 				local border_color = EasyChat.TabOutlineColor.a == 0

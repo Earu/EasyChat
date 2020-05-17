@@ -470,14 +470,16 @@ local function create_default_settings()
 
 		settings:AddSpacer(category_name)
 
-		local setting_legacy_entry = settings:AddSetting(category_name, "action", EC_LEGACY_ENTRY:GetBool() and "Use Modern Textbox" or "Use Legacy Textbox")
-		setting_legacy_entry.DoClick = function()
-			EC_LEGACY_ENTRY:SetBool(not EC_LEGACY_ENTRY:GetBool())
-		end
+		if EasyChat.CanUseCEFFeatures() then
+			local setting_legacy_entry = settings:AddSetting(category_name, "action", EC_LEGACY_ENTRY:GetBool() and "Use Modern Textbox" or "Use Legacy Textbox")
+			setting_legacy_entry.DoClick = function()
+				EC_LEGACY_ENTRY:SetBool(not EC_LEGACY_ENTRY:GetBool())
+			end
 
-		local setting_legacy_text = settings:AddSetting(category_name, "action", EC_LEGACY_TEXT:GetBool() and "Use Modern RichText" or "Use Legacy RichText")
-		setting_legacy_text.DoClick = function()
-			EC_LEGACY_TEXT:SetBool(not EC_LEGACY_TEXT:GetBool())
+			local setting_legacy_text = settings:AddSetting(category_name, "action", EC_LEGACY_TEXT:GetBool() and "Use Modern RichText" or "Use Legacy RichText")
+			setting_legacy_text.DoClick = function()
+				EC_LEGACY_TEXT:SetBool(not EC_LEGACY_TEXT:GetBool())
+			end
 		end
 
 		local setting_dermaskin = settings:AddSetting(category_name, "action", EC_USE_DERMASKIN:GetBool() and "Use Custom Skin" or "Use Dermaskin")
@@ -881,7 +883,7 @@ local function create_default_settings()
 				old_enter(self)
 			end
 		end
-		
+
 		local yandex_link = settings:GetCategory(category_name):Add("DLabelURL")
 		yandex_link:SetText("Click here for a key to use our thirdparty translation provider.")
 		yandex_link:SetURL("https://translate.yandex.com/developers/keys")
