@@ -80,6 +80,27 @@ if CLIENT then
 		end
 
 		initialize("!", generate_ulx_cmds_lookup())
+	elseif FAdmin then
+		-- do nothing, this is here as priority order
+	elseif sam and sam.command then
+		local function generate_sam_cmds_lookup()
+			local sam_cmds = {}
+			for _, cmd in pairs(sam.command:get_commands()) do
+				local cmd_args = {}
+				for _, arg in pairs(cmd.args) do
+					table.insert(cmd_args, arg.name)
+				end
+
+				sam_cmds[cmd.name] = cmd_args
+				for _, alias in pairs(cmd.aliases) do
+					sam_cmds[cmd.name] = cmd_args
+				end
+			end
+
+			return sam_cmds
+		end
+
+		initialize("[!%~]", generate_sam_cmds_lookup())
 	elseif aowl then
 		net.Receive(EASYCHAT_AUTO_COMPLETION, function()
 			local aowl_cmds = {}

@@ -185,7 +185,7 @@ if CLIENT then
 	vgui.Register("ECAdminTab", ADMIN_TAB, "DPanel")
 	local admintab = vgui.Create("ECAdminTab")
 
-	net.Receive(EASYCHAT_ADMIN, function()
+	local function handle_message()
 		local sender = net.ReadEntity()
 		local msg = net.ReadString()
 		if not IsValid(sender) then return end
@@ -194,12 +194,17 @@ if CLIENT then
 		if not EasyChat.IsOpened() then
 			admintab:Notify(sender, msg)
 		else
-			local activetabname = EasyChat.GetActiveTab().Tab.Name
-			if activetabname ~= "Admin" then
+			local active_tab_name = EasyChat.GetActiveTab().Tab.Name
+			if active_tab_name ~= "Admin" then
 				admintab:Notify(sender, msg)
 			end
 		end
-	end)
+	end
+
+	net.Receive(EASYCHAT_ADMIN, handle_message)
+
+	-- handle fadmin admin chat
+	net.Receive("FAdmin_ReceiveAdminMessage", handle_message)
 
 	hook.Add("ECTabChanged", "EasyChatModuleDMTab", function(_, tab)
 		if tab == "Admin" then
