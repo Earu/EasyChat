@@ -264,6 +264,17 @@ if CLIENT then
 				self:AnalyzeTab(new_tab, new_tab.m_pPanel)
 			end
 
+			if not EasyChat.CanUseCEFFeatures() then
+				self.Warn = self:Add("DLabel")
+				self.Warn:SetWrap(true)
+				self.Warn:Dock(TOP)
+				self.Warn:DockMargin(5, 5, 5, 5)
+				self.Warn:SetTall(75)
+				self.Warn:SetTextColor(color_white)
+				self.Warn:SetText([[You cannot use the lua tab on a non-chromium branch, please switch to x86-64.
+				You can change your Garry's Mod branch in your steam library.]])
+			end
+
 			self.LblRunStatus = self:Add("DLabel")
 			self.LblRunStatus:SetTextColor(EasyChat.TextColor)
 			self.LblRunStatus:Dock(BOTTOM)
@@ -352,7 +363,7 @@ if CLIENT then
 			end
 
 			self.ErrorList:SetContents(error_list)
-			self.ErrorList:SetExpanded(true)
+			self.ErrorList:SetExpanded(EasyChat.CanUseCEFFeatures())
 			self.ErrorList.List = error_list
 			self.ErrorList.Header:SetFont("DermaDefault")
 		end,
@@ -494,6 +505,8 @@ if CLIENT then
 			end)
 		end,
 		NewTab = function(self, code)
+			if not EasyChat.CanUseCEFFeatures() then return end
+
 			code = code or ""
 
 			local editor = vgui.Create("DHTML")
