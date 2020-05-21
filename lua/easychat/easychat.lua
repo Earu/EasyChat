@@ -2025,6 +2025,8 @@ if CLIENT then
 					end
 
 					timer.Create("ECSetPlayerTitle", 0.25, 1, function()
+						-- if the frame is closed this can error
+						if not IsValid(self) then return end
 						mk = ec_markup.Parse(self:GetText())
 					end)
 				end
