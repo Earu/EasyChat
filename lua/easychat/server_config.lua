@@ -124,6 +124,7 @@ if SERVER then
 
 		config:Save()
 		config:Send(player.GetAll(), true)
+		EasyChat.Print(("%s changed the usergroup prefix for: %s"):format(ply, user_group))
 	end)
 
 	net.Receive(NET_DEL_USER_GROUP, function(_, ply)
@@ -134,6 +135,7 @@ if SERVER then
 
 		config:Save()
 		config:Send(player.GetAll(), true)
+		EasyChat.Print(("%s deleted the usergroup prefix for: %s"):format(ply, user_group))
 	end)
 
 	net.Receive(NET_WRITE_TAB, function(_, ply)
@@ -145,6 +147,7 @@ if SERVER then
 
 		config:Save()
 		config:Send(player.GetAll(), true)
+		EasyChat.Print(("%s changed tab \"%s\" restrictions to: %s"):format(ply, tab_name, is_allowed and "allowed" or "restricted"))
 	end)
 
 	net.Receive(NET_WRITE_PLY_TITLE, function(_, ply)
@@ -156,6 +159,9 @@ if SERVER then
 
 		config:Save()
 		config:Send(player.GetAll(), true)
+
+		local target = player.GetBySteamID(steam_id)
+		EasyChat.Print(("%s changed title for: %s (%s)"):format(ply, IsValid(target) and target or steam_id, title))
 	end)
 
 	net.Receive(NET_DEL_PLY_TITLE, function(_, ply)
@@ -166,14 +172,19 @@ if SERVER then
 
 		config:Save()
 		config:Send(player.GetAll(), true)
+
+		local target = player.GetBySteamID(steam_id)
+		EasyChat.Print(("%s removed title for: %s"):format(ply, IsValid(target) and target or steam_id))
 	end)
 
 	net.Receive(NET_WRITE_SETTING_OVERRIDE, function(_, ply)
 		if not ply:IsAdmin() then return end
 
-		config.OverrideClientSettings = net.ReadBool()
+		local should_override = net.ReadBool()
+		config.OverrideClientSettings = should_override
 		config:Save()
 		config:Send(player.GetAll(), true)
+		EasyChat.Print(("%s changed settings override to: %s"):format(ply, should_override))
 	end)
 end
 
