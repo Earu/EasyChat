@@ -408,8 +408,10 @@ function font_part:Ctor(str)
 	self.Font = succ and str or self.HUD.DefaultFont
 	if not succ then
 		self.Invalid = true
-	elseif self.HUD == EasyChat.ChatHUD and draw_GetFontHeight(self.Font) > 30 then
-		self.Invalid = true
+	elseif self.HUD == EasyChat.ChatHUD then
+		local font_data = surface.GetLuaFonts()[string_lower(self.Font)]
+		local size = font_data and font_data.size or draw_GetFontHeight(self.Font)
+		self.Invalid = size > 32
 	end
 
 	return self
