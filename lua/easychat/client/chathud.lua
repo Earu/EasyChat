@@ -436,7 +436,8 @@ local text_part = {
 	Content = "",
 	Font = chathud.DefaultFont,
 	Usable = false,
-	RealPos = { X = 0, Y = 0 }
+	RealPos = { X = 0, Y = 0 },
+	ShouldDrawShadow = true,
 }
 
 function text_part:Ctor(content)
@@ -522,8 +523,9 @@ function text_part:CreateShadowFont()
 	local name = string_format("ECHUDShadow_%s", self.Font)
 	if not shadow_fonts[name] then
 		local info = engine_fonts_info[string_lower(self.Font)]
+		local font_data
 		if info then
-			surface_CreateFont(name, {
+			font_data = {
 				font = info.name,
 				extended = true,
 				size = info.tall,
@@ -531,25 +533,31 @@ function text_part:CreateShadowFont()
 				blursize = SHADOW_FONT_BLURSIZE,
 				antialias = tobool(info.antialias),
 				outline = tobool(info.outline),
-			})
+			}
 		else
 			info = surface_GetLuaFonts()[string_lower(self.Font)]
 			if info then
-				local font_data = table_copy(info)
+				font_data = table_copy(info)
 				font_data.blursize = SHADOW_FONT_BLURSIZE
-				surface_CreateFont(name, font_data)
 			else
 				-- fallback to trying to do something?
-				surface_CreateFont(name, {
+				font_data = {
 					font = self.Font,
 					extended = true,
 					size = draw_GetFontHeight(self.Font),
 					blursize = SHADOW_FONT_BLURSIZE,
-				})
+				}
 			end
 		end
 
-		shadow_fonts[name] = true
+		local succ, _ = pcall(surface_CreateFont, name, font_data)
+		if not succ then
+			self.ShadowFont = nil
+			self.ShouldDrawShadow = false
+			return
+		end
+
+		shadow_fonts[name] = succ
 	end
 
 	self.ShadowFont = name
@@ -581,6 +589,8 @@ end
 
 local shadow_col = Color(0, 0, 0, 255)
 function text_part:DrawShadow(ctx)
+	if not self.ShouldDrawShadow then return end
+
 	shadow_col.a = ctx.Alpha
 	surface_SetTextColor(shadow_col)
 	surface_SetFont(self.ShadowFont and self.ShadowFont or self.HUD.DefaultShadowFont)
