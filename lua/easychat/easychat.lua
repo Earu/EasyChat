@@ -1823,7 +1823,7 @@ if CLIENT then
 			for _, ply in ipairs(player.GetAll()) do
 				local nick = EasyChat.GetProperNick(ply)
 				local match = nick:lower():match(last_word:lower():PatternSafe())
-				if match then
+				if match and not text:EndsWith(nick) then
 					local perc = #match / #nick
 					local consider_match = (perc > 0.5 or #match >= 3)
 					if prioritize_nicks then consider_match = true end
