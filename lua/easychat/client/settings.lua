@@ -619,7 +619,9 @@ local function create_default_settings()
 			if usergroup then
 				local prefix_data = EasyChat.Config.UserGroups[usergroup]
 				local text = build_emote_tag(prefix_data.EmoteName, prefix_data.EmoteSize or -1, prefix_data.EmoteProvider or ""):match("<emote=(.*)>")
-				setting_emote_name:SetText(text)
+				if text then
+					setting_emote_name:SetText(text)
+				end
 			end
 
 			local setting_tag = settings:AddSetting(category_name, "string", "Tag")
