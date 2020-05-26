@@ -164,7 +164,7 @@ if CLIENT then
 
 			if EC_HISTORY:GetBool() then
 				local history = EasyChat.ReadFromHistory(id64)
-				if history == "" then
+				if EasyChat.IsStringEmpty(history) then
 					EasyChat.AddText(richtext, "This is the beginning of your conversation!\n\n")
 				else
 					richtext:AppendText(history) -- so we do not log twice
