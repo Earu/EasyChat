@@ -253,7 +253,7 @@ if CLIENT then
 		EasyChat.AddText(chat.RichText, sender, color_white, ": " .. message)
 
 		if EC_TICK_SOUND:GetBool() then
-			chat.PlaySound()
+			_G.chat.PlaySound()
 		end
 
 		if not EasyChat.IsOpened() then
