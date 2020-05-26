@@ -1428,10 +1428,8 @@ if CLIENT then
 						richtext:InsertColorChange(110, 247, 177)
 						append_text(richtext, "???")
 					else
-						if not should_use_server_settings(arg) then
-							local team_color = EC_PLAYER_COLOR:GetBool() and team.GetColor(arg:Team()) or color_white
-							richtext:InsertColorChange(team_color.r, team_color.g, team_color.b, 255)
-						end
+						local team_color = EC_PLAYER_COLOR:GetBool() and team.GetColor(arg:Team()) or color_white
+						richtext:InsertColorChange(team_color.r, team_color.g, team_color.b, 255)
 
 						local nick = EasyChat.GetProperNick(arg)
 						if EC_PLAYER_PASTEL:GetBool() then
