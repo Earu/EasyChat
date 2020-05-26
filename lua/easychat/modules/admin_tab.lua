@@ -26,6 +26,7 @@ end
 
 if CLIENT then
 	local EC_HISTORY = GetConVar("easychat_history")
+	local EC_TICK_SOUND = GetConVar("easychat_tick_sound")
 
 	local ADMIN_TAB = {
 		NewMessages = 0,
@@ -191,6 +192,11 @@ if CLIENT then
 		if not IsValid(sender) then return end
 
 		EasyChat.AddText(admintab.RichText, sender, color_white, ": " .. msg)
+
+		if EC_TICK_SOUND:GetBool() then
+			chat.PlaySound()
+		end
+
 		if not EasyChat.IsOpened() then
 			admintab:Notify(sender, msg)
 		else
