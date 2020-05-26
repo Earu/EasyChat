@@ -64,8 +64,9 @@ local trim_lookup = {
 
 -- control_chars are newlines, tabs, etc...
 function EasyChat.ExtendedStringTrim(str, control_chars)
-	str = utf8.force(str)
+	if not str then return "" end
 
+	str = utf8.force(str)
 	if control_chars then
 		str = str:gsub("%c", "")
 	end
@@ -1402,7 +1403,7 @@ if CLIENT then
 			local contents = history_file:Read(10000)
 			history_file:Close()
 
-			return contents
+			return contents or ""
 		end
 
 		function EasyChat.AddText(richtext, ...)
