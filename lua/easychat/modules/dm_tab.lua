@@ -29,6 +29,7 @@ if CLIENT then
 	local EC_TIMESTAMPS = GetConVar("easychat_timestamps")
 	local EC_TIMESTAMPS_12 = GetConVar("easychat_timestamps_12")
 	local EC_HISTORY = GetConVar("easychat_history")
+	local EC_TICK_SOUND = GetConVar("easychat_tick_sound")
 
 	local DM_TAB = {
 		Chats = {},
@@ -248,7 +249,13 @@ if CLIENT then
 		if not chat then
 			chat = dmtab:CreateChat(sender)
 		end
+
 		EasyChat.AddText(chat.RichText, sender, color_white, ": " .. message)
+
+		if EC_TICK_SOUND:GetBool() then
+			chat.PlaySound()
+		end
+
 		if not EasyChat.IsOpened() then
 			dmtab:Notify(chat, message)
 		else
