@@ -46,7 +46,7 @@ local function URLEncode(s)
             c == "_" or c == "." or c == "~" then
             new = new .. c
         else
-            new = new .. string.format("%%%X", b)
+            new = new .. ("%%%X"):format(b)
         end
     end
 

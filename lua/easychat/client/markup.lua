@@ -29,7 +29,7 @@ function ec_markup.AdvancedParse(str, data)
 			obj.DefaultShadowFont = data.default_shadow_font
 		else
 			-- let the chathud create the shadow
-			str = string.format("<font=%s>", data.default_font) .. str
+			str = ("<font=%s>"):format(data.default_font) .. str
 		end
 	end
 

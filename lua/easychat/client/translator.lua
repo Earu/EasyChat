@@ -35,8 +35,8 @@ function translator:Translate(text, source_lang, target_lang, on_finish)
 	end
 
 	local language = (source_lang ~= "auto" and source_lang.."-" or "")..target_lang
-	local url_encoded_text = text:gsub("[^%w]", function(char) return string.format("%%%02X", char:byte()) end)
-	local request_url = string.format("https://translate.yandex.net/api/v1.5/tr.json/translate?key=%s&text=%s&lang=%s", EC_TRANSLATE_API_KEY:GetString(), url_encoded_text, language)
+	local url_encoded_text = text:gsub("[^%w]", function(char) return ("%%%02X"):format(char:byte()) end)
+	local request_url = ("https://translate.yandex.net/api/v1.5/tr.json/translate?key=%s&text=%s&lang=%s"):format(EC_TRANSLATE_API_KEY:GetString(), url_encoded_text, language)
 
 	http.Fetch(request_url, function(body, size)
 		local translated = util.JSONToTable(body)
