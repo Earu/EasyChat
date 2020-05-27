@@ -6,54 +6,54 @@ local NET_LUA_SV = "EASY_CHAT_MODULE_LUA_SV"
 ]]------------------------------------------------------
 local lua = {}
 if CLIENT then
-	function lua.RunOnClients(code, ply)
-		net.Start(NET_LUA_SV)
-		net.WriteString(code)
-		net.WriteString("clients")
-		net.SendToServer()
-	end
-
-	function lua.RunOnSelf(code, ply)
-		if LocalPlayer():IsSuperAdmin() or GetConVar("sv_allowcslua"):GetBool() then
-			CompileString(code, LocalPlayer():GetName())()
-		end
-	end
-
-	function lua.RunOnShared(code, ply)
-		net.Start(NET_LUA_SV)
-		net.WriteString(code)
-		net.WriteString("shared")
-		net.SendToServer()
-	end
-
-	function lua.RunOnServer(code, ply)
-		net.Start(NET_LUA_SV)
-		net.WriteString(code)
-		net.WriteString("server")
-		net.SendToServer()
-	end
-
-	net.Receive(NET_LUA_CLIENTS, function()
-		local code = net.ReadString()
-		local ply = net.ReadEntity()
-		if not IsValid(ply) then return end
-
-		CompileString(code, ply:GetName())()
-	end)
-
-	-- ugly hack to get luadev from notagain
-	if notagain and notagain.hasloaded and notagain.loaded_libraries.luadev then
-		lua = notagain.loaded_libraries.luadev
+	if _G.luadev then
+		lua = _G.luadev
 	else
-		if _G.luadev then
-			lua = _G.luadev
-		else
-			hook.Add("NotagainPostLoad", "EasyChatModuleLuaTab", function()
-				if notagain.loaded_libraries.luadev then
-					lua = notagain.loaded_libraries.luadev
-				end
-			end)
+		function lua.RunOnClient(code, target, _)
+			if isentity(target) and target:IsPlayer() then
+				net.Start(NET_LUA_SV)
+				net.WriteString(code)
+				net.WriteString("client")
+				net.WriteEntity(target)
+				net.SendToServer()
+			end
 		end
+
+		function lua.RunOnClients(code, _)
+			net.Start(NET_LUA_SV)
+			net.WriteString(code)
+			net.WriteString("clients")
+			net.SendToServer()
+		end
+
+		function lua.RunOnSelf(code, _)
+			net.Start(NET_LUA_SV)
+			net.WriteString(code)
+			net.WriteString("self")
+			net.SendToServer()
+		end
+
+		function lua.RunOnShared(code, _)
+			net.Start(NET_LUA_SV)
+			net.WriteString(code)
+			net.WriteString("shared")
+			net.SendToServer()
+		end
+
+		function lua.RunOnServer(code, _)
+			net.Start(NET_LUA_SV)
+			net.WriteString(code)
+			net.WriteString("server")
+			net.SendToServer()
+		end
+
+		net.Receive(NET_LUA_CLIENTS, function()
+			local code = net.ReadString()
+			local ply = net.ReadEntity()
+			if not IsValid(ply) then return end
+
+			CompileString(code, ply:Nick())()
+		end)
 	end
 end
 
@@ -66,26 +66,55 @@ if SERVER then
 	util.AddNetworkString(NET_LUA_CLIENTS)
 	util.AddNetworkString(NET_LUA_SV)
 
+	local execution_callbacks = {
+		["server"] = function(ply, code)
+			CompileString(code, ply:Nick())()
+		end,
+		["client"] = function(ply, target, code)
+			net.Start(NET_LUA_CLIENTS)
+			net.WriteString(code)
+			net.WriteEntity(ply)
+			net.Send(target)
+		end,
+		["clients"] = function(ply, code)
+			net.Start(NET_LUA_CLIENTS)
+			net.WriteString(code)
+			net.WriteEntity(ply)
+			net.Broadcast()
+		end,
+		["shared"] = function(ply, code)
+			CompileString(code, ply:Nick())()
+			net.Start(NET_LUA_CLIENTS)
+			net.WriteString(code)
+			net.WriteEntity(ply)
+			net.Broadcast()
+		end,
+		["self"] = function(ply, code)
+			net.Start(NET_LUA_CLIENTS)
+			net.WriteString(code)
+			net.WriteEntity(ply)
+			net.Send(ply)
+		end
+	}
+
 	net.Receive(NET_LUA_SV, function(len, ply)
 		if not IsValid(ply) then return end
 
 		local code = net.ReadString()
 		local mode = net.ReadString()
-		if ply:IsSuperAdmin() then
-			if string.match(mode, "server") then
-				CompileString(code, ply:GetName())()
-			elseif string.match(mode, "clients") then
-				net.Start(NET_LUA_CLIENTS)
-				net.WriteString(code)
-				net.WriteEntity(ply)
-				net.Broadcast()
-			elseif string.match(mode, "shared") then
-				CompileString(code, ply:GetName())()
-				net.Start(NET_LUA_CLIENTS)
-				net.WriteString(code)
-				net.WriteEntity(ply)
-				net.Broadcast()
+		if not ply:IsSuperAdmin() then return end
+
+		local callback = execution_callbacks[mode]
+		if callback then
+			if mode == "client" then
+				local target = net.ReadEntity()
+				mode = tostring(target)
+				callback(ply, target, code)
+			else
+				callback(ply, code)
 			end
+
+			EasyChat.Print(("%s running code on %s"):format(ply, mode))
 		end
 	end)
 end
@@ -164,14 +193,30 @@ if CLIENT then
 			self.EnvSelector = self.MenuBar:Add("DComboBox")
 			self.EnvSelector:SetSize(100, 20)
 			self.EnvSelector:SetPos(200, 5)
+			self.EnvSelector:SetSortItems(false)
 			self.EnvSelector:SetTextColor(EasyChat.TextColor)
-			self.EnvSelector:AddChoice("self", nil, true, "icon16/cog_go.png")
-			self.EnvSelector:AddChoice("clients", nil, false, "icon16/user.png")
-			self.EnvSelector:AddChoice("shared", nil, false, "icon16/world.png")
-			self.EnvSelector:AddChoice("server", nil, false, "icon16/server.png")
-			self.EnvSelector.OnSelect = function(_, _, value)
-				self.Env = value
+
+			local function build_env_choices()
+				self.EnvSelector:Clear()
+
+				self.EnvSelector:AddChoice("self", nil, true, "icon16/cog_go.png")
+				self.EnvSelector:AddChoice("clients", nil, false, "icon16/user.png")
+				self.EnvSelector:AddChoice("shared", nil, false, "icon16/world.png")
+				self.EnvSelector:AddChoice("server", nil, false, "icon16/server.png")
+
+				for _, ply in ipairs(player.GetAll()) do
+					--if ply ~= LocalPlayer() then
+						self.EnvSelector:AddChoice(EasyChat.GetProperNick(ply), ply, false)
+					--end
+				end
+
+				self.EnvSelector.OnSelect = function(_, id, value)
+					local data = self.EnvSelector:GetOptionData(id)
+					self.Env = data or value
+				end
 			end
+
+			build_env_choices()
 
 			self.RunButton = self.MenuBar:Add("DButton")
 			self.RunButton:SetText("")
@@ -203,15 +248,26 @@ if CLIENT then
 			self.MenuEdit.Paint = MenuPaint
 			self.MenuTools.Paint = MenuPaint
 			self.EnvSelector.Paint = MenuPaint
+
+			local old_player_count = player.GetCount()
 			self.EnvSelector.Think = function(self)
-				if self:IsMenuOpen() and not self.Menu.CustomPainted then
-					self.Menu.Paint = MenuPaint
-					for i=1, self.Menu:ChildCount() do
-						local option = self.Menu:GetChild(i)
-						option:SetTextColor(EasyChat.TextColor)
-						option.Paint = OptionPaint
+				local player_count = player.GetCount()
+				if old_player_count ~= player_count then
+					build_env_choices()
+					old_player_count = player_count
+					return
+				end
+
+				if self:IsMenuOpen() then
+					if not self.Menu.CustomPainted then
+						self.Menu.Paint = MenuPaint
+						for i=1, self.Menu:ChildCount() do
+							local option = self.Menu:GetChild(i)
+							option:SetTextColor(EasyChat.TextColor)
+							option.Paint = OptionPaint
+						end
+						self.Menu.CustomPainted = true
 					end
-					self.Menu.CustomPainted = true
 				end
 			end
 
@@ -419,6 +475,12 @@ if CLIENT then
 		RunCode = function(self)
 			local code = self:GetCode():Trim()
 			if code == "" then return end
+
+			if isentity(self.Env) then
+				lua.RunOnClient(code, self.Env, LocalPlayer())
+				self:RegisterAction(self.Env)
+				return
+			end
 
 			if lua_callbacks[self.Env] then
 				lua_callbacks[self.Env](self, code)
