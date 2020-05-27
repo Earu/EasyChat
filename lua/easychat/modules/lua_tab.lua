@@ -1,5 +1,6 @@
 local NET_LUA_CLIENTS = "EASY_CHAT_MODULE_LUA_CLIENTS"
 local NET_LUA_SV = "EASY_CHAT_MODULE_LUA_SV"
+local NET_LUA_SEND_CODE = "EASY_CHAT_MODULE_LUA_SEND_CODE"
 
 --[[----------------------------------------------------
 	LuaDev Compat + Fallbacks
@@ -65,6 +66,7 @@ if SERVER then
 
 	util.AddNetworkString(NET_LUA_CLIENTS)
 	util.AddNetworkString(NET_LUA_SV)
+	util.AddNetworkString(NET_LUA_SEND_CODE)
 
 	local execution_callbacks = {
 		["server"] = function(ply, code)
@@ -97,7 +99,7 @@ if SERVER then
 		end
 	}
 
-	net.Receive(NET_LUA_SV, function(len, ply)
+	net.Receive(NET_LUA_SV, function(_, ply)
 		if not IsValid(ply) then return end
 
 		local code = net.ReadString()
@@ -116,6 +118,18 @@ if SERVER then
 
 			EasyChat.Print(("%s running code on %s"):format(ply, mode))
 		end
+	end)
+
+	net.Receive(NET_LUA_SEND_CODE, function(_, ply)
+		local url = net.ReadString()
+		local target = net.ReadEntity()
+
+		timer.Simple(0, function()
+			net.Start(NET_LUA_SEND_CODE)
+			net.WriteString(url)
+			net.WriteEntity(ply)
+			net.Send(target)
+		end)
 	end)
 end
 
@@ -171,17 +185,21 @@ if CLIENT then
 			table.insert(options, self.MenuFile:AddOption("New (Ctrl + N)", function() self:NewTab() end))
 			table.insert(options, self.MenuFile:AddOption("Close Current (Ctrl + W)", function() self:CloseCurrentTab() end))
 
+			-- table.insert(options, self.MenuFile:AddOption("Load File (Ctrl + O)"))
+			-- table.insert(options, self.MenuFile:AddOption("Save (Ctrl + S)"))
+			-- table.insert(options, self.MenuFile:AddOption("Save As... (Ctrl + Shift + S)"))
+			-- self.MenuFile:AddSpacer()
+			-- table.insert(options, self.MenuFile:AddOption("Settings"))
+
 			self.MenuEdit = self.MenuBar:AddMenu("Edit")
 			table.insert(options, self.MenuEdit:AddOption("Rename Current (F2)", function() self:RenameCurrentTab() end))
 
 			self.MenuTools = self.MenuBar:AddMenu("Tools")
 			table.insert(options, self.MenuTools:AddOption("Upload to Pastebin", function() self:UploadCodeToPastebin() end))
 			table.insert(options, self.MenuTools:AddOption("Load Code from URL", function() self:LoadCodeFromURL() end))
-			-- table.insert(options, self.MenuFile:AddOption("Load File (Ctrl + O)"))
-			-- table.insert(options, self.MenuFile:AddOption("Save (Ctrl + S)"))
-			-- table.insert(options, self.MenuFile:AddOption("Save As... (Ctrl + Shift + S)"))
-			-- self.MenuFile:AddSpacer()
-			-- table.insert(options, self.MenuFile:AddOption("Settings"))
+			table.insert(options, self.MenuTools:AddOption("Send Code", function()
+				timer.Simple(0, function() self:SendCode() end)
+			end))
 
 			local function build_env_icon(mat_path)
 				local img = vgui.Create("DImage")
@@ -205,9 +223,9 @@ if CLIENT then
 				self.EnvSelector:AddChoice("server", nil, false, "icon16/server.png")
 
 				for _, ply in ipairs(player.GetAll()) do
-					--if ply ~= LocalPlayer() then
+					if ply ~= LocalPlayer() then
 						self.EnvSelector:AddChoice(EasyChat.GetProperNick(ply), ply, false)
-					--end
+					end
 				end
 
 				self.EnvSelector.OnSelect = function(_, id, value)
@@ -474,7 +492,16 @@ if CLIENT then
 		end,
 		RunCode = function(self)
 			local code = self:GetCode():Trim()
-			if code == "" then return end
+			if #code == 0 then return end
+
+			-- otherwise too big for net messages
+			if not _G.luadev and #code > 63000 then
+				local err_msg = "Code too big, consider installing luadev and an actual editor"
+				EasyChat.Print(true, err_msg)
+				notification.AddLegacy(err_msg, NOTIFY_ERROR, 5)
+				surface.PlaySound("buttons/button11.wav")
+				return
+			end
 
 			if isentity(self.Env) then
 				lua.RunOnClient(code, self.Env, LocalPlayer())
@@ -664,7 +691,7 @@ if CLIENT then
 
 			local spacing = (" "):rep(3)
 			local text = ("%s[%s] Ran %s on %s"):format(spacing, self.LastAction.Time, tab.Name, self.LastAction.Type)
-			if text == "" then text = ("%sReady"):format(spacing) end
+			if #text == 0 then text = ("%sReady"):format(spacing) end
 			self.LblRunStatus:SetText(text)
 		end,
 		SaveSession = function(self)
@@ -709,27 +736,53 @@ if CLIENT then
 
 			return ""
 		end,
-		UploadCodeToPastebin = function(self)
+		Pastebin = function(self, succ_callback, err_callback)
 			local code = self:GetCode()
-			if code == "" then return end
+			if #code == 0 then err_callback("no code") return end
 
 			http.Post("https://pastebin.com/api/api_post.php", {
 				api_dev_key = "58cf95ab426b33880fad5d9374afefea",
 				api_paste_code = code,
 				api_option = "paste",
 				api_paste_format = "lua",
-				api_paste_private = 0,
+				api_paste_private = 1,
 				api_paste_expire_date = "1D",
-			}, function(url)
+			}, succ_callback, err_callback)
+		end,
+		UploadCodeToPastebin = function(self)
+			self:Pastebin(function(url)
 				local msg = ("Uploaded code on pastebin: %s"):format(url)
 				EasyChat.Print(msg)
 				chat.AddText(color_white, msg)
 				SetClipboardText(url)
 			end, function(err)
-				local msg = ("Pastebin error: %s"):format(err)
-				EasyChat.Print(true, msg)
-				chat.AddText(Color(255, 0, 0), msg)
+				local err_msg = ("Pastebin error: %s"):format(err)
+				EasyChat.Print(true, err_msg)
+				notification.AddLegacy(err_msg, NOTIFY_ERROR, 5)
+				surface.PlaySound("buttons/button11.wav")
 			end)
+		end,
+		SendCode = function(self)
+			local ply_menu = DermaMenu()
+			for _, ply in ipairs(player.GetAll()) do
+				if ply ~= LocalPlayer() then
+					ply_menu:AddOption(EasyChat.GetProperNick(ply), function()
+						self:Pastebin(function(url)
+							net.Start(NET_LUA_SEND_CODE)
+							net.WriteString(url)
+							net.WriteEntity(ply)
+							net.SendToServer()
+						end, function()
+							local err_msg = ("Failed to send code to %s"):format(ply)
+							EasyChat.Print(true, err_msg)
+							notification.AddLegacy(err_msg, NOTIFY_ERROR, 5)
+							surface.PlaySound("buttons/button11.wav")
+						end)
+					end)
+				end
+			end
+
+			ply_menu:Open()
 		end,
 		LoadCodeFromURL = function(self)
 			EasyChat.AskForInput("Code URL", function(url)
@@ -741,7 +794,10 @@ if CLIENT then
 					self:NewTab(txt)
 					EasyChat.Print(("Loaded code from: %s"):format(url))
 				end, function(err)
-					EasyChat.Print(true, ("Could not load code from: %s"):format(url))
+					local err_msg = ("Could not load code from: %s"):format(url)
+					EasyChat.Print(true, err_msg)
+					notification.AddLegacy(err_msg, NOTIFY_ERROR, 5)
+					surface.PlaySound("buttons/button11.wav")
 				end)
 			end)
 		end,
@@ -767,6 +823,30 @@ if CLIENT then
 		if not IsValid(active_code_tab) then return end
 
 		active_code_tab.m_pPanel:RequestFocus()
+	end)
+
+	net.Receive(NET_LUA_SEND_CODE, function()
+		local url = net.ReadString()
+		local sender = net.ReadEntity()
+		if not IsValid(lua_tab) then return end
+
+		local sender_nick = EasyChat.GetProperNick(sender)
+		Derma_Query(("%s sent you code, open it?"):format(sender_nick), "Received Code", "Open", function()
+			http.Fetch(url:gsub("pastebin.com/", "pastebin.com/raw/"), function(txt)
+				if txt:match("%</html%>") then return end
+
+				if EasyChat.Open() then
+					EasyChat.OpenTab("Lua")
+				end
+
+				lua_tab:NewTab(txt)
+			end, function()
+				local err_msg = ("Could not load code from %s"):format(sender_nick)
+				EasyChat.Print(true, err_msg)
+				notification.AddLegacy(err_msg, NOTIFY_ERROR, 5)
+				surface.PlaySound("buttons/button11.wav")
+			end)
+		end, "Dismiss", function() end)
 	end)
 
 	-- dont display it by default on small resolutions
