@@ -805,7 +805,7 @@ if CLIENT then
 			return util.Base64Decode
 		end
 
-		base64 = string.gsub(base64, "[^" .. BASE64 .. "=]", "")
+		base64 = base64:gsub("[^" .. BASE64 .. "=]", "")
 		return (base64:gsub(".", function(x)
 			if (x == "=") then return "" end
 			local r, f = "", (BASE64:find(x) - 1)
@@ -821,7 +821,7 @@ if CLIENT then
 				c = c + (x:sub(i, i) == "1" and 2^(8 - i) or 0)
 			end
 
-			return string.char(c)
+			return c:char()
 		end))
 	end
 
@@ -1208,7 +1208,7 @@ if CLIENT then
 
 		local function string_hash(text)
 			local counter = 1
-			local len = string.len(text)
+			local len = #text
 			for i = 1, len, 3 do
 				counter =
 					math.fmod(counter * 8161, 4294967279) + -- 2^32 - 17: Prime!
