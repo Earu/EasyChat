@@ -67,8 +67,8 @@ local function compile_expression(str)
 	if not str or str:Trim() == "" then return false, "nil or empty expression" end
 
 	for _, word in pairs(blacklist) do
-		if string.find(str, "[%p%s]" .. word) or string.find(str, word .. "[%p%s]") then
-			return false, string.format("illegal characters used %q", word)
+		if str:find("[%p%s]" .. word) or str:find(word .. "[%p%s]") then
+			return false, ("illegal characters used %q"):format(word)
 		end
 	end
 
