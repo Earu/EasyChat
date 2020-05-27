@@ -38,19 +38,19 @@ local color_hex_part = {
 }
 
 function color_hex_part:HexToRGB(hex)
-	local hex = string.Replace(hex, "#","")
+	local hex = hex:Replace("#","")
 	local function n(input) return tonumber(input) or 255 end
 
-	if string.len(hex) == 3 then
+	if #hex == 3 then
 		return
-			(n("0x" .. string.sub(hex, 1, 1)) * 17),
-			(n("0x" .. string.sub(hex, 2, 2)) * 17),
-			(n("0x" .. string.sub(hex, 3, 3)) * 17)
+			(n("0x" .. hex:sub(1, 1)) * 17),
+			(n("0x" .. hex:sub(2, 2)) * 17),
+			(n("0x" .. hex:sub(3, 3)) * 17)
 	else
 		return
-			n("0x" .. string.sub(hex, 1, 2)),
-			n("0x" .. string.sub(hex, 3, 4)),
-			n("0x" .. string.sub(hex, 5, 6))
+			n("0x" .. hex:sub(1, 2)),
+			n("0x" .. hex:sub(3, 4)),
+			n("0x" .. hex:sub(5, 6))
 	end
 end
 
@@ -603,7 +603,7 @@ local carat_color_part = {
 }
 
 function carat_color_part:Ctor(num)
-	local col = carat_colors[string.Trim(num)]
+	local col = carat_colors[num:Trim()]
 	if col then
 		self.Color = col
 	else
@@ -723,7 +723,7 @@ local mc_color_part = {
 }
 
 function mc_color_part:Ctor(num)
-    local col = mc_colors[string.Trim(num)]
+    local col = mc_colors[num:Trim()]
     if col then
         self.Color = col
     else
