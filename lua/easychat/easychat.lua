@@ -1761,14 +1761,20 @@ if CLIENT then
 			local last = text_entry:GetText():sub(pos + 2, #text_entry:GetText())
 
 			if (input.IsKeyDown(KEY_LCONTROL) or input.IsKeyDown(KEY_RCONTROL)) and ctrl_shortcuts[key] then
-				local retrieved = ctrl_shortcuts[key](text_entry, text_entry:GetText(), pos, first, last)
+				local retrieved, new_caret_pos = ctrl_shortcuts[key](text_entry, text_entry:GetText(), pos, first, last)
 				if retrieved then
 					text_entry:SetText(retrieved)
+					if isnumber(new_caret_pos) then
+						text_entry:SetCaretPos(new_caret_pos)
+					end
 				end
 			elseif (input.IsKeyDown(KEY_LALT) or input.IsKeyDown(KEY_RALT)) and alt_shortcuts[key] then
-				local retrieved = alt_shortcuts[key](text_entry, text_entry:GetText(), pos, first, last)
+				local retrieved, new_caret_pos = alt_shortcuts[key](text_entry, text_entry:GetText(), pos, first, last)
 				if retrieved then
 					text_entry:SetText(retrieved)
+					if isnumber(new_caret_pos) then
+						text_entry:SetCaretPos(new_caret_pos)
+					end
 				end
 			end
 		end
