@@ -30,7 +30,7 @@ end
 
 function PANEL:OnKeyCodeTyped(key_code)
 	EasyChat.SetupHistory(self, key_code)
-	EasyChat.UseRegisteredShortcuts(self, self.LastKey, code)
+	EasyChat.UseRegisteredShortcuts(self, self.LastKey, key_code)
 
 	if key_code == KEY_TAB then
 		self:OnTab()
