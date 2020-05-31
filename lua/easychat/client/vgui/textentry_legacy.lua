@@ -7,7 +7,6 @@ surface.CreateFont("EasyChatCompletionFont", {
 
 function PANEL:Init()
 	self.PlaceholderColor = color_white
-	self.LastKey = KEY_ENTER
 
 	self:SetFont("EasyChatCompletionFont")
 	self:SetUpdateOnType(true)
@@ -30,7 +29,7 @@ end
 
 function PANEL:OnKeyCodeTyped(key_code)
 	EasyChat.SetupHistory(self, key_code)
-	EasyChat.UseRegisteredShortcuts(self, self.LastKey, key_code)
+	EasyChat.UseRegisteredShortcuts(self, key_code)
 
 	if key_code == KEY_TAB then
 		self:OnTab()
@@ -38,8 +37,6 @@ function PANEL:OnKeyCodeTyped(key_code)
 	elseif key_code == KEY_ENTER or key_code == KEY_PAD_ENTER then
 		self:OnEnter()
 	end
-
-	self.LastKey = key_code
 end
 
 local surface_DisableClipping = _G.surface.DisableClipping
