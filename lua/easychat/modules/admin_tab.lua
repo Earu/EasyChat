@@ -132,10 +132,9 @@ if CLIENT then
 			self.RichText:Dock(FILL)
 			self.RichText:DockMargin(0, 0, 0, 5)
 
-			local lastkey = KEY_ENTER
 			self.TextEntry.OnKeyCodeTyped = function(self, code)
 				EasyChat.SetupHistory(self, code)
-				EasyChat.UseRegisteredShortcuts(self, lastkey, code)
+				EasyChat.UseRegisteredShortcuts(self, code)
 
 				if code == KEY_ESCAPE then
 					chat.Close()
@@ -147,8 +146,6 @@ if CLIENT then
 						frame:SendMessage(text:sub(1, 3000))
 					end
 				end
-
-				lastkey = code
 			end
 
 			if EC_HISTORY:GetBool() then
