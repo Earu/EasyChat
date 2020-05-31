@@ -1738,14 +1738,6 @@ if CLIENT then
 			return not invalid_shortcut_keys[key]
 		end
 
-		local valid_base_keys = {
-			[KEY_LCONTROL] = true, [KEY_LALT] = true,
-			[KEY_RCONTROL] = true, [KEY_RALT] = true
-		}
-		local function is_base_shortcut_key(key)
-			return valid_base_keys[key] or false
-		end
-
 		function EasyChat.RegisterCTRLShortcut(key, callback)
 			if is_valid_shortcut_key(key) then
 				ctrl_shortcuts[key] = callback
@@ -1763,19 +1755,17 @@ if CLIENT then
 			Its because the chat text entry is a DHTML
 			panel that does not fire OnKeyCode* callbacks
 		]]--
-		function EasyChat.UseRegisteredShortcuts(text_entry, last_key, key)
-			if not is_base_shortcut_key(last_key) then return end
-
+		function EasyChat.UseRegisteredShortcuts(text_entry, key)
 			local pos = text_entry:GetCaretPos()
 			local first = text_entry:GetText():sub(1, pos + 1)
 			local last = text_entry:GetText():sub(pos + 2, #text_entry:GetText())
 
-			if ctrl_shortcuts[key] then
+			if (input.IsKeyDown(KEY_LCONTROL) or input.IsKeyDown(KEY_RCONTROL)) and ctrl_shortcuts[key] then
 				local retrieved = ctrl_shortcuts[key](text_entry, text_entry:GetText(), pos, first, last)
 				if retrieved then
 					text_entry:SetText(retrieved)
 				end
-			elseif alt_shortcuts[key] then
+			elseif (input.IsKeyDown(KEY_LALT) or input.IsKeyDown(KEY_RALT)) and alt_shortcuts[key] then
 				local retrieved = alt_shortcuts[key](text_entry, text_entry:GetText(), pos, first, last)
 				if retrieved then
 					text_entry:SetText(retrieved)
