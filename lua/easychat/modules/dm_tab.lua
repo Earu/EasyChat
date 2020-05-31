@@ -68,11 +68,9 @@ if CLIENT then
 			self.TextEntry:SetHistoryEnabled(true)
 			self.TextEntry.HistoryPos = 0
 			self.TextEntry:SetUpdateOnType(true)
-
-			local lastkey = KEY_ENTER
 			self.TextEntry.OnKeyCodeTyped = function(self, code)
 				EasyChat.SetupHistory(self, code)
-				EasyChat.UseRegisteredShortcuts(self, lastkey, code)
+				EasyChat.UseRegisteredShortcuts(self, code)
 
 				if code == KEY_ESCAPE then
 					chat.Close()
@@ -83,8 +81,6 @@ if CLIENT then
 						frame:SendMessage(text:sub(1, 3000))
 					end
 				end
-
-				lastkey = code
 			end
 
 			if not EasyChat.UseDermaSkin then
