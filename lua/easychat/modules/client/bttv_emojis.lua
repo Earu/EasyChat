@@ -136,7 +136,7 @@ local function get_bttv(name)
     local url = get_bttv_url(name)
 
     local function fail(err, isvariant)
-        EasyChat.Print(true, "Http fetch failed for", url, ": " .. tostring(err))
+        EasyChat.Print(true, "Http fetch failed for ", url, ": " .. tostring(err))
     end
 
     http.Fetch(url, function(data, len, hdr, code)
