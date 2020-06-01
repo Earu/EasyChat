@@ -243,7 +243,7 @@ local function get_twemoji(name, code_point)
 		if not isvariant then
 			EasyChat.Print("Retrying without variant selector just in case...")
 			fetch(url:Replace("-fe0f.png",".png"), function(data, len, hdr, code)
-				if code ~= 200 then return fail(code, true) end
+				if code ~= 200 and code ~= 404 then return fail(code, true) end
 
 				file.Write(path, data)
 
