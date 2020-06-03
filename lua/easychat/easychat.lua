@@ -41,6 +41,7 @@ local trim_lookup = {
 
 	-- spaces
 	[utf8.char(0x00a0)] = " ",   -- NO BREAK SPACE
+	[utf8.char(0x1680)] = "  ",  -- OGHAM SPACE MARK
 	[utf8.char(0x2000)] = "  ",  -- EN QUAD
 	[utf8.char(0x2001)] = "   ", -- EM QUAD
 	[utf8.char(0x2002)] = "  ",  -- EN SPACE
