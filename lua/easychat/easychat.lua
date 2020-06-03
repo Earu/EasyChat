@@ -57,6 +57,7 @@ local trim_lookup = {
 	[utf8.char(0x202f)] = " ",   -- NARROW NO BREAK SPACE
 	[utf8.char(0x205f)] = " ",   -- MEDIUM MATHEMATICAL SPACE
 	[utf8.char(0x3000)] = "   ", -- IDEOGRAPHIC SPACE
+	[utf8.char(0x03164)] = "  ", -- HANGUL FILLER
 
 	-- control chars
 	[utf8.char(0x03)] = "^C" -- END OF TEXT
