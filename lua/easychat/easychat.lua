@@ -804,7 +804,7 @@ if CLIENT then
 	local BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 	function EasyChat.DecodeBase64(base64)
 		if util.Base64Decode then
-			return util.Base64Decode
+			return util.Base64Decode(base64)
 		end
 
 		base64 = base64:gsub("[^" .. BASE64 .. "=]", "")
