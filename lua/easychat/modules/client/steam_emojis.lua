@@ -66,14 +66,10 @@ end
 local function get_steam_emote(name)
 	local c = cache[name]
 	if c then
-		if c == true then
-			return
-		end
+		if c == true then return end
 		return c
 	else
-		if c == nil then
-			return false
-		end
+		if c == nil then return false end
 	end
 
 	-- Otherwise download dat shit
@@ -84,7 +80,6 @@ local function get_steam_emote(name)
 	local exists = file.Exists(path, "DATA")
 	if exists then
 		local mat = material_data(path)
-
 		if mat and not mat:IsError() then
 			c = mat
 			cache[name] = c
