@@ -24,10 +24,11 @@ do
 		return lookup
 	end
 
-	local start_time = SysTime()
-	local data = file.Read(("%s/%s"):format(FOLDER, "twemojis.txt"), "DATA")
+	local data_path = ("%s/%s"):format(FOLDER, "twemojis.txt")
+	local data = file.Read(data_path, "DATA")
 	if data and #data > 100 and data:find("\n", 50, true) then
-		EasyChat.Print("Loaded twemoji from FS", generate_lookup_table(data), SysTime() - start_time)
+		generate_lookup_table(data)
+		EasyChat.Print("Loaded twemojis lookup table from from: " .. data_path)
 	else
 		http.Fetch("http://g1.metastruct.net:20080/twemojis.txt.lzma", function(data, _, _, code)
 			if code ~= 200 then return end
@@ -39,7 +40,7 @@ do
 			local ret = generate_lookup_table(data)
 			if not ret or not next(ret) then return end
 
-			EasyChat.Print("Loaded twitter emoji list")
+			EasyChat.Print("Loaded twemojis lookup table")
 		end)
 	end
 end
@@ -224,10 +225,7 @@ local function get_twemoji(name, code_point)
 	local exists = file.Exists(path, "DATA")
 	if exists then
 		local mat = material_data(path)
-
-		if not mat or mat:IsError() then
-			EasyChat.Print(true, "Material found, but is error: ", name, "redownloading")
-		else
+		if mat and not mat:IsError() then
 			c = mat
 			cache[name] = c
 			return c
@@ -237,19 +235,19 @@ local function get_twemoji(name, code_point)
 	local url = code_point and get_twemoji_url_codepoints(code_point) or get_twemoji_url(name)
 
 	local function fail(err, isvariant)
+		if err == 404 then return end
 		EasyChat.Print(true, "Http fetch failed for ", url, ": " .. tostring(err))
 
 		-- bad hack
 		if not isvariant then
 			EasyChat.Print("Retrying without variant selector just in case...")
 			fetch(url:Replace("-fe0f.png",".png"), function(data, len, hdr, code)
-				if code ~= 200 and code ~= 404 then return fail(code, true) end
+				if code ~= 200 then return fail(code, true) end
 
 				file.Write(path, data)
-
 				local mat = material_data(path)
 				if not mat or mat:IsError() then
-					EasyChat.Print(true, "Downloaded material, but is error: ", name)
+					file.Delete(path)
 					return
 				end
 
@@ -265,7 +263,7 @@ local function get_twemoji(name, code_point)
 
 		local mat = material_data(path)
 		if not mat or mat:IsError() then
-			EasyChat.Print(true, "Downloaded material, but is error: ", name)
+			file.Delete(path)
 			return
 		end
 
