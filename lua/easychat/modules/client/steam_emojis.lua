@@ -25,7 +25,7 @@ local function parse_emote_file() end
 local url =	"http://g1.metastruct.net:20080/opendata/public/emote_lzma.dat"
 http.Fetch(url, function(dat, len, hdr, ret)
 	if not dat or ret ~= 200 then
-		EasyChat.Print(true, "steam emoticons update failed")
+		EasyChat.Print(true, "Steam emojis update failed")
 		return
 	end
 
@@ -34,7 +34,7 @@ http.Fetch(url, function(dat, len, hdr, ret)
 
 	file.Write(EMOTS, dat)
 	local count = count(dat, ",")
-	EasyChat.Print(("Saved %d emoticons to %s"):format(count, EMOTS))
+	EasyChat.Print(("Saved steam emojis lookup table with %d references to: %s"):format(count, EMOTS))
 	parse_emote_file(dat)
 end, function(err)
 	EasyChat.Print(true, err)
@@ -43,11 +43,7 @@ end, {
 })
 
 local function material_data(mat)
-	local ret = Material("../data/" .. mat)
-
-	--LocalPlayer():ConCommand("mat_reloadmaterial ../data/" .. mat .. "*")
-
-	return ret
+	return Material("../data/" .. mat)
 end
 
 local UNCACHED = false
@@ -89,9 +85,7 @@ local function get_steam_emote(name)
 	if exists then
 		local mat = material_data(path)
 
-		if not mat or mat:IsError() then
-			EasyChat.Print(true, "Material found, but is error: ", name, "redownloading")
-		else
+		if mat and not mat:IsError() then
 			c = mat
 			cache[name] = c
 			return c
@@ -130,11 +124,9 @@ local function get_steam_emote(name)
 		end
 
 		file.Write(path, data)
-
 		local mat = material_data(path)
-
 		if not mat or mat:IsError() then
-			EasyChat.Print(true, "Downloaded material, but is error: ", name)
+			file.Delete(path)
 			return
 		end
 
