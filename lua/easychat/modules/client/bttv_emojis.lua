@@ -114,9 +114,7 @@ local function get_bttv(name)
     if exists then
         local mat = material_data(path)
 
-        if not mat or mat:IsError() then
-            EasyChat.Print(true, "Material found, but is error: ", name, "redownloading")
-        else
+        if mat and not mat:IsError() then
             c = mat
             cache[name] = c
             return c
@@ -124,9 +122,7 @@ local function get_bttv(name)
     elseif exists2 then
         local mat = gif_material(name, path2)
 
-        if not mat or mat:IsError() then
-            EasyChat.Print(true, "Material found, but is error: ", name, "redownloading")
-        else
+        if mat and not mat:IsError() then
             c = mat
             cache[name] = c
             return c
@@ -146,22 +142,18 @@ local function get_bttv(name)
 
         if url:EndsWith("&type=vtf") then
             file.Write(path2, data)
-
             local mat = gif_material(name, path2)
-
             if not mat or mat:IsError() then
-                EasyChat.Print(true, "Downloaded material, but is error: ", name)
+                file.Delete(path2)
                 return
             end
 
             cache[name] = mat
         else
             file.Write(path, data)
-
             local mat = material_data(path)
-
             if not mat or mat:IsError() then
-                EasyChat.Print(true, "Downloaded material, but is error: ", name)
+                file.Delete(path)
                 return
             end
 

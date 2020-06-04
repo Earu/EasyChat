@@ -84,9 +84,7 @@ local function get_twitch(name)
     if exists then
         local mat = material_data(path)
 
-        if not mat or mat:IsError() then
-            EasyChat.Print(true, "Material found, but is error: ", name, "redownloading")
-        else
+        if mat and not mat:IsError() then
             c = mat
             cache[name] = c
             return c
@@ -105,11 +103,9 @@ local function get_twitch(name)
         end
 
         file.Write(path, data)
-
         local mat = material_data(path)
-
         if not mat or mat:IsError() then
-            EasyChat.Print(true, "Downloaded material, but is error: ", name)
+            file.Delete(path)
             return
         end
 
