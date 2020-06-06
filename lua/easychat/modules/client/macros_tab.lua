@@ -278,9 +278,8 @@ local MACRO_TAB = {
 			end
 
 			scrollbar.btnGrip.Paint = function(self, w, h)
-				local r,g,b,a = EasyChat.OutlayColor:Unpack()
-				a = 150
-				surface.SetDrawColor(r, g, b, a)
+				local outlay_col = EasyChat.OutlayColor
+				surface.SetDrawColor(outlay_col.r, outlay_col.g, outlay_col.b, 150)
 				surface.DrawRect(0, 0, w, h)
 			end
 		end

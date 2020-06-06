@@ -209,7 +209,7 @@ local function create_default_settings()
 			local setting_outlay_color = settings:AddSetting(category_name, "color", "Outlay Color")
 			setting_outlay_color:SetColor(EasyChat.OutlayColor)
 			setting_outlay_color.OnValueChanged = function(_, color)
-				EasyChat.OutlayColor = Color(color:Unpack())
+				EasyChat.OutlayColor = Color(color.r, color.g, color.b, color.a)
 
 				local text_entry = EasyChat.GUI.TextEntry
 				if IsValid(text_entry) and text_entry.ClassName == "TextEntryX" then
@@ -222,13 +222,13 @@ local function create_default_settings()
 			local setting_outlay_outline_color = settings:AddSetting(category_name, "color", "Outlay Outline Color")
 			setting_outlay_outline_color:SetColor(EasyChat.OutlayOutlineColor)
 			setting_outlay_outline_color.OnValueChanged = function(_, color)
-				EasyChat.OutlayOutlineColor = Color(color:Unpack())
+				EasyChat.OutlayOutlineColor = Color(color.r, color.g, color.b, color.a)
 			end
 
 			local setting_tab_color = settings:AddSetting(category_name, "color", "Tab Color")
 			setting_tab_color:SetColor(EasyChat.TabColor)
 			setting_tab_color.OnValueChanged = function(_, color)
-				EasyChat.TabColor = Color(color:Unpack())
+				EasyChat.TabColor = Color(color.r, color.g, color.b, color.a)
 
 				local text_entry = EasyChat.GUI.TextEntry
 				if IsValid(text_entry) and text_entry.ClassName == "TextEntryX" then
@@ -239,7 +239,7 @@ local function create_default_settings()
 			local setting_tab_outline_color = settings:AddSetting(category_name, "color", "Tab Outline Color")
 			setting_tab_outline_color:SetColor(EasyChat.TabOutlineColor)
 			setting_tab_outline_color.OnValueChanged = function(_, color)
-				EasyChat.TabOutlineColor = Color(color:Unpack())
+				EasyChat.TabOutlineColor = Color(color.r, color.g, color.b, color.a)
 				local text_entry = EasyChat.GUI.TextEntry
 
 				if IsValid(text_entry) and text_entry.ClassName == "TextEntryX" then
