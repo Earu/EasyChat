@@ -41,6 +41,7 @@ local trim_lookup = {
 
 	-- spaces
 	[utf8.char(0x00a0)] = " ",   -- NO BREAK SPACE
+	[utf8.char(0x1680)] = "  ",  -- OGHAM SPACE MARK
 	[utf8.char(0x2000)] = "  ",  -- EN QUAD
 	[utf8.char(0x2001)] = "   ", -- EM QUAD
 	[utf8.char(0x2002)] = "  ",  -- EN SPACE
@@ -57,6 +58,7 @@ local trim_lookup = {
 	[utf8.char(0x202f)] = " ",   -- NARROW NO BREAK SPACE
 	[utf8.char(0x205f)] = " ",   -- MEDIUM MATHEMATICAL SPACE
 	[utf8.char(0x3000)] = "   ", -- IDEOGRAPHIC SPACE
+	[utf8.char(0x03164)] = "  ", -- HANGUL FILLER
 
 	-- control chars
 	[utf8.char(0x03)] = "^C" -- END OF TEXT
@@ -802,7 +804,7 @@ if CLIENT then
 	local BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 	function EasyChat.DecodeBase64(base64)
 		if util.Base64Decode then
-			return util.Base64Decode
+			return util.Base64Decode(base64)
 		end
 
 		base64 = base64:gsub("[^" .. BASE64 .. "=]", "")
