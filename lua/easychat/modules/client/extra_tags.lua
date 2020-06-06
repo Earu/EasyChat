@@ -179,7 +179,7 @@ function flash_part:Ctor(str)
 		tonumber(flash_components[3]) or self.TargetColor.b
 	)
 
-	self.Color = Color(self.TargetColor:Unpack())
+	self.Color = Color(self.TargetColor.r, self.TargetColor.g, self.TargetColor.b)
 
 	return self
 end

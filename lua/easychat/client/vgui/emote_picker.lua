@@ -57,9 +57,8 @@ local PICKER = {
             end
 
             scrollbar.btnGrip.Paint = function(_, w, h)
-                local r, g, b, a = EasyChat.OutlayColor:Unpack()
-                a = 150
-                surface_SetDrawColor(r, g, b, a)
+                local outlay_col = EasyChat.OutlayColor
+                surface_SetDrawColor(outlay_col.r, outlay_col.g, outlay_col.b, 150)
                 surface_DrawRect(0, 0, w, h)
             end
         else
