@@ -66,7 +66,7 @@ if not can_use_cef or not use_new_text_entry then
 		local in_spaces = false
 		for cur_pos, code in utf8.codes(chunk) do
 			local char = utf8.char(code)
-			if char:match("[%.\"',%?]") then
+			if char:match("%p") then
 				if cur_pos == 1 then
 					offset = offset + 1
 				end
