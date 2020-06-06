@@ -30,14 +30,11 @@ local function get_silk(name)
     cache[name] = PROCESSING
 
     local path = "icon16/" .. name .. ".png"
-
     local exists = file.Exists("materials/" .. path, "MOD")
     if exists then
         local mat = Material(path)
 
-        if not mat or mat:IsError() then
-            EasyChat.Print(true, "Vanilla silk icon is error????: " .. path)
-        else
+        if mat and not mat:IsError() then
             c = mat
             cache[name] = c
             return c
