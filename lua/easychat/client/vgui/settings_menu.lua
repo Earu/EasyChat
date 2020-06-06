@@ -279,7 +279,8 @@ local COLOR_SETTING = {
 		self.Preview:SetSize(30, 30)
 		self.Preview:DockMargin(0, 0, 10, 0)
 		self.Preview.Paint = function(_, w, h)
-			surface.SetDrawColor(self.Color:Unpack())
+			local col = self.Color
+			surface.SetDrawColor(col.r, col.g, col.b, col.a)
 			surface.DrawRect(0, 0, w, h)
 
 			surface.SetDrawColor(EasyChat.TabOutlineColor)
@@ -427,9 +428,8 @@ function SETTINGS:AddCategory(category_name, icon)
 		end
 
 		scrollbar.btnGrip.Paint = function(self, w, h)
-			local r, g, b, a = EasyChat.OutlayColor:Unpack()
-			a = 150
-			surface.SetDrawColor(r, g, b, a)
+			local outlay_col = EasyChat.OutlayColor
+			surface.SetDrawColor(outlay_col.r, outlay_col.g, outlay_col.b, 150)
 			surface.DrawRect(0, 0, w, h)
 		end
 	end

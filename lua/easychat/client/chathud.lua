@@ -1528,8 +1528,8 @@ do
 			end
 
 			scrollbar.btnGrip.Paint = function(_, w, h)
-				local r, g, b = EasyChat.OutlayColor:Unpack()
-				surface.SetDrawColor(r, g, b, 150)
+				local outlay_col = EasyChat.OutlayColor
+				surface.SetDrawColor(outlay_col.r, outlay_col.g, outlay_col.b, 150)
 				DisableClipping(true)
 				surface.DrawRect(0, 0, w + 5, h)
 				DisableClipping(false)
