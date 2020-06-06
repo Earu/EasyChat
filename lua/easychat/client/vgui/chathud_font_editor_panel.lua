@@ -161,8 +161,8 @@ local EDITOR = {
 				surface.SetDrawColor(EasyChat.OutlayColor)
 				surface.DrawRect(0, 0, w, 25)
 
-				local r, g, b, a = EasyChat.TabColor:Unpack()
-				surface.SetDrawColor(r, g, b, a)
+				local tab_col = EasyChat.TabColor
+				surface.SetDrawColor(tab_col.r, tab_col.g, tab_col.b, tab_col.a)
 				surface.DrawRect(0, 25, w, h - 25)
 
 				surface.SetDrawColor(EasyChat.OutlayOutlineColor)
