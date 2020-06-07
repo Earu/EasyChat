@@ -23,6 +23,42 @@ for _, country_code in pairs(language_lookup) do
 	valid_languages[country_code] = true
 end
 
+-- Returns the Levenshtein distance between the two given strings
+-- Lower numbers are better
+local function levenshtein(str1, str2)
+	local len1 = #str1
+	local len2 = #str2
+	local matrix = {}
+	local cost = 1
+	local min = math.min
+
+	-- quick cut-offs to save time
+	if len1 == 0 then return len2 end
+	if len2 == 0 then return len1 end
+	if str1 == str2 then return 0 end
+
+	-- initialise the base matrix values
+	for i = 0, len1, 1 do
+	  	matrix[i] = {}
+	  	matrix[i][0] = i
+	end
+
+	for j = 0, len2, 1 do
+	  	matrix[0][j] = j
+	end
+
+	-- actual Levenshtein algorithm
+	for i = 1, len1, 1 do
+	  	for j = 1, len2, 1 do
+			if str1:byte(i) == str2:byte(j) then cost = 0 end
+			matrix[i][j] = min(matrix[i-1][j] + 1, matrix[i][j-1] + 1, matrix[i-1][j-1] + cost)
+	  	end
+	end
+
+	-- return the last value - this is the Levenshtein distance
+	return matrix[len1][len2]
+end
+
 function translator:Translate(text, source_lang, target_lang, on_finish)
 	if not text or not valid_languages[source_lang] or not valid_languages[target_lang] or not EC_TRANSLATE_API_KEY:GetString():find("trnsl.1.1.") then
 		on_finish(false)
@@ -30,11 +66,17 @@ function translator:Translate(text, source_lang, target_lang, on_finish)
 	end
 
 	if cached_translations[text] and cached_translations[text][target_lang] then
-		on_finish(true, text, cached_translations[text][target_lang])
+		local translated_text = cached_translations[text][target_lang]
+		if levenshtein(text, translated_text) > 2 then
+			on_finish(true, text, translated_text)
+		else
+			on_finish(false)
+		end
+
 		return
 	end
 
-	local language = (source_lang ~= "auto" and source_lang.."-" or "")..target_lang
+	local language = (source_lang ~= "auto" and source_lang.."-" or "") .. target_lang
 	local url_encoded_text = text:gsub("[^%w]", function(char) return ("%%%02X"):format(char:byte()) end)
 	local request_url = ("https://translate.yandex.net/api/v1.5/tr.json/translate?key=%s&text=%s&lang=%s"):format(EC_TRANSLATE_API_KEY:GetString(), url_encoded_text, language)
 
@@ -48,7 +90,11 @@ function translator:Translate(text, source_lang, target_lang, on_finish)
 		if translated.text and translated.text[1] then
 			cached_translations[text] = cached_translations[text] or {}
 			cached_translations[text][target_lang] = translated.text[1]
-			on_finish(true, text, translated.text[1])
+			if levenshtein(text,  translated.text[1]) > 2 then
+				on_finish(true, text, translated.text[1])
+			else
+				on_finish(false)
+			end
 		else
 			on_finish(false)
 		end
