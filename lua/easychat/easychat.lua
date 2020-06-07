@@ -111,7 +111,9 @@ end
 -- lets not break the addon with bad third-party code but still notify the
 -- developers with an error
 local function safe_hook_run(hook_name, ...)
-	local succ, a, b, c, d, e, f = xpcall(hook.Run, debug.traceback, hook_name, ...)
+	local succ, a, b, c, d, e, f = xpcall(hook.Run, function(err)
+		ErrorNoHalt(debug.traceback(err))
+	end, hook_name, ...)
 	if not succ then return nil end
 	return a, b, c, d, e, f
 end
@@ -1490,7 +1492,9 @@ if CLIENT then
 			for _, arg in ipairs(args) do
 				local callback = ec_addtext_handles[type(arg)]
 				if callback then
-					local succ, ret = xpcall(callback, debug.traceback, arg)
+					local succ, ret = xpcall(callback, function(err)
+						ErrorNoHalt(debug.traceback(err))
+					end, arg)
 					if succ and ret then
 						if is_color(ret) or isstring(ret) then
 							table.insert(data, ret)
