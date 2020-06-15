@@ -212,7 +212,7 @@ if CLIENT then
 			self.EnvSelector:SetSize(100, 20)
 			self.EnvSelector:SetPos(200, 5)
 			self.EnvSelector:SetSortItems(false)
-			self.EnvSelector:SetTextColor(EasyChat.TextColor)
+			self.EnvSelector:SetTextColor(color_white)
 
 			local function build_env_choices()
 				self.EnvSelector:Clear()
@@ -238,7 +238,7 @@ if CLIENT then
 
 			self.RunButton = self.MenuBar:Add("DButton")
 			self.RunButton:SetText("")
-			self.RunButton:SetTextColor(EasyChat.TextColor)
+			self.RunButton:SetTextColor(color_white)
 			self.RunButton:SetSize(40, 10)
 			self.RunButton:SetPos(300, 5)
 			self.RunButton.DoClick = function() self:RunCode() end
@@ -250,7 +250,7 @@ if CLIENT then
 
 			local function OptionPaint(self, w, h)
 				if self:IsHovered() then
-					surface.SetDrawColor(EasyChat.TextColor)
+					surface.SetDrawColor(color_white)
 					surface.DrawOutlinedRect(0, 0, w, h)
 				end
 			end
@@ -281,7 +281,7 @@ if CLIENT then
 						self.Menu.Paint = MenuPaint
 						for i=1, self.Menu:ChildCount() do
 							local option = self.Menu:GetChild(i)
-							option:SetTextColor(EasyChat.TextColor)
+							option:SetTextColor(color_white)
 							option.Paint = OptionPaint
 						end
 						self.Menu.CustomPainted = true
@@ -290,14 +290,14 @@ if CLIENT then
 			end
 
 			for _, option in ipairs(options) do
-				option:SetTextColor(EasyChat.TextColor)
+				option:SetTextColor(color_white)
 				option.Paint = OptionPaint
 			end
 
 			-- menu bar buttons changes
 			for _, panel in pairs(self.MenuBar:GetChildren()) do
 				if panel.ClassName == "DButton" then
-					panel:SetTextColor(EasyChat.TextColor)
+					panel:SetTextColor(color_white)
 					panel:SetSize(50, 25)
 					panel.Paint = MenuButtonPaint
 				end
@@ -307,7 +307,6 @@ if CLIENT then
 				{ x = 10, y = 15 },
 				{ x = 10, y = 5 },
 				{ x = 20, y = 10 }
-
 			}
 			self.RunButton.Paint = function(self, w_, h)
 				surface.SetDrawColor(gray_color)
@@ -350,13 +349,42 @@ if CLIENT then
 			end
 
 			self.LblRunStatus = self:Add("DLabel")
-			self.LblRunStatus:SetTextColor(EasyChat.TextColor)
+			self.LblRunStatus:SetTextColor(color_white)
 			self.LblRunStatus:Dock(BOTTOM)
 			self.LblRunStatus:SetSize(self:GetWide(), 25)
 			self.LblRunStatus:SetText(("%sReady"):format((" "):rep(3)))
-			self.LblRunStatus.Paint = function(self, w, h)
+			self.LblRunStatus.Paint = function(_, w, h)
 				surface.SetDrawColor(blue_color)
 				surface.DrawRect(0, 0, w, h)
+			end
+
+			self.ThemeSelector = self:Add("DComboBox")
+			self.ThemeSelector:AddChoice("vs-dark", nil, true)
+			self.ThemeSelector:SetTextColor(color_white)
+			self.ThemeSelector:SetWide(100)
+
+			local drop_triangle = {
+				{ x = 10, y = 3 },
+				{ x = 5, y = 12 },
+				{ x = 0, y = 3 },
+			}
+			self.ThemeSelector.DropButton.Paint = function(_, w, h)
+				surface.SetDrawColor(color_white)
+				draw.NoTexture()
+				surface.DrawPoly(drop_triangle)
+			end
+
+			self.ThemeSelector.OnSelect = function(_, _, theme_name)
+				local tabs = self.CodeTabs:GetItems()
+				for _, tab in pairs(tabs) do
+					tab.Panel:QueueJavascript([[gmodinterface.SetTheme("]] .. theme_name .. [[");]])
+				end
+
+				cookie.Set("ECLuaTabTheme", theme_name)
+			end
+			self.ThemeSelector.Paint = function(_, w, h)
+				surface.SetDrawColor(color_white)
+				surface.DrawOutlinedRect(0, 0, w, h)
 			end
 
 			self.ErrorList = self:Add("DCollapsibleCategory")
@@ -404,7 +432,7 @@ if CLIENT then
 
 			local line_column = error_list:AddColumn("Line")
 			line_column:SetFixedWidth(50)
-			line_column.Header:SetTextColor(EasyChat.TextColor)
+			line_column.Header:SetTextColor(color_white)
 			line_column.Header.Paint = function(self, w, h)
 				surface.SetDrawColor(EasyChat.TabColor)
 				surface.DrawRect(0, 0, w, h)
@@ -416,7 +444,7 @@ if CLIENT then
 
 			local code_column = error_list:AddColumn("Code")
 			code_column:SetFixedWidth(50)
-			code_column.Header:SetTextColor(EasyChat.TextColor)
+			code_column.Header:SetTextColor(color_white)
 			code_column.Header.Paint = function(self, w, h)
 				surface.SetDrawColor(EasyChat.TabColor)
 				surface.DrawRect(0, 0, w, h)
@@ -427,7 +455,7 @@ if CLIENT then
 			end
 
 			local desc_column = error_list:AddColumn("Description")
-			desc_column.Header:SetTextColor(EasyChat.TextColor)
+			desc_column.Header:SetTextColor(color_white)
 			desc_column.Header.Paint = function(self, w, h)
 				surface.SetDrawColor(EasyChat.TabColor)
 				surface.DrawRect(0, 0, w, h)
@@ -440,6 +468,10 @@ if CLIENT then
 			self.ErrorList:SetExpanded(EasyChat.CanUseCEFFeatures())
 			self.ErrorList.List = error_list
 			self.ErrorList.Header:SetFont("DermaDefault")
+
+			if not cookie.GetString("ECLuaTabTheme") then
+				cookie.Set("ECLuaTabTheme", "vs-dark")
+			end
 		end,
 		Shortcuts = {
 			{
@@ -485,6 +517,9 @@ if CLIENT then
 		PerformLayout = function(self, w, h)
 			self.MenuBar:SetSize(w, 25)
 			self.CodeTabs:SetSize(w, h - (60 + self.ErrorList:GetTall()))
+
+			local x, y, w, _ = self.LblRunStatus:GetBounds()
+			self.ThemeSelector:SetPos(x + w - self.ThemeSelector:GetWide() - 5, y + 1)
 		end,
 		RenameCurrentTab = function(self)
 			local tab = self.CodeTabs:GetActiveTab()
@@ -611,6 +646,18 @@ if CLIENT then
 				self:AnalyzeTab(tab, editor)
 			end)
 
+			editor:AddFunction("gmodinterface", "OnThemesLoaded", function(themes)
+				self.ThemeSelector:Clear()
+				for _, theme_name in pairs(themes) do
+					if cookie.GetString("ECLuaTabTheme") == theme_name then
+						self.ThemeSelector:AddChoice(theme_name, nil, true)
+						editor:QueueJavascript([[gmodinterface.SetCode("]] .. theme_name .. [[");]])
+					else
+						self.ThemeSelector:AddChoice(theme_name)
+					end
+				end
+			end)
+
 			editor:AddFunction("gmodinterface", "OnReady", function()
 				self.LblRunStatus:SetText(("%sReady"):format((" "):rep(3)))
 				local safe_code = code:JavascriptSafe()
@@ -628,13 +675,13 @@ if CLIENT then
 
 			self.CodeTabs:SetActiveTab(tab)
 			local tab_w = tab:GetWide()
-			tab:SetTextColor(EasyChat.TextColor)
+			tab:SetTextColor(color_white)
 
 			local close_btn = tab:Add("DButton")
 			close_btn:SetPos(tab_w - 20, 0)
 			close_btn:SetSize(20, 20)
 			close_btn:SetText("x")
-			close_btn:SetTextColor(EasyChat.TextColor)
+			close_btn:SetTextColor(color_white)
 			close_btn.Paint = function() end
 			close_btn.DoClick = function()
 				if #self.CodeTabs:GetItems() > 1 then
