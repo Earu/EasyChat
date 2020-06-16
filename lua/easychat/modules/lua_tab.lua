@@ -159,6 +159,9 @@ if CLIENT then
 		["server"] = function(self, code)
 			lua.RunOnServer(code, LocalPlayer())
 		end,
+		["javascript"] = function(self, code)
+
+		end,
 	}
 
 	local LUA_TAB = {
@@ -221,6 +224,7 @@ if CLIENT then
 				self.EnvSelector:AddChoice("clients", nil, false, "icon16/user.png")
 				self.EnvSelector:AddChoice("shared", nil, false, "icon16/world.png")
 				self.EnvSelector:AddChoice("server", nil, false, "icon16/server.png")
+				self.EnvSelector:AddChoice("javascript", nil, false, "icon16/script_code.png")
 
 				for _, ply in ipairs(player.GetAll()) do
 					if ply ~= LocalPlayer() then
@@ -243,29 +247,45 @@ if CLIENT then
 			self.RunButton:SetPos(300, 5)
 			self.RunButton.DoClick = function() self:RunCode() end
 
-			local function MenuPaint(self, w, h)
+			local function menu_paint(self, w, h)
 				surface.SetDrawColor(gray_color)
 				surface.DrawRect(0, 0, w, h)
 			end
 
-			local function OptionPaint(self, w, h)
+			local function option_paint(self, w, h)
 				if self:IsHovered() then
 					surface.SetDrawColor(color_white)
 					surface.DrawOutlinedRect(0, 0, w, h)
 				end
 			end
 
-			local function MenuButtonPaint(self, w, h)
+			local function menu_button_paint(self, w, h)
 				if self:IsHovered() then
 					surface.SetDrawColor(gray_color)
 					surface.DrawRect(0, 0, w, h)
 				end
 			end
 
-			self.MenuFile.Paint = MenuPaint
-			self.MenuEdit.Paint = MenuPaint
-			self.MenuTools.Paint = MenuPaint
-			self.EnvSelector.Paint = MenuPaint
+			local function combo_box_paint(_, w, h)
+				surface.SetDrawColor(color_white)
+				surface.DrawOutlinedRect(0, 0, w, h)
+			end
+
+			local drop_triangle = {
+				{ x = 10, y = 3 },
+				{ x = 5, y = 12 },
+				{ x = 0, y = 3 },
+			}
+			local function drop_button_paint()
+				surface.SetDrawColor(color_white)
+				draw.NoTexture()
+				surface.DrawPoly(drop_triangle)
+			end
+
+			self.MenuFile.Paint = menu_paint
+			self.MenuEdit.Paint = menu_paint
+			self.MenuTools.Paint = menu_paint
+			self.EnvSelector.Paint = menu_paint
 
 			local old_player_count = player.GetCount()
 			self.EnvSelector.Think = function(self)
@@ -278,11 +298,11 @@ if CLIENT then
 
 				if self:IsMenuOpen() then
 					if not self.Menu.CustomPainted then
-						self.Menu.Paint = MenuPaint
+						self.Menu.Paint = menu_paint
 						for i=1, self.Menu:ChildCount() do
 							local option = self.Menu:GetChild(i)
 							option:SetTextColor(color_white)
-							option.Paint = OptionPaint
+							option.Paint = option_paint
 						end
 						self.Menu.CustomPainted = true
 					end
@@ -291,7 +311,7 @@ if CLIENT then
 
 			for _, option in ipairs(options) do
 				option:SetTextColor(color_white)
-				option.Paint = OptionPaint
+				option.Paint = option_paint
 			end
 
 			-- menu bar buttons changes
@@ -299,7 +319,7 @@ if CLIENT then
 				if panel.ClassName == "DButton" then
 					panel:SetTextColor(color_white)
 					panel:SetSize(50, 25)
-					panel.Paint = MenuButtonPaint
+					panel.Paint = menu_button_paint
 				end
 			end
 
@@ -362,17 +382,8 @@ if CLIENT then
 			self.ThemeSelector:AddChoice("vs-dark", nil, true)
 			self.ThemeSelector:SetTextColor(color_white)
 			self.ThemeSelector:SetWide(100)
-
-			local drop_triangle = {
-				{ x = 10, y = 3 },
-				{ x = 5, y = 12 },
-				{ x = 0, y = 3 },
-			}
-			self.ThemeSelector.DropButton.Paint = function(_, w, h)
-				surface.SetDrawColor(color_white)
-				draw.NoTexture()
-				surface.DrawPoly(drop_triangle)
-			end
+			self.ThemeSelector.DropButton.Paint = drop_button_paint
+			self.ThemeSelector.Paint = combo_box_paint
 
 			self.ThemeSelector.OnSelect = function(_, _, theme_name)
 				local tabs = self.CodeTabs:GetItems()
@@ -382,9 +393,30 @@ if CLIENT then
 
 				cookie.Set("ECLuaTabTheme", theme_name)
 			end
-			self.ThemeSelector.Paint = function(_, w, h)
-				surface.SetDrawColor(color_white)
-				surface.DrawOutlinedRect(0, 0, w, h)
+
+			self.LangSelector = self:Add("DComboBox")
+			self.LangSelector:AddChoice("glua", nil, true)
+			self.LangSelector:AddChoice("javascript")
+			self.LangSelector:SetTextColor(color_white)
+			self.LangSelector:SetWide(100)
+			self.LangSelector.DropButton.Paint = drop_button_paint
+			self.LangSelector.Paint = combo_box_paint
+
+			self.LangSelector.OnSelect = function(_, _, lang)
+				local active_tab = self.CodeTabs:GetActiveTab()
+				if not IsValid(active_tab) then return end
+
+				local editor = active_tab.m_pPanel
+				if lang == "glua" then
+					self:AnalyzeTab(active_tab, editor)
+				else
+					editor:QueueJavascript([[gmodinterface.SubmitLuaReport({ events: []});]])
+					self.ErrorList.List:Clear()
+					self.ErrorList:SetLabel("Error List")
+				end
+
+				editor:QueueJavascript([[gmodinterface.SetLanguage("]] .. lang .. [[");]])
+				active_tab.Lang = lang
 			end
 
 			self.ErrorList = self:Add("DCollapsibleCategory")
@@ -520,6 +552,7 @@ if CLIENT then
 
 			local x, y, w, _ = self.LblRunStatus:GetBounds()
 			self.ThemeSelector:SetPos(x + w - self.ThemeSelector:GetWide() - 5, y + 1)
+			self.LangSelector:SetPos(x + w - self.ThemeSelector:GetWide() - 10 - self.LangSelector:GetWide(), y + 1)
 		end,
 		RenameCurrentTab = function(self)
 			local tab = self.CodeTabs:GetActiveTab()
@@ -541,6 +574,16 @@ if CLIENT then
 			if isentity(self.Env) then
 				lua.RunOnClient(code, self.Env, LocalPlayer())
 				self:RegisterAction(self.Env)
+				return
+			end
+
+			if self.Env == "javascript" then
+				local active_tab = self.CodeTabs:GetActiveTab()
+				if IsValid(active_tab) then
+					active_tab.m_pPanel:QueueJavascript(code:JavascriptSafe())
+					self:RegisterAction(self.Env)
+				end
+
 				return
 			end
 
@@ -583,6 +626,7 @@ if CLIENT then
 				if not IsValid(tab) or not IsValid(editor) then return end -- this can happen upon reload / disabling
 				if not tab.Code or tab.Code:Trim() == "" then return end
 				if tab ~= self.CodeTabs:GetActiveTab() then return end
+				if tab.Lang ~= "glua" then return end
 
 				-- luacheck can sometime error out
 				local succ, ret = pcall(function()
@@ -639,6 +683,7 @@ if CLIENT then
 			local tab = sheet.Tab
 			tab.Code = code
 			tab.Name = tab_name:Trim()
+			tab.Lang = "glua"
 			self.LblRunStatus:SetText(("%sLoading..."):format((" "):rep(3)))
 
 			editor:AddFunction("gmodinterface", "OnCode", function(new_code)
