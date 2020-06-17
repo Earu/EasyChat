@@ -11,7 +11,11 @@ EasyChat.Mentions = mentions
 
 if file.Exists(FILTER_PATH, "DATA") then
 	local contents = file.Read(FILTER_PATH, "DATA")
-	mentions.Filters = ("\r?\n"):Explode(contents)
+	if #contents:Trim() > 0 then
+		mentions.Filters = ("\r?\n"):Explode(contents)
+	else
+		mentions.Filters = {}
+	end
 else
 	mentions.Filters = {}
 end
