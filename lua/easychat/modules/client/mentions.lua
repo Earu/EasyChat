@@ -2,10 +2,24 @@ local EC_MENTION = CreateConVar("easychat_mentions", "1", FCVAR_ARCHIVE, "Highli
 local EC_MENTION_FLASH = CreateConVar("easychat_mentions_flash_window", "1", FCVAR_ARCHIVE, "Flashes your window when you get mentioned")
 local EC_MENTION_COLOR = CreateConVar("easychat_mentions_color", "244 167 66", FCVAR_ARCHIVE, "Color of the mentions")
 local EC_MENTION_SHOW_MISSED = CreateConVar("easychat_mentions_show_missed", "1", FCVAR_ARCHIVE, "Show mentions you have missed when AFK / tabbed out")
-local EC_TIMESTAMPS_12 = GetConVar("easychat_timestamps_12")
+
+local EC_MENTION_FILTERS = CreateConVar("easychat_mentions_filters", "1", FCVAR_ARCHIVE, "Enables mention filters")
+local FILTER_PATH = "easychat/mention_filters.txt"
 
 local mentions = {}
 EasyChat.Mentions = mentions
+
+if file.Exists(FILTER_PATH, "DATA") then
+	local contents = file.Read(FILTER_PATH, "DATA")
+	mentions.Filters = ("\r?\n"):Explode(contents)
+else
+	mentions.Filters = {}
+end
+
+local function save_filters()
+	local filter_content = table.concat(mentions.Filters, "\n")
+	file.Write(FILTER_PATH, filter_content)
+end
 
 function mentions:GetColor()
 	local r, g, b = EC_MENTION_COLOR:GetString():match("^(%d%d?%d?) (%d%d?%d?) (%d%d?%d?)")
@@ -38,6 +52,54 @@ do
 		local color = setting_mention_color:GetColor()
 		EC_MENTION_COLOR:SetString(("%d %d %d"):format(color.r, color.g, color.b))
 	end
+
+	settings:AddSpacer(category_name)
+
+	settings:AddConvarSetting(category_name, "boolean", EC_MENTION_FILTERS, "Enable mention filters")
+	local setting_filters = settings:AddSetting(category_name, "list", "Filters")
+	setting_filters.List:SetMultiSelect(false)
+	setting_filters.List:AddColumn("Filter")
+
+	local function build_filter_list()
+		setting_filters.List:Clear()
+		for _, filter in pairs(mentions.Filters) do
+			setting_filters.List:AddLine(filter)
+		end
+	end
+
+	build_filter_list()
+
+	local setting_add_filter = settings:AddSetting(category_name, "action", "Add Filter")
+	setting_add_filter.DoClick = function()
+		EasyChat.AskForInput("Add Filter", function(filter)
+			table.insert(mentions.Filters, filter)
+			save_filters()
+			build_filter_list()
+		end, false)
+	end
+
+	local setting_remove_filter = settings:AddSetting(category_name, "action", "Remove Filter")
+	setting_remove_filter.DoClick = function()
+		local _, selected_line = setting_filters.List:GetSelectedLine()
+		if not IsValid(selected_line) then return end
+
+		local selected_filter = selected_line:GetColumnText(1)
+		for i, filter in pairs(mentions.Filters) do
+			if selected_filter == filter then
+				table.remove(mentions.Filters, i)
+				break
+			end
+		end
+
+		save_filters()
+		build_filter_list()
+	end
+
+	concommand.Add("easychat_mentions_add_filter", function(_, _, _, filter)
+		table.insert(mentions.Filters, filter)
+		save_filters()
+		build_filter_list()
+	end)
 end
 
 local mentions_frame = nil
@@ -146,6 +208,22 @@ function GAMEMODE:ECPlayerMention(ply, msg, is_team, is_dead, is_local, data)
 	end
 end
 
+local function filter_match(text)
+	if not EC_MENTION_FILTERS:GetBool() then return false end
+
+	-- if its using malformed patterns, we dont want to break
+	local succ, ret = pcall(function()
+		for _, filter in pairs(mentions.Filters) do
+			if text:match(filter) then return true end
+		end
+
+		return false
+	end)
+
+	if succ then return ret end
+	return false
+end
+
 hook.Add("OnPlayerChat", "EasyChatModuleMention", function(ply, msg, is_team, is_dead, is_local)
 	if not EC_MENTION:GetBool() then return end
 
@@ -159,9 +237,8 @@ hook.Add("OnPlayerChat", "EasyChatModuleMention", function(ply, msg, is_team, is
 	msg = msg:lower()
 	local proper_nick = EasyChat.GetProperNick(lp):lower():PatternSafe()
 	local nick_mention = msg:match(proper_nick)
-	if not msg:match("^[%!%.%/]") and nick_mention then
-		if #nick_mention <= 1 then return end
-
+	local is_nick_match = not msg:match("^[%!%.%/]") and nick_mention
+	if filter_match(original_msg) or (is_nick_match and #nick_mention <= 1) then
 		if EC_MENTION_FLASH:GetBool() then
 			system.FlashWindow()
 		end
