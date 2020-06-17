@@ -235,14 +235,14 @@ hook.Add("OnPlayerChat", "EasyChatModuleMention", function(ply, msg, is_team, is
 	local lp = LocalPlayer()
 	if not IsValid(lp) then return end
 	if ply == lp then return end
+	if ply:IsBot() then return end
 
 	local original_msg = msg
 
 	msg = msg:lower()
-	local proper_nick = EasyChat.GetProperNick(lp):lower():PatternSafe()
-	local nick_mention = msg:match(proper_nick)
+	local nick_mention = msg:match(EasyChat.GetProperNick(lp):lower():PatternSafe())
 	local is_nick_match = not msg:match("^[%!%.%/]") and nick_mention
-	if filter_match(original_msg) or (is_nick_match and #nick_mention <= 1) then
+	if filter_match(original_msg) or (is_nick_match and #nick_mention > 1) then
 		if EC_MENTION_FLASH:GetBool() then
 			system.FlashWindow()
 		end
