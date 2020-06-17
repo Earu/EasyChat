@@ -1896,7 +1896,7 @@ if CLIENT then
 
 			if EC_PEEK_COMPLETION:GetBool() and self.TabCompletion then
 				if self.TabbedOnce then
-					local completion = get_completion(self.BaseCompletionText)
+					local completion = get_completion(self:GetText())
 					if completion then self:SetText(completion) end
 				else
 					self.TabbedOnce = true
@@ -1904,9 +1904,7 @@ if CLIENT then
 				end
 			else
 				local completion = get_completion(self:GetText())
-				if completion then
-					self:SetText(completion)
-				end
+				if completion then self:SetText(completion) end
 			end
 
 			timer.Simple(0, function()
@@ -1981,7 +1979,6 @@ if CLIENT then
 
 			-- this needs to be reset here for peeking to work properly
 			self.TabbedOnce = false
-			self.BaseCompletionText = text
 
 			if not EC_PEEK_COMPLETION:GetBool() then return end
 
