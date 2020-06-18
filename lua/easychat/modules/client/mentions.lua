@@ -235,7 +235,7 @@ hook.Add("OnPlayerChat", "EasyChatModuleMention", function(ply, msg, is_team, is
 	local lp = LocalPlayer()
 	if not IsValid(lp) then return end
 	if ply == lp then return end
-	if ply:IsBot() then return end
+	if IsValid(ply) and ply:IsBot() then return end
 
 	local original_msg = msg
 
