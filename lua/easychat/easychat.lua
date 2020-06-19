@@ -2231,9 +2231,13 @@ if CLIENT then
 			chat.AddText(text)
 		end)
 
+		local chathud_call = false
 		hook.Add("HUDShouldDraw", TAG, function(hud_element)
 			if hud_element ~= "CHudChat" then return end
-			if EC_HUD_CUSTOM:GetBool() then return false end
+			if EC_HUD_CUSTOM:GetBool() then
+				if chathud_call then return end
+				return false
+			end
 		end)
 
 		local function chathud_get_bounds(x, y, w, h)
@@ -2358,7 +2362,11 @@ if CLIENT then
 			-- dont show if we have follow on, and the gui is opened
 			if EC_HUD_FOLLOW:GetBool() and EasyChat.IsOpened() then return end
 
-			if EC_HUD_CUSTOM:GetBool() then
+			chathud_call = true
+			local should_draw = hook.Run("HUDShouldDraw", "CHudChat") ~= false
+			chathud_call = false
+
+			if EC_HUD_CUSTOM:GetBool() and should_draw then
 				chathud:Draw()
 			end
 		end)
