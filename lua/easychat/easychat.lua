@@ -2388,14 +2388,14 @@ if CLIENT then
 			local latest_sha = cookie.GetString("ECLatestSHA")
 			if not latest_sha then
 				EasyChat.Print("Setting and running version ", commit.sha)
-				cookie.Set("ECLatestSHA", ("%s|%d"):format(commit.sha, file.Time("lua/easychat/easychat.lua", "GAME")))
+				cookie.Set("ECLatestSHA", ("%s|%d"):format(commit.sha, file.Time("easychat/easychat.lua","LUA")))
 				return
 			end
 
 			local lastest_sha, last_edit_time = unpack(latest_sha:Split("|"))
 			EasyChat.Print("Running version ", latest_sha)
 			if latest_sha ~= commit.sha then
-				local cur_edit_time = tostring(file.Time("lua/easychat/easychat.lua", "GAME"))
+				local cur_edit_time = tostring(file.Time("easychat/easychat.lua","LUA"))
 				if cur_edit_time == last_edit_time then
 					-- same file as old but different sha, new update but not installed ?
 					chat.AddText(
