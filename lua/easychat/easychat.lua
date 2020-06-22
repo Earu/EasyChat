@@ -14,6 +14,7 @@ local TAG = "EasyChat"
 local EC_MAX_CHARS = CreateConVar("easychat_max_chars", "3000", { FCVAR_REPLICATED, SERVER and FCVAR_ARCHIVE or nil }, "Max characters per messages", 50)
 
 local color_red = Color(255, 0, 0)
+local color_gray = Color(184, 189, 209)
 local color_print_head = Color(244, 167, 66)
 local color_print_good = Color(0, 160, 220)
 local color_print_bad = Color(255, 127, 127)
@@ -2375,6 +2376,41 @@ if CLIENT then
 		hook.Add("OnPlayerChat", TAG, function(ply, text)
 			if EC_HUD_SH_CLEAR:GetBool() and text == "sh" or text:match("%ssh%s") then
 				chathud:StopComponents()
+			end
+		end)
+
+		http.Fetch("https://api.github.com/repos/Earu/EasyChat/commits/master", function(body, _, _, code)
+			if code ~= 200 then return end
+			local commit = util.JSONToTable(body)
+			if not commit then return end
+			if not commit.sha then return end
+
+			local latest_sha = cookie.GetString("ECLatestSHA")
+			if not latest_sha then
+				EasyChat.Print("Setting and running version ", commit.sha)
+				cookie.Set("ECLatestSHA", ("%s|%d"):format(commit.sha, file.Time("lua/easychat/easychat.lua", "GAME")))
+				return
+			end
+
+			local lastest_sha, last_edit_time = unpack(latest_sha:Split("|"))
+			EasyChat.Print("Running version ", latest_sha)
+			if latest_sha ~= commit.sha then
+				local cur_edit_time = tostring(file.Time("lua/easychat/easychat.lua", "GAME"))
+				if cur_edit_time == last_edit_time then
+					-- same file as old but different sha, new update but not installed ?
+					chat.AddText(
+						color_gray, "New version for ",
+						color_red, "EasyChat",
+						color_gray, " detected. Your current version: ",
+						color_red, latest_sha,
+						color_gray, ", newest version: ",
+						color_red, commit.sha
+					)
+				else
+					-- our latest file edit is different than the one we registered which means we installed a new update
+					cookie.Set("ECLatestSHA", ("%s|%d"):format(commit.sha, cur_edit_time))
+					cookie.Delete("ECChromiumWarn")
+				end
 			end
 		end)
 
