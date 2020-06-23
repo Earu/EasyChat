@@ -2379,6 +2379,22 @@ if CLIENT then
 			end
 		end)
 
+		local function retrieve_commit_time(commit)
+			local time = -1
+			if not commit.commit and commit.commit.author and commit.commit.author.date then
+				return time
+			end
+
+			commit.commit.author.date:gsub("(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d)%:(%d%d)%:(%d%d)Z", function(year, month, day, hour, min, sec)
+				time = os.time({
+					day = day, month = month, year = year,
+					hour = hour, min = min, sec = sec
+				})
+			end)
+
+			return time
+		end
+
 		http.Fetch("https://api.github.com/repos/Earu/EasyChat/commits/master", function(body, _, _, code)
 			if code ~= 200 then return end
 			local commit = util.JSONToTable(body)
@@ -2392,26 +2408,44 @@ if CLIENT then
 				return
 			end
 
+			local commit_time = retrieve_commit_time(commit)
+			local cur_edit_time = file.Time("easychat/easychat.lua","LUA")
 			local lastest_sha, last_edit_time = unpack(latest_sha:Split("|"))
 			if latest_sha ~= commit.sha then
-				local cur_edit_time = file.Time("easychat/easychat.lua","LUA")
 				if tostring(cur_edit_time) == last_edit_time then
 					-- same file as old but different sha, new update but not installed ?
 					chat.AddText(
 						color_gray, "New version for ",
 						color_red, "EasyChat",
-						color_gray, " detected. Your current version: ",
+						color_gray, " detected. Current version: ",
 						color_red, latest_sha,
-						color_gray, ", newest version: ",
-						color_red, commit.sha
+						color_gray, "| Newest version: ",
+						color_red, commit.sha,
+						color_gray, ".\nTell the server owner."
 					)
 					EasyChat.Print("Running version ", latest_sha)
 				else
-					-- our latest file edit is different than the one we registered which means we installed a new update
-					cookie.Set("ECLatestSHA", ("%s|%d"):format(commit.sha, cur_edit_time))
-					cookie.Delete("ECChromiumWarn")
-					EasyChat.Print("Running version ", commit.sha)
+					-- only update version if the last file edit was AFTER the latest commit
+					if commit_time ~= -1 and cur_edit_time > commit_time then
+						-- our latest file edit is different than the one we registered which means we installed a new update
+						cookie.Set("ECLatestSHA", ("%s|%d"):format(commit.sha, cur_edit_time))
+						cookie.Delete("ECChromiumWarn")
+						EasyChat.Print("Running version ", commit.sha)
+					end
 				end
+
+			-- we updated the version number at some point but we back-tracked (old version on a server (?))
+			elseif commit_time > cur_edit_time then
+				chat.AddText(
+					color_gray, "Detected version ",
+					color_red, "downgrade",
+					color_gray, " for ",
+					color_red, "EasyChat",
+					color_gray, ". This means the version of EasyChat you are running is ",
+					color_red, "outdated",
+					color_gray ".\nTell the server owner."
+				)
+				EasyChat.Print("Running unknown older version")
 			end
 		end)
 
