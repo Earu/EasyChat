@@ -279,6 +279,7 @@ if SERVER then
 		if not commit.files then return end
 	end
 
+	local DEFAULT_FILE_PATH = "lua/easychat/easychat.lua"
 	local is_outdated = false
 	local old_version, new_version
 	local is_new_version = false
@@ -294,12 +295,19 @@ if SERVER then
 			if not commit.sha then return end
 
 			local commit_time = retrieve_commit_time(commit)
-			local changed_file_path = "lua/easychat/easychat.lua"
+			local cur_edit_time = file.Time(DEFAULT_FILE_PATH, "GAME")
 			if istable(commit.files) and #commit.files > 0 then
-				changed_file_path = commit.files[1].filename or "lua/easychat/easychat.lua"
+				local changed_file = commit.files[1]
+				local changed_file_path = commit.files[1].filename or DEFAULT_FILE_PATH
+				if changed_file.status == "modified" then
+					cur_edit_time = file.Time(changed_file_path, "GAME")
+				elseif changed_file.status == "added" then
+					cur_edit_time = file.Exists(changed_file_path, "GAME") and commit_time + 1 or 0
+				elseif changed_file.status == "removed" then
+					cur_edit_time = file.Exists(changed_file_path, "GAME") and 0 or commit_time + 1
+				end
 			end
 
-			local cur_edit_time = file.Time(changed_file_path, "GAME")
 			local latest_sha = cookie.GetString("ECLatestSHA")
 			if not latest_sha then
 				-- we dont want to set the SHA if we have an outdated version
@@ -365,12 +373,12 @@ if SERVER then
 		if is_outdated then
 			local msg_components = { color_gray, "The server is running an", color_red, " outdated ", color_gray, "version of", color_red, " EasyChat" }
 			if old_version and new_version then
-				table.Add(msg_components, { color_gray, " ( current: ", color_red, old_version, color_gray, " | newest: ", color_red, new_version, color_gray, ")." })
+				table.Add(msg_components, { color_gray, " (current: ", color_red, old_version, color_gray, " | newest: ", color_red, new_version, color_gray, ")." })
 			else
 				table.Add(msg_components, { color_gray, "." })
 			end
 
-			table.insert(msg_components, "\nTell the server owner.")
+			table.insert(msg_components, "\nConsider updating.")
 			EasyChat.PlayerAddText(ply, unpack(msg_components))
 		elseif is_new_version then
 			ply:SendLua([[cookie.Delete("ECChromiumWarn")]])
