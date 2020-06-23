@@ -2395,8 +2395,8 @@ if CLIENT then
 			local lastest_sha, last_edit_time = unpack(latest_sha:Split("|"))
 			EasyChat.Print("Running version ", latest_sha)
 			if latest_sha ~= commit.sha then
-				local cur_edit_time = tostring(file.Time("easychat/easychat.lua","LUA"))
-				if cur_edit_time == last_edit_time then
+				local cur_edit_time = file.Time("easychat/easychat.lua","LUA")
+				if tostring(cur_edit_time) == last_edit_time then
 					-- same file as old but different sha, new update but not installed ?
 					chat.AddText(
 						color_gray, "New version for ",
