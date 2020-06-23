@@ -323,7 +323,7 @@ if SERVER then
 					-- only update version if the last file edit was AFTER the latest commit
 					if commit_time ~= -1 and cur_edit_time >= commit_time then
 						-- our latest file edit is different than the one we registered which means we installed a new update
-						cookie.Set("ECLatestSHA", ("%s|%d"):format(commit.sha, cur_edit_time))
+						cookie.Set("ECLatestSHA", commit.sha)
 						EasyChat.Print("Running version ", commit.sha)
 					end
 				end
