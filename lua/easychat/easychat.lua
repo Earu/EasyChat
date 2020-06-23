@@ -259,10 +259,81 @@ if SERVER then
 		safe_hook_run(is_opened and "ECOpened" or "ECClosed", ply)
 	end)
 
+	local function retrieve_commit_time(commit)
+		local time = -1
+		if not commit.commit and commit.commit.author and commit.commit.author.date then
+			return time
+		end
+
+		commit.commit.author.date:gsub("(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d)%:(%d%d)%:(%d%d)Z", function(year, month, day, hour, min, sec)
+			time = os.time({
+				day = day, month = month, year = year,
+				hour = hour, min = min, sec = sec
+			})
+		end)
+
+		return time
+	end
+
+	local function retrive_file_changes(commit)
+		if not commit.files then return end
+	end
+
+	local is_outdated = false
+	local old_version, new_version
 	function EasyChat.Init()
 		safe_hook_run("ECPreLoadModules")
 		load_modules()
 		safe_hook_run("ECPostLoadModules")
+
+		http.Fetch("https://api.github.com/repos/Earu/EasyChat/commits/master", function(body, _, _, code)
+			if code ~= 200 then return end
+			local commit = util.JSONToTable(body)
+			if not commit then return end
+			if not commit.sha then return end
+
+			local commit_time = retrieve_commit_time(commit)
+			local changed_file_path = "lua/easychat/easychat.lua"
+			if istable(commit.files) and #commit.files > 0 then
+				changed_file_path = commit.files[1].filename or "lua/easychat/easychat.lua"
+			end
+
+			local cur_edit_time = file.Time(changed_file_path, "GAME")
+			local latest_sha = cookie.GetString("ECLatestSHA")
+			if not latest_sha then
+				-- we dont want to set the SHA if we have an outdated version
+				is_outdated = true
+				if commit_time > cur_edit_time then
+					EasyChat.Print("Running unknown outdated version")
+				else
+					cookie.Set("ECLatestSHA", commit.sha)
+					EasyChat.Print("Setting and running version ", commit.sha)
+				end
+
+				return
+			end
+
+			if latest_sha ~= commit.sha then
+				if commit_time > cur_edit_time then
+					-- same file as old but different sha, new update but not installed ?
+					is_outdated = true
+					old_version, new_version = latest_sha, commit.sha
+					EasyChat.Print("Running outdated version ", latest_sha)
+				else
+					-- only update version if the last file edit was AFTER the latest commit
+					if commit_time ~= -1 and cur_edit_time > commit_time then
+						-- our latest file edit is different than the one we registered which means we installed a new update
+						cookie.Set("ECLatestSHA", ("%s|%d"):format(commit.sha, cur_edit_time))
+						EasyChat.Print("Running version ", commit.sha)
+					end
+				end
+			elseif commit_time > cur_edit_time then
+				is_outdated = true
+				EasyChat.Print("Running unknown outdated version")
+			else
+				EasyChat.Print("Running version ", latest_sha)
+			end
+		end)
 
 		safe_hook_run("ECInitialized")
 	end
@@ -281,6 +352,25 @@ if SERVER then
 	hook.Add("Initialize", TAG, function()
 		EasyChat.Init()
 		safe_hook_run("ECPostInitialized")
+	end)
+
+	local has_version_warned = false
+	hook.Add("ECOpened", TAG, function(ply)
+		if has_version_warned then return end
+
+		if is_outdated then
+			local msg_components = { color_gray, "The server is running an", color_red, " outdated ", color_gray, "version of", color_red, " EasyChat" }
+			if old_version and new_version then
+				table.Add(msg_components, { color_gray, " ( current: ", color_red, old_version, color_gray, " | newest: ", color_red, new_version, color_gray, ")." })
+			else
+				table.Add(msg_components, { color_gray, "." })
+			end
+
+			table.insert(msg_components, "\nTell the server owner.")
+			EasyChat.PlayerAddText(ply, unpack(msg_components))
+		end
+
+		has_version_warned = true
 	end)
 
 	hook.Add("PlayerCanSeePlayersChat", TAG, EasyChat.PlayerCanSeePlayersChat)
@@ -2379,76 +2469,8 @@ if CLIENT then
 			end
 		end)
 
-		local function retrieve_commit_time(commit)
-			local time = -1
-			if not commit.commit and commit.commit.author and commit.commit.author.date then
-				return time
-			end
 
-			commit.commit.author.date:gsub("(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d)%:(%d%d)%:(%d%d)Z", function(year, month, day, hour, min, sec)
-				time = os.time({
-					day = day, month = month, year = year,
-					hour = hour, min = min, sec = sec
-				})
-			end)
 
-			return time
-		end
-
-		http.Fetch("https://api.github.com/repos/Earu/EasyChat/commits/master", function(body, _, _, code)
-			if code ~= 200 then return end
-			local commit = util.JSONToTable(body)
-			if not commit then return end
-			if not commit.sha then return end
-
-			local commit_time = retrieve_commit_time(commit)
-			local cur_edit_time = file.Time("easychat/easychat.lua","LUA")
-			local latest_sha = cookie.GetString("ECLatestSHA")
-			if not latest_sha then
-				-- we dont want to set the SHA if we have an outdated version
-				if commit_time > cur_edit_time then
-					chat.AddText(
-						color_gray, "Detected ", color_red, "outdated", color_gray, " version for ", color_red, "EasyChat",
-						color_gray, ".\nTell the server owner."
-					)
-					EasyChat.Print("Running unknown outdated version")
-				else
-					cookie.Set("ECLatestSHA", ("%s|%d"):format(commit.sha, cur_edit_time))
-					EasyChat.Print("Setting and running version ", commit.sha)
-				end
-
-				return
-			end
-
-			local latest_sha, last_edit_time = unpack(latest_sha:Split("|"))
-			if latest_sha ~= commit.sha then
-				if tostring(cur_edit_time) == last_edit_time then
-					-- same file as old but different sha, new update but not installed ?
-					chat.AddText(
-						color_gray, "Detected new version for ", color_red, "EasyChat", color_gray, ". Current version: ",
-						color_red, latest_sha, color_gray, "| Newest version: ", color_red, commit.sha,
-						color_gray, ".\nTell the server owner."
-					)
-					EasyChat.Print("Running version ", latest_sha)
-				else
-					-- only update version if the last file edit was AFTER the latest commit
-					if commit_time ~= -1 and cur_edit_time > commit_time then
-						-- our latest file edit is different than the one we registered which means we installed a new update
-						cookie.Set("ECLatestSHA", ("%s|%d"):format(commit.sha, cur_edit_time))
-						cookie.Delete("ECChromiumWarn")
-						EasyChat.Print("Running version ", commit.sha)
-					end
-				end
-			elseif commit_time > cur_edit_time then
-				chat.AddText(
-					color_gray, "Detected ", color_red, "outdated", color_gray, " version for ", color_red, "EasyChat",
-					color_gray, ".\nTell the server owner."
-				)
-				EasyChat.Print("Running unknown outdated version")
-			else
-				EasyChat.Print("Running version ", latest_sha)
-			end
-		end)
 
 		if jit.arch == "x64" and not cookie.GetString("ECChromiumWarn") then
 			-- warn related to chromium regression
