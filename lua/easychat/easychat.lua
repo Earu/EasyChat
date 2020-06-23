@@ -2446,6 +2446,8 @@ if CLIENT then
 					color_gray ".\nTell the server owner."
 				)
 				EasyChat.Print("Running unknown older version")
+			else
+				EasyChat.Print("Running version ", latest_sha)
 			end
 		end)
 
