@@ -2410,7 +2410,7 @@ if CLIENT then
 
 			local commit_time = retrieve_commit_time(commit)
 			local cur_edit_time = file.Time("easychat/easychat.lua","LUA")
-			local lastest_sha, last_edit_time = unpack(latest_sha:Split("|"))
+			local latest_sha, last_edit_time = unpack(latest_sha:Split("|"))
 			if latest_sha ~= commit.sha then
 				if tostring(cur_edit_time) == last_edit_time then
 					-- same file as old but different sha, new update but not installed ?
@@ -2441,7 +2441,7 @@ if CLIENT then
 					color_red, "downgrade",
 					color_gray, " for ",
 					color_red, "EasyChat",
-					color_gray, ". This means the version of EasyChat you are running is ",
+					color_gray, ". This means the version you are running is ",
 					color_red, "outdated",
 					color_gray ".\nTell the server owner."
 				)
