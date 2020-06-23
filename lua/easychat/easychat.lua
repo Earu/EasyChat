@@ -2453,7 +2453,7 @@ if CLIENT then
 			-- warn related to chromium regression
 			EasyChat.AddText(EasyChat.GUI.RichText, color_red, "IF YOU ARE HAVING TROUBLES TO TYPE SOME CHARACTERS PLEASE TYPE", color_white, " easychat_legacy_entry 1 ",
 			color_red, "IN YOUR CONSOLE. THE ISSUE IS DUE TO A REGRESSION IN CHROMIUM. MORE INFO HERE: https://github.com/Facepunch/garrysmod-issues/issues/4414\n"
-			.. "IF YOU STILL HAVE ISSUES PLEASE DO REPORT IT HERE: https://github.com/Earu/EasyChat/issues")
+			.. "IF YOU STILL HAVE ISSUES PLEASE DO REPORT THEM HERE: https://github.com/Earu/EasyChat/issues")
 			cookie.Set("ECChromiumWarn", "1")
 		end
 
