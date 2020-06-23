@@ -2409,7 +2409,7 @@ if CLIENT then
 				if commit_time > cur_edit_time then
 					chat.AddText(
 						color_gray, "Detected ", color_red, "outdated", color_gray, " version for ", color_red, "EasyChat",
-						color_gray ".\nTell the server owner."
+						color_gray, ".\nTell the server owner."
 					)
 					EasyChat.Print("Running unknown outdated version")
 				else
@@ -2442,7 +2442,7 @@ if CLIENT then
 			elseif commit_time > cur_edit_time then
 				chat.AddText(
 					color_gray, "Detected ", color_red, "outdated", color_gray, " version for ", color_red, "EasyChat",
-					color_gray ".\nTell the server owner."
+					color_gray, ".\nTell the server owner."
 				)
 				EasyChat.Print("Running unknown outdated version")
 			else
