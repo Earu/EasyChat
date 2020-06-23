@@ -281,6 +281,7 @@ if SERVER then
 
 	local is_outdated = false
 	local old_version, new_version
+	local is_new_version = false
 	function EasyChat.Init()
 		safe_hook_run("ECPreLoadModules")
 		load_modules()
@@ -306,6 +307,7 @@ if SERVER then
 					is_outdated = true
 					EasyChat.Print("Running unknown outdated version")
 				else
+					is_new_version = true
 					cookie.Set("ECLatestSHA", commit.sha)
 					EasyChat.Print("Setting and running version ", commit.sha)
 				end
@@ -323,6 +325,7 @@ if SERVER then
 					-- only update version if the last file edit was AFTER the latest commit
 					if commit_time ~= -1 and cur_edit_time >= commit_time then
 						-- our latest file edit is different than the one we registered which means we installed a new update
+						is_new_version = true
 						cookie.Set("ECLatestSHA", commit.sha)
 						EasyChat.Print("Running version ", commit.sha)
 					end
@@ -369,6 +372,8 @@ if SERVER then
 
 			table.insert(msg_components, "\nTell the server owner.")
 			EasyChat.PlayerAddText(ply, unpack(msg_components))
+		elseif is_new_version then
+			ply:SendLua([[cookie.Delete("ECChromiumWarn")]])
 		end
 
 		has_version_warned = true
@@ -2469,9 +2474,6 @@ if CLIENT then
 				chathud:StopComponents()
 			end
 		end)
-
-
-
 
 		if jit.arch == "x64" and not cookie.GetString("ECChromiumWarn") then
 			-- warn related to chromium regression
