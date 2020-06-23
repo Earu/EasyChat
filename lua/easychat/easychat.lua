@@ -2401,26 +2401,32 @@ if CLIENT then
 			if not commit then return end
 			if not commit.sha then return end
 
+			local commit_time = retrieve_commit_time(commit)
+			local cur_edit_time = file.Time("easychat/easychat.lua","LUA")
 			local latest_sha = cookie.GetString("ECLatestSHA")
 			if not latest_sha then
-				EasyChat.Print("Setting and running version ", commit.sha)
-				cookie.Set("ECLatestSHA", ("%s|%d"):format(commit.sha, file.Time("easychat/easychat.lua","LUA")))
+				-- we dont want to set the SHA if we have an outdated version
+				if commit_time > cur_edit_time then
+					chat.AddText(
+						color_gray, "Detected ", color_red, "outdated", color_gray, " version for ", color_red, "EasyChat",
+						color_gray ".\nTell the server owner."
+					)
+					EasyChat.Print("Running unknown outdated version")
+				else
+					cookie.Set("ECLatestSHA", ("%s|%d"):format(commit.sha, cur_edit_time))
+					EasyChat.Print("Setting and running version ", commit.sha)
+				end
+
 				return
 			end
 
-			local commit_time = retrieve_commit_time(commit)
-			local cur_edit_time = file.Time("easychat/easychat.lua","LUA")
 			local latest_sha, last_edit_time = unpack(latest_sha:Split("|"))
 			if latest_sha ~= commit.sha then
 				if tostring(cur_edit_time) == last_edit_time then
 					-- same file as old but different sha, new update but not installed ?
 					chat.AddText(
-						color_gray, "New version for ",
-						color_red, "EasyChat",
-						color_gray, " detected. Current version: ",
-						color_red, latest_sha,
-						color_gray, "| Newest version: ",
-						color_red, commit.sha,
+						color_gray, "Detected new version for ", color_red, "EasyChat", color_gray, ". Current version: ",
+						color_red, latest_sha, color_gray, "| Newest version: ", color_red, commit.sha,
 						color_gray, ".\nTell the server owner."
 					)
 					EasyChat.Print("Running version ", latest_sha)
@@ -2433,19 +2439,12 @@ if CLIENT then
 						EasyChat.Print("Running version ", commit.sha)
 					end
 				end
-
-			-- we updated the version number at some point but we back-tracked (old version on a server (?))
 			elseif commit_time > cur_edit_time then
 				chat.AddText(
-					color_gray, "Detected version ",
-					color_red, "downgrade",
-					color_gray, " for ",
-					color_red, "EasyChat",
-					color_gray, ". This means the version you are running is ",
-					color_red, "outdated",
+					color_gray, "Detected ", color_red, "outdated", color_gray, " version for ", color_red, "EasyChat",
 					color_gray ".\nTell the server owner."
 				)
-				EasyChat.Print("Running unknown older version")
+				EasyChat.Print("Running unknown outdated version")
 			else
 				EasyChat.Print("Running version ", latest_sha)
 			end
