@@ -2393,7 +2393,6 @@ if CLIENT then
 			end
 
 			local lastest_sha, last_edit_time = unpack(latest_sha:Split("|"))
-			EasyChat.Print("Running version ", latest_sha)
 			if latest_sha ~= commit.sha then
 				local cur_edit_time = file.Time("easychat/easychat.lua","LUA")
 				if tostring(cur_edit_time) == last_edit_time then
@@ -2406,10 +2405,12 @@ if CLIENT then
 						color_gray, ", newest version: ",
 						color_red, commit.sha
 					)
+					EasyChat.Print("Running version ", latest_sha)
 				else
 					-- our latest file edit is different than the one we registered which means we installed a new update
 					cookie.Set("ECLatestSHA", ("%s|%d"):format(commit.sha, cur_edit_time))
 					cookie.Delete("ECChromiumWarn")
+					EasyChat.Print("Running version ", commit.sha)
 				end
 			end
 		end)
