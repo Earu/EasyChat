@@ -302,8 +302,8 @@ if SERVER then
 			local latest_sha = cookie.GetString("ECLatestSHA")
 			if not latest_sha then
 				-- we dont want to set the SHA if we have an outdated version
-				is_outdated = true
 				if commit_time > cur_edit_time then
+					is_outdated = true
 					EasyChat.Print("Running unknown outdated version")
 				else
 					cookie.Set("ECLatestSHA", commit.sha)
@@ -321,12 +321,13 @@ if SERVER then
 					EasyChat.Print("Running outdated version ", latest_sha)
 				else
 					-- only update version if the last file edit was AFTER the latest commit
-					if commit_time ~= -1 and cur_edit_time > commit_time then
+					if commit_time ~= -1 and cur_edit_time >= commit_time then
 						-- our latest file edit is different than the one we registered which means we installed a new update
 						cookie.Set("ECLatestSHA", ("%s|%d"):format(commit.sha, cur_edit_time))
 						EasyChat.Print("Running version ", commit.sha)
 					end
 				end
+			-- in theory this should never happen but what do I know
 			elseif commit_time > cur_edit_time then
 				is_outdated = true
 				EasyChat.Print("Running unknown outdated version")
