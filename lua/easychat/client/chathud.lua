@@ -888,7 +888,8 @@ end
 chathud:RegisterPart("emote", emote_part, "%:([A-Za-z0-9_]+)%:", {
 	"STEAM%_%d%:%d%:%d+", -- steamids
 	"%d%d:%d%d:%d%d", -- timestamps
-	"^FAILED%: .-%:%d%:" -- luadev chat feedback
+	"^FAILED%: .-%:%d%:", -- luadev chat feedback
+	"%<a?%:.+%:%d+%>", -- discord emotes
 })
 
 --[[-----------------------------------------------------------------------------
