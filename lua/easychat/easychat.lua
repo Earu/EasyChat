@@ -127,6 +127,8 @@ if SERVER then
 	util.AddNetworkString(NET_SET_TYPING)
 	util.AddNetworkString(NET_ADD_TEXT)
 
+	local EC_VERSION_WARNING = CreateConVar("easychat_version_warnings", "1", FCVAR_ARCHIVE, "Should we warn users if EasyChat is outdated")
+
 	function EasyChat.PlayerAddText(ply, ...)
 		net.Start(NET_ADD_TEXT)
 		net.WriteTable({ ... })
@@ -370,7 +372,7 @@ if SERVER then
 	hook.Add("ECOpened", TAG, function(ply)
 		if has_version_warned then return end
 
-		if is_outdated then
+		if is_outdated and EC_VERSION_WARNING:GetBool() then
 			local msg_components = { color_gray, "The server is running an", color_red, " outdated ", color_gray, "version of", color_red, " EasyChat" }
 			if old_version and new_version then
 				table.Add(msg_components, { color_gray, " (current: ", color_red, old_version, color_gray, " | newest: ", color_red, new_version, color_gray, ")." })
