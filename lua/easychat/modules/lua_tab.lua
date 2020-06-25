@@ -395,8 +395,6 @@ if CLIENT then
 			end
 
 			self.LangSelector = self:Add("DComboBox")
-			self.LangSelector:AddChoice("glua", nil, true)
-			self.LangSelector:AddChoice("javascript")
 			self.LangSelector:SetTextColor(color_white)
 			self.LangSelector:SetWide(100)
 			self.LangSelector.DropButton.Paint = drop_button_paint
@@ -703,6 +701,15 @@ if CLIENT then
 				end
 			end)
 
+			editor:AddFunction("gmodinterface", "OnLanguages", function(languages)
+				self.LangSelector:Clear()
+				self.LangSelector:AddChoice("glua", nil, true)
+
+				for _, lang in pairs(languages) do
+					self.LangSelector:AddChoice(lang)
+				end
+			end)
+
 			editor:AddFunction("gmodinterface", "OnReady", function()
 				self.LblRunStatus:SetText(("%sReady"):format((" "):rep(3)))
 				local safe_code = code:JavascriptSafe()
@@ -950,6 +957,11 @@ if CLIENT then
 
 		cookie.Set("EasyChatSmallScreenLuaTab", "1")
 	end
+
+	hook.Add("ECFactoryReset", "EasyChatModuleLuaTab", function()
+		cookie.Delete("EasyChatSmallScreenLuaTab")
+		cookie.Delete("ECLuaTabTheme")
+	end)
 
 	lua_tab:LoadLastSession()
 

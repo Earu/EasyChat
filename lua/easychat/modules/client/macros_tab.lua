@@ -368,6 +368,11 @@ hook.Add("ECMacroDeleted", "EasyChatModuleMacroTab", function()
 	macro_tab:ReloadMacroPanels()
 end)
 
+hook.Add("ECFactoryReset", "EasyChatModuleMacroTab", function()
+	cookie.Delete("EasyChatExampleMacros")
+	cookie.Delete("EasyChatSmallScreenMacrosTab")
+end)
+
 EasyChat.AddTab("Macros", macro_tab, "icon16/brick_edit.png")
 EasyChat.SetFocusForOn("Macros", macro_tab.Search)
 
