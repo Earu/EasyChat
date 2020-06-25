@@ -263,6 +263,7 @@ if CLIENT then
 
 	hook.Add("FinishChat", hook_name, stop_auto_completion)
 	hook.Add("ECTabChanged", hook_name, stop_auto_completion)
+	hook.Add("ECFactoryReset", hook_name, function() EC_CMDS_SUGGESTIONS:SetString(EC_CMDS_SUGGESTIONS:GetDefault()) end)
 end
 
 return "Commands Auto-Completion"

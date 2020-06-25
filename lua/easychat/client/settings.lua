@@ -1,59 +1,67 @@
+local setting_cvars = {}
+
+local function get_cvar(cvar_name)
+	local cvar = GetConVar(cvar_name)
+	table.insert(setting_cvars, cvar)
+	return cvar
+end
+
 -- general
-local EC_ENABLE = GetConVar("easychat_enable")
-local EC_NO_MODULES = GetConVar("easychat_no_modules")
+local EC_ENABLE = get_cvar("easychat_enable")
+local EC_NO_MODULES = get_cvar("easychat_no_modules")
 
 -- teams and colors
-local EC_TEAMS = GetConVar("easychat_teams")
-local EC_TEAMS_COLOR = GetConVar("easychat_teams_colored")
-local EC_PLAYER_COLOR = GetConVar("easychat_players_colored")
-local EC_PLAYER_PASTEL = GetConVar("easychat_pastel")
+local EC_TEAMS = get_cvar("easychat_teams")
+local EC_TEAMS_COLOR = get_cvar("easychat_teams_colored")
+local EC_PLAYER_COLOR = get_cvar("easychat_players_colored")
+local EC_PLAYER_PASTEL = get_cvar("easychat_pastel")
 
 -- misc
-local EC_SECONDARY = GetConVar("easychat_secondary_mode")
-local EC_ALWAYS_LOCAL = GetConVar("easychat_always_local")
-local EC_LOCAL_MSG_DIST = GetConVar("easychat_local_msg_distance")
-local EC_TICK_SOUND = GetConVar("easychat_tick_sound")
-local EC_USE_ME = GetConVar("easychat_use_me")
-local EC_IMAGES = GetConVar("easychat_images")
-local EC_TIMESTAMPS_12 = GetConVar("easychat_timestamps_12")
-local EC_LINKS_CLIPBOARD = GetConVar("easychat_links_to_clipboard")
-local EC_GM_COMPLETE = GetConVar("easychat_gm_complete")
-local EC_NICK_COMPLETE = GetConVar("easychat_nick_complete")
-local EC_NICK_PRIORITIZE = GetConVar("easychat_nick_prioritize")
-local EC_OUT_CLICK_CLOSE = GetConVar("easychat_out_click_close")
+local EC_SECONDARY = get_cvar("easychat_secondary_mode")
+local EC_ALWAYS_LOCAL = get_cvar("easychat_always_local")
+local EC_LOCAL_MSG_DIST = get_cvar("easychat_local_msg_distance")
+local EC_TICK_SOUND = get_cvar("easychat_tick_sound")
+local EC_USE_ME = get_cvar("easychat_use_me")
+local EC_IMAGES = get_cvar("easychat_images")
+local EC_TIMESTAMPS_12 = get_cvar("easychat_timestamps_12")
+local EC_LINKS_CLIPBOARD = get_cvar("easychat_links_to_clipboard")
+local EC_GM_COMPLETE = get_cvar("easychat_gm_complete")
+local EC_NICK_COMPLETE = get_cvar("easychat_nick_complete")
+local EC_NICK_PRIORITIZE = get_cvar("easychat_nick_prioritize")
+local EC_OUT_CLICK_CLOSE = get_cvar("easychat_out_click_close")
 
 -- chatbox
-local EC_USE_DERMASKIN = GetConVar("easychat_use_dermaskin")
-local EC_HISTORY = GetConVar("easychat_history")
-local EC_GLOBAL_ON_OPEN = GetConVar("easychat_global_on_open")
-local EC_FONT = GetConVar("easychat_font")
-local EC_FONT_SIZE = GetConVar("easychat_font_size")
-local EC_TIMESTAMPS = GetConVar("easychat_timestamps")
-local EC_PEEK_COMPLETION = GetConVar("easychat_peek_completion")
-local EC_LEGACY_ENTRY = GetConVar("easychat_legacy_entry")
-local EC_LEGACY_TEXT = GetConVar("easychat_legacy_text")
+local EC_USE_DERMASKIN = get_cvar("easychat_use_dermaskin")
+local EC_HISTORY = get_cvar("easychat_history")
+local EC_GLOBAL_ON_OPEN = get_cvar("easychat_global_on_open")
+local EC_FONT = get_cvar("easychat_font")
+local EC_FONT_SIZE = get_cvar("easychat_font_size")
+local EC_TIMESTAMPS = get_cvar("easychat_timestamps")
+local EC_PEEK_COMPLETION = get_cvar("easychat_peek_completion")
+local EC_LEGACY_ENTRY = get_cvar("easychat_legacy_entry")
+local EC_LEGACY_TEXT = get_cvar("easychat_legacy_text")
 
 -- chathud
-local EC_HUD_FOLLOW = GetConVar("easychat_hud_follow")
-local EC_HUD_TTL = GetConVar("easychat_hud_ttl")
-local EC_HUD_FADELEN = GetConVar("easychat_hud_fadelen")
-local EC_HUD_SMOOTH = GetConVar("easychat_hud_smooth")
-local EC_HUD_TIMESTAMPS = GetConVar("easychat_hud_timestamps")
-local EC_HUD_SH_CLEAR = GetConVar("easychat_hud_sh_clear")
-local EC_HUD_CUSTOM = GetConVar("easychat_hud_custom")
-local EC_HUD_POS_X = GetConVar("easychat_hud_pos_x")
-local EC_HUD_POS_Y = GetConVar("easychat_hud_pos_y")
-local EC_HUD_WIDTH = GetConVar("easychat_hud_width")
-local EC_HUD_FADELEN = GetConVar("easychat_hud_fadelen")
+local EC_HUD_FOLLOW = get_cvar("easychat_hud_follow")
+local EC_HUD_TTL = get_cvar("easychat_hud_ttl")
+local EC_HUD_FADELEN = get_cvar("easychat_hud_fadelen")
+local EC_HUD_SMOOTH = get_cvar("easychat_hud_smooth")
+local EC_HUD_TIMESTAMPS = get_cvar("easychat_hud_timestamps")
+local EC_HUD_SH_CLEAR = get_cvar("easychat_hud_sh_clear")
+local EC_HUD_CUSTOM = get_cvar("easychat_hud_custom")
+local EC_HUD_POS_X = get_cvar("easychat_hud_pos_x")
+local EC_HUD_POS_Y = get_cvar("easychat_hud_pos_y")
+local EC_HUD_WIDTH = get_cvar("easychat_hud_width")
+local EC_HUD_FADELEN = get_cvar("easychat_hud_fadelen")
 
 -- translation
-local EC_TRANSLATE_INC_MSG = GetConVar("easychat_translate_inc_msg")
-local EC_TRANSLATE_INC_SRC_LANG = GetConVar("easychat_translate_inc_source_lang")
-local EC_TRANSLATE_INC_TARGET_LANG = GetConVar("easychat_translate_inc_target_lang")
-local EC_TRANSLATE_OUT_MSG = GetConVar("easychat_translate_out_msg")
-local EC_TRANSLATE_OUT_SRC_LANG = GetConVar("easychat_translate_out_source_lang")
-local EC_TRANSLATE_OUT_TARGET_LANG = GetConVar("easychat_translate_out_target_lang")
-local EC_TRANSLATE_API_KEY = GetConVar("easychat_translate_api_key")
+local EC_TRANSLATE_INC_MSG = get_cvar("easychat_translate_inc_msg")
+local EC_TRANSLATE_INC_SRC_LANG = get_cvar("easychat_translate_inc_source_lang")
+local EC_TRANSLATE_INC_TARGET_LANG = get_cvar("easychat_translate_inc_target_lang")
+local EC_TRANSLATE_OUT_MSG = get_cvar("easychat_translate_out_msg")
+local EC_TRANSLATE_OUT_SRC_LANG = get_cvar("easychat_translate_out_source_lang")
+local EC_TRANSLATE_OUT_TARGET_LANG = get_cvar("easychat_translate_out_target_lang")
+local EC_TRANSLATE_API_KEY = get_cvar("easychat_translate_api_key")
 
 local function create_default_settings()
 	local settings = EasyChat.Settings
@@ -140,6 +148,42 @@ local function create_default_settings()
 
 		local setting_disable_ec = settings:AddSetting(category_name, "action", "Disable EasyChat")
 		setting_disable_ec.DoClick = function() EC_ENABLE:SetBool(false) end
+
+		local function delete_dir(dir_path)
+			local files, folders = file.Find(dir_path .. "/*", "DATA")
+			for _, f in pairs(files) do
+				local file_path = dir_path .. "/" .. f
+				file.Delete(file_path)
+			end
+
+			for _, folder in pairs(folders) do
+				delete_dir(dir_path .. "/" .. folder)
+			end
+
+			file.Delete(dir_path)
+		end
+
+		local function factory_reset()
+			Derma_Query(
+				"Are you sure you want to factory reset EasyChat? All your data will be deleted.",
+				"Factory Reset",
+				"Reset", function()
+					hook.Run("ECFactoryReset")
+
+					for _, cvar in pairs(setting_cvars) do
+						cvar:SetString(cvar:GetDefault())
+					end
+
+					delete_dir("easychat")
+					timer.Simple(0, function() EasyChat.Reload() end)
+				end,
+				"Cancel"
+			)
+		end
+
+		local setting_factory_reset = settings:AddSetting(category_name, "action", "Factory Reset")
+		setting_factory_reset.DoClick = factory_reset
+		concommand.Add("easychat_factory_reset", factory_reset, nil, "Factory reset EasyChat")
 	end
 
 	-- chatbox settings
@@ -922,7 +966,7 @@ local function add_chathud_markup_settings()
 
 	local tag_options = {}
 	for part_name, _ in pairs(EasyChat.ChatHUD.Parts) do
-		local cvar = GetConVar("easychat_tag_" .. part_name)
+		local cvar = get_cvar("easychat_tag_" .. part_name)
 		if cvar then
 			tag_options[cvar] = ("%s tags"):format(part_name)
 		end
