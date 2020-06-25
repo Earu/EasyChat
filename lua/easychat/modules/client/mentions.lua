@@ -228,6 +228,15 @@ local function filter_match(text)
 	return false
 end
 
+local function reset_cvar(cvar) cvar:SetString(cvar:GetDefault()) end
+hook.Add("ECFactoryReset", "EasyChatModuleMention", function()
+	reset_cvar(EC_MENTION)
+	reset_cvar(EC_MENTION_COLOR)
+	reset_cvar(EC_MENTION_FILTERS)
+	reset_cvar(EC_MENTION_FLASH)
+	reset_cvar(EC_MENTION_SHOW_MISSED)
+end)
+
 hook.Add("OnPlayerChat", "EasyChatModuleMention", function(ply, msg, is_team, is_dead, is_local)
 	if not EC_MENTION:GetBool() then return end
 
