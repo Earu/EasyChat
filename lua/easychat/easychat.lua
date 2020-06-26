@@ -782,7 +782,8 @@ if CLIENT then
 			"https?://[^%s%\"%>%<]+",
 			"ftp://[^%s%\"%>%<]+",
 			"steam://[^%s%\"%>%<]+",
-			"www%.[^%s%\"]+%.[^%s%\"]+"
+			"www%.[^%s%\"]+%.[^%s%\"]+",
+			"STEAM_%d%:%d%:%d+"
 		}
 
 		for _, pattern in ipairs(patterns) do
@@ -2168,8 +2169,20 @@ if CLIENT then
 			ply_menu:AddSpacer()
 
 			ply_menu:AddOption("Cancel", function() ply_menu:Remove() end)
-
 			ply_menu:Open()
+		end
+
+		local function handle_steam_id(steam_id)
+			local id_menu = DermaMenu()
+			local steam_id64 = util.SteamIDTo64(steam_id)
+			id_menu:AddOption("Open Steam Profile", function() EasyChat.OpenURL("https://steamcommunity.com/profiles/" .. steam_id64) end)
+			id_menu:AddOption("Copy SteamID", function() SetClipboardText(steam_id) end)
+			id_menu:AddOption("Copy SteamID64", function() SetClipboardText(steam_id64) end)
+
+			id_menu:AddSpacer()
+
+			id_menu:AddOption("Cancel", function() id_menu:Remove() end)
+			id_menu:Open()
 		end
 
 		function EasyChat.GUI.RichText:ActionSignal(name, value)
@@ -2177,6 +2190,12 @@ if CLIENT then
 			local steam_id, ply_name = value:match("^ECPlayerActions%: (STEAM_%d%:%d%:%d+)|(.+)")
 			if steam_id and ply_name then
 				handle_player_actions(steam_id, ply_name)
+				return
+			end
+
+			local steam_id = value:match("^STEAM_%d%:%d%:%d+")
+			if steam_id then
+				handle_steam_id(steam_id)
 				return
 			end
 
