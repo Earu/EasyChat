@@ -29,6 +29,18 @@ if SERVER then
 	local config = default_config
 	EasyChat.Config = config
 
+	concommand.Add("easychat_purge_config", function()
+		config.OverrideClientSettings = true
+		config.UserGroups = {}
+		config.Titles = {}
+		config.Tabs = {}
+
+		config:Save()
+		config:Send(player.GetAll(), true)
+
+		EasyChat.Print("Purged server config")
+	end, nil, "Purges the server's EasyChat config")
+
 	util.AddNetworkString(NET_SEND_CONFIG)
 	util.AddNetworkString(NET_WRITE_USER_GROUP)
 	util.AddNetworkString(NET_DEL_USER_GROUP)
