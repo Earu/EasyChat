@@ -18,8 +18,8 @@ local LOOKUP_TABLES = {
 local lookup = {}
 for _, url in ipairs(LOOKUP_TABLES) do
     http.Fetch(url, function(body)
-        local tbl = util.JSONToTable(body)
-        if not tbl then
+        local tbl = util.JSONToTable(body) or {}
+        if not tbl.emotes then
             EasyChat.Print(true, "Could not get the lookup table for Twitch")
             return
         end
