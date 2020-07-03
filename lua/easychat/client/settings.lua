@@ -81,10 +81,10 @@ local function create_default_settings()
 			[EC_PLAYER_PASTEL] = "Pastellize player colors",
 			[EC_TICK_SOUND] = "Tick sound on new messages",
 			[EC_USE_ME] = "Replaces your name in the chat with \"me\"",
-			[EC_GM_COMPLETE] = "Uses the default gamemode name auto-completion",
+			[EC_GM_COMPLETE] = "Use the default gamemode auto-completion",
 			[EC_NICK_COMPLETE] = "Auto-complete player names",
-			[EC_NICK_PRIORITIZE] = "Prioritize player nick completion over everything else",
-			[EC_OUT_CLICK_CLOSE] = "Clicking outside the chat closes it",
+			[EC_NICK_PRIORITIZE] = "Prioritize player name completions over everything else",
+			[EC_OUT_CLICK_CLOSE] = "Close the chat when clicking away",
 		})
 
 		settings:AddSpacer(category_name)
@@ -559,7 +559,7 @@ local function create_default_settings()
 		settings:AddSpacer(category_name)
 
 		settings:AddConvarSettingsSet(category_name, {
-			[EC_HUD_FOLLOW] = "Follow chatbox window",
+			[EC_HUD_FOLLOW] = "Follow the chatbox window",
 			[EC_HUD_TIMESTAMPS] = "Display timestamps",
 			[EC_HUD_SMOOTH] = "Smooth message transitions",
 			[EC_HUD_SH_CLEAR] = "Clear the tags upon saying \'sh\'",
