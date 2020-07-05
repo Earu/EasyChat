@@ -1443,22 +1443,23 @@ if CLIENT then
 			global_insert_color_change(team_color.r, team_color.g, team_color.b, 255)
 			table.insert(data, team_color)
 
+			local stripped_ply_nick = EasyChat.GetProperNick(ply)
 			if EC_PLAYER_PASTEL:GetBool() then
-				local nick = EasyChat.GetProperNick(ply)
-				local pastel_color = EasyChat.PastelizeNick(nick)
+				local pastel_color = EasyChat.PastelizeNick(stripped_ply_nick)
 				global_insert_color_change(pastel_color.r, pastel_color.g, pastel_color.b, 255)
 				table.insert(data, pastel_color)
 			end
 
 			EasyChat.GUI.RichText:InsertClickableTextStart(("ECPlayerActions: %s|%s")
-				:format(ply:SteamID(), EasyChat.GetProperNick(ply)))
+				:format(ply:SteamID(), stripped_ply_nick))
 
 			local lp = LocalPlayer()
 			if IsValid(lp) and lp == ply and EC_USE_ME:GetBool() then
 				global_append_text("me")
 				table.insert(data, "me")
 			else
-				local nick_data = global_append_nick(ply:Nick())
+				local nick = EasyChat.Config.AllowTagsInNames and ply:Nick() or stripped_ply_nick
+				local nick_data = global_append_nick(nick)
 				table.Add(data, nick_data)
 			end
 
@@ -2650,7 +2651,13 @@ if CLIENT then
 			end
 
 			table.insert(msg_components, color_white)
-			table.insert(msg_components, ": " .. msg)
+
+			if EasyChat.Config.AllowTagsInMessages then
+				table.insert(msg_components, ": " .. msg)
+			else
+				local stripped_msg = ec_markup and ec_markup.Parse(msg):GetText() or msg
+				table.insert(msg_components, ": " .. stripped_msg)
+			end
 
 			chat.AddText(unpack(msg_components))
 
