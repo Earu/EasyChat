@@ -5,10 +5,14 @@ local NET_DEL_USER_GROUP = "EASY_CHAT_SERVER_CONFIG_DEL_USER_GROUP"
 local NET_WRITE_TAB = "EASY_CHAT_SERVER_CONFIG_WRITE_TAB"
 local NET_WRITE_PLY_TITLE = "EASY_CHAT_SERVER_CONFIG_WRITE_PLY_TITLE"
 local NET_DEL_PLY_TITLE = "EASY_CHAT_SERVER_CONFIG_DEL_PLY_TITLE"
-local NET_WRITE_SETTING_OVERRIDE = "EASYCHAT_SERVER_SETTING_WRITE_OVERRIDE"
+local NET_WRITE_SETTING_OVERRIDE = "EASY_CHAT_SERVER_SETTING_WRITE_OVERRIDE"
+local NET_WRITE_TAGS_IN_NAMES = "EASY_CHAT_TAGS_IN_NAMES"
+local NET_WRITE_TAGS_IN_MESSAGES = "EASY_CHAT_TAGS_IN_MESSAGES"
 
 local default_config = {
 	OverrideClientSettings = true,
+	AllowTagsInNames = true,
+	AllowTagsInMessages = true,
 	UserGroups = {
 		--[[["players"] = {
 			EmoteName = "user",
@@ -31,6 +35,8 @@ if SERVER then
 
 	concommand.Add("easychat_purge_config", function()
 		config.OverrideClientSettings = true
+		config.AllowTagsInNames = true
+		config.AllowTagsInMessages = true
 		config.UserGroups = {}
 		config.Titles = {}
 		config.Tabs = {}
@@ -48,6 +54,8 @@ if SERVER then
 	util.AddNetworkString(NET_WRITE_PLY_TITLE)
 	util.AddNetworkString(NET_DEL_PLY_TITLE)
 	util.AddNetworkString(NET_WRITE_SETTING_OVERRIDE)
+	util.AddNetworkString(NET_WRITE_TAGS_IN_NAMES)
+	util.AddNetworkString(NET_WRITE_TAGS_IN_MESSAGES)
 
 	local CONFIG_PATH = "easychat/server_config.json"
 	function config:Save()
@@ -118,9 +126,15 @@ if SERVER then
 		config:Send(ply, false)
 	end)
 
-	net.Receive(NET_WRITE_USER_GROUP, function(_, ply)
-		if not ply:IsAdmin() then return end
+	local function restricted_receive(net_string, callback)
+		net.Receive(net_string, function(len, ply)
+			if not ply:IsAdmin() then return end
 
+			callback(len, ply)
+		end)
+	end
+
+	restricted_receive(NET_WRITE_USER_GROUP, function(_, ply)
 		local user_group = net.ReadString()
 		local tag = net.ReadString()
 		local emote_name = net.ReadString()
@@ -139,9 +153,7 @@ if SERVER then
 		EasyChat.Print(("%s changed the usergroup prefix for: %s"):format(ply, user_group))
 	end)
 
-	net.Receive(NET_DEL_USER_GROUP, function(_, ply)
-		if not ply:IsAdmin() then return end
-
+	restricted_receive(NET_DEL_USER_GROUP, function(_, ply)
 		local user_group = net.ReadString()
 		config.UserGroups[user_group] = nil
 
@@ -150,9 +162,7 @@ if SERVER then
 		EasyChat.Print(("%s deleted the usergroup prefix for: %s"):format(ply, user_group))
 	end)
 
-	net.Receive(NET_WRITE_TAB, function(_, ply)
-		if not ply:IsAdmin() then return end
-
+	restricted_receive(NET_WRITE_TAB, function(_, ply)
 		local tab_name = net.ReadString()
 		local is_allowed = net.ReadBool()
 		config.Tabs[tab_name] = is_allowed
@@ -162,9 +172,7 @@ if SERVER then
 		EasyChat.Print(("%s changed tab \"%s\" restrictions to: %s"):format(ply, tab_name, is_allowed and "allowed" or "restricted"))
 	end)
 
-	net.Receive(NET_WRITE_PLY_TITLE, function(_, ply)
-		if not ply:IsAdmin() then return end
-
+	restricted_receive(NET_WRITE_PLY_TITLE, function(_, ply)
 		local steam_id = net.ReadString()
 		local title = net.ReadString()
 		config.Titles[steam_id] = title
@@ -176,9 +184,7 @@ if SERVER then
 		EasyChat.Print(("%s changed title for: %s (%s)"):format(ply, IsValid(target) and target or steam_id, title))
 	end)
 
-	net.Receive(NET_DEL_PLY_TITLE, function(_, ply)
-		if not ply:IsAdmin() then return end
-
+	restricted_receive(NET_DEL_PLY_TITLE, function(_, ply)
 		local steam_id = net.ReadString()
 		config.Titles[steam_id] = nil
 
@@ -189,14 +195,28 @@ if SERVER then
 		EasyChat.Print(("%s removed title for: %s"):format(ply, IsValid(target) and target or steam_id))
 	end)
 
-	net.Receive(NET_WRITE_SETTING_OVERRIDE, function(_, ply)
-		if not ply:IsAdmin() then return end
-
+	restricted_receive(NET_WRITE_SETTING_OVERRIDE, function(_, ply)
 		local should_override = net.ReadBool()
 		config.OverrideClientSettings = should_override
 		config:Save()
 		config:Send(player.GetAll(), true)
 		EasyChat.Print(("%s changed settings override to: %s"):format(ply, should_override))
+	end)
+
+	restricted_receive(NET_WRITE_TAGS_IN_NAMES, function(_, ply)
+		local allow_tags = net.ReadBool()
+		config.AllowTagsInNames = allow_tags
+		config:Save()
+		config:Send(player.GetAll(), true)
+		EasyChat.Print(("%s changed usage of tags in player names to: %s"):format(ply, allow_tags))
+	end)
+
+	restricted_receive(NET_WRITE_TAGS_IN_MESSAGES, function(_, ply)
+		local allow_tags = net.ReadBool()
+		config.AllowTagsInMessages = allow_tags
+		config:Save()
+		config:Send(player.GetAll(), true)
+		EasyChat.Print(("%s changed usage of tags in messages to: %s"):format(ply, allow_tags))
 	end)
 end
 
@@ -331,6 +351,26 @@ if CLIENT then
 
 		net.Start(NET_WRITE_SETTING_OVERRIDE)
 		net.WriteBool(should_override or false)
+		net.SendToServer()
+
+		return true
+	end
+
+	function config:WriteTagsInNames(allow)
+		if not LocalPlayer():IsAdmin() then return false, ADMIN_WARN end
+
+		net.Start(NET_WRITE_TAGS_IN_NAMES)
+		net.WriteBool(allow or false)
+		net.SendToServer()
+
+		return true
+	end
+
+	function config:WriteTagsInMessages(allow)
+		if not LocalPlayer():IsAdmin() then return false, ADMIN_WARN end
+
+		net.Start(NET_WRITE_TAGS_IN_MESSAGES)
+		net.WriteBool(allow or false)
 		net.SendToServer()
 
 		return true
