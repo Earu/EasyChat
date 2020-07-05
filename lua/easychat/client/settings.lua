@@ -547,6 +547,37 @@ local function create_default_settings()
 		local category_name = "Chat HUD"
 		settings:AddCategory(category_name)
 
+		local setting_tags_names = settings:AddSetting(category_name, "boolean", "Allow tags in names")
+		local setting_tags_msgs = settings:AddSetting(category_name, "boolean", "Allow tags in messages")
+
+		setting_tags_names:SetChecked(EasyChat.Config.AllowTagsInNames)
+		setting_tags_msgs:SetChecked(EasyChat.Config.AllowTagsInMessages)
+
+		setting_tags_names.OnChange = function(self, enabled)
+			local succ, err = EasyChat.Config:WriteTagsInNames(enabled)
+			if not succ then
+				notification.AddLegacy(err, NOTIFY_ERROR, 3)
+				surface.PlaySound("buttons/button11.wav")
+				self:SetChecked(EasyChat.Config.AllowTagsInNames)
+			end
+		end
+
+		setting_tags_msgs.OnChange = function(self, enabled)
+			local succ, err = EasyChat.Config:WriteTagsInMessages(enabled)
+			if not succ then
+				notification.AddLegacy(err, NOTIFY_ERROR, 3)
+				surface.PlaySound("buttons/button11.wav")
+				self:SetChecked(EasyChat.Config.AllowTagsInMessages)
+			end
+		end
+
+		hook.Add("ECServerConfigUpdate", setting_tags_msgs, function(_, config)
+			setting_tags_names:SetChecked(config.AllowTagsInNames)
+			setting_tags_msgs:SetChecked(config.AllowTagsInMessages)
+		end)
+
+		settings:AddSpacer(category_name)
+
 		local setting_font_editor = settings:AddSetting(category_name, "action", "Font Editor")
 		setting_font_editor.DoClick = function()
 			local editor = vgui.Create("ECChatHUDFontEditor")
