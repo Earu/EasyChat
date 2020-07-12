@@ -140,7 +140,7 @@ if SERVER then
 	end
 
 	function EasyChat.SendGlobalMessage(ply, str, is_team, is_local)
-		local msg = gamemode.Call("PlayerSay", ply, str, is_team, is_local)
+		local msg = hook.Run("PlayerSay", ply, str, is_team, is_local)
 		if type(msg) ~= "string" then return end
 
 		msg = EasyChat.ExtendedStringTrim(msg)
@@ -161,7 +161,7 @@ if SERVER then
 		add_to_filter(ply)
 		for _, listener in ipairs(player.GetAll()) do
 			if listener ~= ply then
-				local can_see = gamemode.Call("PlayerCanSeePlayersChat", msg, is_team, listener, ply, is_local)
+				local can_see = hook.Run("PlayerCanSeePlayersChat", msg, is_team, listener, ply, is_local)
 				if can_see == true then -- can be another type than a bool
 					add_to_filter(listener)
 				elseif can_see == false then -- can be nil so need to check for false
@@ -755,8 +755,8 @@ if CLIENT then
 		EasyChat.GUI.TextEntry.HistoryPos = 0 -- reset history also
 
 		gui.EnableScreenClicker(false)
-		gamemode.Call("ChatTextChanged", "")
-		gamemode.Call("FinishChat")
+		hook.Run("ChatTextChanged", "")
+		hook.Run("FinishChat")
 
 		if not no_user_data_save then
 			save_chatbox_data()
@@ -2084,7 +2084,7 @@ if CLIENT then
 		end
 
 		function EasyChat.GUI.TextEntry:OnValueChange(text)
-			gamemode.Call("ChatTextChanged", text)
+			hook.Run("ChatTextChanged", text)
 
 			-- this needs to be reset here for peeking to work properly
 			self.TabbedOnce = false
@@ -2550,7 +2550,7 @@ if CLIENT then
 				end
 			end)
 		else
-			gamemode.Call("OnPlayerChat", ply, msg, is_team, is_dead, is_local)
+			hook.Run("OnPlayerChat", ply, msg, is_team, is_dead, is_local)
 		end
 	end)
 
