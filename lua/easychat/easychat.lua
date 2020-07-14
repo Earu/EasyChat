@@ -2188,6 +2188,13 @@ if CLIENT then
 
 		function EasyChat.GUI.RichText:ActionSignal(name, value)
 			if name ~= "TextClicked" then return end
+
+			local interaction_value = value:match("^CustomInteraction: (.*)")
+			if interaction_value then
+				hook.Run("ECInteraction", interaction_value)
+				return
+			end
+
 			local steam_id, ply_name = value:match("^ECPlayerActions%: (STEAM_%d%:%d%:%d+)|(.+)")
 			if steam_id and ply_name then
 				handle_player_actions(steam_id, ply_name)
@@ -2201,6 +2208,12 @@ if CLIENT then
 			end
 
 			EasyChat.OpenURL(value)
+		end
+
+		function EasyChat.GUI.RichText:AppendClickableText(text, value)
+			self:InsertClickableTextStart(("CustomInteraction: %s"):format(value))
+			append_text(self, text)
+			self:InsertClickableTextEnd()
 		end
 
 		local invalid_chat_keys = {
