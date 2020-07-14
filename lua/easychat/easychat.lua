@@ -2186,12 +2186,14 @@ if CLIENT then
 			id_menu:Open()
 		end
 
+		local clickable_callback_id = 0
+		local clickable_callbacks = {}
 		function EasyChat.GUI.RichText:ActionSignal(name, value)
 			if name ~= "TextClicked" then return end
 
-			local interaction_value = value:match("^CustomInteraction: (.*)")
-			if interaction_value then
-				hook.Run("ECInteraction", interaction_value)
+			local interaction_id = tonumber(value:match("^CustomInteraction: (%d+)"))
+			if interaction_id and clickable_callbacks[interaction_id] then
+				clickable_callbacks[interaction_id]()
 				return
 			end
 
@@ -2210,10 +2212,13 @@ if CLIENT then
 			EasyChat.OpenURL(value)
 		end
 
-		function EasyChat.GUI.RichText:AppendClickableText(text, value)
-			self:InsertClickableTextStart(("CustomInteraction: %s"):format(value))
+		function EasyChat.GUI.RichText:AppendClickableText(text, callback)
+			self:InsertClickableTextStart(("CustomInteraction: %d"):format(clickable_callback_id))
 			append_text(self, text)
 			self:InsertClickableTextEnd()
+
+			clickable_callbacks[clickable_callback_id] = callback
+			clickable_callback_id = clickable_callback_id + 1
 		end
 
 		local invalid_chat_keys = {
