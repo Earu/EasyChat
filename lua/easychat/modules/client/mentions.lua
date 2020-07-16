@@ -248,7 +248,7 @@ hook.Add("OnPlayerChat", "EasyChatModuleMention", function(ply, msg, is_team, is
 
 	local original_msg = msg
 
-	msg = msg:lower()
+	msg = ec_markup.Parse(msg):GetText():lower()
 	local nick_mention = msg:match(EasyChat.GetProperNick(lp):lower():PatternSafe())
 	local is_nick_match = not msg:match("^[%!%.%/]") and nick_mention
 	if filter_match(original_msg) or (is_nick_match and #nick_mention > 1) then
