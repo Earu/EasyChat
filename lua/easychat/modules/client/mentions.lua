@@ -227,7 +227,8 @@ function mentions:IsMention(msg)
 	local stripped_msg = ec_markup.Parse(msg):GetText():lower()
 	if filter_match(stripped_msg) then return true end
 
-	local nick_mention = stripped_msg:match(EasyChat.GetProperNick(LocalPlayer()):lower():PatternSafe())
+	local ply_name = EasyChat.GetProperNick(LocalPlayer()):lower():PatternSafe()
+	local nick_mention = stripped_msg:match(ply_name)
 	local is_nick_match = not stripped_msg:match("^[%!%.%/]") and nick_mention
 	return is_nick_match and #nick_mention > 1
 end
@@ -259,7 +260,7 @@ end)
 
 hook.Add("OnPlayerChat", "EasyChatModuleMention", function(ply, msg, is_team, is_dead, is_local)
 	if not mentions:IsValidPlayer(ply) then return end
-	if not mentions:IsMention(ply, msg) then return end
+	if not mentions:IsMention(msg) then return end
 
 	if EC_MENTION_FLASH:GetBool() then
 		system.FlashWindow()
