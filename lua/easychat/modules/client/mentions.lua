@@ -225,9 +225,11 @@ function mentions:IsMention(msg)
 	if not EC_MENTION:GetBool() then return false end
 
 	local stripped_msg = ec_markup.Parse(msg):GetText():lower()
+	if filter_match(stripped_msg) then return true end
+
 	local nick_mention = stripped_msg:match(EasyChat.GetProperNick(lp):lower():PatternSafe())
 	local is_nick_match = not stripped_msg:match("^[%!%.%/]") and nick_mention
-	return filter_match(stripped_msg) or (is_nick_match and #nick_mention > 1)
+	return is_nick_match and #nick_mention > 1
 end
 
 local old_focus = true
