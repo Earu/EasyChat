@@ -196,22 +196,6 @@ function mentions:AddMissedMention(data)
 	EasyChat.AddText(mentions_frame.RichText, unpack(data))
 end
 
-local old_focus = true
-hook.Add("Think", "EasyChatModuleMention", function()
-	local has_focus = system.HasFocus()
-	if old_focus ~= has_focus and has_focus then
-		mentions:ShowMissedMentions()
-	end
-
-	old_focus = has_focus
-end)
-
-function GAMEMODE:ECPlayerMention(ply, msg, is_team, is_dead, is_local, data)
-	if not system.HasFocus() then
-		mentions:AddMissedMention(data)
-	end
-end
-
 local function filter_match(text)
 	if not EC_MENTION_FILTERS:GetBool() then return false end
 
@@ -228,6 +212,40 @@ local function filter_match(text)
 	return false
 end
 
+function mentions:IsValidPlayer(ply)
+	local lp = LocalPlayer()
+	if not IsValid(lp) then return false end
+	if ply == lp then return false end
+	if IsValid(ply) and ply:IsBot() then return false end
+
+	return true
+end
+
+function mentions:IsMention(msg)
+	if not EC_MENTION:GetBool() then return false end
+
+	local stripped_msg = ec_markup.Parse(msg):GetText():lower()
+	local nick_mention = stripped_msg:match(EasyChat.GetProperNick(lp):lower():PatternSafe())
+	local is_nick_match = not stripped_msg:match("^[%!%.%/]") and nick_mention
+	return filter_match(stripped_msg) or (is_nick_match and #nick_mention > 1)
+end
+
+local old_focus = true
+hook.Add("Think", "EasyChatModuleMention", function()
+	local has_focus = system.HasFocus()
+	if old_focus ~= has_focus and has_focus then
+		mentions:ShowMissedMentions()
+	end
+
+	old_focus = has_focus
+end)
+
+function GAMEMODE:ECPlayerMention(ply, msg, is_team, is_dead, is_local, data)
+	if not system.HasFocus() then
+		mentions:AddMissedMention(data)
+	end
+end
+
 local function reset_cvar(cvar) cvar:SetString(cvar:GetDefault()) end
 hook.Add("ECFactoryReset", "EasyChatModuleMention", function()
 	reset_cvar(EC_MENTION)
@@ -238,54 +256,42 @@ hook.Add("ECFactoryReset", "EasyChatModuleMention", function()
 end)
 
 hook.Add("OnPlayerChat", "EasyChatModuleMention", function(ply, msg, is_team, is_dead, is_local)
-	if not EC_MENTION:GetBool() then return end
+	if not mentions:IsValidPlayer(ply) then return end
+	if not mentions:IsMention(ply, msg) then return end
 
-	-- could be run too early
-	local lp = LocalPlayer()
-	if not IsValid(lp) then return end
-	if ply == lp then return end
-	if IsValid(ply) and ply:IsBot() then return end
-
-	local original_msg = msg
-
-	msg = ec_markup.Parse(msg):GetText():lower()
-	local nick_mention = msg:match(EasyChat.GetProperNick(lp):lower():PatternSafe())
-	local is_nick_match = not msg:match("^[%!%.%/]") and nick_mention
-	if filter_match(original_msg) or (is_nick_match and #nick_mention > 1) then
-		if EC_MENTION_FLASH:GetBool() then
-			system.FlashWindow()
-		end
-
-		EasyChat.FlashTab("Global")
-
-		local msg_components = {}
-		if is_dead then
-			EasyChat.AddDeadTag(msg_components)
-		end
-
-		if is_team then
-			EasyChat.AddTeamTag(msg_components)
-		end
-
-		if is_local then
-			EasyChat.AddLocalTag(msg_components)
-		end
-
-		if IsValid(ply) then
-			EasyChat.AddNameTags(ply, msg_components)
-		end
-
-		table.insert(msg_components, ply)
-		table.insert(msg_components, color_white)
-		table.insert(msg_components, ": ")
-
-		table.insert(msg_components, mentions:GetColor())
-		table.insert(msg_components, original_msg)
-		chat.AddText(unpack(msg_components))
-
-		hook.Run("ECPlayerMention", ply, msg, is_team, is_dead, is_local, msg_components)
-		return true -- hide chat message
+	if EC_MENTION_FLASH:GetBool() then
+		system.FlashWindow()
 	end
+
+	EasyChat.FlashTab("Global")
+
+	local msg_components = {}
+	if is_dead then
+		EasyChat.AddDeadTag(msg_components)
+	end
+
+	if is_team then
+		EasyChat.AddTeamTag(msg_components)
+	end
+
+	if is_local then
+		EasyChat.AddLocalTag(msg_components)
+	end
+
+	if IsValid(ply) then
+		EasyChat.AddNameTags(ply, msg_components)
+	end
+
+	table.insert(msg_components, ply)
+	table.insert(msg_components, color_white)
+	table.insert(msg_components, ": ")
+
+	table.insert(msg_components, mentions:GetColor())
+	table.insert(msg_components, original_msg)
+	chat.AddText(unpack(msg_components))
+
+	hook.Run("ECPlayerMention", ply, msg, is_team, is_dead, is_local, msg_components)
+	return true -- hide chat message
 end)
 
 return "Mentions"
