@@ -281,7 +281,7 @@ if SERVER then
 		if not commit.files then return end
 	end
 
-	local DEFAULT_FILE_PATH = "lua/easychat/easychat.lua"
+	local DEFAULT_FILE_PATH = "easychat/easychat.lua"
 	local is_outdated = false
 	local old_version, new_version
 	local is_new_version = false
@@ -297,16 +297,16 @@ if SERVER then
 			if not commit.sha then return end
 
 			local commit_time = retrieve_commit_time(commit)
-			local cur_edit_time = file.Time(DEFAULT_FILE_PATH, "GAME")
+			local cur_edit_time = file.Time(DEFAULT_FILE_PATH, "LUA")
 			if istable(commit.files) and #commit.files > 0 then
 				local changed_file = commit.files[1]
-				local changed_file_path = commit.files[1].filename or DEFAULT_FILE_PATH
+				local changed_file_path = (commit.files[1].filename or DEFAULT_FILE_PATH):gsub("^lua/", "")
 				if changed_file.status == "modified" then
-					cur_edit_time = file.Time(changed_file_path, "GAME")
+					cur_edit_time = file.Time(changed_file_path, "LUA")
 				elseif changed_file.status == "added" then
-					cur_edit_time = file.Exists(changed_file_path, "GAME") and commit_time + 1 or 0
+					cur_edit_time = file.Exists(changed_file_path, "LUA") and commit_time + 1 or 0
 				elseif changed_file.status == "removed" then
-					cur_edit_time = file.Exists(changed_file_path, "GAME") and 0 or commit_time + 1
+					cur_edit_time = file.Exists(changed_file_path, "LUA") and 0 or commit_time + 1
 				end
 			end
 
