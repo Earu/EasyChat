@@ -288,7 +288,7 @@ if SERVER then
 		return false
 	end
 
-	local DEFAULT_FILE_PATH = "lua/asychat/easychat.lua"
+	local DEFAULT_FILE_PATH = "lua/easychat/easychat.lua"
 	local is_outdated = false
 	local old_version, new_version
 	local is_new_version = false
