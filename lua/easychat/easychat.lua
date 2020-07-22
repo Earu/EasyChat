@@ -277,18 +277,26 @@ if SERVER then
 		return time
 	end
 
-	local function retrive_file_changes(commit)
-		if not commit.files then return end
+	local WORKSHOP_ID = "1182471500"
+	local function is_workshop_install()
+		for _, addon_data in ipairs(engine.GetAddons()) do
+			if addon_data.wsid == WORKSHOP_ID then
+				return true
+			end
+		end
+
+		return false
 	end
 
-	local DEFAULT_FILE_PATH = "easychat/easychat.lua"
+	local DEFAULT_FILE_PATH = "lua/asychat/easychat.lua"
 	local is_outdated = false
 	local old_version, new_version
 	local is_new_version = false
-	function EasyChat.Init()
-		safe_hook_run("ECPreLoadModules")
-		load_modules()
-		safe_hook_run("ECPostLoadModules")
+	local function check_version()
+		if is_workshop_install() then
+			EasyChat.Print("Running workshop version")
+			return
+		end
 
 		http.Fetch("https://api.github.com/repos/Earu/EasyChat/commits/master", function(body, _, _, code)
 			if code ~= 200 then return end
@@ -297,16 +305,16 @@ if SERVER then
 			if not commit.sha then return end
 
 			local commit_time = retrieve_commit_time(commit)
-			local cur_edit_time = file.Time(DEFAULT_FILE_PATH, "LUA")
+			local cur_edit_time = file.Time(DEFAULT_FILE_PATH, "GAME")
 			if istable(commit.files) and #commit.files > 0 then
 				local changed_file = commit.files[1]
-				local changed_file_path = (commit.files[1].filename or DEFAULT_FILE_PATH):gsub("^lua/", "")
+				local changed_file_path = commit.files[1].filename or DEFAULT_FILE_PATH
 				if changed_file.status == "modified" then
-					cur_edit_time = file.Time(changed_file_path, "LUA")
+					cur_edit_time = file.Time(changed_file_path, "GAME")
 				elseif changed_file.status == "added" then
-					cur_edit_time = file.Exists(changed_file_path, "LUA") and commit_time + 1 or 0
+					cur_edit_time = file.Exists(changed_file_path, "GAME") and commit_time + 1 or 0
 				elseif changed_file.status == "removed" then
-					cur_edit_time = file.Exists(changed_file_path, "LUA") and 0 or commit_time + 1
+					cur_edit_time = file.Exists(changed_file_path, "GAME") and 0 or commit_time + 1
 				end
 			end
 
@@ -348,7 +356,13 @@ if SERVER then
 				EasyChat.Print("Running version ", latest_sha)
 			end
 		end)
+	end
 
+	function EasyChat.Init()
+		safe_hook_run("ECPreLoadModules")
+		load_modules()
+		safe_hook_run("ECPostLoadModules")
+		check_version()
 		safe_hook_run("ECInitialized")
 	end
 
