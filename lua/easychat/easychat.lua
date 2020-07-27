@@ -2174,6 +2174,20 @@ if CLIENT then
 				end
 			end):SetImage("icon16/shield.png")
 
+			local ply = player.GetBySteamID(steam_id)
+			if IsValid(ply) then
+				ply_menu:AddOption("Set Name", function()
+					local frame = EasyChat.AskForInput("Set Name", function(name)
+						local succ, err = EasyChat.Config:WritePlayerName(ply, name)
+						if not succ then
+							notification.AddLegacy(err, NOTIFY_ERROR, 3)
+							surface.PlaySound("buttons/button11.wav")
+						end
+					end, false)
+					frame.TextEntry:SetText(ply:Nick())
+				end):SetImage("icon16/shield.png")
+			end
+
 			ply_menu:AddSpacer()
 
 			ply_menu:AddOption("Open Steam Profile", function() EasyChat.OpenURL("https://steamcommunity.com/profiles/" .. steam_id64) end)
@@ -2652,6 +2666,8 @@ if CLIENT then
 				EasyChat.GUI.TextEntry:TriggerBlink("TOO BIG")
 				return false
 			end
+
+			return true
 		end
 
 		-- this is for the best
