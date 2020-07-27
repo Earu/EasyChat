@@ -8,6 +8,7 @@ local NET_DEL_PLY_TITLE = "EASY_CHAT_SERVER_CONFIG_DEL_PLY_TITLE"
 local NET_WRITE_SETTING_OVERRIDE = "EASY_CHAT_SERVER_SETTING_WRITE_OVERRIDE"
 local NET_WRITE_TAGS_IN_NAMES = "EASY_CHAT_TAGS_IN_NAMES"
 local NET_WRITE_TAGS_IN_MESSAGES = "EASY_CHAT_TAGS_IN_MESSAGES"
+local NET_WRITE_PLY_NAME = "EASY_CHAT_WRITE_PLY_NAME"
 
 local default_config = {
 	OverrideClientSettings = true,
@@ -56,6 +57,7 @@ if SERVER then
 	util.AddNetworkString(NET_WRITE_SETTING_OVERRIDE)
 	util.AddNetworkString(NET_WRITE_TAGS_IN_NAMES)
 	util.AddNetworkString(NET_WRITE_TAGS_IN_MESSAGES)
+	util.AddNetworkString(NET_WRITE_PLY_NAME)
 
 	local CONFIG_PATH = "easychat/server_config.json"
 	function config:Save()
@@ -218,6 +220,42 @@ if SERVER then
 		config:Send(player.GetAll(), true)
 		EasyChat.Print(("%s changed usage of tags in messages to: %s"):format(ply, allow_tags))
 	end)
+
+	local NAMING_FUNCTIONS = { "SetNick", "setNick", "SetRPName", "setRPName" }
+	local WARN_NAME_FAIL = "Cannot set name for specified player: "
+	local GM = GAMEMODE or GM
+	function GM:ECPlayerNameChange(ply, target_ply, old_name, new_name)
+		local is_set = false
+		if DarkRP and target_ply.setRPName then
+			target_ply:setRPName(new_name)
+			is_set = true
+		else
+			-- fallbacks ?
+			for _, func_name in ipairs(NAMING_FUNCTIONS) do
+				if target_ply[func_name] then
+					local succ, err = pcall(target_ply[func_name], target_ply, new_name)
+					if not succ then
+						EasyChat.Warn(ply, WARN_NAME_FAIL .. err)
+					end
+
+					is_set = true
+					break
+				end
+			end
+		end
+
+		if not is_set then
+			EasyChat.Warn(ply, WARN_NAME_FAIL .. "Could not find any compatible addon to do so.")
+		end
+	end
+
+	restricted_receive(NET_WRITE_PLY_NAME, function(_, ply)
+		local target_ply = net.ReadEntity()
+		local name = net.ReadString()
+		if not IsValid(target_ply) then return end
+
+		hook.Run("ECPlayerNameChange", ply, target_ply, target_ply:Nick(), name)
+	end)
 end
 
 if CLIENT then
@@ -371,6 +409,19 @@ if CLIENT then
 
 		net.Start(NET_WRITE_TAGS_IN_MESSAGES)
 		net.WriteBool(allow or false)
+		net.SendToServer()
+
+		return true
+	end
+
+	function config:WritePlayerName(ply, name)
+		if not LocalPlayer():IsAdmin() then return false, ADMIN_WARN end
+		if not IsValid(ply) then return false, "Invalid Player" end
+		if #name > 32 then return false, "Name Too Long" end
+
+		net.Start(NET_WRITE_PLY_NAME)
+		net.WriteEntity(ply)
+		net.WriteString(name)
 		net.SendToServer()
 
 		return true
