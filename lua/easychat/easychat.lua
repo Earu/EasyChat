@@ -1509,7 +1509,7 @@ if CLIENT then
 			file_handles.output:Seek(0)
 
 			local pre_content = file_handles.output:Size() >= 10000
-				and "...\n" .. file_handles.output:Read(10000 - #content)
+				and "...\n" .. (file_handles.output:Read(10000 - #content) or "")
 				or file_handles.output:Read(10000)
 
 			file_handles.input:Write(pre_content and pre_content .. content or content)
