@@ -172,7 +172,7 @@ function macro_processor:RegisterMacro(macro_name, macro)
 	file.Write(("%s/%s.txt"):format(self.Directory, macro_name), to_save)
 	self.Macros[macro_name] = macro
 
-	hook.Run("ECMacroRegistered", macro_name, macro)
+	EasyChat.SafeHookRun("ECMacroRegistered", macro_name, macro)
 	return true
 end
 
@@ -184,7 +184,7 @@ function macro_processor:DeleteMacro(macro_name)
 
 	self.Macros[macro_name] = nil
 
-	hook.Run("ECMacroDeleted", macro_name)
+	EasyChat.SafeHookRun("ECMacroDeleted", macro_name)
 end
 
 function macro_processor:LoadSavedMacros()
