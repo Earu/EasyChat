@@ -118,6 +118,7 @@ local function safe_hook_run(hook_name, ...)
 	if not succ then return nil end
 	return a, b, c, d, e, f
 end
+EasyChat.SafeHookRun = safe_hook_run
 
 include("easychat/server_config.lua")
 
@@ -377,8 +378,37 @@ if SERVER then
 		end
 	end
 
+	local NAMING_FUNCTIONS = { "SetNick", "setNick", "SetRPName", "setRPName" }
+	local WARN_NAME_FAIL = "Cannot set name for specified player: "
 	hook.Add("Initialize", TAG, function()
 		EasyChat.Init()
+
+		-- default behavior for changing a player's name from the chat
+		function GAMEMODE:ECPlayerNameChange(ply, target_ply, old_name, new_name)
+			local is_set = false
+			if DarkRP and target_ply.setRPName then
+				target_ply:setRPName(new_name)
+				is_set = true
+			else
+				-- fallbacks ?
+				for _, func_name in ipairs(NAMING_FUNCTIONS) do
+					if target_ply[func_name] then
+						local succ, err = pcall(target_ply[func_name], target_ply, new_name)
+						if not succ then
+							EasyChat.Warn(ply, WARN_NAME_FAIL .. err)
+						end
+
+						is_set = true
+						break
+					end
+				end
+			end
+
+			if not is_set then
+				EasyChat.Warn(ply, WARN_NAME_FAIL .. "Could not find any compatible addon to do so.")
+			end
+		end
+
 		safe_hook_run("ECPostInitialized")
 	end)
 

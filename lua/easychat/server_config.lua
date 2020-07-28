@@ -67,7 +67,7 @@ if SERVER then
 
 		-- util.TableToJSON ignores functions so its fine
 		file.Write(CONFIG_PATH, util.TableToJSON(self, true))
-		hook.Run("ECServerConfigUpdate", self)
+		EasyChat.SafeHookRun("ECServerConfigUpdate", self)
 	end
 
 	-- make this as user proof as possible
@@ -221,40 +221,12 @@ if SERVER then
 		EasyChat.Print(("%s changed usage of tags in messages to: %s"):format(ply, allow_tags))
 	end)
 
-	local NAMING_FUNCTIONS = { "SetNick", "setNick", "SetRPName", "setRPName" }
-	local WARN_NAME_FAIL = "Cannot set name for specified player: "
-	local GM = GAMEMODE or GM
-	function GM:ECPlayerNameChange(ply, target_ply, old_name, new_name)
-		local is_set = false
-		if DarkRP and target_ply.setRPName then
-			target_ply:setRPName(new_name)
-			is_set = true
-		else
-			-- fallbacks ?
-			for _, func_name in ipairs(NAMING_FUNCTIONS) do
-				if target_ply[func_name] then
-					local succ, err = pcall(target_ply[func_name], target_ply, new_name)
-					if not succ then
-						EasyChat.Warn(ply, WARN_NAME_FAIL .. err)
-					end
-
-					is_set = true
-					break
-				end
-			end
-		end
-
-		if not is_set then
-			EasyChat.Warn(ply, WARN_NAME_FAIL .. "Could not find any compatible addon to do so.")
-		end
-	end
-
 	restricted_receive(NET_WRITE_PLY_NAME, function(_, ply)
 		local target_ply = net.ReadEntity()
 		local name = net.ReadString()
 		if not IsValid(target_ply) then return end
 
-		hook.Run("ECPlayerNameChange", ply, target_ply, target_ply:Nick(), name)
+		EasyChat.SafeHookRun("ECPlayerNameChange", ply, target_ply, target_ply:Nick(), name)
 	end)
 end
 
@@ -303,7 +275,7 @@ if CLIENT then
 		end
 
 		process_tabs_config()
-		hook.Run("ECServerConfigUpdate", EasyChat.Config)
+		EasyChat.SafeHookRun("ECServerConfigUpdate", EasyChat.Config)
 	end)
 
 	function config:WriteUserGroup(user_group, tag, emote_name, emote_size, emote_provider)
