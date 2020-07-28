@@ -2267,8 +2267,8 @@ if CLIENT then
 			end
 
 			local steam_id, ply_name = value:match("^ECPlayerActions%: (.+)|(.+)")
-			if steam_id == "NULL" or not steam_id:match("STEAM_%d%:%d%:%d+") then return end
 			if steam_id and ply_name then
+				if steam_id == "NULL" or not steam_id:match("STEAM_%d%:%d%:%d+") then return end
 				handle_player_actions(steam_id, ply_name)
 				return
 			end
