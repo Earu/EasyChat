@@ -243,7 +243,7 @@ local EDITOR = {
 		local json = util.TableToJSON(data, true)
 		file.Write(file_path, json)
 
-		hook.Run("ECHUDFontChanged", data)
+		EasyChat.SafeHookRun("ECHUDFontChanged", data)
 		notification.AddLegacy("Successfully applied your font settings", NOTIFY_HINT, 5)
 	end,
 	ResetFontData = function(self)
