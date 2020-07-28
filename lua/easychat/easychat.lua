@@ -2221,9 +2221,20 @@ if CLIENT then
 			ply_menu:AddSpacer()
 
 			ply_menu:AddOption("Open Steam Profile", function() EasyChat.OpenURL("https://steamcommunity.com/profiles/" .. steam_id64) end)
-			ply_menu:AddOption("Copy Name", function() SetClipboardText(ply_name) end)
-			ply_menu:AddOption("Copy SteamID", function() SetClipboardText(steam_id) end)
-			ply_menu:AddOption("Copy SteamID64", function() SetClipboardText(steam_id64) end)
+			ply_menu:AddOption("Copy Name", function()
+				SetClipboardText(ply_name)
+				notification.AddLegacy("Copied player name", NOTIFY_GENERIC, 3)
+			end)
+
+			ply_menu:AddOption("Copy SteamID", function()
+				SetClipboardText(steam_id)
+				notification.AddLegacy("Copied player SteamID", NOTIFY_GENERIC, 3)
+			end)
+
+			ply_menu:AddOption("Copy SteamID64", function()
+				SetClipboardText(steam_id64)
+				notification.AddLegacy("Copied player SteamID64", NOTIFY_GENERIC, 3)
+			end)
 
 			ply_menu:AddSpacer()
 
@@ -2255,7 +2266,8 @@ if CLIENT then
 				return
 			end
 
-			local steam_id, ply_name = value:match("^ECPlayerActions%: (STEAM_%d%:%d%:%d+)|(.+)")
+			local steam_id, ply_name = value:match("^ECPlayerActions%: (.+)|(.+)")
+			if steam_id == "NULL" or not steam_id:match("STEAM_%d%:%d%:%d+") then return end
 			if steam_id and ply_name then
 				handle_player_actions(steam_id, ply_name)
 				return
