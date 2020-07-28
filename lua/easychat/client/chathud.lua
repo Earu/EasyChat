@@ -44,8 +44,6 @@ local math_EaseInOut = _G.math.EaseInOut
 local cam_PopModelMatrix = _G.cam.PopModelMatrix
 local cam_PushModelMatrix = _G.cam.PushModelMatrix
 
-local hook_run = _G.hook.Run
-
 local string_explode = _G.string.Explode
 local string_gmatch = _G.string.gmatch
 local string_replace = _G.string.Replace
@@ -1347,8 +1345,6 @@ end
 chathud.DrawContext = chathud:CreateDrawContext()
 
 function chathud:Draw()
-	--if hook_run("HUDShouldDraw", "CHudChat") == false then return end
-
 	self.DrawContext.DrawStart = RealTime()
 	for _, line in ipairs(self.Lines) do
 		line:Draw(self.DrawContext)

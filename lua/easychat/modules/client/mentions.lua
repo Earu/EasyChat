@@ -293,7 +293,7 @@ hook.Add("OnPlayerChat", "EasyChatModuleMention", function(ply, msg, is_team, is
 	table.insert(msg_components, msg)
 	chat.AddText(unpack(msg_components))
 
-	hook.Run("ECPlayerMention", ply, msg, is_team, is_dead, is_local, msg_components)
+	EasyChat.SafeHookRun("ECPlayerMention", ply, msg, is_team, is_dead, is_local, msg_components)
 	return true -- hide chat message
 end)
 

@@ -168,7 +168,7 @@ local function create_default_settings()
 				"Are you sure you want to factory reset EasyChat? All your data will be deleted.",
 				"Factory Reset",
 				"Reset", function()
-					hook.Run("ECFactoryReset")
+					EasyChat.SafeHookRun("ECFactoryReset")
 
 					for _, cvar in pairs(setting_cvars) do
 						cvar:SetString(cvar:GetDefault())
