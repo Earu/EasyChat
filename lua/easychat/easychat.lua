@@ -2434,16 +2434,17 @@ if CLIENT then
 
 		local chat_text_types = {
 			none = true, -- fallback
-			--darkrp = true -- darkrp compat most likely? Note: prints twice
-			--namechange = true, -- annoying
-			--servermsg = true,  -- annoying
-			--teamchange = true, -- annoying
-			--chat = true,       -- deprecated
+			-- darkrp = true -- darkrp compat most likely? Note: prints twice
+			-- namechange = true, -- annoying
+			-- servermsg = true, -- annoying
+			-- teamchange = true, -- annoying
+			-- chat = true, -- deprecated
+			-- joinleave = true, -- we handle it ourselves
 		}
 		hook.Add("ChatText", TAG, function(index, name, text, type)
 			if not chat_text_types[type] then return end
 
-			chat.AddText(text)
+			chat.AddText(color_white, text)
 		end)
 
 		local chathud_call = false
