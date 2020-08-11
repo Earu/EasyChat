@@ -50,11 +50,15 @@ hook.Add("HUDPaint", "pac_in_editor", function()
 			if ply.pac_editor_cam_pos then
 				if not IsValid(ply.pac_editor_camera) then
 					ply.pac_editor_camera = ClientsideModel("models/tools/camera/camera.mdl")
-					ply.pac_editor_camera:SetModelScale(0.25,0)
-					local ent = ply.pac_editor_camera
-					ply:CallOnRemove("pac_editor_camera", function()
-						SafeRemoveEntity(ent)
-					end)
+
+					-- if there's some server lag it's possible that it gets deleted or something apparently
+					if IsValid(ply.pac_editor_camera) then
+						ply.pac_editor_camera:SetModelScale(0.25,0)
+						local ent = ply.pac_editor_camera
+						ply:CallOnRemove("pac_editor_camera", function()
+							SafeRemoveEntity(ent)
+						end)
+					end
 				end
 
 				local ent = ply.pac_editor_camera
