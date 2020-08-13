@@ -2450,10 +2450,8 @@ if CLIENT then
 		local chathud_call = false
 		hook.Add("HUDShouldDraw", TAG, function(hud_element)
 			if hud_element ~= "CHudChat" then return end
-			if EC_HUD_CUSTOM:GetBool() then
-				if chathud_call then return end
-				return false
-			end
+			if chathud_call then return end
+			if EC_HUD_CUSTOM:GetBool() then return false end
 		end)
 
 		local function chathud_get_bounds(x, y, w, h)
