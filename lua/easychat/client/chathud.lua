@@ -71,6 +71,7 @@ local SHADOW_FONT_BLURSIZE = 1
 local SMOOTHING_SPEED = 1000
 local MAX_TEXT_OFFSET = 400
 local MAX_IMAGE_WIDTH = 250
+local MAX_IMAGE_HEIGHT = 400
 
 -- this is used later for creating shadow fonts properly
 local engine_fonts_info = {}
@@ -906,6 +907,7 @@ function image_part:Ctor(url)
 	local browser = vgui.Create("DHTML")
 	browser:SetAllowLua(true)
 	browser:SetSize(0, 0)
+	browser:SetPaintedManually(true)
 	browser:AddFunction("Img", "Size", function(w, h)
 		self.ImgWidth = w
 		self.ImgHeight = h
@@ -914,6 +916,10 @@ function image_part:Ctor(url)
 		if perc > 1 then -- rescale
 			self.ImgWidth = self.ImgWidth / perc
 			self.ImgHeight = self.ImgHeight / perc
+		end
+
+		if self.ImgHeight > MAX_IMAGE_HEIGHT then
+			self.ImgHeight = MAX_IMAGE_HEIGHT
 		end
 
 		self.HUD:InvalidateLayout()
@@ -929,15 +935,6 @@ function image_part:Ctor(url)
 			<img src="]] .. url .. [[" style="width: 100%;" onload="Img.Size(this.naturalWidth, this.naturalHeight);" onerror="Img.Remove();"/>
 		</body>
 	</html>]])
-
-	browser.Paint = function()
-		local wep = LocalPlayer():GetActiveWeapon()
-		if IsValid(wep) then
-			if wep:GetClass() == "gmod_camera" then
-				self:OnRemove()
-			end
-		end
-	end
 
 	-- last measure in case its not called somehow?
 	timer.Simple(self.HUD.FadeTime + 4, function()
@@ -1006,6 +1003,11 @@ function image_part:Draw(ctx)
 		self.Browser:SetSize(self.ImgWidth, self.ImgHeight)
 		self.Browser:SetPos(x, y)
 	end
+
+	local wep = LocalPlayer():GetActiveWeapon()
+	if IsValid(wep) and wep:GetClass() == "gmod_camera" then return end
+
+	self.Browser:PaintManual()
 end
 
 chathud:RegisterPart("image", image_part)
