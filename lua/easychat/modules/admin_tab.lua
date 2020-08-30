@@ -113,22 +113,22 @@ if CLIENT then
 				end
 			end
 
-			self.RichText = self:Add("RichText")
+			self.RichText = self:Add("RichTextLegacy")
 			self.RichText.HistoryName = "admin"
+
 			if not EasyChat.UseDermaSkin then
 				self.RichText:InsertColorChange(255, 255, 255, 255)
 			end
+
 			self.RichText.PerformLayout = function(self)
 				self:SetFontInternal("EasyChatFont")
+				self:SetUnderlineFont("EasyChatFont")
 				if not EasyChat.UseDermaSkin then
 					self:SetFGColor(EasyChat.TextColor)
 				end
 			end
-			self.RichText.ActionSignal = function(self, name, value)
-				if name == "TextClicked" then
-					EasyChat.OpenURL(value)
-				end
-			end
+
+			self.RichText.ActionSignal = EasyChat.GUI.RichText.ActionSignal
 			self.RichText:Dock(FILL)
 			self.RichText:DockMargin(0, 0, 0, 5)
 
