@@ -439,6 +439,7 @@ end
 
 if CLIENT then
 	local NO_COLOR = Color(0, 0, 0, 0)
+	local LINK_COLOR = Color(68, 151, 206)
 	local UPLOADING_TEXT = "[uploading image...]"
 
 	-- general
@@ -1150,9 +1151,20 @@ if CLIENT then
 			else
 				local url = text:sub(start_pos, end_pos)
 				append_text(richtext, text:sub(1, start_pos - 1))
+
+				local previous_color
+				if richtext.GetLastColorChange then
+					previous_color = richtext:GetLastColorChange()
+					richtext:InsertColorChange(LINK_COLOR)
+				end
+
 				richtext:InsertClickableTextStart(url)
 				append_text(richtext, url)
 				richtext:InsertClickableTextEnd()
+
+				if previous_color then
+					richtext:InsertColorChange(previous_color)
+				end
 
 				if EC_LINKS_CLIPBOARD:GetBool() and richtext:IsVisible() then
 					SetClipboardText(url)
@@ -1219,7 +1231,6 @@ if CLIENT then
 			return false
 		end
 
-		local link_color = Color(68, 151, 206)
 		local function global_append_text_url(text)
 			local data = {}
 
@@ -1231,7 +1242,7 @@ if CLIENT then
 				table.Add(data, global_append_text(text:sub(1, start_pos - 1)))
 
 				local previous_color = EasyChat.GUI.RichText:GetLastColorChange()
-				EasyChat.GUI.RichText:InsertColorChange(link_color)
+				EasyChat.GUI.RichText:InsertColorChange(LINK_COLOR)
 
 				if is_image_url(url) then
 					EasyChat.GUI.RichText:InsertClickableTextStart(url)
@@ -1261,7 +1272,7 @@ if CLIENT then
 
 				EasyChat.GUI.RichText:InsertColorChange(previous_color)
 
-				table.insert(data, link_color)
+				table.insert(data, LINK_COLOR)
 				table.insert(data, url)
 				table.insert(data, previous_color)
 
@@ -1595,12 +1606,17 @@ if CLIENT then
 							richtext:InsertColorChange(pastel_color.r, pastel_color.g, pastel_color.b, 255)
 						end
 
+						richtext:InsertClickableTextStart(("ECPlayerActions: %s|%s")
+							:format(arg:SteamID(), nick))
+
 						local lp = LocalPlayer()
 						if IsValid(lp) and lp == arg and EC_USE_ME:GetBool() then
 							append_text(richtext, "me")
 						else
 							append_text(richtext, nick)
 						end
+
+						richtext:InsertClickableTextEnd()
 					end
 				elseif is_color(arg) then
 					richtext:InsertColorChange(arg.r, arg.g, arg.b, isnumber(arg.a) and arg.a or 255)
