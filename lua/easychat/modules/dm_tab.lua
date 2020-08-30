@@ -118,22 +118,22 @@ if CLIENT then
 			if self.Chats[ply] then return end
 
 			local id64 = ply:SteamID64()
-			local richtext = self:Add("RichText")
+			local richtext = self:Add("RichTextLegacy")
 			richtext.HistoryName = id64 -- so we save our chat history with that player
+
 			if not EasyChat.UseDermaSkin then
 				richtext:InsertColorChange(255, 255, 255, 255)
 			end
+
 			richtext.PerformLayout = function(self)
 				self:SetFontInternal("EasyChatFont")
+				self:SetUnderlineFont("EasyChatFont")
 				if not EasyChat.UseDermaSkin then
 					self:SetFGColor(EasyChat.TextColor)
 				end
 			end
-			richtext.ActionSignal = function(self, name, value)
-				if name == "TextClicked" then
-					EasyChat.OpenURL(value)
-				end
-			end
+
+			richtext.ActionSignal = EasyChat.GUI.RichText.ActionSignal
 			richtext:Dock(FILL)
 			richtext:DockMargin(0, 0, 0, 5)
 			richtext:Hide()

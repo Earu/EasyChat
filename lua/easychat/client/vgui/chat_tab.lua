@@ -1,4 +1,5 @@
 include("easychat/client/vgui/richtextx.lua")
+include("easychat/client/vgui/richtext_legacy.lua")
 include("easychat/client/vgui/textentryx.lua")
 include("easychat/client/vgui/textentry_legacy.lua")
 include("easychat/client/vgui/emote_picker.lua")
@@ -11,27 +12,13 @@ local MAIN_TAB = {
 	Init = function(self)
 		local can_use_cef = EasyChat.CanUseCEFFeatures()
 		local use_new_richtext = (EC_LEGACY_TEXT and not EC_LEGACY_TEXT:GetBool()) or not EC_LEGACY_TEXT
-		self.RichText = self:Add((can_use_cef and use_new_richtext) and "RichTextX" or "RichText")
-		if not can_use_cef or not use_new_richtext then
-			-- compat for RichTextX
-			self.RichText.AppendImageURL = function(self, url)
-			end
-		end
+		self.RichText = self:Add((can_use_cef and use_new_richtext) and "RichTextX" or "RichTextLegacy")
 
 		self.RichText.PerformLayout = function(self)
 			self:SetFontInternal("EasyChatFont")
 			self:SetUnderlineFont("EasyChatFont")
 			self:SetFGColor(EasyChat.UseDermaSkin and EasyChat.TextColor or Color(0, 0, 0, 255))
 		end
-
-		local last_color = self.RichText:GetFGColor()
-		local old_insert_color_change = self.RichText.InsertColorChange
-		self.RichText.InsertColorChange = function(self, r, g, b, a)
-			last_color = istable(r) and Color(r.r, r.g, r.b) or Color(r, g, b)
-			old_insert_color_change(self, last_color.r, last_color.g, last_color.b, last_color.a)
-		end
-
-		self.RichText.GetLastColorChange = function(self) return last_color end
 
 		self.BtnSwitch = self:Add("DButton")
 		self.BtnSwitch:SetText("Say")
