@@ -243,12 +243,16 @@ if CLIENT then
 
 	local function process_tabs_config()
 		local newly_allowed_tabs = {}
-		for tab_name, is_allowed in pairs(EasyChat.Config.Tabs) do
-			local tab_data = EasyChat.GetTab(tab_name)
-			if tab_data and not is_allowed then
-				EasyChat.RemoveTab(tab_name)
-			elseif not tab_data and is_allowed then
-				table.insert(newly_allowed_tabs, tab_name)
+
+		-- nil if EasyChat is disabled maybe?
+		if EasyChat.GetTab then
+			for tab_name, is_allowed in pairs(EasyChat.Config.Tabs) do
+				local tab_data = EasyChat.GetTab(tab_name)
+				if tab_data and not is_allowed then
+					EasyChat.RemoveTab(tab_name)
+				elseif not tab_data and is_allowed then
+					table.insert(newly_allowed_tabs, tab_name)
+				end
 			end
 		end
 
