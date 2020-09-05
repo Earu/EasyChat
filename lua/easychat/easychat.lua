@@ -956,6 +956,78 @@ if CLIENT then
 		return frame
 	end
 
+	function EasyChat.AskForValidation(title, message, data)
+		data = data or {}
+
+		local frame = EasyChat.CreateFrame()
+		frame:SetTitle(title)
+		frame:SetDrawOnTop(true)
+		frame:SetSize(200, 200)
+		frame:SetDraggable(false)
+
+		if EasyChat.GUI and IsValid(EasyChat.GUI.ChatBox) then
+			local x, y, w, h = EasyChat.GUI.ChatBox:GetBounds()
+			frame:SetPos(x + w / 2 - 100, y + h / 2 - 55)
+		else
+			frame:Center()
+		end
+
+		local lbl = frame:Add("DLabel")
+		lbl:SetWrap(true)
+		lbl:SetFont("EasyChatFont")
+		lbl:SetText(message)
+		lbl:SetTall(125)
+		lbl:Dock(TOP)
+		frame.Message = lbl
+
+		local btn_ok = frame:Add("DButton")
+		btn_ok:SetText(data.ok_text or "Ok")
+		btn_ok:Dock(LEFT)
+		btn_ok:SetSize(90, 50)
+		btn_ok.DoClick = function()
+			if data.callback then
+				data.callback()
+			end
+			frame:Close()
+		end
+		frame.OkButton = btn_ok
+
+		local btn_cancel = frame:Add("DButton")
+		btn_cancel:SetText(data.cancel_text or "Cancel")
+		btn_cancel:Dock(RIGHT)
+		btn_cancel:SetSize(90, 50)
+		btn_cancel.DoClick = function() frame:Close() end
+		frame.CancelButton = btn_cancel
+
+		if not EasyChat.UseDermaSkin then
+			lbl:SetColor(color_white)
+			btn_ok:SetColor(color_white)
+			btn_cancel:SetColor(color_white)
+
+			btn_ok.Paint = function(self, w, h)
+				surface.SetDrawColor(data.ok_btn_color or EasyChat.TabColor)
+				if self:IsHovered() then
+					surface.DrawRect(0, 0, w, h)
+				else
+					surface.DrawOutlinedRect(0, 0, w, h)
+				end
+			end
+
+			btn_cancel.Paint = function(self, w, h)
+				surface.SetDrawColor(data.cancel_btn_color or EasyChat.TabColor)
+				if self:IsHovered() then
+					surface.DrawRect(0, 0, w, h)
+				else
+					surface.DrawOutlinedRect(0, 0, w, h)
+				end
+			end
+		end
+
+		frame:MakePopup()
+
+		return frame
+	end
+
 	local BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 	function EasyChat.DecodeBase64(base64)
 		if util.Base64Decode then
@@ -2143,6 +2215,8 @@ if CLIENT then
 			end)
 		end
 
+		-- the amount of chars before we start dropping trying to autocomplete and processing the text further
+		local TEXT_LAG_THRESHOLD = 2000
 		function EasyChat.GUI.TextEntry:OnValueChange(text)
 			hook.Run("ChatTextChanged", text)
 
@@ -2151,7 +2225,7 @@ if CLIENT then
 
 			if not EC_PEEK_COMPLETION:GetBool() then return end
 
-			if EasyChat.IsStringEmpty(text) then
+			if #text > TEXT_LAG_THRESHOLD or EasyChat.IsStringEmpty(text) then
 				self.TabCompletion = nil
 				self:SetCompletionText(nil)
 				return
