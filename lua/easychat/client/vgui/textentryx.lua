@@ -200,9 +200,7 @@ function PANEL:UpdateFromHistory()
 	local text = self.History[pos]
 	text = text or ""
 
-	self:SetText(text)
-	self:OnChange()
-	self:OnValueChange(text)
+	self:SetValue(text)
 	self.HistoryPos = pos
 end
 
@@ -236,7 +234,15 @@ function PANEL:SetText(text)
 	self.CurrentValue = text
 	self:QueueJavascript(([[TEXT_ENTRY.value = `%s`;]]):format(text:JavascriptSafe()))
 end
-PANEL.SetValue = PANEL.SetText
+
+function PANEL:SetValue(text)
+	self:SetText(text)
+	self:OnChange()
+	self:OnValueChange(text)
+end
+
+-- this cannot work due to the limitations of the lua -> js interop
+function PANEL:AllowInput(last_char) end
 
 local function color_to_css(col)
 	return ("rgba(%d, %d, %d, %d)"):format(col.r, col.g, col.b, col.a / 255)
