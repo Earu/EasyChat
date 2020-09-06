@@ -126,11 +126,13 @@ local function create_mention_panel()
 	btn_ok:DockMargin(5, 5, 5, 5)
 	btn_ok.DoClick = function() frame:Close() end
 
-	local richtext = frame:Add("RichText")
+	local richtext = frame:Add("RichTextLegacy")
 	richtext:Dock(FILL)
 	richtext:DockMargin(5, 5, 5, 5)
+	richtext.ActionSignal = EasyChat.GUI.RichText.ActionSignal
 	richtext.PerformLayout = function(self)
 		self:SetFontInternal("EasyChatFont")
+		self:SetUnderlineFont("EasyChatFont")
 		if not EasyChat.UseDermaSkin then
 			self:SetFGColor(EasyChat.TextColor)
 		end
