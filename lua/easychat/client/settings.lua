@@ -164,20 +164,23 @@ local function create_default_settings()
 		end
 
 		local function factory_reset()
-			Derma_Query(
-				"Are you sure you want to factory reset EasyChat? All your data will be deleted.",
+			EasyChat.AskForValidation(
 				"Factory Reset",
-				"Reset", function()
-					EasyChat.SafeHookRun("ECFactoryReset")
+				"Are you sure you want to factory reset EasyChat? All your data will be deleted.",
+				{
+					ok_text = "Reset",
+					ok_btn_color = Color(255, 0, 0),
+					callback = function()
+						EasyChat.SafeHookRun("ECFactoryReset")
 
-					for _, cvar in pairs(setting_cvars) do
-						cvar:SetString(cvar:GetDefault())
+						for _, cvar in pairs(setting_cvars) do
+							cvar:SetString(cvar:GetDefault())
+						end
+
+						delete_dir("easychat")
+						timer.Simple(0, function() EasyChat.Reload() end)
 					end
-
-					delete_dir("easychat")
-					timer.Simple(0, function() EasyChat.Reload() end)
-				end,
-				"Cancel"
+				}
 			)
 		end
 
