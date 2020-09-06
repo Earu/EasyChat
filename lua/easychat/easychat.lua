@@ -958,6 +958,9 @@ if CLIENT then
 
 	function EasyChat.AskForValidation(title, message, data)
 		data = data or {}
+		if isfunction(data) then
+			data = { callback = data }
+		end
 
 		local frame = EasyChat.CreateFrame()
 		frame:SetTitle(title)
