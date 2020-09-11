@@ -11,7 +11,12 @@ function PANEL:Init()
 	self.GetLastColorChange = function(self) return last_color end
 end
 
+-- compat for RichTextX
 function PANEL:AppendImageURL(url)
+end
+
+-- compat for RichTextX
+function PANEL:OnTextHover(text_value, is_hover)
 end
 
 vgui.Register("RichTextLegacy", PANEL, "RichText")
