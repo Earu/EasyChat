@@ -61,6 +61,8 @@ local trim_lookup = {
 	[utf8.char(0x3000)] = "   ", -- IDEOGRAPHIC SPACE
 	[utf8.char(0x03164)] = "  ", -- HANGUL FILLER
 
+	[utf8.char(0x0e00aa)] = "",  -- UNKNOWN CHAR MOST FONTS RENDER AS NOTHING
+
 	-- control chars
 	[utf8.char(0x03)] = "^C" -- END OF TEXT
 }
