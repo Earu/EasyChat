@@ -58,7 +58,7 @@ function PANEL:Init()
 		</body>
 	</html>]])
 
-	self:AddFunction("RichTextX", "OnClick", function(signal_value)
+	self:AddInternalCallback("OnClick", function(signal_value)
 		self:ActionSignal("TextClicked", signal_value)
 	end)
 
@@ -68,8 +68,8 @@ function PANEL:Init()
 		end, false)
 	end
 
-	self:AddFunction("RichTextX", "Find", find_text)
-	self:AddFunction("RichTextX", "OnRightClick", function(selected_text)
+	self:AddInternalCallback("Find", find_text)
+	self:AddInternalCallback("OnRightClick", function(selected_text)
 		local copy_menu = DermaMenu()
 		copy_menu:AddOption("Copy", function() SetClipboardText(selected_text) end)
 		copy_menu:AddOption("Find", find_text)
@@ -82,7 +82,11 @@ function PANEL:Init()
 		copy_menu:Open()
 	end)
 
-	self:AddFunction("RichTextX", "Print", print)
+	self:AddInternalCallback("OnTextHover", function(text_value, is_hover)
+		self:OnTextHover(text_value, is_hover)
+	end)
+
+	self:AddInternalCallback("Debug", print)
 
 	self:QueueJavascript([[
 		const BODY = document.getElementsByTagName("body")[0];
@@ -134,6 +138,10 @@ function PANEL:Init()
 	self.GetLastColorChange = function(self) return last_color end
 end
 
+function PANEL:AddInternalCallback(name, callback)
+	self:AddFunction("RichTextX", name, callback)
+end
+
 function PANEL:SetFGColor(r, g, b)
 	local color = istable(r) and r or Color(r, g, b)
 	self.CurrentColor = color
@@ -172,12 +180,18 @@ end
 function PANEL:ActionSignal(signal_name, signal_value)
 end
 
+-- for overrides
+function PANEL:OnTextHover(text_value, is_hover)
+end
+
 function PANEL:AppendText(text)
 	text = text:JavascriptSafe()
 	local css_color = ("rgb(%d,%d,%d)"):format(self.CurrentColor.r, self.CurrentColor.g, self.CurrentColor.b)
 	local js = (self.ClickableTextValue and [[
 		span = document.createElement("span");
 		span.onclick = () => RichTextX.OnClick(`]] .. self.ClickableTextValue .. [[`);
+		span.onmouseenter = () => RichTextX.OnTextHover(`]] .. self.ClickableTextValue .. [[`,true);
+		span.onmouseleave = () => RichTextX.OnTextHover(`]] .. self.ClickableTextValue .. [[`, false);
 		span.clickableText = true;
 		span.style.cursor = "pointer";
 		span.style.color = `]] .. css_color .. [[`;
