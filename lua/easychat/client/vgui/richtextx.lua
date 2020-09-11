@@ -44,7 +44,7 @@ function PANEL:Init()
 					background: rgba(0, 0, 0, 0);
 					color: white;
 					font-family: 'Roboto', sans-serif;
-					font-size: 16;
+					font-size: 16px;
 					overflow-x: hidden;
 				}
 
@@ -251,7 +251,7 @@ function PANEL:SetFontData(font_data)
 	local font_size = (font_data.size or 16) - 3
 	self:QueueJavascript([[
 		RICHTEXT.style.fontFamily = `]] .. (font_data.font or "Roboto") .. [[, sans-serif`;
-		RICHTEXT.style.fontSize = `]] .. font_size .. [[`;
+		RICHTEXT.style.fontSize = `]] .. font_size .. [[px`;
 		RICHTEXT.style.fontWeight = `]] .. (font_data.weight or 500) .. [[`;
 	]])
 end
