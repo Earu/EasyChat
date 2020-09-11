@@ -2375,6 +2375,76 @@ if CLIENT then
 			EasyChat.OpenURL(value)
 		end
 
+		local player_info_panels = {}
+		local function handle_steam_id_hover(self, steam_id, is_hover)
+			if is_hover then
+				if player_info_panels[steam_id] then return end
+
+				local ply = player.GetBySteamID(steam_id)
+				if IsValid(ply) then
+					local info_panel = vgui.Create("AvatarImage")
+					info_panel:SetSize(128, 128)
+					info_panel:SetPos(gui.MouseX(), gui.MouseY() - 132)
+					info_panel:SetPlayer(ply, 128)
+					info_panel:SetDrawOnTop(true)
+					info_panel.Think = function()
+						if not IsValid(self) or not EasyChat.IsOpened() then
+							info_panel:Remove()
+							player_info_panels[steam_id] = nil
+						end
+					end
+
+					local mk = ec_markup.Parse(ply:Nick(), nil, true)
+					info_panel.PaintOver = function(_, w, h)
+						surface.SetDrawColor(0, 0, 0, 200)
+						surface.DrawOutlinedRect(0, 0, w, h)
+						surface.DrawRect(0, h - 27, w, 27)
+						mk:Draw(64 - mk:GetWide() / 2, h - 25)
+					end
+
+					player_info_panels[steam_id] = info_panel
+				else
+					steamworks.RequestPlayerInfo(util.SteamIDTo64(steam_id), function(steam_name)
+						local info_panel = vgui.Create("DPanel")
+						local mk = ec_markup.Parse(steam_name, nil, true)
+						info_panel:SetSize(mk:GetWide() + 10, mk:GetTall() + 10)
+						info_panel:SetPos(gui.MouseX(), gui.MouseY() - info_panel:GetTall())
+						info_panel:SetDrawOnTop(true)
+						info_panel.Think = function()
+							if not IsValid(self) or not EasyChat.IsOpened() then
+								info_panel:Remove()
+								player_info_panels[steam_id] = nil
+							end
+						end
+
+						info_panel.Paint = function(_, w, h)
+							surface.SetDrawColor(0, 0, 0, 200)
+							surface.DrawRect(0, 0, w, h)
+							mk:Draw(5, 5)
+						end
+
+						player_info_panels[steam_id] = info_panel
+					end)
+				end
+			else
+				local info_panel = player_info_panels[steam_id]
+				if IsValid(info_panel) then
+					info_panel:Remove()
+					player_info_panels[steam_id] = nil
+				end
+			end
+		end
+
+		function EasyChat.GUI.RichText:OnTextHover(text_value, is_hover)
+			local steam_id = text_value:match("^ECPlayerActions%: (STEAM_%d%:%d%:%d+)") or text_value:match("STEAM_%d%:%d%:%d+")
+			if steam_id and steam_id ~= "NULL" and steam_id:match("STEAM_%d%:%d%:%d+") then
+				handle_steam_id_hover(self, steam_id, is_hover)
+				return
+			end
+
+			-- handle more hovering hacks (?)
+		end
+
 		function EasyChat.GUI.RichText:AppendClickableText(text, callback)
 			self:InsertClickableTextStart(("CustomInteraction: %d"):format(clickable_callback_id))
 			append_text(self, text)
