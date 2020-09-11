@@ -2388,7 +2388,7 @@ if CLIENT then
 					info_panel:SetPlayer(ply, 128)
 					info_panel:SetDrawOnTop(true)
 					info_panel.Think = function()
-						if not IsValid(self) or not EasyChat.IsOpened() then
+						if not IsValid(self) or not self:IsHovered() then
 							info_panel:Remove()
 							player_info_panels[steam_id] = nil
 						end
