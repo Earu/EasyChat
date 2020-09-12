@@ -2438,6 +2438,8 @@ if CLIENT then
 		end
 
 		function EasyChat.GUI.RichText:OnTextHover(text_value, is_hover)
+			if not EasyChat.IsOpened() then return end
+
 			local steam_id = text_value:match("^ECPlayerActions%: (STEAM_%d%:%d%:%d+)") or text_value:match("STEAM_%d%:%d%:%d+")
 			if steam_id and steam_id ~= "NULL" and steam_id:match("STEAM_%d%:%d%:%d+") then
 				handle_steam_id_hover(self, steam_id, is_hover)
