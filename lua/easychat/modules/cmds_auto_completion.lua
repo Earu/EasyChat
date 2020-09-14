@@ -6,8 +6,18 @@ if SERVER then
 
 		net.Receive(EASYCHAT_AUTO_COMPLETION, function(_, ply)
 			local cmds_str = ""
-			for cmd_name in pairs(aowl.cmds) do
-				cmds_str = ("%s,%s"):format(cmds_str, cmd_name)
+			if aowl.cmds then
+				for cmd_name in pairs(aowl.cmds) do
+					cmds_str = ("%s,%s"):format(cmds_str, cmd_name)
+				end
+			elseif aowl.Commands then
+				for cmd_name in pairs(aowl.Commands) do
+					cmds_str = ("%s,%s"):format(cmds_str, cmd_name)
+				end
+			elseif aowl.commands then
+				for cmd_name in pairs(aowl.commands) do
+					cmds_str = ("%s,%s"):format(cmds_str, cmd_name)
+				end
 			end
 
 			timer.Simple(0, function()
@@ -27,25 +37,30 @@ if CLIENT then
 	local option_font = "EasyChatFont"
 	local hook_name = "EasyChatModuleCmdsAutoComplete"
 
-	local cmds = {
-		Lookup = {},
-		Prefix = "",
-		Initialized = false,
+	EasyChat.CmdSuggestions = {
+		Handlers = {},
+		Priorities = {}
 	}
 
-	local function initialize(prefix, lookup)
-		cmds.Prefix = prefix
-		cmds.Lookup = lookup
-		cmds.Initialized = true
-		cmds.ActiveOptionsIndex = 1
-		cmds.ActiveOptions = {}
-		cmds.ActiveOptionsCount = 0
+	function EasyChat.CmdSuggestions:AddSuggestionHandler(identifier, prefix, lookup, priority)
+		priority = priority or 0
+		self.Handlers[identifier] = {
+			Lookup = lookup,
+			Prefix = prefix,
+			ActiveOptionsIndex = 1,
+			ActiveOptions = {},
+			ActiveOptionsCount = 0,
+		}
+
+		self.Priorities[identifier] = priority
 	end
 
 	local function stop_auto_completion()
 		hook.Remove("HUDPaint", hook_name)
-		cmds.ActiveOptions = {}
-		cmds.ActiveOptionsCount = 0
+		for _, cmds in pairs(EasyChat.CmdSuggestions.Handlers) do
+			cmds.ActiveOptions = {}
+			cmds.ActiveOptionsCount = 0
+		end
 	end
 
 	if ulx and ULib then
@@ -79,7 +94,7 @@ if CLIENT then
 			return ulx_cmds
 		end
 
-		initialize("!", generate_ulx_cmds_lookup())
+		EasyChat.CmdSuggestions:AddSuggestionHandler("ULX", "!", generate_ulx_cmds_lookup(), 9999)
 	elseif FAdmin then
 		-- do nothing, this is here as priority order
 	elseif sam and sam.command then
@@ -100,13 +115,23 @@ if CLIENT then
 			return sam_cmds
 		end
 
-		initialize("[!%~]", generate_sam_cmds_lookup())
+		EasyChat.CmdSuggestions:AddSuggestionHandler("sam", "[!%~]", generate_sam_cmds_lookup())
 	elseif aowl then
 		net.Receive(EASYCHAT_AUTO_COMPLETION, function()
 			local aowl_cmds = {}
 			local cmds_str = net.ReadString()
-			for cmd_name, _ in pairs(aowl.cmds or {}) do
-				aowl_cmds[cmd_name] = {}
+			if aowl.cmds then
+				for cmd_name in pairs(aowl.cmds) do
+					aowl_cmds[cmd_name] = {}
+				end
+			elseif aowl.Commands then
+				for cmd_name in pairs(aowl.Commands) do
+					aowl_cmds[cmd_name] = {}
+				end
+			elseif aowl.commands then
+				for cmd_name in pairs(aowl.commands) do
+					aowl_cmds[cmd_name] = {}
+				end
 			end
 
 			local srv_cmds = cmds_str:Split(",")
@@ -114,11 +139,7 @@ if CLIENT then
 				aowl_cmds[cmd_name] = {}
 			end
 
-			for chat_cmd, _ in pairs(list.Get("ChatCommands")) do
-				aowl_cmds[chat_cmd] = {}
-			end
-
-			initialize("[!/%.]", aowl_cmds)
+			EasyChat.CmdSuggestions:AddSuggestionHandler("aowl", aowl.Prefix or aowl.prefix or "[!/%.]", aowl_cmds)
 		end)
 
 		hook.Add("StartChat", hook_name, function()
@@ -128,84 +149,78 @@ if CLIENT then
 		end)
 	elseif Mercury and Mercury.Commands and Mercury.Commands.CommandTable then
 		local mercury_cmds = {}
-		for cmd_name, _ in pairs(Mercury.Commands.CommandTable) do
+		for cmd_name in pairs(Mercury.Commands.CommandTable) do
 			mercury_cmds[cmd_name] = {}
 		end
 
-		initialize("[!/@]", mercury_cmds)
+		EasyChat.CmdSuggestions:AddSuggestionHandler("Mercury", "[!/@]", mercury_cmds)
+	end
+
+	local ChatCommands = list.Get("ChatCommands")
+	if not table.IsEmpty(ChatCommands) then
+		local commands = {}
+		for chat_cmd in pairs(ChatCommands) do
+			commands[chat_cmd] = {}
+		end
+
+		EasyChat.CmdSuggestions:AddSuggestionHandler("ChatCommands", "[!/\\%.]", commands, -1)
 	end
 
 	hook.Add("ChatTextChanged", hook_name, function(text)
 		if not EC_CMDS_SUGGESTIONS:GetBool() then return end
 
-		if not cmds.Initialized then return end
-		cmds.ActiveOptionsIndex = 1
+		local all_options = {}
+		local all_options_count = 0
 
-		local prefix = text:match(("^%s"):format(cmds.Prefix))
-		if not prefix then
-			stop_auto_completion()
-			return
-		end
+		for identifier in SortedPairsByValue(EasyChat.CmdSuggestions.Priorities) do
+			local cmds = EasyChat.CmdSuggestions.Handlers[identifier]
+			cmds.ActiveOptionsIndex = 1
 
-		local args = text:sub(2):Split(" ")
-		-- if we dont have a command dont proceed anyway
-		if not args[1] then
-			stop_auto_completion()
-			return
-		end
-
-		local cmd = args[1]:lower():PatternSafe()
-		table.remove(args, 1) -- remove the command from the args
-
-		local options_count = 0
-		local options = {}
-		for cmd_name, cmd_args in pairs(cmds.Lookup) do
-			if cmd_name:match(cmd) then
-				options[("%s%s"):format(prefix, cmd_name)] = cmd_args
-				options_count = options_count + 1
+			local prefix = text:match(("^%s"):format(cmds.Prefix))
+			if not prefix then
+				continue
 			end
+
+			local args = text:sub(2):Split(" ")
+			-- if we dont have a command dont proceed anyway
+			if not args[1] then
+				continue
+			end
+
+			local cmd = args[1]:lower():PatternSafe()
+			table.remove(args, 1) -- remove the command from the args
+
+			local options_count = 0
+			local options = {}
+			for cmd_name, cmd_args in pairs(cmds.Lookup) do
+				if cmd_name:match(cmd) then
+					options[("%s%s"):format(prefix, cmd_name)] = cmd_args
+					options_count = options_count + 1
+				end
+			end
+
+			if options_count == 0 then
+				cmds.ActiveOptions = options
+				cmds.ActiveOptionsCount = options_count
+				continue
+			end
+
+			table.sort(options)
+			cmds.ActiveOptions = options
+			cmds.ActiveOptionsCount = options_count
+
+			all_options = table.Merge(all_options, options)
+			all_options_count = all_options_count + options_count
 		end
 
-		if options_count == 0 then
+		table.sort(all_options)
+
+		if all_options_count == 0 then
 			stop_auto_completion()
 			return
 		end
 
-		table.sort(options)
-		cmds.ActiveOptions = options
-		cmds.ActiveOptionsCount = options_count
-
-		-- only keep options that will fit on the screen
-		local chat_x, chat_y = chat.GetChatBoxPos()
-		local chat_w, _ = chat.GetChatBoxSize()
-		local above_screen_height = false
-		local option_h = draw.GetFontHeight(option_font) + 10 -- account for wordbox padding
-		local i = 1
-		for option, _ in pairs(options) do
-			local pos_y = chat_y + ((i + 1) * option_h)
-			if pos_y > ScrH() then
-				options[option] = nil
-				above_screen_height = true
-				options_count = options_count - 1
-			end
-			i = i + 1
-		end
-
-		local pos_x = chat_x + chat_w + 2
-
-		-- account for the panel that shows people that can "hear" you
-		local cur_mode = EasyChat.GetCurrentMode()
-		local localui_panel = EasyChat.GUI.LocalPanel
-		local is_local_mode = cur_mode and cur_mode.Name == "Local" and IsValid(localui_panel)
-		if is_local_mode then
-			pos_x = pos_x + 5 + localui_panel:GetWide()
-		end
-
-		local left_pos_set = false
-		local should_left_side = EasyChat.IsOnRightSide()
-		if should_left_side then
-			pos_x = 0
-		end
+		local pos_x = 0
 
 		hook.Add("HUDPaint", hook_name, function()
 			if not EasyChat.IsOpened() then
@@ -213,16 +228,39 @@ if CLIENT then
 				return
 			end
 
+			-- only keep options that will fit on the screen
+			local chat_x, chat_y = chat.GetChatBoxPos()
+			local chat_w = chat.GetChatBoxSize()
+			local above_screen_height = false
+			local option_h = draw.GetFontHeight(option_font) + 10 -- account for wordbox padding
+			local i = 1
+			for option in SortedPairs(all_options) do
+				local pos_y = chat_y + ((i + 1) * option_h)
+				if pos_y > ScrH() then
+					all_options[option] = nil
+					above_screen_height = true
+					all_options_count = all_options_count - 1
+				end
+				i = i + 1
+			end
+
+			local should_left_side = EasyChat.IsOnRightSide()
+
+			-- account for the panel that shows people that can "hear" you
+			local cur_mode = EasyChat.GetCurrentMode()
+			local localui_panel = EasyChat.GUI.LocalPanel
+			local is_local_mode = cur_mode and cur_mode.Name == "Local" and IsValid(localui_panel)
+
 			local i = 0
 			local max_w = 0
-			for option, option_args in pairs(options) do
+			for option, option_args in SortedPairs(all_options) do
 				local pos_y = chat_y + (i * option_h)
-				local option_w, _ = draw.WordBox(4, pos_x, pos_y, option, option_font, black_color, color_white)
+				local option_w = draw.WordBox(4, pos_x, pos_y, option, option_font, black_color, color_white)
 				if option_w > max_w then max_w = option_w end
 
 				for arg_index, arg in ipairs(option_args) do
-					local arg_w, _ = draw.WordBox(4, pos_x + (arg_index * 130), pos_y, arg, option_font, black_color, color_white)
-					if arg_w > max_w then max_w = arg_w end
+					local arg_w = draw.WordBox(4, pos_x + (arg_index * 130), pos_y, arg, option_font, black_color, color_white)
+					if (arg_index * 130) + arg_w > max_w then max_w = (arg_index * 130) + arg_w end
 				end
 
 				i = i + 1
@@ -232,26 +270,45 @@ if CLIENT then
 				draw.WordBox(4, pos_x, chat_y + (i * option_h), "...", option_font, black_color, color_white)
 			end
 
-			if should_left_side and not left_pos_set then
-				left_pos_set = true
+			if should_left_side then
 				pos_x = chat_x - max_w - 2
-				if is_local_mode then pos_x = pos_x - 5 - localui_panel:GetWide() end
+				if is_local_mode then
+					pos_x = pos_x - 5 - localui_panel:GetWide()
+				end
+			else
+				pos_x = chat_x + chat_w + 2
+				if is_local_mode then
+					pos_x = pos_x + 5 + localui_panel:GetWide()
+				end
 			end
 		end)
 	end)
 
 	hook.Add("OnChatTab", hook_name, function(text)
 		if not EC_CMDS_SUGGESTIONS:GetBool() then return end
-		if cmds.ActiveOptionsCount == 0 then return end
-		if not cmds.ActiveOptions then return end
-		if text:match(" ") then return end
+
+		local all_options = {}
+		local all_options_count = 0
+		local options_index = 1
+
+		for identifier in SortedPairsByValue(EasyChat.CmdSuggestions.Priorities) do
+			local cmds = EasyChat.CmdSuggestions.Handlers[identifier]
+			if cmds.ActiveOptionsCount == 0 then continue end
+			if not cmds.ActiveOptions then continue end
+			if text:match(" ") then continue end
+
+			all_options = table.Merge(all_options, cmds.ActiveOptions)
+			all_options_count = all_options_count + cmds.ActiveOptionsCount
+		end
+
+		table.sort(all_options)
 
 		local i = 1
-		for option, _ in pairs(cmds.ActiveOptions) do
-			if i == cmds.ActiveOptionsIndex then
-				cmds.ActiveOptionsIndex = cmds.ActiveOptionsIndex + 1
-				if cmds.ActiveOptionsIndex > cmds.ActiveOptionsCount then
-					cmds.ActiveOptionsIndex = 1
+		for option in SortedPairs(all_options) do
+			if i == options_index then
+				options_index = options_index + 1
+				if options_index > all_options_count then
+					options_index = 1
 				end
 
 				return option
