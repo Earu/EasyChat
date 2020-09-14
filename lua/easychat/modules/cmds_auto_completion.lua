@@ -318,6 +318,18 @@ if CLIENT then
 		end
 	end)
 
+	hook.Add("ECPostLoadModules", hook_name, function()
+		ChatCommands = list.Get("ChatCommands")
+		if not table.IsEmpty(ChatCommands) then
+			local commands = {}
+			for chat_cmd in pairs(ChatCommands) do
+				commands[chat_cmd] = {}
+			end
+
+			EasyChat.CmdSuggestions:AddSuggestionHandler("ChatCommands", "[!/\\%.]", commands, -1)
+		end
+	end)
+
 	hook.Add("FinishChat", hook_name, stop_auto_completion)
 	hook.Add("ECTabChanged", hook_name, stop_auto_completion)
 	hook.Add("ECFactoryReset", hook_name, function() EC_CMDS_SUGGESTIONS:SetString(EC_CMDS_SUGGESTIONS:GetDefault()) end)
