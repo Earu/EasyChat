@@ -1573,33 +1573,36 @@ if CLIENT then
 				end
 			end
 
-			local team_color = EC_PLAYER_COLOR:GetBool() and team.GetColor(ply:Team()) or color_white
-			global_insert_color_change(team_color.r, team_color.g, team_color.b, 255)
-			table.insert(data, team_color)
-
+			local ply_col = EC_PLAYER_COLOR:GetBool() and team.GetColor(ply:Team()) or color_white
 			local stripped_ply_nick = EasyChat.GetProperNick(ply)
 			if EC_PLAYER_PASTEL:GetBool() then
-				local pastel_color = EasyChat.PastelizeNick(stripped_ply_nick)
-				global_insert_color_change(pastel_color.r, pastel_color.g, pastel_color.b, 255)
-				table.insert(data, pastel_color)
+				ply_col = EasyChat.PastelizeNick(stripped_ply_nick)
 			end
 
+			local empty_nick = EasyChat.IsStringEmpty(stripped_ply_nick)
+			if empty_nick then
+				ply_col = UNKNOWN_COLOR
+			end
+
+			global_insert_color_change(ply_col.r, ply_col.g, ply_col.b, 255)
+			table.insert(data, ply_col)
+
 			EasyChat.GUI.RichText:InsertClickableTextStart(("ECPlayerActions: %s|%s")
-				:format(ply:SteamID(), stripped_ply_nick))
+				:format(ply:SteamID(), empty_nick and "[NO NAME]" or stripped_ply_nick))
 
 			local lp = LocalPlayer()
 			if IsValid(lp) and lp == ply and EC_USE_ME:GetBool() then
 				global_append_text("me")
 				table.insert(data, "me")
 			else
-				local nick = EasyChat.Config.AllowTagsInNames and ply:Nick() or stripped_ply_nick
-				if EasyChat.IsStringEmpty(nick) then
+				if empty_nick then
 					global_insert_color_change(UNKNOWN_COLOR.r, UNKNOWN_COLOR.g, UNKNOWN_COLOR.b)
 					global_append_text("[NO NAME]")
 
 					table.insert(data, UNKNOWN_COLOR)
 					table.insert(data, "[NO NAME]")
 				else
+					local nick = EasyChat.Config.AllowTagsInNames and ply:Nick() or stripped_ply_nick
 					local nick_data = global_append_nick(nick)
 					table.Add(data, nick_data)
 				end
@@ -1684,24 +1687,26 @@ if CLIENT then
 						richtext:InsertColorChange(UNKNOWN_COLOR.r, UNKNOWN_COLOR.g, UNKNOWN_COLOR.b)
 						append_text(richtext, "???")
 					else
-						local team_color = EC_PLAYER_COLOR:GetBool() and team.GetColor(arg:Team()) or color_white
-						richtext:InsertColorChange(team_color.r, team_color.g, team_color.b, 255)
-
+						local ply_col = EC_PLAYER_COLOR:GetBool() and team.GetColor(arg:Team()) or color_white
 						local nick = EasyChat.GetProperNick(arg)
 						if EC_PLAYER_PASTEL:GetBool() then
-							local pastel_color = EasyChat.PastelizeNick(nick)
-							richtext:InsertColorChange(pastel_color.r, pastel_color.g, pastel_color.b, 255)
+							ply_col = EasyChat.PastelizeNick(nick)
 						end
 
+						local empty_nick = EasyChat.IsStringEmpty(nick)
+						if empty_nick then
+							ply_col = UNKNOWN_COLOR
+						end
+
+						richtext:InsertColorChange(ply_col.r, ply_col.g, ply_col.b, 255)
 						richtext:InsertClickableTextStart(("ECPlayerActions: %s|%s")
-							:format(arg:SteamID(), nick))
+							:format(arg:SteamID(), empty_nick and "[NO NAME]" or nick))
 
 						local lp = LocalPlayer()
 						if IsValid(lp) and lp == arg and EC_USE_ME:GetBool() then
 							append_text(richtext, "me")
 						else
-							if EasyChat.IsStringEmpty(nick) then
-								richtext:InsertColorChange(UNKNOWN_COLOR.r, UNKNOWN_COLOR.g, UNKNOWN_COLOR.b)
+							if empty_nick then
 								append_text(richtext, "[NO NAME]")
 							else
 								append_text(richtext, nick)
@@ -2324,7 +2329,7 @@ if CLIENT then
 							surface.PlaySound("buttons/button11.wav")
 						end
 					end, false)
-					frame.TextEntry:SetText(ply:Nick())
+					frame.TextEntry:SetText(ply_name)
 				end):SetImage("icon16/shield.png")
 			end
 
