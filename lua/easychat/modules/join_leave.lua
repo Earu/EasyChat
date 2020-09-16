@@ -59,6 +59,8 @@ if SERVER then
 end
 
 if CLIENT then
+	local UNKNOWN_COLOR = Color(110, 247, 177)
+
 	local green_color = Color(100, 230, 100)
 	local red_color = Color(230, 100, 100)
 	local cyan_color = Color(0, 255, 255)
@@ -152,8 +154,13 @@ if CLIENT then
 		end
 
 		local ply_col = team.GetColor(team_id)
-		if EC_PLAYER_PASTEL:GetBool() then
-			ply_col = EasyChat.PastelizeNick(name)
+		if EasyChat.IsStringEmpty(name) then
+			name = "[NO NAME]"
+			ply_col = UNKNOWN_COLOR
+		else
+			if EC_PLAYER_PASTEL:GetBool() then
+				ply_col = EasyChat.PastelizeNick(name)
+			end
 		end
 
 		local formatted_id = (" (%s) "):format(network_id)
@@ -178,6 +185,7 @@ if CLIENT then
 		local network_id = net.ReadString()
 
 		if not friend_ids[network_id] then return end
+		if EasyChat.IsStringEmpty(name) then name = "[NO NAME]" end
 		chat.AddText(green_color, " ● Friend joining ", white_color, name, gray_color, " (" .. network_id .. ")")
 	end)
 end
