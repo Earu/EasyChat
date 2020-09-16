@@ -29,6 +29,7 @@ local EC_GM_COMPLETE = get_cvar("easychat_gm_complete")
 local EC_NICK_COMPLETE = get_cvar("easychat_nick_complete")
 local EC_NICK_PRIORITIZE = get_cvar("easychat_nick_prioritize")
 local EC_OUT_CLICK_CLOSE = get_cvar("easychat_out_click_close")
+local EC_SERVER_MSG = get_cvar("easychat_server_msg")
 
 -- chatbox
 local EC_USE_DERMASKIN = get_cvar("easychat_use_dermaskin")
@@ -85,6 +86,7 @@ local function create_default_settings()
 			[EC_NICK_COMPLETE] = "Auto-complete player names",
 			[EC_NICK_PRIORITIZE] = "Prioritize player name completions over everything else",
 			[EC_OUT_CLICK_CLOSE] = "Close the chat when clicking away",
+			[EC_SERVER_MSG] = "Show changes made to the server cvars"
 		})
 
 		settings:AddSpacer(category_name)
