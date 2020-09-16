@@ -442,6 +442,7 @@ end
 if CLIENT then
 	local NO_COLOR = Color(0, 0, 0, 0)
 	local LINK_COLOR = Color(68, 151, 206)
+	local UNKNOWN_COLOR = Color(110, 247, 177)
 	local UPLOADING_TEXT = "[uploading image...]"
 
 	-- general
@@ -466,6 +467,7 @@ if CLIENT then
 	local EC_NICK_COMPLETE = CreateConVar("easychat_nick_complete", "1", FCVAR_ARCHIVE, "Auto-completes player names")
 	local EC_NICK_PRIORITIZE = CreateConVar("easychat_nick_prioritize", "0", FCVAR_ARCHIVE, "Prioritize player nick completion over everything else")
 	local EC_OUT_CLICK_CLOSE = CreateConVar("easychat_out_click_close", "1", FCVAR_ARCHIVE, "Clicking outside the chatbox closes it")
+	local EC_SERVER_MSG = CreateConVar("easychat_server_msg", "1", FCVAR_ARCHIVE, "Shows convars being changed on the server")
 
 	-- chatbox panel
 	local EC_GLOBAL_ON_OPEN = CreateConVar("easychat_global_on_open", "1", FCVAR_ARCHIVE, "Set the chat to always open global chat tab on open")
@@ -1493,10 +1495,10 @@ if CLIENT then
 			table.insert(data, color_white)
 
 			if not IsValid(ply) then
-				global_insert_color_change(110, 247, 177)
+				global_insert_color_change(UNKNOWN_COLOR.r, UNKNOWN_COLOR.g, UNKNOWN_COLOR.b)
 				global_append_text("???")
 
-				table.insert(data, Color(110, 247, 177))
+				table.insert(data, UNKNOWN_COLOR)
 				table.insert(data, "???")
 
 				return data
@@ -1591,8 +1593,16 @@ if CLIENT then
 				table.insert(data, "me")
 			else
 				local nick = EasyChat.Config.AllowTagsInNames and ply:Nick() or stripped_ply_nick
-				local nick_data = global_append_nick(nick)
-				table.Add(data, nick_data)
+				if EasyChat.IsStringEmpty(nick) then
+					global_insert_color_change(UNKNOWN_COLOR.r, UNKNOWN_COLOR.g, UNKNOWN_COLOR.b)
+					global_append_text("[NO NAME]")
+
+					table.insert(data, UNKNOWN_COLOR)
+					table.insert(data, "[NO NAME]")
+				else
+					local nick_data = global_append_nick(nick)
+					table.Add(data, nick_data)
+				end
 			end
 
 			EasyChat.GUI.RichText:InsertClickableTextEnd()
@@ -1671,7 +1681,7 @@ if CLIENT then
 					append_text_url(richtext, arg)
 				elseif type(arg) == "Player" then
 					if not IsValid(arg) then
-						richtext:InsertColorChange(110, 247, 177)
+						richtext:InsertColorChange(UNKNOWN_COLOR.r, UNKNOWN_COLOR.g, UNKNOWN_COLOR.b)
 						append_text(richtext, "???")
 					else
 						local team_color = EC_PLAYER_COLOR:GetBool() and team.GetColor(arg:Team()) or color_white
@@ -1690,7 +1700,12 @@ if CLIENT then
 						if IsValid(lp) and lp == arg and EC_USE_ME:GetBool() then
 							append_text(richtext, "me")
 						else
-							append_text(richtext, nick)
+							if EasyChat.IsStringEmpty(nick) then
+								richtext:InsertColorChange(UNKNOWN_COLOR.r, UNKNOWN_COLOR.g, UNKNOWN_COLOR.b)
+								append_text(richtext, "[NO NAME]")
+							else
+								append_text(richtext, nick)
+							end
 						end
 
 						richtext:InsertClickableTextEnd()
@@ -2599,19 +2614,24 @@ if CLIENT then
 			EasyChat.GUI.ChatBox.Scroller.Panels = tabs
 		end
 
-		local chat_text_types = {
-			none = true, -- fallback
-			-- darkrp = true -- darkrp compat most likely? Note: prints twice
-			-- namechange = true, -- annoying
-			-- servermsg = true, -- annoying
-			-- teamchange = true, -- annoying
-			-- chat = true, -- deprecated
-			-- joinleave = true, -- we handle it ourselves
-		}
+		-- darkrp = true -- darkrp compat most likely? Note: prints twice
+		-- namechange = true, -- annoying
+		-- teamchange = true, -- annoying
+		-- chat = true, -- deprecated
+		-- joinleave = true, -- we handle it ourselves
 		hook.Add("ChatText", TAG, function(index, name, text, type)
-			if not chat_text_types[type] then return end
+			if type == "none" then
+				chat.AddText(color_white, text)
+			end
 
-			chat.AddText(color_white, text)
+			if type == "servermsg" and EC_SERVER_MSG:GetBool() then
+				local cvar_name, cvar_value = text:match("^Server cvar '([a-zA-Z_]+)' changed to (.+)$")
+				if cvar_name and cvar_value then
+					chat.AddText(color_gray, "Server ", color_red, cvar_name, color_gray, " changed to ", color_red, cvar_value)
+				else
+					chat.AddText(color_gray, text)
+				end
+			end
 		end)
 
 		local chathud_call = false
@@ -2902,7 +2922,7 @@ if CLIENT then
 			if IsValid(ply) then
 				table.insert(msg_components, ply)
 			else
-				table.insert(msg_components, Color(110, 247, 177))
+				table.insert(msg_components, UNKNOWN_COLOR)
 				table.insert(msg_components, "???") -- console or weird stuff
 			end
 
