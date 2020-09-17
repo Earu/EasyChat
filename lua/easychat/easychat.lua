@@ -183,9 +183,11 @@ if SERVER then
 		net.WriteBool(is_local)
 		net.Send(filter)
 
-		if game.IsDedicated() then
+		if game.IsDedicated() and not is_local then
 			-- shows in server console
-			print(("%s: %s"):format(ply:Nick():gsub("<.->", ""), msg))
+			local print_msg = ("%s: %s"):format(ply:Nick():gsub("<.->", ""), msg)
+			if is_team then print_msg = "(TEAM) " .. print_msg end
+			print(print_msg)
 		end
 	end
 
