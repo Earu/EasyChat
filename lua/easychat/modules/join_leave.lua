@@ -14,27 +14,32 @@ if SERVER then
 	hook.Add("PlayerInitialSpawn", TAG, function(ply)
 		if not EC_JOIN_LEAVE:GetBool() then return end
 
-		net.Start(NET_SPAWN_LEAVE)
-		net.WriteBool(true)
-		net.WriteString(ply:Nick())
-		net.WriteInt(ply:Team(), 32)
-		net.WriteString(ply:SteamID())
+		-- we have to do this because its too early for getting player nick etc...
+		timer.Simple(0, function()
+			if not IsValid(ply) then return end -- we never know
 
-		local last_seen = ply:GetPData("ECLastSeen", -1)
-		local cur_time = os.time()
-		if last_seen ~= -1 then
-			local last_seen_time = tonumber(last_seen) or 0
-			local time_diff = last_seen_time ~= 0 and (cur_time - last_seen_time) or 0
+			net.Start(NET_SPAWN_LEAVE)
+			net.WriteBool(true)
+			net.WriteString(ply:Nick())
+			net.WriteInt(ply:Team(), 32)
+			net.WriteString(ply:SteamID())
 
-			net.WriteInt(time_diff, 32)
-			net.WriteInt(cur_time, 32)
-			net.WriteInt(last_seen_time, 32)
-		else
-			net.WriteInt(-1, 32)
-		end
+			local last_seen = ply:GetPData("ECLastSeen", -1)
+			local cur_time = os.time()
+			if last_seen ~= -1 then
+				local last_seen_time = tonumber(last_seen) or 0
+				local time_diff = last_seen_time ~= 0 and (cur_time - last_seen_time) or 0
 
-		net.Broadcast()
-		ply:SetPData("ECLastSeen", cur_time)
+				net.WriteInt(time_diff, 32)
+				net.WriteInt(cur_time, 32)
+				net.WriteInt(last_seen_time, 32)
+			else
+				net.WriteInt(-1, 32)
+			end
+
+			net.Broadcast()
+			ply:SetPData("ECLastSeen", cur_time)
+		end)
 	end)
 
 	hook.Add("player_disconnect", TAG, function(data)
