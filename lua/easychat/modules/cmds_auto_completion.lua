@@ -47,7 +47,6 @@ if CLIENT then
 		self.Handlers[identifier] = {
 			Lookup = lookup,
 			Prefix = prefix,
-			ActiveOptionsIndex = 1,
 			ActiveOptions = {},
 			ActiveOptionsCount = 0,
 		}
@@ -166,6 +165,7 @@ if CLIENT then
 		EasyChat.CmdSuggestions:AddSuggestionHandler("ChatCommands", "[!/\\%.]", commands, -1)
 	end
 
+	local active_options_index = 0
 	hook.Add("ChatTextChanged", hook_name, function(text)
 		if not EC_CMDS_SUGGESTIONS:GetBool() then return end
 
@@ -174,7 +174,6 @@ if CLIENT then
 
 		for identifier in SortedPairsByValue(EasyChat.CmdSuggestions.Priorities) do
 			local cmds = EasyChat.CmdSuggestions.Handlers[identifier]
-			cmds.ActiveOptionsIndex = 1
 
 			local prefix = text:match(("^%s"):format(cmds.Prefix))
 			if not prefix then
@@ -219,6 +218,8 @@ if CLIENT then
 			stop_auto_completion()
 			return
 		end
+
+		active_options_index = 1
 
 		local pos_x = 0
 
@@ -289,7 +290,6 @@ if CLIENT then
 
 		local all_options = {}
 		local all_options_count = 0
-		local options_index = 1
 
 		for identifier in SortedPairsByValue(EasyChat.CmdSuggestions.Priorities) do
 			local cmds = EasyChat.CmdSuggestions.Handlers[identifier]
@@ -305,10 +305,10 @@ if CLIENT then
 
 		local i = 1
 		for option in SortedPairs(all_options) do
-			if i == options_index then
-				options_index = options_index + 1
-				if options_index > all_options_count then
-					options_index = 1
+			if i == active_options_index then
+				active_options_index = active_options_index + 1
+				if active_options_index > all_options_count then
+					active_options_index = 1
 				end
 
 				return option
