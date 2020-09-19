@@ -33,7 +33,15 @@ local function hack_msg_send()
 
 		self:SetPos(engine_panel:GetPos())
 		self:SetSize(engine_panel:GetSize())
-		self:SetVisible(is_chat_opened and not EC_ENABLED:GetBool())
+
+		local should_show = is_chat_opened and not EC_ENABLED:GetBool()
+		self:SetVisible(should_show)
+
+		if should_show and input.IsKeyDown(KEY_ESCAPE) then
+			self:SetText("")
+			hook.Run("ChatTextChanged", "")
+			chat.Close()
+		end
 	end)
 
 	function text_entry:OnValueChange(text)
