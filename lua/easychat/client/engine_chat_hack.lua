@@ -18,7 +18,7 @@ local function hack_msg_send()
 	text_entry:SetFont("ChatFont")
 	text_entry:SetTextColor(color_white)
 	text_entry:SetUpdateOnType(true)
-	CHAT_HACK = text_entry
+	EC_CHAT_HACK = text_entry
 
 	local selection_color = Color(255, 0, 0, 127)
 	function text_entry:Paint()
@@ -69,10 +69,12 @@ local function hack_msg_send()
 
 		if key_code == KEY_ENTER or key_code == KEY_PAD_ENTER then
 			local msg = EasyChat.ExtendedStringTrim(self:GetText())
-			local is_team = label:GetText():lower():match("team")
-			EasyChat.SendGlobalMessage(msg, is_team, false)
+			if #msg > 0 then
+				local is_team = label:GetText():lower():match("team")
+				EasyChat.SendGlobalMessage(msg, is_team, false)
+				self:SetText("")
+			end
 
-			self:SetText("")
 			hook.Run("ChatTextChanged", "")
 			chat.Close()
 			return true
