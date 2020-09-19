@@ -68,8 +68,8 @@ local function hack_msg_send()
 		end
 
 		if key_code == KEY_ENTER or key_code == KEY_PAD_ENTER then
-			local msg = EasyChat.ExtendedStringTrim(self:GetText())
-			if #msg > 0 then
+			if not EasyChat.IsStringEmpty(msg) then
+				local msg = EasyChat.ExtendedStringTrim(self:GetText())
 				local is_team = label:GetText():lower():match("team")
 				EasyChat.SendGlobalMessage(msg, is_team, false)
 				self:SetText("")
