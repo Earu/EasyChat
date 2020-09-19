@@ -224,10 +224,10 @@ if SERVER then
 		net.WriteBool(is_local)
 		net.Send(filter)
 
-		--if game.IsDedicated() and not is_local then
+		if game.IsDedicated() and not is_local then
 			-- shows in server console
 			print_chat_msg(ply, msg, is_team, is_dead)
-		--end
+		end
 	end
 
 	local SPAM_STEP = 1 -- how many messages can be sent per second after burst
