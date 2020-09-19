@@ -1,7 +1,7 @@
 local EasyChat = _G.EasyChat or {}
 _G.EasyChat = EasyChat
 
-local print = _G._print or _G.print -- epoe compat
+local msgc_native = _G._MsgC or _G.MsgC -- epoe compat
 
 local NET_BROADCAST_MSG = "EASY_CHAT_BROADCAST_MSG"
 local NET_SEND_MSG = "EASY_CHAT_RECEIVE_MSG"
@@ -13,24 +13,34 @@ local TAG = "EasyChat"
 
 local EC_MAX_CHARS = CreateConVar("easychat_max_chars", "3000", { FCVAR_REPLICATED, SERVER and FCVAR_ARCHIVE or nil }, "Max characters per messages", 50)
 
-local color_red = Color(255, 0, 0)
-local color_gray = Color(184, 189, 209)
-local color_print_head = Color(244, 167, 66)
-local color_print_good = Color(0, 160, 220)
-local color_print_bad = Color(255, 127, 127)
+local COLOR_RED = Color(255, 0, 0)
+local COLOR_GRAY = Color(184, 189, 209)
+
+local COLOR_LOCAL= Color(120, 210, 255)
+local COLOR_TEAM = Color(120, 120, 240)
+local COLOR_DEAD = Color(240, 80, 80)
+
+local COLOR_PRINT_HEAD = Color(244, 167, 66)
+local COLOR_PRINT_GOOD = Color(0, 160, 220)
+local COLOR_PRINT_BAD = Color(255, 127, 127)
+
+local COLOR_PRINT_CHAT_TIME = Color(0, 161, 255)
+local COLOR_PRINT_CHAT_NICK = Color(222, 222, 255)
+local COLOR_PRINT_CHAT_MSG = Color(255, 255, 255)
+
 function EasyChat.Print(is_err, ...)
 	local args = { ... }
 	local body_color
 
 	if isstring(is_err) then
 		table.insert(args, 1, is_err)
-		body_color = color_print_good
+		body_color = COLOR_PRINT_GOOD
 	else
-		body_color = is_err and color_print_bad or color_print_good
+		body_color = is_err and COLOR_PRINT_BAD or COLOR_PRINT_GOOD
 	end
 
 	for k, v in ipairs(args) do args[k] = tostring(v) end
-	MsgC(color_print_head, "[EasyChat] ⮞ ", body_color, table.concat(args), "\n")
+	MsgC(COLOR_PRINT_HEAD, "[EasyChat] ⮞ ", body_color, table.concat(args), "\n")
 end
 
 local trim_lookup = {
@@ -91,11 +101,11 @@ local load_modules, get_modules = include("easychat/autoloader.lua")
 EasyChat.GetModules = get_modules -- maybe useful for modules?
 
 concommand.Add("easychat_show_modules", function()
-	MsgC(color_print_head, "---- EasyChat Modules ----\n")
+	MsgC(COLOR_PRINT_HEAD, "---- EasyChat Modules ----\n")
 	for _, module in pairs(get_modules()) do
-		MsgC(color_print_good, ("%s\n"):format(module.Name))
+		MsgC(COLOR_PRINT_GOOD, ("%s\n"):format(module.Name))
 	end
-	MsgC(color_print_head, ("-"):rep(26) .. "\n")
+	MsgC(COLOR_PRINT_HEAD, ("-"):rep(26) .. "\n")
 end, nil, "Shows all the loaded EasyChat modules")
 
 function PLY:ECIsEnabled()
@@ -139,7 +149,37 @@ if SERVER then
 	end
 
 	function EasyChat.Warn(ply, msg)
-		EasyChat.PlayerAddText(ply, color_red, "[WARN] " ..  msg)
+		EasyChat.PlayerAddText(ply, COLOR_RED, "[WARN] " ..  msg)
+	end
+
+	function print_chat_msg(ply, msg, is_team, is_dead)
+		local print_args = {}
+
+		table.insert(print_args, COLOR_PRINT_CHAT_TIME)
+		table.insert(print_args, os.date("!%H:%M:%S "))
+
+		if is_team then
+			table.insert(print_args, COLOR_TEAM)
+			table.insert(print_args, "(Team) ")
+		end
+
+		if is_dead then
+			table.insert(print_args, COLOR_DEAD)
+			table.insert(print_args, "*DEAD* ")
+		end
+
+		local stripped_ply_nick = ply:Nick():gsub("<.->", "")
+		if #stripped_ply_nick > 20 then
+			stripped_ply_nick = stripped_ply_nick:sub(1, 20) .. "..."
+		end
+
+		table.insert(print_args, COLOR_PRINT_CHAT_NICK)
+		table.insert(print_args, stripped_ply_nick)
+
+		table.insert(print_args, COLOR_PRINT_CHAT_MSG)
+		table.insert(print_args, (": %s\n"):format(msg))
+
+		msgc_native(unpack(print_args))
 	end
 
 	function EasyChat.SendGlobalMessage(ply, str, is_team, is_local)
@@ -175,20 +215,19 @@ if SERVER then
 
 		filter = table.ClearKeys(filter)
 
+		local is_dead = not ply:Alive()
 		net.Start(NET_BROADCAST_MSG)
 		net.WriteEntity(ply)
 		net.WriteString(msg)
-		net.WriteBool(IsValid(ply) and (not ply:Alive()) or false)
+		net.WriteBool(is_dead)
 		net.WriteBool(is_team)
 		net.WriteBool(is_local)
 		net.Send(filter)
 
-		if game.IsDedicated() and not is_local then
+		--if game.IsDedicated() and not is_local then
 			-- shows in server console
-			local print_msg = ("%s: %s"):format(ply:Nick():gsub("<.->", ""), msg)
-			if is_team then print_msg = "(TEAM) " .. print_msg end
-			print(print_msg)
-		end
+			print_chat_msg(ply, msg, is_team, is_dead)
+		--end
 	end
 
 	local SPAM_STEP = 1 -- how many messages can be sent per second after burst
@@ -421,11 +460,11 @@ if SERVER then
 		if has_version_warned then return end
 
 		if is_outdated and EC_VERSION_WARNING:GetBool() then
-			local msg_components = { color_gray, "The server is running an", color_red, " outdated ", color_gray, "version of", color_red, " EasyChat" }
+			local msg_components = { COLOR_GRAY, "The server is running an", COLOR_RED, " outdated ", COLOR_GRAY, "version of", COLOR_RED, " EasyChat" }
 			if old_version and new_version then
-				table.Add(msg_components, { color_gray, " (current: ", color_red, old_version, color_gray, " | newest: ", color_red, new_version, color_gray, ")." })
+				table.Add(msg_components, { COLOR_GRAY, " (current: ", COLOR_RED, old_version, COLOR_GRAY, " | newest: ", COLOR_RED, new_version, COLOR_GRAY, ")." })
 			else
-				table.Add(msg_components, { color_gray, "." })
+				table.Add(msg_components, { COLOR_GRAY, "." })
 			end
 
 			table.insert(msg_components, "\nConsider updating.")
@@ -620,7 +659,7 @@ if CLIENT then
 	include("easychat/client/vgui/chathud_font_editor_panel.lua")
 
 	function EasyChat.Warn(msg)
-		chat.AddText(color_red, "[WARN] " .. msg)
+		chat.AddText(COLOR_RED, "[WARN] " .. msg)
 	end
 
 	-- TODO: Figure out how to check keyboard IME
@@ -1159,6 +1198,30 @@ if CLIENT then
 		return false
 	end
 
+	function EasyChat.SendGlobalMessage(msg, is_team, is_local)
+		msg = EasyChat.MacroProcessor:ProcessString(msg)
+
+		local source_lang, target_lang =
+			EC_TRANSLATE_OUT_SRC_LANG:GetString(),
+			EC_TRANSLATE_OUT_TARGET_LANG:GetString()
+
+		if EC_TRANSLATE_OUT_MSG:GetBool() and source_lang ~= target_lang then
+			EasyChat.Translator:Translate(msg, source_lang, target_lang, function(success, _, translation)
+				net.Start(NET_SEND_MSG)
+				net.WriteString(success and translation or msg)
+				net.WriteBool(is_team)
+				net.WriteBool(is_local)
+				net.SendToServer()
+			end)
+		else
+			net.Start(NET_SEND_MSG)
+			net.WriteString(msg)
+			net.WriteBool(is_team)
+			net.WriteBool(is_local)
+			net.SendToServer()
+		end
+	end
+
 	function EasyChat.Init()
 		load_chatbox_colors()
 
@@ -1180,30 +1243,6 @@ if CLIENT then
 		ec_addtext_handles = {}
 		uploading = false
 		queued_upload = nil
-
-		function EasyChat.SendGlobalMessage(msg, is_team, is_local)
-			msg = EasyChat.MacroProcessor:ProcessString(msg)
-
-			local source_lang, target_lang =
-				EC_TRANSLATE_OUT_SRC_LANG:GetString(),
-				EC_TRANSLATE_OUT_TARGET_LANG:GetString()
-
-			if EC_TRANSLATE_OUT_MSG:GetBool() and source_lang ~= target_lang then
-				EasyChat.Translator:Translate(msg, source_lang, target_lang, function(success, _, translation)
-					net.Start(NET_SEND_MSG)
-					net.WriteString(success and translation or msg)
-					net.WriteBool(is_team)
-					net.WriteBool(is_local)
-					net.SendToServer()
-				end)
-			else
-				net.Start(NET_SEND_MSG)
-				net.WriteString(msg)
-				net.WriteBool(is_team)
-				net.WriteBool(is_local)
-				net.SendToServer()
-			end
-		end
 
 		EasyChat.AddMode("Team", function(text)
 			EasyChat.SendGlobalMessage(text, true, false)
@@ -2634,9 +2673,9 @@ if CLIENT then
 			if type == "servermsg" and EC_SERVER_MSG:GetBool() then
 				local cvar_name, cvar_value = text:match("^Server cvar '([a-zA-Z_]+)' changed to (.+)$")
 				if cvar_name and cvar_value then
-					chat.AddText(color_gray, "Server ", color_red, cvar_name, color_gray, " changed to ", color_red, cvar_value)
+					chat.AddText(COLOR_GRAY, "Server ", COLOR_RED, cvar_name, COLOR_GRAY, " changed to ", COLOR_RED, cvar_value)
 				else
-					chat.AddText(color_gray, text)
+					chat.AddText(COLOR_GRAY, text)
 				end
 			end
 		end)
@@ -2788,8 +2827,8 @@ if CLIENT then
 
 		if jit.arch == "x64" and not cookie.GetString("ECChromiumWarn") then
 			-- warn related to chromium regression
-			EasyChat.AddText(EasyChat.GUI.RichText, color_red, "IF YOU ARE HAVING TROUBLES TO TYPE SOME CHARACTERS PLEASE TYPE", color_white, " easychat_legacy_entry 1 ",
-			color_red, "IN YOUR CONSOLE. THE ISSUE IS DUE TO A REGRESSION IN CHROMIUM. MORE INFO HERE: https://github.com/Facepunch/garrysmod-issues/issues/4414\n"
+			EasyChat.AddText(EasyChat.GUI.RichText, COLOR_RED, "IF YOU ARE HAVING TROUBLES TO TYPE SOME CHARACTERS PLEASE TYPE", color_white, " easychat_legacy_entry 1 ",
+			COLOR_RED, "IN YOUR CONSOLE. THE ISSUE IS DUE TO A REGRESSION IN CHROMIUM. MORE INFO HERE: https://github.com/Facepunch/garrysmod-issues/issues/4414\n"
 			.. "IF YOU STILL HAVE ISSUES PLEASE DO REPORT THEM HERE: https://github.com/Earu/EasyChat/issues")
 			cookie.Set("ECChromiumWarn", "1")
 		end
@@ -2864,7 +2903,7 @@ if CLIENT then
 	function EasyChat.AddDeadTag(msg_components)
 		msg_components = msg_components or {}
 
-		table.insert(msg_components, Color(240, 80, 80))
+		table.insert(msg_components, COLOR_DEAD)
 		table.insert(msg_components, "*DEAD* ")
 
 		return msg_components
@@ -2873,7 +2912,7 @@ if CLIENT then
 	function EasyChat.AddLocalTag(msg_components)
 		msg_components = msg_components or {}
 
-		table.insert(msg_components, Color(120, 210, 255))
+		table.insert(msg_components, COLOR_LOCAL)
 		table.insert(msg_components, "(Local) ")
 
 		return msg_components
@@ -2882,7 +2921,7 @@ if CLIENT then
 	function EasyChat.AddTeamTag(msg_components)
 		msg_components = msg_components or {}
 
-		table.insert(msg_components, Color(120, 120, 240))
+		table.insert(msg_components, COLOR_TEAM)
 		table.insert(msg_components, "(Team) ")
 
 		return msg_components
