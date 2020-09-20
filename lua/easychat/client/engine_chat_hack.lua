@@ -63,6 +63,8 @@ local function hack_msg_send()
 	end
 
 	function text_entry:OnKeyCodeTyped(key_code)
+		EasyChat.SetupHistory(self, key_code)
+
 		if key_code == KEY_TAB then
 			self:OnTab()
 			return true

@@ -651,6 +651,8 @@ if CLIENT then
 	local ec_convars = {}
 	local uploading = false
 	local queued_upload = nil
+	local ec_ctrl_shortcuts = {}
+	local ec_alt_shortcuts = {}
 
 	-- after easychat var declarations [necessary]
 	include("easychat/client/vgui/chatbox_panel.lua")
@@ -1222,6 +1224,518 @@ if CLIENT then
 		end
 	end
 
+	local function string_hash(text)
+		local counter = 1
+		local len = #text
+		for i = 1, len, 3 do
+			counter =
+				math.fmod(counter * 8161, 4294967279) + -- 2^32 - 17: Prime!
+				(text:byte(i) * 16776193) +
+				((text:byte(i + 1) or (len - i + 256)) * 8372226) +
+				((text:byte(i + 2) or (len - i + 256)) * 3932164)
+		end
+
+		return math.fmod(counter, 4294967291) -- 2^32 - 5: Prime (and different from the prime in the loop)
+	end
+
+	function EasyChat.GetProperNick(ply)
+		if not IsValid(ply) then return "???" end
+
+		local ply_nick = ply:Nick()
+		if not ec_markup then return ply_nick end
+		local mk = ec_markup.CachePlayer("EasyChat", ply, function()
+			return ec_markup.Parse(ply_nick, nil, true)
+		end)
+
+		return mk and mk:GetText() or ply_nick
+	end
+
+	function EasyChat.PastelizeNick(nick)
+		local hue = string_hash(nick)
+		local saturation, value = hue % 3 == 0, hue % 127 == 0
+
+		-- HSVToColor doesnt return a color with the color metatable...
+		local bad_col = HSVToColor(hue % 180 * 2, saturation and 0.3 or 0.6, value and 0.6 or 1)
+		return Color(bad_col.r, bad_col.g, bad_col.b, bad_col.a)
+	end
+
+	local function append_text(richtext, text)
+		if richtext.HistoryName then
+			richtext.Log = richtext.Log and richtext.Log .. text or text
+		end
+
+		richtext:AppendText(text)
+	end
+
+	local function append_text_url(richtext, text)
+		local start_pos, end_pos = EasyChat.IsURL(text)
+		if not start_pos then
+			append_text(richtext, text)
+		else
+			local url = text:sub(start_pos, end_pos)
+			append_text(richtext, text:sub(1, start_pos - 1))
+
+			local previous_color
+			if richtext.GetLastColorChange then
+				previous_color = richtext:GetLastColorChange()
+				richtext:InsertColorChange(LINK_COLOR)
+			end
+
+			richtext:InsertClickableTextStart(url)
+			append_text(richtext, url)
+			richtext:InsertClickableTextEnd()
+
+			if previous_color then
+				richtext:InsertColorChange(previous_color)
+			end
+
+			if EC_LINKS_CLIPBOARD:GetBool() and richtext:IsVisible() then
+				SetClipboardText(url)
+			end
+
+			-- recurse for possible other urls after this one
+			append_text_url(richtext, text:sub(end_pos + 1))
+		end
+	end
+
+	local function save_text(richtext)
+		if not richtext.HistoryName then return end
+
+		EasyChat.SaveToHistory(richtext.HistoryName, richtext.Log)
+		richtext.Log = ""
+	end
+
+	local function chathud_append_text(text)
+		if not EC_HUD_CUSTOM:GetBool() then return end
+		EasyChat.ChatHUD:AppendText(text)
+	end
+
+	local function global_append_text(text)
+		local data = {}
+
+		chathud_append_text(text)
+		append_text(EasyChat.GUI.RichText, text)
+
+		if not ec_markup then
+			table.insert(data, text)
+			return data
+		end
+
+		local mk = ec_markup.Parse(text)
+		for _, line in ipairs(mk.Lines) do
+			for _, component in ipairs(line.Components) do
+				if component.Color then
+					table.insert(data, component.Color)
+				elseif component.Type == "text" then
+					table.insert(data, component.Content)
+				end
+			end
+		end
+
+		return data
+	end
+
+	local image_url_patterns = {
+		"^https?://steamuserimages%-a%.akamaihd%.net/ugc/[0-9]+/[A-Z0-9]+/",
+		"^https?://pbs%.twimg%.com/media/",
+	}
+	local image_url_exts = { "png", "jpg", "jpeg", "gif", "webp" }
+	local function is_image_url(url)
+		local simple_url = url:gsub("%?[^/]+", ""):lower() -- remove url args, lower for exts like JPG, PNG
+		for _, url_ext in ipairs(image_url_exts) do
+			local pattern = (".%s$"):format(url_ext)
+			if simple_url:match(pattern) then return true end
+		end
+
+		for _, pattern in ipairs(image_url_patterns) do
+			if url:match(pattern) then return true end
+		end
+
+		return false
+	end
+
+	local function global_append_text_url(text)
+		local data = {}
+
+		local start_pos, end_pos = EasyChat.IsURL(text)
+		if not start_pos then
+			table.Add(data, global_append_text(text))
+		else
+			local url = text:sub(start_pos, end_pos)
+			table.Add(data, global_append_text(text:sub(1, start_pos - 1)))
+
+			local previous_color = EasyChat.GUI.RichText:GetLastColorChange()
+			EasyChat.GUI.RichText:InsertColorChange(LINK_COLOR)
+
+			if is_image_url(url) then
+				EasyChat.GUI.RichText:InsertClickableTextStart(url)
+				append_text(EasyChat.GUI.RichText, url)
+				EasyChat.GUI.RichText:InsertClickableTextEnd()
+
+				if EC_HUD_CUSTOM:GetBool() then
+					EasyChat.ChatHUD:AppendImageURL(url)
+				end
+
+				if EC_IMAGES:GetBool() then
+					EasyChat.GUI.RichText:AppendImageURL(url)
+				end
+			else
+				EasyChat.GUI.RichText:InsertClickableTextStart(url)
+				global_append_text(url)
+				EasyChat.GUI.RichText:InsertClickableTextEnd()
+			end
+
+			-- hack that fixes broken URLs for the gmod default RichText panel unti we get a proper fix
+			if EC_LEGACY_TEXT:GetBool() then
+				EasyChat.GUI.RichText:InsertClickableTextStart(url)
+				EasyChat.GUI.RichText:AppendText(" ")
+				EasyChat.GUI.RichText:InsertClickableTextEnd()
+				EasyChat.GUI.RichText:AppendText(" ")
+			end
+
+			EasyChat.GUI.RichText:InsertColorChange(previous_color)
+
+			table.insert(data, LINK_COLOR)
+			table.insert(data, url)
+			table.insert(data, previous_color)
+
+			if EC_LINKS_CLIPBOARD:GetBool() and EasyChat.GUI.RichText:IsVisible() then
+				SetClipboardText(url)
+			end
+
+			-- recurse for possible other urls after this one
+			table.Add(data, global_append_text_url(text:sub(end_pos + 1)))
+		end
+
+		return data
+	end
+
+	local function is_color(tbl)
+		if type(tbl) ~= "table" then return false end
+		if isnumber(tbl.r) and isnumber(tbl.g) and isnumber(tbl.b) then
+			return true
+		end
+
+		return false
+	end
+
+	local function extract_tags_data(str, is_nick)
+		local data = {}
+
+		if not ec_markup then
+			table.insert(data, str)
+		else
+			-- use markup to get text and colors out of the string
+			local mk = ec_markup.Parse(str, nil, is_nick)
+			for _, line in ipairs(mk.Lines) do
+				for _, component in ipairs(line.Components) do
+					if component.Color then
+						table.insert(data, component.Color)
+					elseif component.Type == "text" then
+						table.insert(data, component.Content)
+					elseif component.Type == "stop" then
+						table.insert(data, color_white)
+					end
+				end
+			end
+		end
+
+		return data
+	end
+
+	local function global_append_nick(str)
+		local data = {}
+
+		local tags_data = extract_tags_data(str, true)
+		for _, tag_data in ipairs(tags_data) do
+			if is_color(tag_data) then
+				EasyChat.GUI.RichText:InsertColorChange(tag_data.r, tag_data.g, tag_data.b, 255)
+				table.insert(data, tag_data)
+			elseif isstring(tag_data) then
+				append_text(EasyChat.GUI.RichText, tag_data)
+				table.insert(data, tag_data)
+			end
+		end
+
+		EasyChat.GUI.RichText:InsertColorChange(255, 255, 255, 255)
+		table.insert(data, color_white)
+
+		if EC_HUD_CUSTOM:GetBool() then
+			-- let the chathud do its own thing
+			EasyChat.ChatHUD:AppendNick(str)
+			EasyChat.ChatHUD:PushPartComponent("stop")
+		end
+
+		return data
+	end
+
+	local function global_insert_color_change(r, g, b, a)
+		r, g, b, a = r or 255, g or 255, b or 255, isnumber(a) and a or 255
+
+		if EasyChat.UseDermaSkin and r == 255 and g == 255 and b == 255 then
+			local new_col = EasyChat.GUI.RichText:GetSkin().text_normal
+			EasyChat.GUI.RichText:InsertColorChange(new_col.r, new_col.g, new_col.b, new_col.a)
+		else
+			EasyChat.GUI.RichText:InsertColorChange(r, g, b, a)
+		end
+
+		if EC_HUD_CUSTOM:GetBool() then
+			EasyChat.ChatHUD:InsertColorChange(r, g, b)
+		end
+
+		return Color(r, g, b, a)
+	end
+
+	local history_file_handles = {}
+	local HISTORY_DIRECTORY = "easychat/history"
+	function EasyChat.SaveToHistory(name, content)
+		if not name or not content then return end
+		if EasyChat.IsStringEmpty(content) then return end
+
+		if not file.Exists(HISTORY_DIRECTORY, "DATA") then
+			file.CreateDir(HISTORY_DIRECTORY)
+		end
+
+		local file_name = ("%s/%s_history.txt"):format(HISTORY_DIRECTORY, name:lower())
+		local file_handles = history_file_handles[name]
+		if not file_handles then
+			file_handles = {
+				input = file.Open(file_name, "w", "DATA"),
+				output = file.Open(file_name, "r", "DATA"),
+			}
+			history_file_handles[name] = file_handles
+		end
+
+		-- another process is using the file, discard
+		if not file_handles.input or not file_handles.output then return end
+
+		file_handles.input:Seek(0)
+		file_handles.output:Seek(0)
+
+		local pre_content = file_handles.output:Size() >= 10000
+			and "...\n" .. (file_handles.output:Read(10000 - #content) or "")
+			or file_handles.output:Read(10000)
+
+		file_handles.input:Write(pre_content and pre_content .. content or content)
+		file_handles.input:Flush()
+	end
+
+	function EasyChat.ReadFromHistory(name)
+		if not name then return "" end
+
+		local file_name = ("%s/%s_history.txt"):format(HISTORY_DIRECTORY, name:lower())
+		if not file.Exists(file_name, "DATA") then return "" end
+
+		local history_file = file.Open(file_name, "r", "DATA")
+
+		-- another process is using the file, return an empty string
+		if not history_file then return "" end
+
+		local contents = history_file:Read(10000)
+		history_file:Close()
+
+		return contents or ""
+	end
+
+	function EasyChat.AddText(richtext, ...)
+		append_text(richtext, "\n")
+		if not EasyChat.UseDermaSkin then
+			richtext:InsertColorChange(255, 255, 255, 255)
+		end
+
+		if EC_TIMESTAMPS:GetBool() then
+			if EC_TIMESTAMPS_12:GetBool() then
+				append_text(richtext, os.date("%I:%M %p") .. " - ")
+			else
+				append_text(richtext, os.date("%H:%M") .. " - ")
+			end
+		end
+
+		local args = {...}
+		for _, arg in ipairs(args) do
+			if isstring(arg) then
+				append_text_url(richtext, arg)
+			elseif type(arg) == "Player" then
+				if not IsValid(arg) then
+					richtext:InsertColorChange(UNKNOWN_COLOR.r, UNKNOWN_COLOR.g, UNKNOWN_COLOR.b)
+					append_text(richtext, "???")
+				else
+					local ply_col = EC_PLAYER_COLOR:GetBool() and team.GetColor(arg:Team()) or color_white
+					local nick = EasyChat.GetProperNick(arg)
+					if EC_PLAYER_PASTEL:GetBool() then
+						ply_col = EasyChat.PastelizeNick(nick)
+					end
+
+					local empty_nick = EasyChat.IsStringEmpty(nick)
+					if empty_nick then
+						ply_col = UNKNOWN_COLOR
+					end
+
+					richtext:InsertColorChange(ply_col.r, ply_col.g, ply_col.b, 255)
+					richtext:InsertClickableTextStart(("ECPlayerActions: %s|%s")
+						:format(arg:SteamID(), empty_nick and "[NO NAME]" or nick))
+
+					local lp = LocalPlayer()
+					if IsValid(lp) and lp == arg and EC_USE_ME:GetBool() then
+						append_text(richtext, "me")
+					else
+						if empty_nick then
+							append_text(richtext, "[NO NAME]")
+						else
+							append_text(richtext, nick)
+						end
+					end
+
+					richtext:InsertClickableTextEnd()
+				end
+			elseif is_color(arg) then
+				richtext:InsertColorChange(arg.r, arg.g, arg.b, isnumber(arg.a) and arg.a or 255)
+			else
+				append_text(richtext, tostring(arg))
+			end
+		end
+
+		save_text(richtext)
+	end
+
+	function EasyChat.GlobalAddText(...)
+		-- somehow too early?
+		if not EasyChat.GUI or not EasyChat.ChatHUD then
+			EasyChat.Print(true, "attempting to AddText without a GUI??!!")
+			return { ... }
+		end
+
+		local data = {}
+
+		if EC_HUD_CUSTOM:GetBool() then
+			EasyChat.ChatHUD:NewLine()
+		end
+
+		append_text(EasyChat.GUI.RichText, "\n")
+		global_insert_color_change(255, 255, 255, 255)
+		table.insert(data, color_white)
+
+		if EC_ENABLE:GetBool() then
+			local timestamp = (EC_TIMESTAMPS_12:GetBool() and os.date("%I:%M %p") or os.date("%H:%M")) .. " - "
+			if EC_TIMESTAMPS:GetBool() then
+				append_text(EasyChat.GUI.RichText, timestamp)
+			end
+
+			if EC_HUD_TIMESTAMPS:GetBool() then
+				chathud_append_text(timestamp)
+				table.insert(data, timestamp)
+			end
+		end
+
+		local args = {...}
+		for _, arg in ipairs(args) do
+			local callback = ec_addtext_handles[type(arg)]
+			if callback then
+				local succ, ret = xpcall(callback, function(err)
+					ErrorNoHalt(debug.traceback(err))
+				end, arg)
+				if succ and ret then
+					if is_color(ret) or isstring(ret) then
+						table.insert(data, ret)
+					elseif istable(ret) then
+						table.Add(data, ret)
+					end
+				end
+			else
+				local str = tostring(arg)
+				table.Add(data, global_append_text(str))
+			end
+		end
+
+		if EC_HUD_CUSTOM:GetBool() then
+			EasyChat.ChatHUD:PushPartComponent("stop")
+			EasyChat.ChatHUD:InvalidateLayout()
+		end
+
+		save_text(EasyChat.GUI.RichText)
+
+		if EC_TICK_SOUND:GetBool() then
+			chat.PlaySound()
+		end
+
+		return data
+	end
+
+	local invalid_shortcut_keys = {
+		[KEY_ENTER] = true, [KEY_PAD_ENTER] = true,
+		[KEY_ESCAPE] = true, [KEY_TAB] = true
+	}
+	local function is_valid_shortcut_key(key_code)
+		return not invalid_shortcut_keys[key_code]
+	end
+
+	function EasyChat.RegisterCTRLShortcut(key_code, callback)
+		if is_valid_shortcut_key(key_code) then
+			ec_ctrl_shortcuts[key_code] = callback
+		end
+	end
+
+	function EasyChat.RegisterALTShortcut(key_code, callback)
+		if is_valid_shortcut_key(key_code) then
+			ec_alt_shortcuts[key_code] = callback
+		end
+	end
+
+	--[[
+		/!\ Not used for the main chat text entry
+		Its because the chat text entry is a DHTML
+		panel that does not fire OnKeyCode* callbacks
+	]]--
+	function EasyChat.UseRegisteredShortcuts(text_entry, key_code)
+		local pos = text_entry:GetCaretPos()
+		local first = text_entry:GetText():sub(1, pos + 1)
+		local last = text_entry:GetText():sub(pos + 2, #text_entry:GetText())
+
+		if (input.IsKeyDown(KEY_LCONTROL) or input.IsKeyDown(KEY_RCONTROL)) and ec_ctrl_shortcuts[key_code] then
+			local retrieved, new_caret_pos = ec_ctrl_shortcuts[key_code](text_entry, text_entry:GetText(), pos, first, last)
+			if retrieved then
+				text_entry:SetText(retrieved)
+				if isnumber(new_caret_pos) then
+					text_entry:SetCaretPos(new_caret_pos)
+				end
+			end
+		elseif (input.IsKeyDown(KEY_LALT) or input.IsKeyDown(KEY_RALT)) and ec_alt_shortcuts[key_code] then
+			local retrieved, new_caret_pos = ec_alt_shortcuts[key_code](text_entry, text_entry:GetText(), pos, first, last)
+			if retrieved then
+				text_entry:SetText(retrieved)
+				if isnumber(new_caret_pos) then
+					text_entry:SetCaretPos(new_caret_pos)
+				end
+			end
+		end
+	end
+
+	--[[
+		/!\ Not used for the main chat text entry
+		Its because the chat text entry is a DHTML
+		panel that does not fire OnKeyCode* callbacks
+	]]--
+	function EasyChat.SetupHistory(text_entry, key_code)
+		if key_code == KEY_ENTER or key_code == KEY_PAD_ENTER then
+			text_entry:AddHistory(text_entry:GetText())
+			text_entry.HistoryPos = 0
+		end
+
+		if key_code == KEY_ESCAPE then
+			text_entry.HistoryPos = 0
+		end
+
+		if not text_entry.HistoryPos then return end
+
+		if key_code == KEY_UP then
+			text_entry.HistoryPos = text_entry.HistoryPos - 1
+			text_entry:UpdateFromHistory()
+		elseif key_code == KEY_DOWN then
+			text_entry.HistoryPos = text_entry.HistoryPos + 1
+			text_entry:UpdateFromHistory()
+		end
+	end
+
 	function EasyChat.Init()
 		load_chatbox_colors()
 
@@ -1243,6 +1757,8 @@ if CLIENT then
 		ec_addtext_handles = {}
 		uploading = false
 		queued_upload = nil
+		ec_ctrl_shortcuts = {}
+		ec_alt_shortcuts = {}
 
 		EasyChat.AddMode("Team", function(text)
 			EasyChat.SendGlobalMessage(text, true, false)
@@ -1256,233 +1772,6 @@ if CLIENT then
 			LocalPlayer():ConCommand(text)
 		end)
 
-		local function append_text(richtext, text)
-			if richtext.HistoryName then
-				richtext.Log = richtext.Log and richtext.Log .. text or text
-			end
-
-			richtext:AppendText(text)
-		end
-
-		local function append_text_url(richtext, text)
-			local start_pos, end_pos = EasyChat.IsURL(text)
-			if not start_pos then
-				append_text(richtext, text)
-			else
-				local url = text:sub(start_pos, end_pos)
-				append_text(richtext, text:sub(1, start_pos - 1))
-
-				local previous_color
-				if richtext.GetLastColorChange then
-					previous_color = richtext:GetLastColorChange()
-					richtext:InsertColorChange(LINK_COLOR)
-				end
-
-				richtext:InsertClickableTextStart(url)
-				append_text(richtext, url)
-				richtext:InsertClickableTextEnd()
-
-				if previous_color then
-					richtext:InsertColorChange(previous_color)
-				end
-
-				if EC_LINKS_CLIPBOARD:GetBool() and richtext:IsVisible() then
-					SetClipboardText(url)
-				end
-
-				-- recurse for possible other urls after this one
-				append_text_url(richtext, text:sub(end_pos + 1))
-			end
-		end
-
-		local function save_text(richtext)
-			if not richtext.HistoryName then return end
-
-			EasyChat.SaveToHistory(richtext.HistoryName, richtext.Log)
-			richtext.Log = ""
-		end
-
-		local function chathud_append_text(text)
-			if not EC_HUD_CUSTOM:GetBool() then return end
-			EasyChat.ChatHUD:AppendText(text)
-		end
-
-		local function global_append_text(text)
-			local data = {}
-
-			chathud_append_text(text)
-			append_text(EasyChat.GUI.RichText, text)
-
-			if not ec_markup then
-				table.insert(data, text)
-				return data
-			end
-
-			local mk = ec_markup.Parse(text)
-			for _, line in ipairs(mk.Lines) do
-				for _, component in ipairs(line.Components) do
-					if component.Color then
-						table.insert(data, component.Color)
-					elseif component.Type == "text" then
-						table.insert(data, component.Content)
-					end
-				end
-			end
-
-			return data
-		end
-
-		local image_url_patterns = {
-			"^https?://steamuserimages%-a%.akamaihd%.net/ugc/[0-9]+/[A-Z0-9]+/",
-			"^https?://pbs%.twimg%.com/media/",
-		}
-		local image_url_exts = { "png", "jpg", "jpeg", "gif", "webp" }
-		local function is_image_url(url)
-			local simple_url = url:gsub("%?[^/]+", ""):lower() -- remove url args, lower for exts like JPG, PNG
-			for _, url_ext in ipairs(image_url_exts) do
-				local pattern = (".%s$"):format(url_ext)
-				if simple_url:match(pattern) then return true end
-			end
-
-			for _, pattern in ipairs(image_url_patterns) do
-				if url:match(pattern) then return true end
-			end
-
-			return false
-		end
-
-		local function global_append_text_url(text)
-			local data = {}
-
-			local start_pos, end_pos = EasyChat.IsURL(text)
-			if not start_pos then
-				table.Add(data, global_append_text(text))
-			else
-				local url = text:sub(start_pos, end_pos)
-				table.Add(data, global_append_text(text:sub(1, start_pos - 1)))
-
-				local previous_color = EasyChat.GUI.RichText:GetLastColorChange()
-				EasyChat.GUI.RichText:InsertColorChange(LINK_COLOR)
-
-				if is_image_url(url) then
-					EasyChat.GUI.RichText:InsertClickableTextStart(url)
-					append_text(EasyChat.GUI.RichText, url)
-					EasyChat.GUI.RichText:InsertClickableTextEnd()
-
-					if EC_HUD_CUSTOM:GetBool() then
-						EasyChat.ChatHUD:AppendImageURL(url)
-					end
-
-					if EC_IMAGES:GetBool() then
-						EasyChat.GUI.RichText:AppendImageURL(url)
-					end
-				else
-					EasyChat.GUI.RichText:InsertClickableTextStart(url)
-					global_append_text(url)
-					EasyChat.GUI.RichText:InsertClickableTextEnd()
-				end
-
-				-- hack that fixes broken URLs for the gmod default RichText panel unti we get a proper fix
-				if EC_LEGACY_TEXT:GetBool() then
-					EasyChat.GUI.RichText:InsertClickableTextStart(url)
-					EasyChat.GUI.RichText:AppendText(" ")
-					EasyChat.GUI.RichText:InsertClickableTextEnd()
-					EasyChat.GUI.RichText:AppendText(" ")
-				end
-
-				EasyChat.GUI.RichText:InsertColorChange(previous_color)
-
-				table.insert(data, LINK_COLOR)
-				table.insert(data, url)
-				table.insert(data, previous_color)
-
-				if EC_LINKS_CLIPBOARD:GetBool() and EasyChat.GUI.RichText:IsVisible() then
-					SetClipboardText(url)
-				end
-
-				-- recurse for possible other urls after this one
-				table.Add(data, global_append_text_url(text:sub(end_pos + 1)))
-			end
-
-			return data
-		end
-
-		local function is_color(tbl)
-			if type(tbl) ~= "table" then return false end
-			if isnumber(tbl.r) and isnumber(tbl.g) and isnumber(tbl.b) then
-				return true
-			end
-
-			return false
-		end
-
-		local function extract_tags_data(str, is_nick)
-			local data = {}
-
-			if not ec_markup then
-				table.insert(data, str)
-			else
-				-- use markup to get text and colors out of the string
-				local mk = ec_markup.Parse(str, nil, is_nick)
-				for _, line in ipairs(mk.Lines) do
-					for _, component in ipairs(line.Components) do
-						if component.Color then
-							table.insert(data, component.Color)
-						elseif component.Type == "text" then
-							table.insert(data, component.Content)
-						elseif component.Type == "stop" then
-							table.insert(data, color_white)
-						end
-					end
-				end
-			end
-
-			return data
-		end
-
-		local function global_append_nick(str)
-			local data = {}
-
-			local tags_data = extract_tags_data(str, true)
-			for _, tag_data in ipairs(tags_data) do
-				if is_color(tag_data) then
-					EasyChat.GUI.RichText:InsertColorChange(tag_data.r, tag_data.g, tag_data.b, 255)
-					table.insert(data, tag_data)
-				elseif isstring(tag_data) then
-					append_text(EasyChat.GUI.RichText, tag_data)
-					table.insert(data, tag_data)
-				end
-			end
-
-			EasyChat.GUI.RichText:InsertColorChange(255, 255, 255, 255)
-			table.insert(data, color_white)
-
-			if EC_HUD_CUSTOM:GetBool() then
-				-- let the chathud do its own thing
-				EasyChat.ChatHUD:AppendNick(str)
-				EasyChat.ChatHUD:PushPartComponent("stop")
-			end
-
-			return data
-		end
-
-		local function global_insert_color_change(r, g, b, a)
-			r, g, b, a = r or 255, g or 255, b or 255, isnumber(a) and a or 255
-
-			if EasyChat.UseDermaSkin and r == 255 and g == 255 and b == 255 then
-				local new_col = EasyChat.GUI.RichText:GetSkin().text_normal
-				EasyChat.GUI.RichText:InsertColorChange(new_col.r, new_col.g, new_col.b, new_col.a)
-			else
-				EasyChat.GUI.RichText:InsertColorChange(r, g, b, a)
-			end
-
-			if EC_HUD_CUSTOM:GetBool() then
-				EasyChat.ChatHUD:InsertColorChange(r, g, b)
-			end
-
-			return Color(r, g, b, a)
-		end
-
 		EasyChat.SetAddTextTypeHandle("table", function(col)
 			if is_color(col) then
 				return global_insert_color_change(col.r, col.g, col.b, col.a)
@@ -1492,41 +1781,6 @@ if CLIENT then
 		end)
 
 		EasyChat.SetAddTextTypeHandle("string", function(str) return global_append_text_url(str) end)
-
-		local function string_hash(text)
-			local counter = 1
-			local len = #text
-			for i = 1, len, 3 do
-				counter =
-					math.fmod(counter * 8161, 4294967279) + -- 2^32 - 17: Prime!
-					(text:byte(i) * 16776193) +
-					((text:byte(i + 1) or (len - i + 256)) * 8372226) +
-					((text:byte(i + 2) or (len - i + 256)) * 3932164)
-			end
-
-			return math.fmod(counter, 4294967291) -- 2^32 - 5: Prime (and different from the prime in the loop)
-		end
-
-		function EasyChat.GetProperNick(ply)
-			if not IsValid(ply) then return "???" end
-
-			local ply_nick = ply:Nick()
-			if not ec_markup then return ply_nick end
-			local mk = ec_markup.CachePlayer("EasyChat", ply, function()
-				return ec_markup.Parse(ply_nick, nil, true)
-			end)
-
-			return mk and mk:GetText() or ply_nick
-		end
-
-		function EasyChat.PastelizeNick(nick)
-			local hue = string_hash(nick)
-			local saturation, value = hue % 3 == 0, hue % 127 == 0
-
-			-- HSVToColor doesnt return a color with the color metatable...
-			local bad_col = HSVToColor(hue % 180 * 2, saturation and 0.3 or 0.6, value and 0.6 or 1)
-			return Color(bad_col.r, bad_col.g, bad_col.b, bad_col.a)
-		end
 
 		EasyChat.SetAddTextTypeHandle("Player", function(ply)
 			local data = {}
@@ -1653,181 +1907,6 @@ if CLIENT then
 
 			return data
 		end)
-
-		local history_file_handles = {}
-		local HISTORY_DIRECTORY = "easychat/history"
-		function EasyChat.SaveToHistory(name, content)
-			if not name or not content then return end
-			if EasyChat.IsStringEmpty(content) then return end
-
-			if not file.Exists(HISTORY_DIRECTORY, "DATA") then
-				file.CreateDir(HISTORY_DIRECTORY)
-			end
-
-			local file_name = ("%s/%s_history.txt"):format(HISTORY_DIRECTORY, name:lower())
-			local file_handles = history_file_handles[name]
-			if not file_handles then
-				file_handles = {
-					input = file.Open(file_name, "w", "DATA"),
-					output = file.Open(file_name, "r", "DATA"),
-				}
-				history_file_handles[name] = file_handles
-			end
-
-			-- another process is using the file, discard
-			if not file_handles.input or not file_handles.output then return end
-
-			file_handles.input:Seek(0)
-			file_handles.output:Seek(0)
-
-			local pre_content = file_handles.output:Size() >= 10000
-				and "...\n" .. (file_handles.output:Read(10000 - #content) or "")
-				or file_handles.output:Read(10000)
-
-			file_handles.input:Write(pre_content and pre_content .. content or content)
-			file_handles.input:Flush()
-		end
-
-		function EasyChat.ReadFromHistory(name)
-			if not name then return "" end
-
-			local file_name = ("%s/%s_history.txt"):format(HISTORY_DIRECTORY, name:lower())
-			if not file.Exists(file_name, "DATA") then return "" end
-
-			local history_file = file.Open(file_name, "r", "DATA")
-
-			-- another process is using the file, return an empty string
-			if not history_file then return "" end
-
-			local contents = history_file:Read(10000)
-			history_file:Close()
-
-			return contents or ""
-		end
-
-		function EasyChat.AddText(richtext, ...)
-			append_text(richtext, "\n")
-			if not EasyChat.UseDermaSkin then
-				richtext:InsertColorChange(255, 255, 255, 255)
-			end
-
-			if EC_TIMESTAMPS:GetBool() then
-				if EC_TIMESTAMPS_12:GetBool() then
-					append_text(richtext, os.date("%I:%M %p") .. " - ")
-				else
-					append_text(richtext, os.date("%H:%M") .. " - ")
-				end
-			end
-
-			local args = {...}
-			for _, arg in ipairs(args) do
-				if isstring(arg) then
-					append_text_url(richtext, arg)
-				elseif type(arg) == "Player" then
-					if not IsValid(arg) then
-						richtext:InsertColorChange(UNKNOWN_COLOR.r, UNKNOWN_COLOR.g, UNKNOWN_COLOR.b)
-						append_text(richtext, "???")
-					else
-						local ply_col = EC_PLAYER_COLOR:GetBool() and team.GetColor(arg:Team()) or color_white
-						local nick = EasyChat.GetProperNick(arg)
-						if EC_PLAYER_PASTEL:GetBool() then
-							ply_col = EasyChat.PastelizeNick(nick)
-						end
-
-						local empty_nick = EasyChat.IsStringEmpty(nick)
-						if empty_nick then
-							ply_col = UNKNOWN_COLOR
-						end
-
-						richtext:InsertColorChange(ply_col.r, ply_col.g, ply_col.b, 255)
-						richtext:InsertClickableTextStart(("ECPlayerActions: %s|%s")
-							:format(arg:SteamID(), empty_nick and "[NO NAME]" or nick))
-
-						local lp = LocalPlayer()
-						if IsValid(lp) and lp == arg and EC_USE_ME:GetBool() then
-							append_text(richtext, "me")
-						else
-							if empty_nick then
-								append_text(richtext, "[NO NAME]")
-							else
-								append_text(richtext, nick)
-							end
-						end
-
-						richtext:InsertClickableTextEnd()
-					end
-				elseif is_color(arg) then
-					richtext:InsertColorChange(arg.r, arg.g, arg.b, isnumber(arg.a) and arg.a or 255)
-				else
-					append_text(richtext, tostring(arg))
-				end
-			end
-
-			save_text(richtext)
-		end
-
-		function EasyChat.GlobalAddText(...)
-			-- somehow too early?
-			if not EasyChat.GUI or not EasyChat.ChatHUD then
-				EasyChat.Print(true, "attempting to AddText without a GUI??!!")
-				return { ... }
-			end
-
-			local data = {}
-
-			if EC_HUD_CUSTOM:GetBool() then
-				EasyChat.ChatHUD:NewLine()
-			end
-
-			append_text(EasyChat.GUI.RichText, "\n")
-			global_insert_color_change(255, 255, 255, 255)
-			table.insert(data, color_white)
-
-			if EC_ENABLE:GetBool() then
-				local timestamp = (EC_TIMESTAMPS_12:GetBool() and os.date("%I:%M %p") or os.date("%H:%M")) .. " - "
-				if EC_TIMESTAMPS:GetBool() then
-					append_text(EasyChat.GUI.RichText, timestamp)
-				end
-
-				if EC_HUD_TIMESTAMPS:GetBool() then
-					chathud_append_text(timestamp)
-					table.insert(data, timestamp)
-				end
-			end
-
-			local args = {...}
-			for _, arg in ipairs(args) do
-				local callback = ec_addtext_handles[type(arg)]
-				if callback then
-					local succ, ret = xpcall(callback, function(err)
-						ErrorNoHalt(debug.traceback(err))
-					end, arg)
-					if succ and ret then
-						if is_color(ret) or isstring(ret) then
-							table.insert(data, ret)
-						elseif istable(ret) then
-							table.Add(data, ret)
-						end
-					end
-				else
-					local str = tostring(arg)
-					table.Add(data, global_append_text(str))
-				end
-			end
-
-			if EC_HUD_CUSTOM:GetBool() then
-				EasyChat.ChatHUD:PushPartComponent("stop")
-				EasyChat.ChatHUD:InvalidateLayout()
-			end
-
-			save_text(EasyChat.GUI.RichText)
-
-			if EC_TICK_SOUND:GetBool() then
-				chat.PlaySound()
-			end
-
-			return data
-		end
 
 		do
 			chat.old_AddText = chat.old_AddText or chat.AddText
@@ -2038,84 +2117,6 @@ if CLIENT then
 			}
 
 			close_chatbox(true)
-		end
-
-		local ctrl_shortcuts = {}
-		local alt_shortcuts = {}
-
-		local invalid_shortcut_keys = {
-			[KEY_ENTER] = true, [KEY_PAD_ENTER] = true,
-			[KEY_ESCAPE] = true, [KEY_TAB] = true
-		}
-		local function is_valid_shortcut_key(key)
-			return not invalid_shortcut_keys[key]
-		end
-
-		function EasyChat.RegisterCTRLShortcut(key, callback)
-			if is_valid_shortcut_key(key) then
-				ctrl_shortcuts[key] = callback
-			end
-		end
-
-		function EasyChat.RegisterALTShortcut(key, callback)
-			if is_valid_shortcut_key(key) then
-				alt_shortcuts[key] = callback
-			end
-		end
-
-		--[[
-			/!\ Not used for the main chat text entry
-			Its because the chat text entry is a DHTML
-			panel that does not fire OnKeyCode* callbacks
-		]]--
-		function EasyChat.UseRegisteredShortcuts(text_entry, key)
-			local pos = text_entry:GetCaretPos()
-			local first = text_entry:GetText():sub(1, pos + 1)
-			local last = text_entry:GetText():sub(pos + 2, #text_entry:GetText())
-
-			if (input.IsKeyDown(KEY_LCONTROL) or input.IsKeyDown(KEY_RCONTROL)) and ctrl_shortcuts[key] then
-				local retrieved, new_caret_pos = ctrl_shortcuts[key](text_entry, text_entry:GetText(), pos, first, last)
-				if retrieved then
-					text_entry:SetText(retrieved)
-					if isnumber(new_caret_pos) then
-						text_entry:SetCaretPos(new_caret_pos)
-					end
-				end
-			elseif (input.IsKeyDown(KEY_LALT) or input.IsKeyDown(KEY_RALT)) and alt_shortcuts[key] then
-				local retrieved, new_caret_pos = alt_shortcuts[key](text_entry, text_entry:GetText(), pos, first, last)
-				if retrieved then
-					text_entry:SetText(retrieved)
-					if isnumber(new_caret_pos) then
-						text_entry:SetCaretPos(new_caret_pos)
-					end
-				end
-			end
-		end
-
-		--[[
-			/!\ Not used for the main chat text entry
-			Its because the chat text entry is a DHTML
-			panel that does not fire OnKeyCode* callbacks
-		]]--
-		function EasyChat.SetupHistory(text_entry, key)
-			if key == KEY_ENTER or key == KEY_PAD_ENTER then
-				text_entry:AddHistory(text_entry:GetText())
-				text_entry.HistoryPos = 0
-			end
-
-			if key == KEY_ESCAPE then
-				text_entry.HistoryPos = 0
-			end
-
-			if not text_entry.HistoryPos then return end
-
-			if key == KEY_UP then
-				text_entry.HistoryPos = text_entry.HistoryPos - 1
-				text_entry:UpdateFromHistory()
-			elseif key == KEY_DOWN then
-				text_entry.HistoryPos = text_entry.HistoryPos + 1
-				text_entry:UpdateFromHistory()
-			end
 		end
 
 		local function nick_completion(text)
