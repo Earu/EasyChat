@@ -277,11 +277,7 @@ if SERVER then
 	end
 	EasyChat.SpamWatch = spam_watch
 
-	net.Receive(NET_SEND_MSG, function(_, ply)
-		local msg = net.ReadString()
-		local is_team = net.ReadBool()
-		local is_local = net.ReadBool()
-
+	function EasyChat.ReceiveGlobalMessage(ply, msg, is_team, is_local)
 		-- we sub the message len clientside if we receive something bigger here
 		-- it HAS to be malicious
 		if #msg > EC_MAX_CHARS:GetInt() then
@@ -297,6 +293,14 @@ if SERVER then
 		end
 
 		EasyChat.SendGlobalMessage(ply, msg, is_team, is_local)
+	end
+
+	net.Receive(NET_SEND_MSG, function(_, ply)
+		local msg = net.ReadString()
+		local is_team = net.ReadBool()
+		local is_local = net.ReadBool()
+
+		EasyChat.ReceiveGlobalMessage(ply, msg, is_team, is_local)
 	end)
 
 	net.Receive(NET_SET_TYPING, function(_, ply)
