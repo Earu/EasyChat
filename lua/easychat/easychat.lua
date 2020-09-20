@@ -1541,7 +1541,17 @@ if CLIENT then
 		return contents or ""
 	end
 
+	local function is_valid_richtext(richtext)
+		if not IsValid(richtext) then return false end
+		return richtext.ClassName:lower():match("richtext")
+	end
+
 	function EasyChat.AddText(richtext, ...)
+		if not is_valid_richtext(richtext) then
+			EasyChat.Print(true, "attempting to EasyChat.AddText on an invalid RichText panel")
+			return
+		end
+
 		append_text(richtext, "\n")
 		if not EasyChat.UseDermaSkin then
 			richtext:InsertColorChange(255, 255, 255, 255)
