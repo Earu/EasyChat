@@ -5,16 +5,25 @@ local TAG = "EasyChatEngineChatHack"
 if SERVER then
 	pcall(require, "sourcenet")
 
-	local say_cmd_pattern = "^say%s+"
-	hook.Add("ExecuteStringCommand", TAG, function(steam_id, command)
-		if command:match(say_cmd_pattern) then
-			local ply = player.GetBySteamID(steam_id)
-			if not IsValid(ply) then return end
-
-			local msg = command:gsub(say_cmd_pattern, "")
+	local say_cmds = {
+		["^say%s+"] = function(ply, msg)
 			EasyChat.ReceiveGlobalMessage(ply, msg, false, false)
+		end,
+		["^say%_team%s+"] = function(ply, msg)
+			EasyChat.ReceiveGlobalMessage(ply, msg, true, false)
+		end,
+	}
+	hook.Add("ExecuteStringCommand", TAG, function(steam_id, command)
+		for say_cmd_pattern, say_cmd_callback in pairs(say_cmds) do
+			if command:match(say_cmd_pattern) then
+				local ply = player.GetBySteamID(steam_id)
+				if not IsValid(ply) then return end
 
-			return true
+				local msg = command:gsub(say_cmd_pattern)
+				say_cmd_callback(ply, msg)
+
+				return true
+			end
 		end
 	end)
 
