@@ -19,7 +19,7 @@ if SERVER then
 				local ply = player.GetBySteamID(steam_id)
 				if not IsValid(ply) then return end
 
-				local msg = command:gsub(say_cmd_pattern)
+				local msg = command:gsub(say_cmd_pattern, "")
 				say_cmd_callback(ply, msg)
 
 				return true
