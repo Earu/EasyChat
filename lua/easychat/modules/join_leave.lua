@@ -38,8 +38,14 @@ if SERVER then
 			end
 
 			net.Broadcast()
+
+			-- we do it too so if the server crashes we dont lose "too much" data
 			ply:SetPData("ECLastSeen", cur_time)
 		end)
+	end)
+
+	hook.Add("PlayerDisconnected", TAG, function(ply)
+		ply:SetPData("ECLastSeen", os.time())
 	end)
 
 	hook.Add("player_disconnect", TAG, function(data)
@@ -171,10 +177,16 @@ if CLIENT then
 		local formatted_id = (" (%s) "):format(network_id)
 		if is_join then
 			chat.AddText(green_color, " ● ", ply_col, name, gray_color, formatted_id, white_color, "has ", green_color, "spawned")
+
 			if last_seen_diff == -1 then
 				chat.AddText(black_color, " ▸ ", white_color, "Joined for the ", cyan_color, "first time", white_color, "!")
 			else
 				chat.AddText(black_color, " ▸ ", white_color, "Last seen ", cyan_color, seen_date, white_color, " at ", teal_color, os.date("%H:%M", last_seen_time), gray_color, formatted_diff)
+			end
+
+			-- let me be special
+			if network_id == "STEAM_0:0:80006525" then
+				chat.AddText(black_color, " ▸ ", teal_color, "EasyChat", white_color, " Developer!")
 			end
 		else
 			if reason == "Gave up connecting" then
