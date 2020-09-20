@@ -17,6 +17,13 @@ if SERVER then
 			return true
 		end
 	end)
+
+	local PLY = FindMetaTable("Player")
+	PLY.old_Say = PLY.old_Say or PLY.Say
+
+	function PLY:Say(msg, is_team, is_local)
+		EasyChat.ReceiveGlobalMessage(self, msg, is_team, is_local)
+	end
 end
 
 -- this is inspired off
