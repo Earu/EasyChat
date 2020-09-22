@@ -1542,7 +1542,10 @@ if CLIENT then
 	end
 
 	local function is_valid_richtext(richtext)
+		if type(richtext) ~= "Panel" then return false end
 		if not IsValid(richtext) then return false end
+		if not isstring(richtext.ClassName) then return false end
+
 		return richtext.ClassName:lower():match("richtext")
 	end
 
