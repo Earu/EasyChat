@@ -1,9 +1,9 @@
 local TAG = "EasyChatEngineChatHack"
 
--- if a server has sourcenet, use it to make "say" use our networking
--- https://github.com/danielga/gm_sourcenet
+-- if a server has slog, use it to make "say" use our networking
+-- https://github.com/Heyter/gbins/tree/master/slog/src
 if SERVER then
-	pcall(require, "sourcenet")
+	pcall(require, "slog")
 
 	local say_cmds = {
 		["^say%s+"] = function(ply, msg)
