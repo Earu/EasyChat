@@ -32,7 +32,8 @@ hook.Add("HUDPaint", "EasyChatBlur", function()
         if not IsValid(panel) then
             blur_panels[panel] = nil
         elseif panel:IsVisible() and EasyChat.OutlayColor.a < 255 then
-            local x, y, w, h = panel:GetBounds()
+            local x, y = panel:LocalToScreen(0, 0)
+            local w, h = panel:GetSize()
             blur_rect(x + data.OffsetX, y + data.OffsetY, w + data.OffsetW, h + data.OffsetH, 10, 2)
         end
     end
