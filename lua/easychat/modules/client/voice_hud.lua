@@ -1,6 +1,8 @@
 local TAG = "EasyChatModuleVoiceHUD"
 local EC_VOICE_HUD = CreateClientConVar("easychat_voice_hud", "1", true, false, "Should we use EasyChat's voice hud")
+local EC_VOICE_RINGS = CreateClientConVar("easychat_voice_rings", "1", true, false, "Should we draw voice rings under the player")
 EasyChat.RegisterConvar(EC_VOICE_HUD, "Use EasyChat's voice HUD")
+EasyChat.RegisterConvar(EC_VOICE_RINGS, "Draw voice rings under players")
 
 local ply_voice_panels = {}
 cvars.RemoveChangeCallback(EC_VOICE_HUD:GetName(), TAG)
@@ -171,7 +173,6 @@ end
 timer.Create(TAG, 2, 0, voice_clean)
 
 local circle_mat = Material("SGM/playercircle")
-local black_color = Color(0, 0, 0)
 local function draw_voice_ring(ply)
 	if not IsValid(ply) then return end
 	if not ply:Alive() then return end
@@ -197,7 +198,7 @@ end
 
 local old_scrw, old_scrh = ScrW(), ScrH()
 hook.Add("PostDrawTranslucentRenderables", TAG, function()
-	if not EC_VOICE_HUD:GetBool() then return end
+	if not EC_VOICE_RINGS:GetBool() then return end
 
 	for _, ply in ipairs(player.GetAll()) do
 		draw_voice_ring(ply)
