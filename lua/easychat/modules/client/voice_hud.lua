@@ -24,7 +24,7 @@ local function get_player_volume(ply)
 	if not IsValid(ply) then return 0 end
 
 	if ply == LocalPlayer() then
-		return VOICE_LOOPBACK:GetBool() and ply:VoiceVolume() or 1
+		return VOICE_LOOPBACK:GetBool() and ply:VoiceVolume() or 0.15 + math.sin(CurTime() * 10) / 20
 	end
 
 	return ply:VoiceVolume()
@@ -32,6 +32,7 @@ end
 
 local PANEL = {}
 local MAX_VOICE_DATA = 50
+local PANEL_HEIGHT = 40
 
 function PANEL:Init()
 	self.LabelName = vgui.Create("DLabel", self)
@@ -42,13 +43,13 @@ function PANEL:Init()
 
 	self.Avatar = vgui.Create("AvatarImage", self)
 	self.Avatar:Dock(LEFT)
-	self.Avatar:SetSize(48, 48)
+	self.Avatar:SetSize(PANEL_HEIGHT, PANEL_HEIGHT)
 
 	self.Color = color_transparent
 	self.VoiceData = {}
 	self.NextVoiceData = 0
 
-	self:SetSize(250, 48 + 8)
+	self:SetSize(250, PANEL_HEIGHT + 8)
 	self:DockPadding(4, 4, 4, 4)
 	self:DockMargin(2, 2, 2, 2)
 	self:Dock(BOTTOM)
@@ -63,10 +64,6 @@ end
 function PANEL:Setup(ply)
 	self.ply = ply
 
-	if ply == LocalPlayer() then
-		self.VoiceData = {}
-	end
-
 	self.Markup = ec_markup.Parse(ply:Nick(), nil, true)
 	self.LabelName:SetText("")
 
@@ -79,12 +76,12 @@ function PANEL:Paint(w, h)
 	if not IsValid(self.ply) then return end
 
 	if self.NextVoiceData <= CurTime() then
-		table.insert(self.VoiceData, get_player_volume(self.ply) * h * 2)
+		table.insert(self.VoiceData, 2 + (get_player_volume(self.ply) * h * 2))
 		if #self.VoiceData > MAX_VOICE_DATA then
 			table.remove(self.VoiceData, 1)
 		end
 
-		self.NextVoiceData = CurTime() + 0.1
+		self.NextVoiceData = CurTime() + 0.025
 	end
 
 	local bg_color = EasyChat.OutlayColor
@@ -103,7 +100,7 @@ function PANEL:Paint(w, h)
 	surface.DrawOutlinedRect(0, 0, w, h)
 
 	if self.Markup then
-		self.Markup:Draw(48 + 10, h / 2 - self.Markup:GetTall() / 2)
+		self.Markup:Draw(PANEL_HEIGHT + 10, h / 2 - self.Markup:GetTall() / 2)
 	end
 end
 
@@ -118,8 +115,8 @@ vgui.Register("ECVoiceNotify", PANEL, "DPanel")
 local function create_voice_vgui()
 	EasyChat.GUI.VoiceList = vgui.Create("DPanel")
 	EasyChat.GUI.VoiceList:ParentToHUD()
-	EasyChat.GUI.VoiceList:SetPos(ScrW() - 300, 100)
-	EasyChat.GUI.VoiceList:SetSize(250, ScrH() - 200)
+	EasyChat.GUI.VoiceList:SetPos(ScrW() - 300, 200)
+	EasyChat.GUI.VoiceList:SetSize(250, ScrH() - 400)
 	EasyChat.GUI.VoiceList:SetPaintBackground(false)
 end
 
@@ -191,7 +188,7 @@ local function draw_voice_ring(ply)
 	end
 
 	local color = team.GetColor(ply:Team())
-	color.a = 40 + (100 * get_player_volume(ply) * 6)
+	color.a = 80 + (100 * get_player_volume(ply) * 6)
 	if not ply:IsVoiceAudible() then color.a = 0 end
 
 	render.SetMaterial(circle_mat)
