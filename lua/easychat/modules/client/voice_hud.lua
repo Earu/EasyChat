@@ -75,6 +75,9 @@ end
 function PANEL:Paint(w, h)
 	if not IsValid(self.ply) then return end
 
+	local wep = LocalPlayer():GetActiveWeapon()
+	if IsValid(wep) and wep:GetClass() == "gmod_camera" then return end
+
 	if self.NextVoiceData <= CurTime() then
 		table.insert(self.VoiceData, 2 + (get_player_volume(self.ply) * h * 2))
 		if #self.VoiceData > MAX_VOICE_DATA then
