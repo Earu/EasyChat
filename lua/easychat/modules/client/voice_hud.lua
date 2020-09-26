@@ -19,6 +19,17 @@ if IsValid(EasyChat.GUI.VoiceList) then
 	EasyChat.GUI.VoiceList:Remove()
 end
 
+local VOICE_LOOPBACK = GetConVar("voice_loopback")
+local function get_player_volume(ply)
+	if not IsValid(ply) then return 0 end
+
+	if ply == LocalPlayer() then
+		return VOICE_LOOPBACK:GetBool() and ply:VoiceVolume() or 1
+	end
+
+	return ply:VoiceVolume()
+end
+
 local PANEL = {}
 local MAX_VOICE_DATA = 50
 
@@ -68,7 +79,7 @@ function PANEL:Paint(w, h)
 	if not IsValid(self.ply) then return end
 
 	if self.NextVoiceData <= CurTime() then
-		table.insert(self.VoiceData, self.ply:VoiceVolume() * h * 2)
+		table.insert(self.VoiceData, get_player_volume(self.ply) * h * 2)
 		if #self.VoiceData > MAX_VOICE_DATA then
 			table.remove(self.VoiceData, 1)
 		end
@@ -88,7 +99,7 @@ function PANEL:Paint(w, h)
 	end
 
 	local outline_color = Color(EasyChat.OutlayOutlineColor:Unpack())
-	surface.SetDrawColor(outline_color.r, outline_color.g, outline_color.b, self.ply == LocalPlayer() and 255 or 100 + self.ply:VoiceVolume() * 155)
+	surface.SetDrawColor(outline_color.r, outline_color.g, outline_color.b, 100 + get_player_volume(self.ply) * 155)
 	surface.DrawOutlinedRect(0, 0, w, h)
 
 	if self.Markup then
@@ -180,7 +191,7 @@ local function draw_voice_ring(ply)
 	end
 
 	local color = team.GetColor(ply:Team())
-	color.a = 40 + (100 * (ply == LocalPlayer() and 1 or ply:VoiceVolume() * 6))
+	color.a = 40 + (100 * get_player_volume(ply) * 6)
 	if not ply:IsVoiceAudible() then color.a = 0 end
 
 	render.SetMaterial(circle_mat)
