@@ -168,7 +168,7 @@ local function voice_clean()
 	end
 end
 
-timer.Create("ECVoiceClean", 2, 0, voice_clean)
+timer.Create(TAG, 2, 0, voice_clean)
 
 local circle_mat = Material("SGM/playercircle")
 local black_color = Color(0, 0, 0)
@@ -195,11 +195,18 @@ local function draw_voice_ring(ply)
 	render.DrawQuadEasy(tr.HitPos + tr.HitNormal, tr.HitNormal, 128, 128, color)
 end
 
-hook.Add("PostDrawTranslucentRenderables", "VoiceRing", function()
+local old_scrw, old_scrh = ScrW(), ScrH()
+hook.Add("PostDrawTranslucentRenderables", TAG, function()
 	if not EC_VOICE_HUD:GetBool() then return end
 
 	for _, ply in ipairs(player.GetAll()) do
 		draw_voice_ring(ply)
+	end
+
+	-- if resolution changes
+	if IsValid(EasyChat.GUI.VoiceList) and (old_scrw ~= ScrW() or old_scrh ~= ScrH()) then
+		EasyChat.GUI.VoiceList:Remove()
+		old_scrw, old_scrh = ScrW(), ScrH()
 	end
 end)
 
