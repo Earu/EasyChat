@@ -2132,6 +2132,14 @@ if CLIENT then
 				end
 			end
 
+			-- Checks if this table already has panels, if so remove them and clear the table
+			if EasyChat.GUI then
+				for k, v in pairs(EasyChat.GUI) do
+					if type(v) == "Panel" then v:Remove() end
+					EasyChat.GUI[k] = nil
+				end
+			end
+
 			-- Only the neccesary elements --
 			EasyChat.GUI = {
 				ChatBox = chatbox_frame,
