@@ -1,18 +1,15 @@
 if gmod.GetGamemode().Name ~= "DarkRP" then return "DarkRP Compat" end
 
-hook.Add("ECPostInitialized", "EasyChatModuleDarkRP", function()
-	local EC_ENABLE = GetConVar("easychat_enable")
-	local EC_TIMESTAMPS = GetConVar("easychat_timestamps")
-	local EC_TEAMS = GetConVar("easychat_teams")
-	local EC_TEAMS_COLOR = GetConVar("easychat_teams_colored")
+local color_white = color_white
 
+hook.Add("ECPostInitialized", "EasyChatModuleDarkRP", function()
 	-- this is for the best
 	function GAMEMODE:OnPlayerChat(ply, msg, is_team, is_dead, prefix, col1, col2)
 		local msg_components = {}
 
 		-- I don't trust this gamemode at all.
-		local col1 = col1 or color_white
-		local col2 = col2 or color_white
+		col1 = col1 or color_white
+		col2 = col2 or color_white
 
 		table.insert(msg_components, color_white) -- we don't want previous colors to be used again
 
@@ -29,7 +26,7 @@ hook.Add("ECPostInitialized", "EasyChatModuleDarkRP", function()
 
 			table.insert(msg_components, col1)
 			-- Remove the nick appened, use our own system.
-			table.insert(msg_components, (prefix:gsub(ply:Nick():PatternSafe(), "")))
+			table.insert(msg_components, prefix:gsub(ply:Nick():PatternSafe(), ""))
 		end
 
 		if IsValid(ply) then

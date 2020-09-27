@@ -6,6 +6,8 @@ local function get_cvar(cvar_name)
 	return cvar
 end
 
+local color_white = color_white
+
 -- general
 local EC_ENABLE = get_cvar("easychat_enable")
 local EC_NO_MODULES = get_cvar("easychat_no_modules")
@@ -53,7 +55,6 @@ local EC_HUD_CUSTOM = get_cvar("easychat_hud_custom")
 local EC_HUD_POS_X = get_cvar("easychat_hud_pos_x")
 local EC_HUD_POS_Y = get_cvar("easychat_hud_pos_y")
 local EC_HUD_WIDTH = get_cvar("easychat_hud_width")
-local EC_HUD_FADELEN = get_cvar("easychat_hud_fadelen")
 
 -- translation
 local EC_TRANSLATE_INC_MSG = get_cvar("easychat_translate_inc_msg")

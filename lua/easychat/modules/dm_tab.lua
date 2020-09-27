@@ -26,8 +26,8 @@ if SERVER then
 end
 
 if CLIENT then
-	local EC_TIMESTAMPS = GetConVar("easychat_timestamps")
-	local EC_TIMESTAMPS_12 = GetConVar("easychat_timestamps_12")
+	local color_white = color_white
+
 	local EC_HISTORY = GetConVar("easychat_history")
 	local EC_TICK_SOUND = GetConVar("easychat_tick_sound")
 
