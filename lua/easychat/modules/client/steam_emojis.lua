@@ -1,21 +1,3 @@
-local function count(a, n)
-	if not a then return 0 end
-
-	local x = 0
-	local pos = 1
-	for i = 1, #a do
-		local newpos = a:find(n, pos, true)
-		if not newpos then
-			break
-		end
-
-		pos = newpos + 1
-		x = x + 1
-	end
-
-	return x
-end
-
 local FOLDER = "easychat/emojis/steam"
 file.CreateDir(FOLDER, "DATA")
 
@@ -103,7 +85,7 @@ local function get_steam_emote(name)
 			return fail("ending")
 		end
 
-		local start2, ending2 = data:find([["]], ending + 64, true)
+		local start2 = data:find([["]], ending + 64, true)
 		if not start2 then
 			return fail("start2")
 		end

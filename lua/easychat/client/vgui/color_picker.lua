@@ -1,3 +1,5 @@
+local color_white = color_white
+
 local PICKER = {
 	Init = function(self)
 		self:SetSize(200, 300)
@@ -17,32 +19,32 @@ local PICKER = {
 			self.BtnColor:SetText(col_str)
 			self.BtnColor.CurrentColorString = col_str
 		end
-		self.Mixer:SetColor(color_white)
+		self.Mixer:SetColor(table.Copy(color_white))
 
 		if not EasyChat.UseDermaSkin then
-            self.Paint = function(_, w, h)
-                surface.SetDrawColor(EasyChat.TabColor)
-                surface.DrawRect(0, 0, w, h)
+			self.Paint = function(_, w, h)
+				surface.SetDrawColor(EasyChat.TabColor)
+				surface.DrawRect(0, 0, w, h)
 
-                local line_col =
-                    EasyChat.OutlayOutlineColor.a == 0
-                        and EasyChat.OutlayColor
-                        or EasyChat.OutlayOutlineColor
-                surface.SetDrawColor(line_col)
-                surface.DrawOutlinedRect(0, 0, w, h)
+				local line_col =
+					EasyChat.OutlayOutlineColor.a == 0
+						and EasyChat.OutlayColor
+						or EasyChat.OutlayOutlineColor
+				surface.SetDrawColor(line_col)
+				surface.DrawOutlinedRect(0, 0, w, h)
 			end
 
 			self.BtnColor:SetTextColor(EasyChat.TextColor)
 			self.BtnColor:SetFont("EasyChatFont")
 			self.BtnColor.Paint = function(_, w, h)
 				surface.SetDrawColor(EasyChat.OutlayColor)
-                surface.DrawRect(0, 0, w, h)
+				surface.DrawRect(0, 0, w, h)
 			end
 		else
-            self.Paint = function(self, w, h)
-                derma.SkinHook("Paint", "Frame", self, w, h)
-            end
-        end
+			self.Paint = function(self, w, h)
+				derma.SkinHook("Paint", "Frame", self, w, h)
+			end
+		end
 	end,
 	MouseInBounds = function(self)
 		local x, y = self:LocalToScreen(0, 0)

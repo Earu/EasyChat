@@ -119,7 +119,7 @@ local function twemojify(str)
 end
 
 local function get_twemoji_code_points(str)
-	local tbl, err = twemojify(str)
+	local tbl = twemojify(str)
 	if not tbl or not tbl[1] or tbl[2] then return end
 
 	local res = {}
@@ -191,9 +191,9 @@ local function get_twemoji_url_codepoints(tbl)
 end
 
 local function to_hex(str)
-    return str:gsub(".", function(char)
-        return ("%02X"):format(char:byte())
-    end)
+	return str:gsub(".", function(char)
+		return ("%02X"):format(char:byte())
+	end)
 end
 
 local function get_twemoji(name, code_point)

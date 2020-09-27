@@ -8,7 +8,7 @@ local color_default = Color(244, 167, 66)
 local module_loaded_count, module_failed_count = 0, 0
 
 local function add_module(name, file_name, callback)
-	local name = isstring(name) and name or file_name
+	name = isstring(name) and name or file_name
 	table.insert(modules, {
 		Name = name,
 		File = file_name,
@@ -25,10 +25,10 @@ local function module_error(file_name, err, where)
 end
 
 local function load_modules(path)
-	local path = path or EC_MODULE_PATH
+	path = path or EC_MODULE_PATH
 
 	local start_time = SysTime()
-	for _, file_name in pairs((file.Find(path .. "*.lua", "LUA"))) do
+	for _, file_name in pairs(file.Find(path .. "*.lua", "LUA")) do
 		AddCSLuaFile(path .. file_name)
 		local module = CompileFile(path .. file_name)
 		local succ, module_name = xpcall(module, function(err)
@@ -41,7 +41,7 @@ local function load_modules(path)
 	end
 
 	if SERVER then
-		for _, file_name in pairs((file.Find(path .. "server/*.lua", "LUA"))) do
+		for _, file_name in pairs(file.Find(path .. "server/*.lua", "LUA")) do
 			local module = CompileFile(path .. "server/" .. file_name)
 			local succ, module_name = xpcall(module, function(err)
 				module_error(file_name, err, "SV")
@@ -52,13 +52,13 @@ local function load_modules(path)
 			end
 		end
 
-		for _, file_name in pairs((file.Find(path .. "client/*.lua", "LUA"))) do
+		for _, file_name in pairs(file.Find(path .. "client/*.lua", "LUA")) do
 			AddCSLuaFile(path .. "client/" .. file_name)
 		end
 	end
 
 	if CLIENT then
-		for _, file_name in pairs((file.Find(path .. "client/*.lua", "LUA"))) do
+		for _, file_name in pairs(file.Find(path .. "client/*.lua", "LUA")) do
 			local module = CompileFile(path .. "client/" .. file_name)
 			local succ, module_name = xpcall(module, function(err)
 				module_error(file_name, err, "CL")

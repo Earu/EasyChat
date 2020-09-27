@@ -2,20 +2,17 @@
 	Micro Optimization
 ]]-------------------------------------------------------------------------------
 local ipairs, pairs, tonumber, select = _G.ipairs, _G.pairs, _G.tonumber, _G.select
-local Color, Vector, Matrix = _G.Color, _G.Vector, _G.Matrix
-local type, tostring, RealFrameTime, ScrH, RealTime = _G.type, _G.tostring, _G.RealFrameTime, _G.ScrH, _G.RealTime
-local select, setfenv, CompileString, unpack = _G.select, _G.setfenv, _G.CompileString, _G.unpack
+local Color = _G.Color
+local type, tostring, RealFrameTime, RealTime = _G.type, _G.tostring, _G.RealFrameTime, _G.RealTime
 
 local table_copy = _G.table.Copy
 local table_insert = _G.table.insert
 local table_remove = _G.table.remove
-local table_sort = _G.table.sort
 local table_concat = _G.table.concat
 
 local surface_SetDrawColor = _G.surface.SetDrawColor
 local surface_SetTextColor = _G.surface.SetTextColor
 local surface_GetTextSize = _G.surface.GetTextSize
-local surface_DrawOutlinedRect = _G.surface.DrawOutlinedRect
 local surface_SetFont = _G.surface.SetFont
 local surface_SetTextPos = _G.surface.SetTextPos
 local surface_DrawText = _G.surface.DrawText
@@ -36,31 +33,22 @@ local gui_mousey = _G.gui.MouseY
 
 local math_max = _G.math.max
 local math_min = _G.math.min
-local math_floor = _G.math.floor
 local math_clamp = _G.math.Clamp
 local math_abs = _G.math.abs
 local math_EaseInOut = _G.math.EaseInOut
 
-local cam_PopModelMatrix = _G.cam.PopModelMatrix
-local cam_PushModelMatrix = _G.cam.PushModelMatrix
-
 local string_explode = _G.string.Explode
 local string_gmatch = _G.string.gmatch
-local string_replace = _G.string.Replace
 local string_sub = _G.string.sub
-local string_len = _G.string.len
-local string_find = _G.string.find
 local string_format = _G.string.format
 local string_lower = _G.string.lower
-local string_find = _G.string.find
 local string_gsub = _G.string.gsub
 local string_match = _G.string.match
 local string_byte = _G.string.byte
 
 local utf8_force = utf8.force
 
-local chat_GetPos = chat.GetChatBoxPos
-local chat_GetSize = chat.GetChatBoxSize
+local color_white = color_white
 
 --[[-----------------------------------------------------------------------------
 	Base ChatHUD
@@ -568,15 +556,15 @@ function text_part:ComputePos()
 		return
 	end
 
-    if self.RealPos.Y ~= self.Pos.Y then
-        if self.RealPos.Y > self.Pos.Y then
-            local factor = math_EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
-            self.RealPos.Y = math_max(self.RealPos.Y - math_max(math_abs(factor), 0.15), self.Pos.Y)
-        else
-            local factor = math_EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
-            self.RealPos.Y = math_min(self.RealPos.Y + math_max(math_abs(factor), 0.15), self.Pos.Y)
-        end
-    end
+	if self.RealPos.Y ~= self.Pos.Y then
+		if self.RealPos.Y > self.Pos.Y then
+			local factor = math_EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
+			self.RealPos.Y = math_max(self.RealPos.Y - math_max(math_abs(factor), 0.15), self.Pos.Y)
+		else
+			local factor = math_EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
+			self.RealPos.Y = math_min(self.RealPos.Y + math_max(math_abs(factor), 0.15), self.Pos.Y)
+		end
+	end
 end
 
 function text_part:GetTextDrawPos(ctx)
@@ -640,7 +628,7 @@ function text_part:FitWidth()
 	local text = self.Content
 
 	local len = utf8_len(text)
-	for i=1, len do
+	for i = 1, len do
 		if self:IsTextWider(utf8_sub(text, 1, i), left_width) then
 			local sub_str = utf8_sub(text, i, i)
 
@@ -846,15 +834,15 @@ function emote_part:ComputePos()
 		return
 	end
 
-    if self.RealPos.Y ~= self.Pos.Y then
-        if self.RealPos.Y > self.Pos.Y then
-            local factor = math_EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
-            self.RealPos.Y = math_max(self.RealPos.Y - math_max(math_abs(factor), 0.15), self.Pos.Y)
-        else
-            local factor = math_EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
-            self.RealPos.Y = math_min(self.RealPos.Y + math_max(math_abs(factor), 0.15), self.Pos.Y)
-        end
-    end
+	if self.RealPos.Y ~= self.Pos.Y then
+		if self.RealPos.Y > self.Pos.Y then
+			local factor = math_EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
+			self.RealPos.Y = math_max(self.RealPos.Y - math_max(math_abs(factor), 0.15), self.Pos.Y)
+		else
+			local factor = math_EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
+			self.RealPos.Y = math_min(self.RealPos.Y + math_max(math_abs(factor), 0.15), self.Pos.Y)
+		end
+	end
 end
 
 function emote_part:GetDrawPos(ctx)
@@ -865,23 +853,23 @@ function emote_part:GetDrawPos(ctx)
 end
 
 function emote_part:PostLinePush()
-    self.RealPos = table_copy(self.Pos)
+	self.RealPos = table_copy(self.Pos)
 end
 
 function emote_part:Draw(ctx)
 	if self.Invalid then return end
 
-    self:ComputePos()
+	self:ComputePos()
 
-    local x, y = self:GetDrawPos(ctx)
+	local x, y = self:GetDrawPos(ctx)
 
-    ctx:CallPreTextDrawFunctions(x, y, self.Size.W, self.Size.H)
+	ctx:CallPreTextDrawFunctions(x, y, self.Size.W, self.Size.H)
 
-    self.SetEmoteMaterial()
+	self.SetEmoteMaterial()
 	surface_DrawTexturedRect(x, y, self.Size.W, self.Size.H)
-    draw_NoTexture()
+	draw_NoTexture()
 
-    ctx:CallPostTextDrawFunctions(x, y, self.Size.W, self.Size.H)
+	ctx:CallPostTextDrawFunctions(x, y, self.Size.W, self.Size.H)
 end
 
 chathud:RegisterPart("emote", emote_part, "%:([A-Za-z0-9_]+)%:", {
@@ -961,7 +949,7 @@ function image_part:GetDrawPos()
 end
 
 function image_part:PostLinePush()
-    self.RealPos = table_copy(self.Pos)
+	self.RealPos = table_copy(self.Pos)
 end
 
 function image_part:OnStop()
@@ -976,15 +964,15 @@ function image_part:ComputePos()
 		return
 	end
 
-    if self.RealPos.Y ~= self.Pos.Y then
-        if self.RealPos.Y > self.Pos.Y then
-            local factor = math_EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
-            self.RealPos.Y = math_max(self.RealPos.Y - math_max(math_abs(factor), 0.15), self.Pos.Y)
-        else
-            local factor = math_EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
-            self.RealPos.Y = math_min(self.RealPos.Y + math_max(math_abs(factor), 0.15), self.Pos.Y)
-        end
-    end
+	if self.RealPos.Y ~= self.Pos.Y then
+		if self.RealPos.Y > self.Pos.Y then
+			local factor = math_EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
+			self.RealPos.Y = math_max(self.RealPos.Y - math_max(math_abs(factor), 0.15), self.Pos.Y)
+		else
+			local factor = math_EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
+			self.RealPos.Y = math_min(self.RealPos.Y + math_max(math_abs(factor), 0.15), self.Pos.Y)
+		end
+	end
 end
 
 function image_part:Draw(ctx)
@@ -1097,7 +1085,7 @@ end
 function chathud:InvalidateLayout()
 	local line_count, total_height = #self.Lines, 0
 	-- process from bottom to top (most recent to ancient)
-	for i=line_count, 1, -1 do
+	for i = line_count, 1, -1 do
 		local line = self.Lines[i]
 		line.Size.W = 0
 		line.Index = i
@@ -1152,7 +1140,7 @@ function chathud:PushText(text, multiline)
 		self:PushPartComponent("text", text_lines[1])
 		table_remove(text_lines, 1)
 
-		for i=1, #text_lines do
+		for i = 1, #text_lines do
 			self:NewLine()
 			self:PushPartComponent("text", text_lines[i])
 		end

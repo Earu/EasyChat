@@ -1,5 +1,5 @@
+local color_white = color_white
 local black_color = Color(0, 0, 0)
-local gray_color = Color(75, 75, 75)
 local macro_processor = EasyChat.MacroProcessor
 
 local MACRO_PANEL = {

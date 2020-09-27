@@ -43,11 +43,12 @@ end
 if CLIENT then
 	local EC_ENABLED = GetConVar("easychat_enable")
 
+	local color_white = color_white
+
 	local engine_panel
 	local is_chat_opened = false
 	local function hack_msg_send()
 		local parent_panel = engine_panel:GetParent()
-		local engine_chat = parent_panel:GetParent()
 		local label = parent_panel:GetChildren()[1]
 		--engine_panel:SetKeyboardInputEnabled(false) -- lets not do that lol
 

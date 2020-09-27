@@ -29,13 +29,13 @@ local CHATBOX = {
 		self.BtnClose:SetZPos(10)
 		self.BtnClose:SetFont("DermaDefaultBold")
 		self.BtnClose:SetText("X")
-		self.BtnClose:SetToolTip("Close")
+		self.BtnClose:SetTooltip("Close")
 
 		self.BtnMaxim:SetSize(30, 33)
 		self.BtnMaxim:SetZPos(10)
 		self.BtnMaxim:SetFont("DermaLarge")
 		self.BtnMaxim:SetText("▭")
-		self.BtnMaxim:SetToolTip("Maximize")
+		self.BtnMaxim:SetTooltip("Maximize")
 		self.BtnMaxim.IsFullScreen = false
 		self.BtnMaxim.DoClick = function(self)
 			if not self.IsFullScreen then
@@ -54,7 +54,7 @@ local CHATBOX = {
 		self.BtnSettings:SetSize(30, 29)
 		self.BtnSettings:SetZPos(10)
 		self.BtnSettings:SetText("")
-		self.BtnSettings:SetToolTip("Settings")
+		self.BtnSettings:SetTooltip("Settings")
 		self.BtnSettings:SetImage("icon16/cog.png")
 		self.BtnSettings.DoClick = function()
 			if not EasyChat.OpenSettings then return end -- too early
@@ -72,7 +72,7 @@ local CHATBOX = {
 		self.BtnDonate:SetSize(30, 29)
 		self.BtnDonate:SetZPos(10)
 		self.BtnDonate:SetText("")
-		self.BtnDonate:SetToolTip("Donate")
+		self.BtnDonate:SetTooltip("Donate")
 		self.BtnDonate:SetImage("icon16/heart.png")
 		self.BtnDonate.DoClick = function()
 			gui.OpenURL("https://paypal.me/easychat")
