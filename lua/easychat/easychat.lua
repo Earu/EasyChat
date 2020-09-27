@@ -1599,7 +1599,7 @@ if CLIENT then
 						if empty_nick then
 							append_text(richtext, "[NO NAME]")
 						else
-							local tags_data = extract_tags_data(nick, true)
+							local tags_data = extract_tags_data(arg:Nick(), true)
 							for _, tag_data in ipairs(tags_data) do
 								if is_color(tag_data) then
 									richtext:InsertColorChange(tag_data.r, tag_data.g, tag_data.b, 255)
