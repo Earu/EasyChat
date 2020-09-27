@@ -1,6 +1,6 @@
 local MIGRATIONS_DIRECTORY = "easychat/migrations"
 
-local files = (file.Find(MIGRATIONS_DIRECTORY .. "/*.lua", "LUA"))
+local files = file.Find(MIGRATIONS_DIRECTORY .. "/*.lua", "LUA")
 local migrations = {}
 for _, f in pairs(files) do
 	local file_path = ("%s/%s"):format(MIGRATIONS_DIRECTORY, f)
