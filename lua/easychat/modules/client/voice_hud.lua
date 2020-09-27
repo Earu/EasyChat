@@ -15,10 +15,6 @@ cvars.AddChangeCallback(EC_VOICE_HUD:GetName(), function()
 	end
 end, TAG)
 
-if IsValid(EasyChat.GUI.VoiceList) then
-	EasyChat.GUI.VoiceList:Remove()
-end
-
 local VOICE_LOOPBACK = GetConVar("voice_loopback")
 local function get_player_volume(ply)
 	if not IsValid(ply) then return 0 end
