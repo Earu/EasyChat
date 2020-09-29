@@ -11,7 +11,6 @@ http.Fetch(url, function(dat, len, hdr, ret)
 		return
 	end
 
-	local t = {}
 	dat = util.Decompress(dat)
 
 	file.Write(EMOTS, dat)
@@ -85,7 +84,7 @@ local function get_steam_emote(name)
 			return fail("ending")
 		end
 
-		local start2 = data:find([["]], ending + 64, true)
+		local start2, ending2 = data:find([["]], ending + 64, true)
 		if not start2 then
 			return fail("start2")
 		end

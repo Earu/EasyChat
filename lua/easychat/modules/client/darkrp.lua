@@ -26,7 +26,7 @@ hook.Add("ECPostInitialized", "EasyChatModuleDarkRP", function()
 
 			table.insert(msg_components, col1)
 			-- Remove the nick appened, use our own system.
-			table.insert(msg_components, prefix:gsub(ply:Nick():PatternSafe(), ""))
+			table.insert(msg_components, (prefix:gsub(ply:Nick():PatternSafe(), "")))
 		end
 
 		if IsValid(ply) then

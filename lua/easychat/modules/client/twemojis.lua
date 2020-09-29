@@ -119,7 +119,7 @@ local function twemojify(str)
 end
 
 local function get_twemoji_code_points(str)
-	local tbl = twemojify(str)
+	local tbl, err = twemojify(str)
 	if not tbl or not tbl[1] or tbl[2] then return end
 
 	local res = {}
