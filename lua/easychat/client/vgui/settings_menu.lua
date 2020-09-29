@@ -11,6 +11,8 @@ end
 
 update_settings_font(EasyChat.Font, EasyChat.FontSize)
 
+local color_white = color_white
+
 local EC_FONT = GetConVar("easychat_font")
 local EC_FONT_SIZE = GetConVar("easychat_font_size")
 cvars.AddChangeCallback(EC_FONT:GetName(), function(_, _, new_font_name)
@@ -603,7 +605,7 @@ function SETTINGS:AddConvarSetting(category_name, type, cvar, ...)
 
 	local category_panel = self:GetCategory(category_name)
 	local setting_panel = convar_type_callbacks[type](self, category_panel, cvar, ...)
-	setting_panel:SetToolTip(cvar:GetName())
+	setting_panel:SetTooltip(cvar:GetName())
 	return setting_panel
 end
 

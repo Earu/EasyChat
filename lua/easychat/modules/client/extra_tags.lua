@@ -3,7 +3,6 @@ local compile_expression = EasyChat.Expressions.Compile
 local pcall = _G.pcall
 
 local surface_SetDrawColor = surface.SetDrawColor
-local surface_SetTextColor = surface.SetTextColor
 local surface_SetMaterial = surface.SetMaterial
 local surface_DrawTexturedRect = surface.DrawTexturedRect
 local surface_DrawRect = surface.DrawRect
@@ -43,9 +42,9 @@ function color_hex_part:HexToRGB(hex)
 
 	if #hex == 3 then
 		return
-			(n("0x" .. hex:sub(1, 1)) * 17),
-			(n("0x" .. hex:sub(2, 2)) * 17),
-			(n("0x" .. hex:sub(3, 3)) * 17)
+			n("0x" .. hex:sub(1, 1)) * 17,
+			n("0x" .. hex:sub(2, 2)) * 17,
+			n("0x" .. hex:sub(3, 3)) * 17
 	else
 		return
 			n("0x" .. hex:sub(1, 2)),
@@ -455,7 +454,7 @@ function texture_part:Ctor(str)
 	local texture_components = str:Split(",")
 
 	local path = texture_components[1]:Trim()
-	local mat = Material(path, (path:EndsWith(".png") and "nocull noclamp" or nil))
+	local mat = Material(path, path:EndsWith(".png") and "nocull noclamp" or nil)
 	local shader = mat:GetShader()
 	if shader == "VertexLitGeneric" or shader == "Cable" then
 		local tex_path = mat:GetString("$basetexture")
@@ -497,15 +496,15 @@ function texture_part:ComputePos()
 		return
 	end
 
-    if self.RealPos.Y ~= self.Pos.Y then
-        if self.RealPos.Y > self.Pos.Y then
-            local factor = math_EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
-            self.RealPos.Y = math_max(self.RealPos.Y - math_max(math_abs(factor), 0.15), self.Pos.Y)
-        else
-            local factor = math_EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
-            self.RealPos.Y = math_min(self.RealPos.Y + math_max(math_abs(factor), 0.15), self.Pos.Y)
-        end
-    end
+	if self.RealPos.Y ~= self.Pos.Y then
+		if self.RealPos.Y > self.Pos.Y then
+			local factor = math_EaseInOut((self.RealPos.Y - self.Pos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
+			self.RealPos.Y = math_max(self.RealPos.Y - math_max(math_abs(factor), 0.15), self.Pos.Y)
+		else
+			local factor = math_EaseInOut((self.Pos.Y - self.RealPos.Y) / 100, 0.02, 0.02) * SMOOTHING_SPEED * RealFrameTime()
+			self.RealPos.Y = math_min(self.RealPos.Y + math_max(math_abs(factor), 0.15), self.Pos.Y)
+		end
+	end
 end
 
 function texture_part:GetDrawPos(ctx)
@@ -520,15 +519,15 @@ function texture_part:Draw(ctx)
 
 	self:ComputePos()
 
-    local x, y = self:GetDrawPos(ctx)
+	local x, y = self:GetDrawPos(ctx)
 
-    ctx:CallPreTextDrawFunctions(x, y, self.Size.W, self.Size.H)
+	ctx:CallPreTextDrawFunctions(x, y, self.Size.W, self.Size.H)
 
-    surface_SetMaterial(self.Material)
+	surface_SetMaterial(self.Material)
 	surface_DrawTexturedRect(x, y, self.Size.W, self.Size.H)
-    draw_NoTexture()
+	draw_NoTexture()
 
-    ctx:CallPostTextDrawFunctions(x, y, self.Size.W, self.Size.H)
+	ctx:CallPostTextDrawFunctions(x, y, self.Size.W, self.Size.H)
 end
 
 chathud:RegisterPart("texture", texture_part)
@@ -690,28 +689,28 @@ end
 chathud:RegisterPart("background", background_part)
 
 --[[-----------------------------------------------------------------------------
-    Minecraft Color Component
+	Minecraft Color Component
 
-    Colors from Minecraft, based off of carat color
+	Colors from Minecraft, based off of carat color
 ]]-------------------------------------------------------------------------------
 local mc_colors = {
-    ["0"] = Color(0, 0, 0),
-    ["1"] = Color(0, 0, 170),
-    ["2"] = Color(0, 170, 0),
-    ["3"] = Color(0, 170, 170),
-    ["4"] = Color(170, 0, 0),
-    ["5"] = Color(170, 0, 170),
-    ["6"] = Color(255, 170, 0),
-    ["7"] = Color(170, 170, 170),
-    ["8"] = Color(85, 85, 85),
-    ["9"] = Color(85, 85, 255),
-    ["a"] = Color(85, 255, 85),
-    ["b"] = Color(85, 255, 255),
-    ["c"] = Color(255, 85, 85),
-    ["d"] = Color(255, 85, 255),
-    ["e"] = Color(255, 255, 85),
-    ["f"] = Color(255, 255, 255),
-    ["r"] = Color(255, 255, 255),
+	["0"] = Color(0, 0, 0),
+	["1"] = Color(0, 0, 170),
+	["2"] = Color(0, 170, 0),
+	["3"] = Color(0, 170, 170),
+	["4"] = Color(170, 0, 0),
+	["5"] = Color(170, 0, 170),
+	["6"] = Color(255, 170, 0),
+	["7"] = Color(170, 170, 170),
+	["8"] = Color(85, 85, 85),
+	["9"] = Color(85, 85, 255),
+	["a"] = Color(85, 255, 85),
+	["b"] = Color(85, 255, 255),
+	["c"] = Color(255, 85, 85),
+	["d"] = Color(255, 85, 255),
+	["e"] = Color(255, 255, 85),
+	["f"] = Color(255, 255, 255),
+	["r"] = Color(255, 255, 255),
 }
 
 local mc_color_part = {
@@ -723,18 +722,18 @@ local mc_color_part = {
 }
 
 function mc_color_part:Ctor(num)
-    local col = mc_colors[num:Trim()]
-    if col then
-        self.Color = col
-    else
-        self.Color = Color(255, 255, 255)
-    end
+	local col = mc_colors[num:Trim()]
+	if col then
+		self.Color = col
+	else
+		self.Color = Color(255, 255, 255)
+	end
 
-    return self
+	return self
 end
 
 function mc_color_part:Draw(ctx)
-    ctx:UpdateColor(self.Color)
+	ctx:UpdateColor(self.Color)
 end
 
 chathud:RegisterPart("mccol", mc_color_part, "[&§]([0-9a-fr])")

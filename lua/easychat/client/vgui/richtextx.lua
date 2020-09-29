@@ -1,3 +1,5 @@
+local color_white = color_white
+
 local PANEL = {
 	CurrentColor = Color(255, 255, 255),
 	RichTextXBackgroundColor = Color(0, 0, 0, 0), -- stupid name or it overrides other stuff (?)

@@ -191,9 +191,9 @@ local function get_twemoji_url_codepoints(tbl)
 end
 
 local function to_hex(str)
-    return str:gsub(".", function(char)
-        return ("%02X"):format(char:byte())
-    end)
+	return str:gsub(".", function(char)
+		return ("%02X"):format(char:byte())
+	end)
 end
 
 local function get_twemoji(name, code_point)

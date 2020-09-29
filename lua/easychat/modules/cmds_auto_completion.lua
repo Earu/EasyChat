@@ -33,6 +33,7 @@ if CLIENT then
 	local EC_CMDS_SUGGESTIONS = CreateConVar("easychat_cmd_suggestions", "1", FCVAR_ARCHIVE, "Shows suggestions for commands")
 	EasyChat.RegisterConvar(EC_CMDS_SUGGESTIONS, "Displays command suggestions")
 
+	local color_white = color_white
 	local black_color = Color(0, 0, 0, 200)
 	local option_font = "EasyChatFont"
 	local hook_name = "EasyChatModuleCmdsAutoComplete"

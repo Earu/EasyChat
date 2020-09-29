@@ -1,3 +1,5 @@
+local color_white = color_white
+
 local file_path = "easychat/chud_font_settings.txt"
 local default_font_data = {
 	font = "Roboto",
@@ -129,7 +131,6 @@ local EDITOR = {
 		self.Canvas:SetPos(250, 140)
 
 		local mk = ec_markup.Parse("Hello World!")
-		local black_color = Color(0, 0, 0)
 		self.Canvas.Paint = function(_, w, h)
 			surface.SetDrawColor(color_white)
 			surface.DrawOutlinedRect(0, 0, w, h)
