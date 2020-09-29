@@ -260,6 +260,7 @@ hook.Add("ECFactoryReset", "EasyChatModuleMention", function()
 	reset_cvar(EC_MENTION_SHOW_MISSED)
 end)
 
+local color_white = color_white
 hook.Add("OnPlayerChat", "EasyChatModuleMention", function(ply, msg, is_team, is_dead, is_local)
 	if not mentions:IsValidPlayer(ply) then return end
 	if not mentions:IsMention(msg) then return end

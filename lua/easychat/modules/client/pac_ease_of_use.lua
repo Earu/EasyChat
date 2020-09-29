@@ -1,5 +1,7 @@
 if not _G.pac and _G.pace and _G.pacx then return "PAC3 Ease of Use" end
 
+local color_white = color_white
+
 local pac_is_opened = false
 
 local function request_invalidation()
