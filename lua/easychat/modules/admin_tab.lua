@@ -25,6 +25,8 @@ if SERVER then
 end
 
 if CLIENT then
+	local color_white = color_white
+
 	local EC_HISTORY = GetConVar("easychat_history")
 	local EC_TICK_SOUND = GetConVar("easychat_tick_sound")
 
@@ -214,7 +216,7 @@ if CLIENT then
 			admintab.NewMessages = 0
 			admintab.RichText:GotoTextEnd()
 			if not LocalPlayer():IsAdmin() then
-				EasyChat.AddText(self.RichText, "You cannot see the content of this channel because you are not an admin")
+				EasyChat.AddText(admintab.RichText, "You cannot see the content of this channel because you are not an admin")
 			end
 		end
 	end)

@@ -13,10 +13,12 @@ local TAG = "EasyChat"
 
 local EC_MAX_CHARS = CreateConVar("easychat_max_chars", "3000", { FCVAR_REPLICATED, SERVER and FCVAR_ARCHIVE or nil }, "Max characters per messages", 50)
 
+local color_white = color_white
+
 local COLOR_RED = Color(255, 0, 0)
 local COLOR_GRAY = Color(184, 189, 209)
 
-local COLOR_LOCAL= Color(120, 210, 255)
+local COLOR_LOCAL = Color(120, 210, 255)
 local COLOR_TEAM = Color(120, 120, 240)
 local COLOR_DEAD = Color(240, 80, 80)
 
@@ -701,7 +703,7 @@ if CLIENT then
 	end
 
 	function EasyChat.GetDefaultBounds()
-		local coef_w, coef_h = (ScrW() / 2560), (ScrH() / 1440)
+		local coef_w, coef_h = ScrW() / 2560, ScrH() / 1440
 		return 50 * coef_w, ScrH() - (320 + (coef_h * 300)), 550, 320
 	end
 
@@ -745,7 +747,7 @@ if CLIENT then
 		-- make sure to get rid of the possible completion
 		EasyChat.GUI.TextEntry.TabCompletion = nil
 		EasyChat.GUI.TextEntry:SetCompletionText(nil)
-		timer.Destroy("ECCompletionPeek")
+		timer.Remove("ECCompletionPeek")
 
 		EasyChat.GUI.TextEntry:SetText("")
 
@@ -2166,7 +2168,7 @@ if CLIENT then
 				local match = nick:lower():match(last_word:lower():PatternSafe())
 				if match and not text:EndsWith(nick) then
 					local perc = #match / #nick
-					local consider_match = (perc > 0.5 or #match >= 3)
+					local consider_match = perc > 0.5 or #match >= 3
 					if prioritize_nicks then consider_match = true end
 					if perc == 1 then consider_match = false end -- we dont want to complete things that already are
 					if consider_match and perc > max_perc then
@@ -2779,7 +2781,7 @@ if CLIENT then
 		end
 
 		local function screen_resolution_changed(old_scrw, old_scrh)
-			local old_scrw, old_scrh =
+			old_scrw, old_scrh =
 				old_scrw == 0 and ScrW() or old_scrw,
 				old_scrh == 0 and ScrH() or old_scrh
 
