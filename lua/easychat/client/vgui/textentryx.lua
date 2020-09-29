@@ -314,7 +314,7 @@ local string_format, string_find, string_sub = _G.string.format, _G.string.find,
 
 local should_blink = false -- so we dont trigger by default
 local blink_text = nil
-local red_color = Color(255, 0, 0)
+local color_white = color_white
 local function blink(w, h)
 	if not should_blink then return end
 

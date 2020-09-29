@@ -1,3 +1,5 @@
+local color_white = color_white
+
 local function update_big_chat_font(default_font_data)
 	local font_data
 
