@@ -297,6 +297,22 @@ if SERVER then
 		EasyChat.SendGlobalMessage(ply, msg, is_team, is_local)
 	end
 
+	local WORKSHOP_ID = "1182471500"
+	local is_workshop = nil
+	function EasyChat.IsWorkshopInstall()
+		if is_workshop ~= nil then return is_workshop end
+
+		for _, addon_data in ipairs(engine.GetAddons()) do
+			if addon_data.wsid == WORKSHOP_ID then
+				is_workshop = true
+				return true
+			end
+		end
+
+		is_workshop = false
+		return false
+	end
+
 	net.Receive(NET_SEND_MSG, function(_, ply)
 		local msg = net.ReadString()
 		local is_team = net.ReadBool()
@@ -327,23 +343,12 @@ if SERVER then
 		return time
 	end
 
-	local WORKSHOP_ID = "1182471500"
-	local function is_workshop_install()
-		for _, addon_data in ipairs(engine.GetAddons()) do
-			if addon_data.wsid == WORKSHOP_ID then
-				return true
-			end
-		end
-
-		return false
-	end
-
 	local DEFAULT_FILE_PATH = "lua/easychat/easychat.lua"
 	local is_outdated = false
 	local old_version, new_version
 	local is_new_version = false
 	local function check_version()
-		if is_workshop_install() then
+		if EasyChat.IsWorkshopInstall() then
 			EasyChat.Print("Running workshop version")
 			return
 		end
