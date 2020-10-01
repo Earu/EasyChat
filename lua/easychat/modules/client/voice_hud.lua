@@ -70,11 +70,23 @@ function PANEL:Setup(ply)
 	self:InvalidateLayout()
 end
 
+local GMOD_VOCAL_DISTANCE_THRESHOLD = 3000
+local function is_in_audible_area(ply)
+	if not IsValid(ply) then return false end
+
+	return ply:GetPos():Distance(LocalPlayer():GetPos()) < GMOD_VOCAL_DISTANCE_THRESHOLD
+end
+
 function PANEL:Paint(w, h)
 	if not IsValid(self.ply) then return end
 
 	if self.NextVoiceData <= CurTime() then
-		table.insert(self.VoiceData, 2 + (get_player_volume(self.ply) * h * 2))
+		if is_in_audible_area(self.ply) then
+			table.insert(self.VoiceData, 2 + (get_player_volume(self.ply) * h * 2))
+		else
+			table.insert(self.VoiceData, 2)
+		end
+
 		if #self.VoiceData > MAX_VOICE_DATA then
 			table.remove(self.VoiceData, 1)
 		end
@@ -110,6 +122,11 @@ function PANEL:Think()
 	local wep = LocalPlayer():GetActiveWeapon()
 	local should_hide = IsValid(wep) and wep:GetClass() == "gmod_camera"
 	self:SetVisible(not should_hide)
+
+	if self.RemoveTime and CurTime() >= self.RemoveTime then
+		self:Remove()
+		ply_voice_panels[self.ply] = nil
+	end
 end
 
 vgui.Register("ECVoiceNotify", PANEL, "DPanel")
@@ -123,8 +140,9 @@ local function create_voice_vgui()
 end
 
 local function player_end_voice(ply)
-	if IsValid(ply_voice_panels[ply]) then
-		ply_voice_panels[ply]:Remove()
+	local voice_panel = ply_voice_panels[ply]
+	if IsValid(voice_panel) then
+		voice_panel.RemoveTime = CurTime() + 1
 	end
 end
 
@@ -133,12 +151,16 @@ local function player_start_voice(ply)
 		create_voice_vgui()
 	end
 
-	-- There'd be an exta one if voice_loopback is on, so remove it.
+	-- there'd be an exta one if voice_loopback is on, so remove it.
 	player_end_voice(ply)
 
+	local voice_panel = ply_voice_panels[ply]
+	if IsValid(voice_panel) and voice_panel.RemoveTime then
+		voice_panel.RemoveTime = nil
+		return
+	end
+
 	if not IsValid(ply) then return end
-	if not ply:IsVoiceAudible() then return end
-	if ply:VoiceVolume() * 100 < 5 then return end
 
 	local panel = EasyChat.GUI.VoiceList:Add("ECVoiceNotify")
 	panel:Setup(ply)
@@ -165,9 +187,15 @@ function GAMEMODE:PlayerEndVoice(ply)
 end
 
 local function voice_clean()
+	local lp_pos = LocalPlayer():GetPos()
 	for ply, _ in pairs(ply_voice_panels) do
 		if not IsValid(ply) then
 			player_end_voice(ply)
+		else
+			if ply:GetPos():Distance(lp_pos) >= GMOD_VOCAL_DISTANCE_THRESHOLD then
+				print("SHOULD END")
+				player_end_voice(ply)
+			end
 		end
 	end
 end
