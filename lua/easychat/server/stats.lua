@@ -1,17 +1,6 @@
 local EC_STATS = CreateConVar("easychat_stats", "1", FCVAR_ARCHIVE, "Analytical anonymous stats")
 
 local TAG = "EasyChatStats"
-local WORKSHOP_ID = "1182471500"
-local function is_workshop_install()
-	for _, addon_data in ipairs(engine.GetAddons()) do
-		if addon_data.wsid == WORKSHOP_ID then
-			return true
-		end
-	end
-
-	return false
-end
-
 local function compute_perc_enabled()
 	local perc = 0
 	local plys = player.GetAll()
@@ -26,8 +15,8 @@ local function compute_perc_enabled()
 end
 
 local function send_stats(msg_per_hour)
-	if not EC_STATS:GetBool() then return false end
-	if not game.IsDedicated() then return false end -- we dont care about singleplayer
+	if not EC_STATS:GetBool() then return true end
+	if not game.IsDedicated() then return true end -- we dont care about singleplayer
 
 	return HTTP({
 		url = "http://3kv.in:9006/stats/submit",
@@ -37,7 +26,7 @@ local function send_stats(msg_per_hour)
 			PercentageEnabled = compute_perc_enabled(),
 			PlayersConnected = player.GetCount(),
 			Gamemode = gmod.GetGamemode().Name,
-			FromWorkshop = is_workshop_install(),
+			FromWorkshop = EasyChat.IsWorkshopInstall(),
 		}),
 		type = "application/json",
 	})
