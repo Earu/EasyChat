@@ -137,6 +137,8 @@ local function player_start_voice(ply)
 	player_end_voice(ply)
 
 	if not IsValid(ply) then return end
+	if not ply:IsVoiceAudible() then return end
+	if ply:VoiceVolume() < 5 then return end
 
 	local panel = EasyChat.GUI.VoiceList:Add("ECVoiceNotify")
 	panel:Setup(ply)
