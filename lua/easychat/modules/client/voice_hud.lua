@@ -74,7 +74,10 @@ local GMOD_VOCAL_DISTANCE_THRESHOLD = 3000
 local function is_in_audible_area(ply)
 	if not IsValid(ply) then return false end
 
-	return ply:GetPos():Distance(LocalPlayer():GetPos()) < GMOD_VOCAL_DISTANCE_THRESHOLD
+	local lp = LocalPlayer()
+	if not IsValid(lp) then return false end -- this can be run early, and LocalPlayer can be invalid
+
+	return ply:GetPos():Distance(lp:GetPos()) < GMOD_VOCAL_DISTANCE_THRESHOLD
 end
 
 function PANEL:Paint(w, h)
@@ -187,13 +190,11 @@ function GAMEMODE:PlayerEndVoice(ply)
 end
 
 local function voice_clean()
-	local lp_pos = LocalPlayer():GetPos()
 	for ply, _ in pairs(ply_voice_panels) do
 		if not IsValid(ply) then
 			player_end_voice(ply)
 		else
-			if ply:GetPos():Distance(lp_pos) >= GMOD_VOCAL_DISTANCE_THRESHOLD then
-				print("SHOULD END")
+			if is_in_audible_area(ply) then
 				player_end_voice(ply)
 			end
 		end
