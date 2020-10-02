@@ -154,12 +154,12 @@ local function player_start_voice(ply)
 		create_voice_vgui()
 	end
 
-	-- there'd be an exta one if voice_loopback is on, so remove it.
-	player_end_voice(ply)
-
 	local voice_panel = ply_voice_panels[ply]
-	if IsValid(voice_panel) and voice_panel.RemoveTime then
-		voice_panel.RemoveTime = nil
+	if IsValid(voice_panel) then
+		if voice_panel.RemoveTime then
+			voice_panel.RemoveTime = nil
+		end
+
 		return
 	end
 
@@ -194,7 +194,7 @@ local function voice_clean()
 		if not IsValid(ply) then
 			player_end_voice(ply)
 		else
-			if is_in_audible_area(ply) then
+			if not is_in_audible_area(ply) then
 				player_end_voice(ply)
 			end
 		end
