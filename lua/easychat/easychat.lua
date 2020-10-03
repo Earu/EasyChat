@@ -1256,7 +1256,7 @@ if CLIENT then
 
 		-- this is always going to be a player thats not been networked yet or some weird
 		-- stuff that gmod is responsible for
-		return "[UKNOWN]"
+		return "[UNKNOWN]"
 	end
 
 	function EasyChat.GetProperNick(ply)
