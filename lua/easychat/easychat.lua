@@ -1249,8 +1249,18 @@ if CLIENT then
 		return math.fmod(counter, 4294967291) -- 2^32 - 5: Prime (and different from the prime in the loop)
 	end
 
+	local function get_unknown_name(ply)
+		-- NULL is "pure", its not the same as a player becoming NULL
+		-- therefore this will only work if the ply is the server console
+		if ply == NULL then return "[SERVER]" end
+
+		-- this is always going to be a player thats not been networked yet or some weird
+		-- stuff that gmod is responsible for
+		return "[UKNOWN]"
+	end
+
 	function EasyChat.GetProperNick(ply)
-		if not IsValid(ply) then return "???" end
+		if not IsValid(ply) then return get_unknown_name(ply) end
 
 		local ply_nick = ply:Nick()
 		if not ec_markup then return ply_nick end
@@ -1582,7 +1592,7 @@ if CLIENT then
 			elseif type(arg) == "Player" then
 				if not IsValid(arg) then
 					richtext:InsertColorChange(UNKNOWN_COLOR.r, UNKNOWN_COLOR.g, UNKNOWN_COLOR.b)
-					append_text(richtext, "???")
+					append_text(richtext, get_unknown_name(arg))
 				else
 					local ply_col = EC_PLAYER_COLOR:GetBool() and team.GetColor(arg:Team()) or color_white
 					local nick = EasyChat.GetProperNick(arg)
@@ -1821,11 +1831,12 @@ if CLIENT then
 			table.insert(data, color_white)
 
 			if not IsValid(ply) then
+				local unknown_name = get_unknown_name(ply)
 				global_insert_color_change(UNKNOWN_COLOR.r, UNKNOWN_COLOR.g, UNKNOWN_COLOR.b)
-				global_append_text("???")
+				global_append_text(unknown_name)
 
 				table.insert(data, UNKNOWN_COLOR)
-				table.insert(data, "???")
+				table.insert(data, unknown_name)
 
 				return data
 			end
@@ -3009,7 +3020,7 @@ if CLIENT then
 				table.insert(msg_components, ply)
 			else
 				table.insert(msg_components, UNKNOWN_COLOR)
-				table.insert(msg_components, "???") -- console or weird stuff
+				table.insert(msg_components, get_unknown_name(ply))
 			end
 
 			table.insert(msg_components, color_white)
