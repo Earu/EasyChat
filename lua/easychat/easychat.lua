@@ -417,7 +417,6 @@ if SERVER then
 		safe_hook_run("ECPreLoadModules")
 		load_modules()
 		safe_hook_run("ECPostLoadModules")
-		check_version()
 		safe_hook_run("ECInitialized")
 	end
 
@@ -464,6 +463,12 @@ if SERVER then
 		end
 
 		safe_hook_run("ECPostInitialized")
+	end)
+
+	-- we can't do that in Initialize because the http lib is sometimes not available
+	hook.Add("Think", TAG, function()
+		check_version()
+		hook.Remove("Think", TAG)
 	end)
 
 	local has_version_warned = false
