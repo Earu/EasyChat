@@ -97,6 +97,9 @@ function PANEL:Paint(w, h)
 		self.NextVoiceData = CurTime() + 0.025
 	end
 
+	local wep = LocalPlayer():GetActiveWeapon()
+	if IsValid(wep) and wep:GetClass() == "gmod_camera" then return end
+
 	local bg_color = EasyChat.OutlayColor
 	surface.SetDrawColor(bg_color.r, bg_color.g, bg_color.b, bg_color.a)
 	surface.DrawRect(0, 0, w, h)
@@ -121,10 +124,6 @@ function PANEL:Think()
 	if IsValid(self.ply) and not self.Markup then
 		self.LabelName:SetText(self.ply:Nick())
 	end
-
-	local wep = LocalPlayer():GetActiveWeapon()
-	local should_hide = IsValid(wep) and wep:GetClass() == "gmod_camera"
-	self:SetVisible(not should_hide)
 
 	if self.RemoveTime and CurTime() >= self.RemoveTime then
 		self:Remove()
