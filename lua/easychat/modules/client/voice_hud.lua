@@ -42,6 +42,7 @@ function PANEL:Init()
 	self.Avatar = vgui.Create("AvatarImage", self)
 	self.Avatar:Dock(LEFT)
 	self.Avatar:SetSize(PANEL_HEIGHT, PANEL_HEIGHT)
+	self.Avatar:SetPaintedManually(true)
 
 	self.Color = color_transparent
 	self.VoiceData = {}
@@ -118,6 +119,8 @@ function PANEL:Paint(w, h)
 	if self.Markup then
 		self.Markup:Draw(PANEL_HEIGHT + 10, h / 2 - self.Markup:GetTall() / 2)
 	end
+
+	self.Avatar:PaintManual()
 end
 
 function PANEL:Think()
