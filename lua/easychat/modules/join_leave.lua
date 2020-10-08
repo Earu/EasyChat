@@ -47,6 +47,12 @@ if SERVER then
 	hook.Add("PlayerDisconnected", TAG, function(ply)
 		ply:SetPData("ECLastSeen", os.time())
 	end)
+	
+	hook.Add("ShutDown", TAG, function()
+		for _, ply in ipairs(player.GetHumans()) do
+			ply:SetPData("ECLastSeen", os.time())
+		end
+	end)
 
 	hook.Add("player_disconnect", TAG, function(data)
 		if not EC_JOIN_LEAVE:GetBool() then return end
