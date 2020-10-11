@@ -229,18 +229,17 @@ local function draw_voice_ring(ply)
 	render.DrawQuadEasy(tr.HitPos + tr.HitNormal, tr.HitNormal, 128, 128, color)
 end
 
-local old_scrw, old_scrh = ScrW(), ScrH()
 hook.Add("PostDrawTranslucentRenderables", TAG, function()
 	if not EC_VOICE_RINGS:GetBool() then return end
 
 	for _, ply in ipairs(player.GetAll()) do
 		draw_voice_ring(ply)
 	end
+end)
 
-	-- if resolution changes
-	if IsValid(EasyChat.GUI.VoiceList) and (old_scrw ~= ScrW() or old_scrh ~= ScrH()) then
+hook.Add("ECResolutionChanged", TAG, function()
+	if IsValid(EasyChat.GUI.VoiceList) then
 		EasyChat.GUI.VoiceList:Remove()
-		old_scrw, old_scrh = ScrW(), ScrH()
 	end
 end)
 
