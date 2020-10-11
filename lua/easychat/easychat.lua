@@ -2859,6 +2859,7 @@ if CLIENT then
 			-- this is because the "OnScreenSizeChanged" is kinda broken and unreliable
 			if scrh ~= old_scrh or scrw ~= old_scrw then
 				screen_resolution_changed(old_scrw, old_scrh)
+				safe_hook_run("ECResolutionChanged", scrw, scrh)
 				old_scrw, old_scrh = scrw, scrh
 			end
 
