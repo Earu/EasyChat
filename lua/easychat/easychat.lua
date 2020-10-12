@@ -41,7 +41,7 @@ function EasyChat.Print(is_err, ...)
 		body_color = is_err and COLOR_PRINT_BAD or COLOR_PRINT_GOOD
 	end
 
-	for k, v in ipairs(args) do args[k] = tostring(v) end
+	for k, v in pairs(args) do args[k] = tostring(v) end
 	MsgC(COLOR_PRINT_HEAD, "[EasyChat] ⮞ ", body_color, table.concat(args), "\n")
 end
 
@@ -1591,7 +1591,7 @@ if CLIENT then
 		end
 
 		local args = {...}
-		for _, arg in ipairs(args) do
+		for _, arg in pairs(args) do
 			if isstring(arg) then
 				append_text_url(richtext, arg)
 			elseif type(arg) == "Player" then
@@ -1674,7 +1674,7 @@ if CLIENT then
 		end
 
 		local args = {...}
-		for _, arg in ipairs(args) do
+		for _, arg in pairs(args) do
 			local callback = ec_addtext_handles[type(arg)]
 			if callback then
 				local succ, ret = xpcall(callback, function(err)
