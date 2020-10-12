@@ -1374,7 +1374,7 @@ function chathud:AddText(...)
 	local args = { ... }
 	self:NewLine()
 
-	for _, arg in ipairs(args) do
+	for _, arg in pairs(args) do
 		local t = type(arg)
 		if t == "string" then
 			self:AppendText(arg)
