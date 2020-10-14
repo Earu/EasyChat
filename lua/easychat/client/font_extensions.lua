@@ -1,5 +1,6 @@
 -- CREDITS TO PYTHON1320
 if not CLIENT then return end
+if surface.GetLuaFonts then return end
 
 --gotta catch 'em all or very broken stuff
 local fonts = {}
