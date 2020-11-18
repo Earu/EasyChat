@@ -840,6 +840,8 @@ if CLIENT then
 			if bounds.y >= ScrH() then bounds.y = y end
 			if bounds.w >= ScrW() then bounds.w = w end
 			if bounds.h >= ScrH() then bounds.h = h end
+			if bounds.w < 200 then bounds.w = 200 end
+			if bounds.h < 200 then bounds.h = 200 end
 
 			return bounds.x, bounds.y, bounds.w, bounds.h
 		else

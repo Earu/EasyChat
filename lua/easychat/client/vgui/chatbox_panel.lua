@@ -12,6 +12,7 @@ local CHATBOX = {
 		self:SetSizable(true)
 		self:SetDeleteOnClose(false)
 		self:SetTitle("")
+		self:SetMinimumSize(200, 200)
 
 		self.btnClose:Hide()
 		self.btnMaxim:Hide()
