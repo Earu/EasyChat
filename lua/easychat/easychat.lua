@@ -1774,7 +1774,9 @@ if CLIENT then
 		end
 
 		if not text_entry.HistoryPos then return end
-
+		
+		if input.IsKeyDown(KEY_LSHIFT) then return end
+		
 		if key_code == KEY_UP then
 			text_entry.HistoryPos = text_entry.HistoryPos - 1
 			text_entry:UpdateFromHistory()
@@ -2344,6 +2346,11 @@ if CLIENT then
 		function EasyChat.GUI.TextEntry:OnValueChange(text)
 			hook.Run("ChatTextChanged", text)
 
+			-- for TextEntryLegacy
+			if self.AddUndo then
+				self:AddUndo(text)
+			end
+			
 			-- this needs to be reset here for peeking to work properly
 			self.TabbedOnce = false
 
