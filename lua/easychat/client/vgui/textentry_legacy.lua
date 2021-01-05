@@ -9,10 +9,11 @@ surface.CreateFont("EasyChatCompletionFont", {
 
 function PANEL:Init()
 	self.PlaceholderColor = color_white
-
 	self:SetFont("EasyChatCompletionFont")
 	self:SetUpdateOnType(true)
 	self:SetMultiline(true)
+
+	self.undo_history = {}
 end
 
 function PANEL:OnTab() end
@@ -29,10 +30,54 @@ function PANEL:SetPlaceholderColor(col)
 	self.PlaceholderColor = col
 end
 
+
+function PANEL:DoUndo()
+	local len = #self.undo_history
+	self.undo_history[len] = nil
+	local t = self.undo_history[len - 1]
+	-- TODO: can we get rid of this?
+	self.set_text_nextframe = t or {"", 0}
+end
+
+function PANEL:Think()
+
+	if self.set_text_nextframe then
+		local t = self.set_text_nextframe
+		self.set_text_nextframe = nil
+		local msg = t[1]
+		local pos = t[2]
+		self:SetText(msg)
+		self:SetCaretPos(pos)
+		self:OnTextChanged()
+	end
+end
+
+function PANEL:AddUndo(msg)
+	local pos = self:GetCaretPos()
+	local len = #self.undo_history
+
+	-- my god
+	if len > 40 then
+		table.remove(self.undo_history, 1)
+		len = len - 1
+	end
+
+	local prev = self.undo_history[len]
+	if prev and prev[1] == msg then return end
+	local t = {msg, pos}
+	table.insert(self.undo_history, t)
+end
+
+
 function PANEL:OnKeyCodeTyped(key_code)
 	EasyChat.SetupHistory(self, key_code)
 	EasyChat.UseRegisteredShortcuts(self, key_code)
 
+	if key_code == KEY_Z and input.IsKeyDown(KEY_LCONTROL) then
+		self:DoUndo()
+		return true
+	end
+	
 	if key_code == KEY_TAB then
 		self:OnTab()
 		return true
@@ -107,5 +152,13 @@ function PANEL:PaintOver(w, h)
 
 	blink(w, h)
 end
+
+--in easychat.lua
+--function PANEL:OnTextChanged()
+--	local msg = self:GetValue()
+--
+--	self:AddUndo(msg)
+--	
+--end
 
 vgui.Register("TextEntryLegacy", PANEL, "DTextEntry")
