@@ -617,7 +617,7 @@ if CLIENT then
 	end)
 
 	local function parse_cvar_color(str)
-		local r, g, b = unpack(string.Explode(" ", str))
+		local r, g, b = str:match("(%d+) (%d+) (%d+)")
 		r = r or 255
 		g = g or 255
 		b = b or 255
