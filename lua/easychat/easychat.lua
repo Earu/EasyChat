@@ -518,13 +518,18 @@ if CLIENT then
 	local EC_LOCAL_MSG_DIST = CreateConVar("easychat_local_msg_distance", "300", {FCVAR_ARCHIVE, FCVAR_USERINFO}, "Set the maximum distance for users to receive local messages", 150, 1000)
 	local EC_TICK_SOUND = CreateConVar("easychat_tick_sound", "0", FCVAR_ARCHIVE, "Should a tick sound be played on new messages or not")
 	local EC_USE_ME = CreateConVar("easychat_use_me", "0", FCVAR_ARCHIVE, 'Should the chat display your name or "me"')
-	local EC_TIMESTAMPS_12 = CreateConVar("easychat_timestamps_12", "0", FCVAR_ARCHIVE, "Display timestamps in 12 hours mode or not")
 	local EC_LINKS_CLIPBOARD = CreateConVar("easychat_links_to_clipboard", "0", FCVAR_ARCHIVE, "Automatically copies links to your clipboard")
 	local EC_GM_COMPLETE = CreateConVar("easychat_gm_complete", "0", FCVAR_ARCHIVE, "Use the gamemode bad auto-completion")
 	local EC_NICK_COMPLETE = CreateConVar("easychat_nick_complete", "1", FCVAR_ARCHIVE, "Auto-completes player names")
 	local EC_NICK_PRIORITIZE = CreateConVar("easychat_nick_prioritize", "0", FCVAR_ARCHIVE, "Prioritize player nick completion over everything else")
 	local EC_OUT_CLICK_CLOSE = CreateConVar("easychat_out_click_close", "1", FCVAR_ARCHIVE, "Clicking outside the chatbox closes it")
 	local EC_SERVER_MSG = CreateConVar("easychat_server_msg", "1", FCVAR_ARCHIVE, "Shows convars being changed on the server")
+
+	-- timestamps
+	local EC_TIMESTAMPS = CreateConVar("easychat_timestamps", "0", FCVAR_ARCHIVE, "Display timestamps in the chatbox")
+	local EC_TIMESTAMPS_12 = CreateConVar("easychat_timestamps_12", "0", FCVAR_ARCHIVE, "Display timestamps in 12 hours mode or not")
+	local EC_HUD_TIMESTAMPS = CreateConVar("easychat_hud_timestamps", "0", FCVAR_ARCHIVE, "Display timestamps in the chat hud")
+	local EC_TIMESTAMPS_COLOR = CreateConVar("easychat_timestamps_color", "255 255 255", FCVAR_ARCHIVE, "Color timestamps display in")
 
 	-- chatbox panel
 	local EC_GLOBAL_ON_OPEN = CreateConVar("easychat_global_on_open", "1", FCVAR_ARCHIVE, "Set the chat to always open global chat tab on open")
@@ -533,7 +538,6 @@ if CLIENT then
 	local EC_DERMASKIN = CreateConVar("easychat_use_dermaskin", "0", FCVAR_ARCHIVE, "Use dermaskin look or not")
 	local EC_HISTORY = CreateConVar("easychat_history", "1", FCVAR_ARCHIVE, "Should the history be shown")
 	local EC_IMAGES = CreateConVar("easychat_images", "1", FCVAR_ARCHIVE, "Display images in the chat window")
-	local EC_TIMESTAMPS = CreateConVar("easychat_timestamps", "0", FCVAR_ARCHIVE, "Display timestamps in the chatbox")
 	local EC_PEEK_COMPLETION = CreateConVar("easychat_peek_completion", "1", FCVAR_ARCHIVE, "Display a preview of the possible text completion")
 	local EC_LEGACY_ENTRY = CreateConVar("easychat_legacy_entry", "0", FCVAR_ARCHIVE, "Uses the legacy textbox entry")
 	local EC_LEGACY_TEXT = CreateConVar("easychat_legacy_text", "0", FCVAR_ARCHIVE, "Uses the legacy text output")
@@ -542,7 +546,6 @@ if CLIENT then
 	local EC_HUD_SMOOTH = CreateConVar("easychat_hud_smooth", "1", FCVAR_ARCHIVE, "Enables chat smoothing")
 	local EC_HUD_TTL = CreateConVar("easychat_hud_ttl", "16", FCVAR_ARCHIVE, "How long messages stay before vanishing")
 	local EC_HUD_FOLLOW = CreateConVar("easychat_hud_follow", "1", FCVAR_ARCHIVE, "Set the chat hud to follow the chatbox")
-	local EC_HUD_TIMESTAMPS = CreateConVar("easychat_hud_timestamps", "0", FCVAR_ARCHIVE, "Display timestamps in the chat hud")
 	local EC_HUD_SH_CLEAR = CreateConVar("easychat_hud_sh_clear", "1", FCVAR_ARCHIVE, "Should \'sh\' clear the chat hud tags")
 	local EC_HUD_CUSTOM = CreateConVar("easychat_hud_custom", "1", FCVAR_ARCHIVE, "Use EasyChat's custom chat hud")
 	local EC_HUD_POS_X = CreateConVar("easychat_hud_pos_x", "0", FCVAR_ARCHIVE, "Changes the position of the chat hud on the x axis")
@@ -611,6 +614,21 @@ if CLIENT then
 
 	cvars.AddChangeCallback(EC_FONT_SIZE:GetName(), function(_, _, new_font_size)
 		update_chatbox_font(EasyChat.FontName, tonumber(new_font_size))
+	end)
+
+	local function parse_cvar_color(str)
+		local r, g, b = str:match("(%d+) (%d+) (%d+)")
+		r = r or 255
+		g = g or 255
+		b = b or 255
+
+		return Color(r, g, b)
+	end
+
+	EasyChat.TimestampColor = parse_cvar_color(EC_TIMESTAMPS_COLOR:GetString())
+
+	cvars.AddChangeCallback(EC_TIMESTAMPS_COLOR:GetName(), function(_, _, new_color)
+		EasyChat.TimestampColor = parse_cvar_color(new_color)
 	end)
 
 	local function to_color(tbl)
@@ -1333,6 +1351,13 @@ if CLIENT then
 		richtext.Log = ""
 	end
 
+	local function chathud_insert_color_change(r, g, b, a)
+		r, g, b, a = r or 255, g or 255, b or 255, isnumber(a) and a or 255
+
+		if not EC_HUD_CUSTOM:GetBool() then return end
+		EasyChat.ChatHUD:InsertColorChange(r, g, b)
+	end
+
 	local function chathud_append_text(text)
 		if not EC_HUD_CUSTOM:GetBool() then return end
 		EasyChat.ChatHUD:AppendText(text)
@@ -1585,11 +1610,14 @@ if CLIENT then
 		end
 
 		if EC_TIMESTAMPS:GetBool() then
+			richtext:InsertColorChange(EasyChat.TimestampColor)
 			if EC_TIMESTAMPS_12:GetBool() then
-				append_text(richtext, os.date("%I:%M %p") .. " - ")
+				append_text(richtext, os.date("%I:%M %p"))
 			else
-				append_text(richtext, os.date("%H:%M") .. " - ")
+				append_text(richtext, os.date("%H:%M"))
 			end
+			richtext:InsertColorChange(255, 255, 255, 255)
+			append_text(richtext, " - ")
 		end
 
 		local args = {...}
@@ -1664,14 +1692,23 @@ if CLIENT then
 		table.insert(data, color_white)
 
 		if EC_ENABLE:GetBool() then
-			local timestamp = (EC_TIMESTAMPS_12:GetBool() and os.date("%I:%M %p") or os.date("%H:%M")) .. " - "
+			local timestamp = EC_TIMESTAMPS_12:GetBool() and os.date("%I:%M %p") or os.date("%H:%M")
 			if EC_TIMESTAMPS:GetBool() then
+				EasyChat.GUI.RichText:InsertColorChange(EasyChat.TimestampColor)
 				append_text(EasyChat.GUI.RichText, timestamp)
+				EasyChat.GUI.RichText:InsertColorChange(255, 255, 255, 255)
+				append_text(EasyChat.GUI.RichText, " - ")
 			end
 
 			if EC_HUD_TIMESTAMPS:GetBool() then
+				chathud_insert_color_change(EasyChat.TimestampColor:Unpack())
+				table.insert(data, EasyChat.TimestampColor)
 				chathud_append_text(timestamp)
 				table.insert(data, timestamp)
+				chathud_insert_color_change(255, 255, 255, 255)
+				table.insert(data, color_white)
+				chathud_append_text(" - ")
+				table.insert(data, " - ")
 			end
 		end
 

@@ -25,7 +25,6 @@ local EC_LOCAL_MSG_DIST = get_cvar("easychat_local_msg_distance")
 local EC_TICK_SOUND = get_cvar("easychat_tick_sound")
 local EC_USE_ME = get_cvar("easychat_use_me")
 local EC_IMAGES = get_cvar("easychat_images")
-local EC_TIMESTAMPS_12 = get_cvar("easychat_timestamps_12")
 local EC_LINKS_CLIPBOARD = get_cvar("easychat_links_to_clipboard")
 local EC_GM_COMPLETE = get_cvar("easychat_gm_complete")
 local EC_NICK_COMPLETE = get_cvar("easychat_nick_complete")
@@ -33,13 +32,18 @@ local EC_NICK_PRIORITIZE = get_cvar("easychat_nick_prioritize")
 local EC_OUT_CLICK_CLOSE = get_cvar("easychat_out_click_close")
 local EC_SERVER_MSG = get_cvar("easychat_server_msg")
 
+-- timestamps
+local EC_TIMESTAMPS = get_cvar("easychat_timestamps")
+local EC_TIMESTAMPS_12 = get_cvar("easychat_timestamps_12")
+local EC_HUD_TIMESTAMPS = get_cvar("easychat_hud_timestamps")
+local EC_TIMESTAMPS_COLOR = get_cvar("easychat_timestamps_color")
+
 -- chatbox
 local EC_USE_DERMASKIN = get_cvar("easychat_use_dermaskin")
 local EC_HISTORY = get_cvar("easychat_history")
 local EC_GLOBAL_ON_OPEN = get_cvar("easychat_global_on_open")
 local EC_FONT = get_cvar("easychat_font")
 local EC_FONT_SIZE = get_cvar("easychat_font_size")
-local EC_TIMESTAMPS = get_cvar("easychat_timestamps")
 local EC_PEEK_COMPLETION = get_cvar("easychat_peek_completion")
 local EC_LEGACY_ENTRY = get_cvar("easychat_legacy_entry")
 local EC_LEGACY_TEXT = get_cvar("easychat_legacy_text")
@@ -49,7 +53,6 @@ local EC_HUD_FOLLOW = get_cvar("easychat_hud_follow")
 local EC_HUD_TTL = get_cvar("easychat_hud_ttl")
 local EC_HUD_FADELEN = get_cvar("easychat_hud_fadelen")
 local EC_HUD_SMOOTH = get_cvar("easychat_hud_smooth")
-local EC_HUD_TIMESTAMPS = get_cvar("easychat_hud_timestamps")
 local EC_HUD_SH_CLEAR = get_cvar("easychat_hud_sh_clear")
 local EC_HUD_CUSTOM = get_cvar("easychat_hud_custom")
 local EC_HUD_POS_X = get_cvar("easychat_hud_pos_x")
@@ -76,7 +79,6 @@ local function create_default_settings()
 		settings:AddConvarSettingsSet(category_name, {
 			[EC_ALWAYS_LOCAL] = "Always talk in local mode by default",
 			[EC_LINKS_CLIPBOARD] = "Automatically copy links to your clipboard",
-			[EC_TIMESTAMPS_12] = "12 hours mode timestamps",
 			[EC_TEAMS] = "Display teams",
 			[EC_TEAMS_COLOR] = "Color the team tags",
 			[EC_PLAYER_COLOR] = "Color players in their team color",
@@ -143,6 +145,27 @@ local function create_default_settings()
 
 		settings:AddSpacer(category_name)
 
+		local setting_timestamps = settings:AddConvarSetting(category_name, "boolean", EC_TIMESTAMPS, "Display timestamps")
+		local setting_timestamps_12 = settings:AddConvarSetting(category_name, "boolean", EC_TIMESTAMPS_12, "12 hours mode timestamps")
+		local setting_timestamps_hud = settings:AddConvarSetting(category_name, "boolean", EC_HUD_TIMESTAMPS, "Display timestamps in Chat HUD")
+
+		local setting_timestamps_color = settings:AddSetting(category_name, "color", "Timestamp Color")
+		setting_timestamps_color:SetColor(EasyChat.TimestampColor)
+		setting_timestamps_color.OnValueChanged = function(_, color)
+			EC_TIMESTAMPS_COLOR:SetString(("%d %d %d"):format(color.r, color.g, color.b))
+		end
+
+		local setting_reset_timestamps = settings:AddSetting(category_name, "action", "Reset Options")
+		setting_reset_timestamps.DoClick = function()
+			EC_TIMESTAMPS:SetBool(tobool(EC_TIMESTAMPS:GetDefault()))
+			EC_TIMESTAMPS_12:SetBool(tobool(EC_TIMESTAMPS_12:GetDefault()))
+			EC_HUD_TIMESTAMPS:SetBool(tobool(EC_HUD_TIMESTAMPS:GetDefault()))
+			setting_timestamps_color:SetColor(Color(255, 255, 255, 255))
+			EC_TIMESTAMPS_COLOR:SetString(EC_TIMESTAMPS_COLOR:GetDefault())
+		end
+
+		settings:AddSpacer(category_name)
+
 		local setting_disable_modules = settings:AddSetting(category_name, "action", EC_NO_MODULES:GetBool() and "Run Modules" or "Disallow Modules")
 		setting_disable_modules.DoClick = function() EC_NO_MODULES:SetBool(not EC_NO_MODULES:GetBool()) end
 
@@ -199,7 +222,6 @@ local function create_default_settings()
 
 		settings:AddConvarSettingsSet(category_name, {
 			[EC_GLOBAL_ON_OPEN] = "Open in the global tab",
-			[EC_TIMESTAMPS] = "Display timestamps",
 			[EC_HISTORY] = "Enable history",
 			[EC_IMAGES] = "Display images",
 			[EC_PEEK_COMPLETION] = "Peek at the possible chat completion",
@@ -597,7 +619,6 @@ local function create_default_settings()
 
 		settings:AddConvarSettingsSet(category_name, {
 			[EC_HUD_FOLLOW] = "Follow the chatbox window",
-			[EC_HUD_TIMESTAMPS] = "Display timestamps",
 			[EC_HUD_SMOOTH] = "Smooth message transitions",
 			[EC_HUD_SH_CLEAR] = "Clear the tags upon saying \'sh\'",
 			[EC_HUD_CUSTOM] = "Use EasyChat's custom hud",
