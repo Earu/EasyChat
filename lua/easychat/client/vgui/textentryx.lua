@@ -229,7 +229,7 @@ end
 PANEL.GetValue = PANEL.GetText
 
 function PANEL:SetText(text)
-	text = text or ""
+	text = isstring(text) and text or ""
 
 	self.CurrentValue = text
 	self:QueueJavascript(([[TEXT_ENTRY.value = `%s`;]]):format(text:JavascriptSafe()))
