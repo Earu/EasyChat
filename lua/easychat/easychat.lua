@@ -930,6 +930,10 @@ if CLIENT then
 			url = ("http://%s"):format(url)
 		end
 
+		if EC_LINKS_CLIPBOARD:GetBool() then
+			SetClipboardText(url)
+		end
+
 		local ok = safe_hook_run("ECOpenURL", url)
 		if ok == false then return end
 
@@ -1335,10 +1339,6 @@ if CLIENT then
 				richtext:InsertColorChange(previous_color)
 			end
 
-			if EC_LINKS_CLIPBOARD:GetBool() and richtext:IsVisible() then
-				SetClipboardText(url)
-			end
-
 			-- recurse for possible other urls after this one
 			append_text_url(richtext, text:sub(end_pos + 1))
 		end
@@ -1451,10 +1451,6 @@ if CLIENT then
 			table.insert(data, LINK_COLOR)
 			table.insert(data, url)
 			table.insert(data, previous_color)
-
-			if EC_LINKS_CLIPBOARD:GetBool() and EasyChat.GUI.RichText:IsVisible() then
-				SetClipboardText(url)
-			end
 
 			-- recurse for possible other urls after this one
 			table.Add(data, global_append_text_url(text:sub(end_pos + 1)))
@@ -1811,9 +1807,9 @@ if CLIENT then
 		end
 
 		if not text_entry.HistoryPos then return end
-		
+
 		if input.IsKeyDown(KEY_LSHIFT) then return end
-		
+
 		if key_code == KEY_UP then
 			text_entry.HistoryPos = text_entry.HistoryPos - 1
 			text_entry:UpdateFromHistory()
@@ -2387,7 +2383,7 @@ if CLIENT then
 			if self.AddUndo then
 				self:AddUndo(text)
 			end
-			
+
 			-- this needs to be reset here for peeking to work properly
 			self.TabbedOnce = false
 
