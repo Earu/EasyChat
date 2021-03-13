@@ -258,7 +258,7 @@ if CLIENT then
 			for option, option_args in SortedPairs(all_options) do
 				local pos_y = chat_y + (i * option_h)
 				local option_w = draw.WordBox(4, pos_x, pos_y, option, option_font, black_color, color_white)
-				if option_w > max_w then max_w = option_w end
+				if option_w and option_w > max_w then max_w = option_w end
 
 				for arg_index, arg in ipairs(option_args) do
 					local arg_w = draw.WordBox(4, pos_x + (arg_index * 130), pos_y, arg, option_font, black_color, color_white)
