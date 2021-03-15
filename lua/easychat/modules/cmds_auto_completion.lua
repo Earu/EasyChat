@@ -262,7 +262,7 @@ if CLIENT then
 
 				for arg_index, arg in ipairs(option_args) do
 					local arg_w = draw.WordBox(4, pos_x + (arg_index * 130), pos_y, arg, option_font, black_color, color_white)
-					if (arg_index * 130) + arg_w > max_w then max_w = (arg_index * 130) + arg_w end
+					if arg_w and (arg_index * 130) + arg_w > max_w then max_w = (arg_index * 130) + arg_w end
 				end
 
 				i = i + 1
