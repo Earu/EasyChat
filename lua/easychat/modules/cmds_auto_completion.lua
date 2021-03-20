@@ -193,7 +193,7 @@ if CLIENT then
 			local options_count = 0
 			local options = {}
 			for cmd_name, cmd_args in pairs(cmds.Lookup) do
-				if cmd_name:match(cmd) then
+				if cmd_name:lower():match(cmd) then
 					options[("%s%s"):format(prefix, cmd_name)] = cmd_args
 					options_count = options_count + 1
 				end
