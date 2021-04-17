@@ -94,6 +94,49 @@ local function create_default_settings()
 
 		settings:AddSpacer(category_name)
 
+		local setting_blocked_players = settings:AddSetting(category_name, "list", "Blocked Users")
+		local blocked_players_list = setting_blocked_players.List
+		blocked_players_list:SetMultiSelect(true)
+		blocked_players_list:AddColumn("SteamID")
+		blocked_players_list:AddColumn("Name")
+
+		blocked_players_list.DoDoubleClick = function(_, _, line)
+			local steam_id = line:GetColumnText(1)
+			if not steam_id or #steam_id:Trim() <= 0 then return end
+
+			local steam_id64 = util.SteamIDTo64(steam_id)
+			EasyChat.OpenURL("https://steamcommunity.com/profiles/" .. steam_id64)
+		end
+
+		local function build_blocked_players_list()
+			blocked_players_list:Clear()
+
+			for steam_id, _ in pairs(EasyChat.BlockedPlayers) do
+				local steam_id64 = util.SteamIDTo64(steam_id)
+				steamworks.RequestPlayerInfo(steam_id64, function(steam_name)
+					if not IsValid(blocked_players_list) then return end
+					blocked_players_list:AddLine(steam_id, steam_name)
+				end)
+			end
+		end
+
+		build_blocked_players_list()
+		hook.Add("ECBlockedPlayer", blocked_players_list, build_blocked_players_list)
+
+		local setting_unblock_player = settings:AddSetting(category_name, "action", "Unblock Player(s)")
+		setting_unblock_player.DoClick = function()
+			local lines = blocked_players_list:GetSelected()
+			for _, line in pairs(lines) do
+				local steam_id = line:GetColumnText(1)
+				EasyChat.BlockedPlayers[steam_id] = nil
+			end
+
+			file.Write("easychat/blocked_players.json", util.TableToJSON(EasyChat.BlockedPlayers))
+			build_blocked_players_list()
+		end
+
+		settings:AddSpacer(category_name)
+
 		local setting_secondary_mode = settings:AddConvarSetting(category_name, "string", EC_SECONDARY, "Secondary Message Mode")
 		setting_secondary_mode.GetAutoComplete = function(self, text)
 			local suggestions = {}
