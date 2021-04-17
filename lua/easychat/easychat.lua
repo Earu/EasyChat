@@ -501,6 +501,7 @@ if CLIENT then
 	local LINK_COLOR = Color(68, 151, 206)
 	local UNKNOWN_COLOR = Color(110, 247, 177)
 	local UPLOADING_TEXT = "[uploading image...]"
+	local BLOCKED_PLAYERS_PATH = "easychat/blocked_players.json"
 
 	-- general
 	local EC_ENABLE = CreateConVar("easychat_enable", "1", {FCVAR_ARCHIVE, FCVAR_USERINFO}, "Use easychat or not")
@@ -662,6 +663,13 @@ if CLIENT then
 	end
 
 	load_chatbox_colors()
+
+	local function load_blocked_players()
+		local BLOCKED_PLAYERS = file.Read(BLOCKED_PLAYERS_PATH, "DATA") or ""
+		EasyChat.BlockedPlayers = util.JSONToTable(BLOCKED_PLAYERS) or {}
+	end
+
+	load_blocked_players()
 
 	local default_chat_mode = {
 		Name = "Say",
@@ -1535,6 +1543,25 @@ if CLIENT then
 		return Color(r, g, b, a)
 	end
 
+	function EasyChat.BlockPlayer(steam_id)
+		EasyChat.BlockedPlayers[steam_id] = true
+		file.Write(BLOCKED_PLAYERS_PATH, util.TableToJSON(EasyChat.BlockedPlayers))
+		safe_hook_run("ECBlockedPlayer", steam_id)
+	end
+
+	function EasyChat.IsBlockedPlayer(ply)
+		if not IsValid(ply) then return false end
+		if not ply:IsPlayer() then return false end
+
+		local steam_blocked = (ply:GetFriendStatus() or "") == "blocked"
+		if steam_blocked then return true end
+
+		local steam_id = ply:SteamID() or ""
+		if LocalPlayer():SteamID() == steam_id then return false end
+
+		return EasyChat.BlockedPlayers[steam_id] and true or false
+	end
+
 	local history_file_handles = {}
 	local HISTORY_DIRECTORY = "easychat/history"
 	function EasyChat.SaveToHistory(name, content)
@@ -1821,6 +1848,7 @@ if CLIENT then
 
 	function EasyChat.Init()
 		load_chatbox_colors()
+		load_blocked_players()
 
 		-- reset for reload
 		EasyChat.Mode = 0
@@ -1831,7 +1859,6 @@ if CLIENT then
 		EasyChat.ChatHUD = include("easychat/client/chathud.lua")
 		EasyChat.MacroProcessor = include("easychat/client/macro_processor.lua")
 		EasyChat.ModeCount = 0
-
 
 		include("easychat/client/settings.lua")
 		include("easychat/client/markup.lua")
@@ -2401,7 +2428,7 @@ if CLIENT then
 		end
 
 		local function handle_player_actions(steam_id, ply_name)
-			if steam_id == "BOT" then return end
+			if steam_id == "BOT" or steam_id == "NULL" then return end
 
 			local steam_id64 = util.SteamIDTo64(steam_id)
 			local ply_menu = DermaMenu()
@@ -2490,6 +2517,8 @@ if CLIENT then
 				notification.AddLegacy("Copied player SteamID64", NOTIFY_GENERIC, 3)
 			end)
 
+			ply_menu:AddOption("Block Player", function() EasyChat.BlockPlayer(steam_id) end)
+
 			ply_menu:AddSpacer()
 
 			ply_menu:AddOption("Cancel", function() ply_menu:Remove() end)
@@ -2502,6 +2531,7 @@ if CLIENT then
 			id_menu:AddOption("Open Steam Profile", function() EasyChat.OpenURL("https://steamcommunity.com/profiles/" .. steam_id64) end)
 			id_menu:AddOption("Copy SteamID", function() SetClipboardText(steam_id) end)
 			id_menu:AddOption("Copy SteamID64", function() SetClipboardText(steam_id64) end)
+			id_menu:AddOption("Block Player", function() EasyChat.BlockPlayer(steam_id) end)
 
 			id_menu:AddSpacer()
 
@@ -2947,6 +2977,8 @@ if CLIENT then
 		local is_team = net.ReadBool()
 		local is_local = net.ReadBool()
 
+		if EasyChat.IsBlockedPlayer(ply) then return end
+
 		-- so we never have the two together
 		if is_local and is_team then
 			is_team = false
@@ -3045,6 +3077,8 @@ if CLIENT then
 
 		-- this is for the best
 		function GAMEMODE:OnPlayerChat(ply, msg, is_team, is_dead, is_local)
+			if EasyChat.IsBlockedPlayer(ply) then return true end
+
 			local msg_components = {}
 
 			-- reset color to white
