@@ -47,7 +47,7 @@ if SERVER then
 	hook.Add("PlayerDisconnected", TAG, function(ply)
 		ply:SetPData("ECLastSeen", os.time())
 	end)
-	
+
 	hook.Add("ShutDown", TAG, function()
 		for _, ply in ipairs(player.GetHumans()) do
 			ply:SetPData("ECLastSeen", os.time())
@@ -208,6 +208,7 @@ if CLIENT then
 		local network_id = net.ReadString()
 
 		if not friend_ids[network_id] then return end
+		if EasyChat.BlockedPlayers[network_id] then return end -- friends can block each others on steam
 		if EasyChat.IsStringEmpty(name) then name = "[NO NAME]" end
 		chat.AddText(green_color, " ● Friend joining ", white_color, name, gray_color, " (" .. network_id .. ")")
 	end)

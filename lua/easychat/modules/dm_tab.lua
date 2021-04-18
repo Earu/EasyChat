@@ -240,6 +240,7 @@ if CLIENT then
 		local message = net.ReadString()
 		if not IsValid(dmtab) then return end
 		if not IsValid(sender) then return end
+		if EasyChat.IsBlockedPlayer(sender) then return end
 
 		local chat = dmtab.Chats[sender]
 		if not chat then

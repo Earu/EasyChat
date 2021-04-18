@@ -188,7 +188,10 @@ if CLIENT then
 	local function handle_message()
 		local sender = net.ReadEntity()
 		local msg = net.ReadString()
+
+		if not IsValid(admintab) then return end
 		if not IsValid(sender) then return end
+		if EasyChat.IsBlockedPlayer(sender) then return end
 
 		EasyChat.AddText(admintab.RichText, sender, color_white, ": " .. msg)
 
