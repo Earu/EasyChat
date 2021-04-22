@@ -1546,7 +1546,15 @@ if CLIENT then
 	function EasyChat.BlockPlayer(steam_id)
 		EasyChat.BlockedPlayers[steam_id] = true
 		file.Write(BLOCKED_PLAYERS_PATH, util.TableToJSON(EasyChat.BlockedPlayers))
+		notification.AddLegacy("Blocked user: " .. steam_id, NOTIFY_GENERIC, 5)
 		safe_hook_run("ECBlockedPlayer", steam_id)
+	end
+
+	function EasyChat.UnblockPlayer(steam_id)
+		EasyChat.BlockedPlayers[steam_id] = nil
+		file.Write(BLOCKED_PLAYERS_PATH, util.TableToJSON(EasyChat.BlockedPlayers))
+		notification.AddLegacy("Unblocked user: " .. steam_id, NOTIFY_UNDO, 5)
+		safe_hook_run("ECUnblockedPlayer")
 	end
 
 	function EasyChat.IsBlockedPlayer(ply)
@@ -2517,7 +2525,12 @@ if CLIENT then
 				notification.AddLegacy("Copied player SteamID64", NOTIFY_GENERIC, 3)
 			end)
 
-			ply_menu:AddOption("Block Player", function() EasyChat.BlockPlayer(steam_id) end)
+			-- we dont use IsBlockedPlayer because it could return true if its a Steam block
+			if EasyChat.BlockedPlayers[steam_id] then
+				ply_menu:AddOption("Unblock Player", function() EasyChat.UnblockPlayer(steam_id) end)
+			else
+				ply_menu:AddOption("Block Player", function() EasyChat.BlockPlayer(steam_id) end)
+			end
 
 			ply_menu:AddSpacer()
 
@@ -2531,7 +2544,13 @@ if CLIENT then
 			id_menu:AddOption("Open Steam Profile", function() EasyChat.OpenURL("https://steamcommunity.com/profiles/" .. steam_id64) end)
 			id_menu:AddOption("Copy SteamID", function() SetClipboardText(steam_id) end)
 			id_menu:AddOption("Copy SteamID64", function() SetClipboardText(steam_id64) end)
-			id_menu:AddOption("Block Player", function() EasyChat.BlockPlayer(steam_id) end)
+
+			-- we dont use IsBlockedPlayer because it could return true if its a Steam block
+			if EasyChat.BlockedPlayers[steam_id] then
+				id_menu:AddOption("Unblock Player", function() EasyChat.UnblockPlayer(steam_id) end)
+			else
+				id_menu:AddOption("Block Player", function() EasyChat.BlockPlayer(steam_id) end)
+			end
 
 			id_menu:AddSpacer()
 
