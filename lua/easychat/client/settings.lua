@@ -122,6 +122,7 @@ local function create_default_settings()
 
 		build_blocked_players_list()
 		hook.Add("ECBlockedPlayer", blocked_players_list, build_blocked_players_list)
+		hook.Add("ECUnblockedPlayer", blocked_players_list, build_blocked_players_list)
 
 		local setting_unblock_player = settings:AddSetting(category_name, "action", "Unblock Player(s)")
 		setting_unblock_player.DoClick = function()
