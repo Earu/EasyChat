@@ -145,6 +145,7 @@ function ec_markup.AdvancedParse(str, data)
 					text = text .. component.Content
 				end
 			end
+			text = text .. "\n"
 		end
 
 		return text
