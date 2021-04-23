@@ -139,13 +139,16 @@ function ec_markup.AdvancedParse(str, data)
 
 	function obj:GetText()
 		local text = ""
-		for _, line in ipairs(self.Lines) do
+		for i, line in ipairs(self.Lines) do
 			for _, component in ipairs(line.Components) do
 				if component.Type == "text" then
 					text = text .. component.Content
 				end
 			end
-			text = text .. "\n"
+
+			if i < #self.Lines then
+				text = text .. "\n"
+			end
 		end
 
 		return text
