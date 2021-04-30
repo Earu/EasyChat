@@ -7,6 +7,7 @@ local NET_BROADCAST_MSG = "EASY_CHAT_BROADCAST_MSG"
 local NET_SEND_MSG = "EASY_CHAT_RECEIVE_MSG"
 local NET_SET_TYPING = "EASY_CHAT_START_CHAT"
 local NET_ADD_TEXT = "EASY_CHAT_ADD_TEXT"
+local NET_SYNC_BLOCKED = "EASY_CHAT_SYNC_BLOCKED"
 
 local PLY = FindMetaTable("Player")
 local TAG = "EasyChat"
@@ -141,6 +142,7 @@ if SERVER then
 	util.AddNetworkString(NET_BROADCAST_MSG)
 	util.AddNetworkString(NET_SET_TYPING)
 	util.AddNetworkString(NET_ADD_TEXT)
+	util.AddNetworkString(NET_SYNC_BLOCKED)
 
 	local EC_VERSION_WARNING = CreateConVar("easychat_version_warnings", "1", FCVAR_ARCHIVE, "Should we warn users if EasyChat is outdated")
 
@@ -313,6 +315,17 @@ if SERVER then
 		return false
 	end
 
+	EasyChat.BlockedPlayers = {}
+	function EasyChat.IsBlockedPlayer(ply, steam_id)
+		if not IsValid(ply) or not steam_id then return false end
+
+		local lookup = EasyChat.BlockedPlayers[ply]
+		if not lookup then return false end
+		if not lookup[steam_id] then return false end
+
+		return true
+	end
+
 	net.Receive(NET_SEND_MSG, function(_, ply)
 		local msg = net.ReadString()
 		local is_team = net.ReadBool()
@@ -325,6 +338,25 @@ if SERVER then
 		local is_opened = net.ReadBool()
 		ply:SetNWBool("ec_is_typing", is_opened)
 		safe_hook_run(is_opened and "ECOpened" or "ECClosed", ply)
+	end)
+
+	net.Receive(NET_SYNC_BLOCKED, function(_, ply)
+		local partial = net.ReadBool()
+		if not partial then
+			local lookup = {}
+			local blocked_steam_ids = net.ReadTable()
+			for _, steam_id in pairs(blocked_steam_ids) do
+				lookup[steam_id] = true
+			end
+
+			EasyChat.BlockedPlayers[ply] = lookup
+		else
+			local blocked_steam_ids = EasyChat.BlockedPlayers[ply] or {}
+			local steam_id = net.ReadString()
+			local blocked = net.ReadBool()
+			blocked_steam_ids[steam_id] = blocked or nil
+			EasyChat.BlockedPlayers[ply] = blocked_steam_ids
+		end
 	end)
 
 	local function retrieve_commit_time(commit)
@@ -431,6 +463,10 @@ if SERVER then
 		end
 	end
 
+	function EasyChat.PlayerCanHearPlayersVoice(listener, talker)
+		if EasyChat.IsBlockedPlayer(listener, talker:SteamID()) then return false end
+	end
+
 	local NAMING_FUNCTIONS = { "SetNick", "setNick", "SetRPName", "setRPName" }
 	local WARN_NAME_FAIL = "Cannot set name for specified player: "
 	hook.Add("Initialize", TAG, function()
@@ -493,7 +529,11 @@ if SERVER then
 	end)
 
 	hook.Add("PlayerCanSeePlayersChat", TAG, EasyChat.PlayerCanSeePlayersChat)
-	hook.Add("PlayerDisconnected", TAG, function(ply) spam_watch_lookup[ply] = nil end)
+	hook.Add("PlayerCanHearPlayersVoice", TAG, EasyChat.PlayerCanHearPlayersVoice)
+	hook.Add("PlayerDisconnected", TAG, function(ply)
+		spam_watch_lookup[ply] = nil
+		EasyChat.BlockedPlayers[ply] = nil
+	end)
 end
 
 if CLIENT then
@@ -667,6 +707,22 @@ if CLIENT then
 	local function load_blocked_players()
 		local BLOCKED_PLAYERS = file.Read(BLOCKED_PLAYERS_PATH, "DATA") or ""
 		EasyChat.BlockedPlayers = util.JSONToTable(BLOCKED_PLAYERS) or {}
+
+		local lookup = {}
+		for _, ply in ipairs(player.GetAll()) do
+			if ply:GetFriendStatus() == "blocked" then
+				table.insert(lookup, ply:SteamID())
+			end
+		end
+
+		for steam_id, _ in pairs(EasyChat.BlockedPlayers) do
+			table.insert(lookup, steam_id)
+		end
+
+		net.Start(NET_SYNC_BLOCKED)
+		net.WriteBool(false)
+		net.WriteTable(lookup)
+		net.SendToServer()
 	end
 
 	load_blocked_players()
@@ -1547,6 +1603,13 @@ if CLIENT then
 		EasyChat.BlockedPlayers[steam_id] = true
 		file.Write(BLOCKED_PLAYERS_PATH, util.TableToJSON(EasyChat.BlockedPlayers))
 		notification.AddLegacy("Blocked user: " .. steam_id, NOTIFY_GENERIC, 5)
+
+		net.Start(NET_SYNC_BLOCKED)
+		net.WriteBool(true)
+		net.WriteString(steam_id)
+		net.WriteBool(true)
+		net.SendToServer()
+
 		safe_hook_run("ECBlockedPlayer", steam_id)
 	end
 
@@ -1554,6 +1617,13 @@ if CLIENT then
 		EasyChat.BlockedPlayers[steam_id] = nil
 		file.Write(BLOCKED_PLAYERS_PATH, util.TableToJSON(EasyChat.BlockedPlayers))
 		notification.AddLegacy("Unblocked user: " .. steam_id, NOTIFY_UNDO, 5)
+
+		net.Start(NET_SYNC_BLOCKED)
+		net.WriteBool(true)
+		net.WriteString(steam_id)
+		net.WriteBool(false)
+		net.SendToServer()
+
 		safe_hook_run("ECUnblockedPlayer")
 	end
 
@@ -1672,8 +1742,10 @@ if CLIENT then
 					end
 
 					richtext:InsertColorChange(ply_col.r, ply_col.g, ply_col.b, 255)
-					richtext:InsertClickableTextStart(("ECPlayerActions: %s|%s")
-						:format(arg:SteamID(), empty_nick and "[NO NAME]" or nick))
+					if not arg:IsBot() then
+						richtext:InsertClickableTextStart(("ECPlayerActions: %s|%s")
+							:format(arg:SteamID(), empty_nick and "[NO NAME]" or nick))
+					end
 
 					local lp = LocalPlayer()
 					if IsValid(lp) and lp == arg and EC_USE_ME:GetBool() then
@@ -1693,7 +1765,9 @@ if CLIENT then
 						end
 					end
 
-					richtext:InsertClickableTextEnd()
+					if not arg:IsBot() then
+						richtext:InsertClickableTextEnd()
+					end
 				end
 			elseif is_color(arg) then
 				richtext:InsertColorChange(arg.r, arg.g, arg.b, isnumber(arg.a) and arg.a or 255)
@@ -2001,8 +2075,10 @@ if CLIENT then
 			global_insert_color_change(ply_col.r, ply_col.g, ply_col.b, 255)
 			table.insert(data, ply_col)
 
-			EasyChat.GUI.RichText:InsertClickableTextStart(("ECPlayerActions: %s|%s")
-				:format(ply:SteamID(), empty_nick and "[NO NAME]" or stripped_ply_nick))
+			if not ply:IsBot() then
+				EasyChat.GUI.RichText:InsertClickableTextStart(("ECPlayerActions: %s|%s")
+					:format(ply:SteamID(), empty_nick and "[NO NAME]" or stripped_ply_nick))
+			end
 
 			local lp = LocalPlayer()
 			if IsValid(lp) and lp == ply and EC_USE_ME:GetBool() then
@@ -2022,7 +2098,9 @@ if CLIENT then
 				end
 			end
 
-			EasyChat.GUI.RichText:InsertClickableTextEnd()
+			if not ply:IsBot() then
+				EasyChat.GUI.RichText:InsertClickableTextEnd()
+			end
 
 			return data
 		end)
@@ -2984,6 +3062,22 @@ if CLIENT then
 		hook.Add("ECFactoryReset", TAG, function()
 			cookie.Delete("ECChromiumWarn")
 			cookie.Delete("ECShowDonateButton")
+		end)
+
+		-- sync up data for players joining, we dont want a funny steam blocked person to avoid blocking
+		gameevent.Listen("player_spawn")
+		hook.Add("player_spawn", TAG, function(data)
+			timer.Simple(10, function()
+				local ply = Player(data.userid)
+				if not IsValid(ply) then return end
+				if ply:GetFriendStatus() ~= "blocked" then return end
+
+				net.Start(NET_SYNC_BLOCKED)
+				net.WriteBool(true)
+				net.WriteString(ply:SteamID())
+				net.WriteBool(true)
+				net.SendToServer()
+			end)
 		end)
 
 		safe_hook_run("ECInitialized")
