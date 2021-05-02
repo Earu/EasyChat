@@ -109,7 +109,7 @@ if SERVER then
 
 		local data = util.Compress(util.TableToJSON(config_copy))
 		local data_len = #data
-		timer.Simple(0, function()
+		EasyChat.RunOnNextFrame(function()
 			net.Start(NET_SEND_CONFIG)
 			net.WriteDouble(data_len)
 			net.WriteData(data, data_len)

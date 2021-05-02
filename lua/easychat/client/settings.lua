@@ -155,7 +155,7 @@ local function create_default_settings()
 				local suggestion = self:GetAutoComplete(secondary_mode_input)[secondary_mode_selection]
 				if suggestion then
 					self:SetText(suggestion)
-					timer.Simple(0, function()
+					EasyChat.RunOnNextFrame(function()
 						self:RequestFocus()  -- keep focus
 						self:SetCaretPos(#self:GetText())
 					end)
@@ -168,7 +168,7 @@ local function create_default_settings()
 			elseif key_code == KEY_ENTER or key_code == KEY_PAD_ENTER then
 				if IsValid(self.Menu) then self.Menu:Remove() end
 				self:OnEnter()
-				timer.Simple(0, function()
+				EasyChat.RunOnNextFrame(function()
 					self:RequestFocus()  -- keep focus
 					self:SetCaretPos(#self:GetText())
 				end)
@@ -248,7 +248,7 @@ local function create_default_settings()
 						end
 
 						delete_dir("easychat")
-						timer.Simple(0, function() EasyChat.Reload() end)
+						EasyChat.RunOnNextFrame(function() EasyChat.Reload() end)
 					end
 				}
 			)
@@ -987,7 +987,7 @@ local function create_default_settings()
 					if suggestion then
 						local country_code = suggestion:match("^(.+)%s%(")
 						self:SetText(country_code)
-						timer.Simple(0, function()
+						EasyChat.RunOnNextFrame(function()
 							self:RequestFocus()  -- keep focus
 							self:SetCaretPos(#self:GetText())
 						end)
@@ -1000,7 +1000,7 @@ local function create_default_settings()
 				elseif key_code == KEY_ENTER or key_code == KEY_PAD_ENTER then
 					if IsValid(self.Menu) then self.Menu:Remove() end
 					self:OnEnter()
-					timer.Simple(0, function()
+					EasyChat.RunOnNextFrame(function()
 						self:RequestFocus()  -- keep focus
 						self:SetCaretPos(#self:GetText())
 					end)
