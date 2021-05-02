@@ -31,6 +31,10 @@ local COLOR_PRINT_CHAT_TIME = Color(0, 161, 255)
 local COLOR_PRINT_CHAT_NICK = Color(222, 222, 255)
 local COLOR_PRINT_CHAT_MSG = Color(255, 255, 255)
 
+function EasyChat.RunOnNextFrame(func)
+	timer.Simple(0, func)
+end
+
 function EasyChat.Print(is_err, ...)
 	local args = { ... }
 	local body_color
@@ -704,7 +708,7 @@ if CLIENT then
 
 	load_chatbox_colors()
 
-	local function load_blocked_players()
+	local function load_blocked_players(retries)
 		local BLOCKED_PLAYERS = file.Read(BLOCKED_PLAYERS_PATH, "DATA") or ""
 		EasyChat.BlockedPlayers = util.JSONToTable(BLOCKED_PLAYERS) or {}
 
@@ -719,10 +723,12 @@ if CLIENT then
 			table.insert(lookup, steam_id)
 		end
 
-		net.Start(NET_SYNC_BLOCKED)
-		net.WriteBool(false)
-		net.WriteTable(lookup)
-		net.SendToServer()
+		EasyChat.RunOnNextFrame(function()
+			net.Start(NET_SYNC_BLOCKED)
+			net.WriteBool(false)
+			net.WriteTable(lookup)
+			net.SendToServer()
+		end)
 	end
 
 	load_blocked_players()
@@ -871,7 +877,7 @@ if CLIENT then
 			end
 		end
 
-		timer.Simple(0, function()
+		EasyChat.RunOnNextFrame(function()
 			EasyChat.GUI.RichText:GotoTextEnd()
 		end)
 
@@ -2420,7 +2426,7 @@ if CLIENT then
 				if completion then self:SetText(completion) end
 			end
 
-			timer.Simple(0, function()
+			EasyChat.RunOnNextFrame(function()
 				self:RequestFocus()
 				self:SetCaretPos(#self:GetText())
 			end)

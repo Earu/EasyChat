@@ -15,7 +15,7 @@ if SERVER then
 		if not EC_JOIN_LEAVE:GetBool() then return end
 
 		-- we have to do this because its too early for getting player nick etc...
-		timer.Simple(0, function()
+		EasyChat.RunOnNextFrame(function()
 			if not IsValid(ply) then return end -- we never know
 
 			net.Start(NET_SPAWN_LEAVE)

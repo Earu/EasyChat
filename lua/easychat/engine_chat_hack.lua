@@ -95,7 +95,7 @@ if CLIENT then
 			local completion = hook.Run("OnChatTab", text)
 			if completion then self:SetText(completion) end
 
-			timer.Simple(0, function()
+			EasyChat.RunOnNextFrame(function()
 				self:SetCaretPos(#self:GetText())
 				engine_panel:KillFocus()
 				self:RequestFocus()
