@@ -20,7 +20,7 @@ if SERVER then
 				end
 			end
 
-			timer.Simple(0, function()
+			EasyChat.RunOnNextFrame(function()
 				net.Start(EASYCHAT_AUTO_COMPLETION)
 				net.WriteString(cmds_str)
 				net.Send(ply)
