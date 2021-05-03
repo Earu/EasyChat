@@ -445,6 +445,7 @@ function SETTINGS:AddCategory(category_name, icon)
 	end
 
 	if not EasyChat.UseDermaSkin then
+		local categories = self.Categories
 		new_category.Button.Paint = function(self, w, h)
 			local line_col =
 				EasyChat.TabOutlineColor.a == 0
@@ -455,6 +456,11 @@ function SETTINGS:AddCategory(category_name, icon)
 
 			if self:IsHovered() then
 				surface.DrawRect(0, 0, w, h)
+			end
+
+			if self == categories:GetActiveButton() then
+				surface.SetDrawColor(color_white)
+				surface.DrawRect(w - 4, 0, 4, h)
 			end
 		end
 	end
