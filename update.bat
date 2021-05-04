@@ -3,7 +3,7 @@ title EasyChat Update
 set /p changes="Changes: "
 
 git add *
-git commit -a -m "%changes%"
+git commit -m "%changes%"
 git push
 
 gmad.exe create -folder "./" -out ".gma"
