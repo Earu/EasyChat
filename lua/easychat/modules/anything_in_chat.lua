@@ -192,28 +192,47 @@ if CLIENT then
         return true, category
     end
 
-    local EC_INDICATIONS = CreateConVar("easychat_indications", "1", FCVAR_ARCHIVE, "Allows you to indicate objects in the chat by pressing mouse3 and shift")
-	EasyChat.RegisterConvar(EC_INDICATIONS, "Indicates objects when pressing mouse3 and shift")
+    local function indicate_faced_object()
+        local tr = LocalPlayer():GetEyeTrace()
+        if IsValid(tr.Entity) then
+            handle_object(tr.Entity)
+        elseif tr.HitWorld then
+            handle_object(game.GetWorld())
+        end
+    end
 
-    local was_down = false
+    local using = false
+    concommand.Add("+ec_indicate", function() using = true end)
+    concommand.Add("-ec_indicate", function()
+        using = false
+        indicate_faced_object()
+    end)
+
     hook.Add("PreDrawHalos", TAG, function()
-        if not EC_INDICATIONS:GetBool() then return end
-
-        if input.IsMouseDown(MOUSE_MIDDLE) and (input.IsKeyDown(KEY_LSHIFT) or input.IsKeyDown(KEY_RSHIFT)) then
+        if using then
             local tr = LocalPlayer():GetEyeTrace()
             if IsValid(tr.Entity) then
                 halo.Add({ tr.Entity }, white_color)
             end
-            was_down = true
+        end
+    end)
+
+    local EC_INDICATIONS = CreateConVar("easychat_indications", "1", FCVAR_ARCHIVE, "Allows you to indicate objects in the chat by pressing mouse3 and shift")
+	EasyChat.RegisterConvar(EC_INDICATIONS, "Indicates objects when pressing mouse3 and shift")
+
+    local was_pressed = false
+    hook.Add("Think", TAG, function()
+        if not input.LookupBinding("+ec_indicate", true) then return end
+        if not EC_INDICATIONS:GetBool() then return end
+
+        if (input.IsKeyDown(KEY_LSHIFT) or input.IsKeyDown(KEY_RSHIFT)) and input.IsMouseDown(MOUSE_MIDDLE) then
+            using = true
+            was_pressed = true
         else
-            if was_down then
-                local tr = LocalPlayer():GetEyeTrace()
-                if IsValid(tr.Entity) then
-                    handle_object(tr.Entity)
-                elseif tr.HitWorld then
-                    handle_object(game.GetWorld())
-                end
-                was_down = false
+            if was_pressed then
+                was_pressed = false
+                using = false
+                indicate_faced_object()
             end
         end
     end)
@@ -323,7 +342,7 @@ if SERVER then
         end,
     }
 
-    local RATE_LIMIT = 2
+    local RATE_LIMIT = 4
     net.Receive(TAG, function(_, ply)
         if CurTime() <= (ply.NextAIC or 0) then return end
 
