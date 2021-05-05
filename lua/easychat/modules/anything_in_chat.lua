@@ -222,7 +222,7 @@ if CLIENT then
 
     local was_pressed = false
     hook.Add("Think", TAG, function()
-        if not input.LookupBinding("+ec_indicate", true) then return end
+        if input.LookupBinding("+ec_indicate", true) then return end
         if not EC_INDICATIONS:GetBool() then return end
 
         if (input.IsKeyDown(KEY_LSHIFT) or input.IsKeyDown(KEY_RSHIFT)) and input.IsMouseDown(MOUSE_MIDDLE) then
