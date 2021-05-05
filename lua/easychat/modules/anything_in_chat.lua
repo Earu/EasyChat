@@ -83,14 +83,22 @@ if CLIENT then
         end,
     }
 
+    local INDICATION_DURATION = 5
     local EC_ENABLE = GetConVar("easychat_enable")
     local green_color = Color(100, 230, 100)
     local gray_color = Color(200, 200, 200)
     local white_color = Color(255, 255, 255)
+    local indicated_ents = {}
     net.Receive(TAG, function()
         local ply = net.ReadEntity()
         local category = net.ReadString()
         local data = net.ReadTable()
+
+        local ent = data.Entity
+        if IsValid(ent) then
+            table.insert(indicated_ents, ent)
+            ent.IndicationEndTime = CurTime() + INDICATION_DURATION
+        end
 
         if not EC_ENABLE:GetBool() then
             chat.AddText(ply, green_color, " indicates ", gray_color, util.TableToJSON(data, true))
@@ -208,12 +216,24 @@ if CLIENT then
         indicate_faced_object()
     end)
 
+    local next_check = 0
     hook.Add("PreDrawHalos", TAG, function()
+        halo.Add(indicated_ents, green_color)
+
         if using then
             local tr = LocalPlayer():GetEyeTrace()
             if IsValid(tr.Entity) then
                 halo.Add({ tr.Entity }, white_color)
             end
+        end
+
+        if CurTime() >= next_check then
+            for i, ent in pairs(indicated_ents) do
+                if not IsValid(ent) or CurTime() >= ent.IndicationEndTime then
+                    table.remove(indicated_ents, i)
+                end
+            end
+            next_check = CurTime() + 1
         end
     end)
 
