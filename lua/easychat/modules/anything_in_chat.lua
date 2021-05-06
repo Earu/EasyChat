@@ -61,15 +61,8 @@ if CLIENT then
             }
         end,
         player = function(obj)
-            local friendship = obj:GetFriendStatus()
-            local is_blocked = friendship == "blocked"
-            local is_friend = friendship == "friend"
-            local nick = EasyChat.GetProperNick(LocalPlayer())
-
             return {
                 Name = EasyChat.GetProperNick(obj),
-                FriendStatus = is_blocked and ("Blocked by " .. nick) or is_friend and ("Friend with " .. nick) or "",
-                Model = obj:GetModel(),
                 Entity = obj,
             }
         end,
@@ -84,6 +77,7 @@ if CLIENT then
     }
 
     local INDICATION_DURATION = 5
+    local INDICATION_TEXT = " has indicated "
     local EC_ENABLE = GetConVar("easychat_enable")
     local green_color = Color(100, 230, 100)
     local gray_color = Color(200, 200, 200)
@@ -98,10 +92,15 @@ if CLIENT then
         if IsValid(ent) then
             table.insert(indicated_ents, ent)
             ent.IndicationEndTime = CurTime() + INDICATION_DURATION
+
+            if ent:IsPlayer() then
+                chat.AddText(ply, green_color, INDICATION_TEXT, ent)
+                return
+            end
         end
 
         if not EC_ENABLE:GetBool() then
-            chat.AddText(ply, green_color, " indicates ", gray_color, util.TableToJSON(data, true))
+            chat.AddText(ply, green_color, INDICATION_TEXT, gray_color, util.TableToJSON(data, true))
             return
         end
 
@@ -336,16 +335,6 @@ if SERVER then
             return data
         end,
         player = function(_, data)
-            local obj = data.Entity
-            if IsValid(obj) then
-                data.SteamID = obj:SteamID()
-                data.Team = team.GetName(obj:Team())
-                data.Weapon = obj:GetActiveWeapon()
-                data.Health = obj:Health()
-                data.Armor = obj:Armor()
-                data.Position = obj:GetPos()
-            end
-
             return data
         end,
         npc = function(ply, data)
@@ -381,7 +370,7 @@ if SERVER then
             net.WriteEntity(ply)
             net.WriteString(category)
             net.WriteTable(data)
-            net.Broadcast()
+            net.SendPVS(ply:GetPos())
         end)
     end)
 end
