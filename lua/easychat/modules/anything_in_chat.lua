@@ -113,9 +113,9 @@ if CLIENT then
                 text = ("[Object: %s, Name: %s]"):format(category, data.Name)
             end
 
-            chathud:AddText(ply, green_color, " indicates ", gray_color, text)
+            chathud:AddText(ply, green_color, INDICATION_TEXT, gray_color, text)
 
-            EasyChat.AddText(panel, ply, green_color, " indicates ", gray_color)
+            EasyChat.AddText(panel, ply, green_color, INDICATION_TEXT, gray_color)
             panel:AppendClickableText(text, function()
                 local frame = EasyChat.CreateFrame()
                 frame:SetTitle(text)
