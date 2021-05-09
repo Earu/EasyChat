@@ -560,6 +560,7 @@ if CLIENT then
 	-- misc
 	local EC_SECONDARY = CreateConVar("easychat_secondary_mode", "team", FCVAR_ARCHIVE, "Opens the chat in the selected mode with the secondary chat bind")
 	local EC_ALWAYS_LOCAL = CreateConVar("easychat_always_local", "0", FCVAR_ARCHIVE, "Should we always type in local chat by default")
+	local EC_ONLY_LOCAL = CreateConVar("easychat_only_local", "0", FCVAR_ARCHIVE, "Only receive local messages")
 	local EC_LOCAL_MSG_DIST = CreateConVar("easychat_local_msg_distance", "300", {FCVAR_ARCHIVE, FCVAR_USERINFO}, "Set the maximum distance for users to receive local messages", 150, 1000)
 	local EC_TICK_SOUND = CreateConVar("easychat_tick_sound", "0", FCVAR_ARCHIVE, "Should a tick sound be played on new messages or not")
 	local EC_USE_ME = CreateConVar("easychat_use_me", "0", FCVAR_ARCHIVE, 'Should the chat display your name or "me"')
@@ -3103,6 +3104,8 @@ if CLIENT then
 			is_team = false
 		end
 
+		if EC_ONLY_LOCAL:GetBool() and not is_local then return end
+
 		local source_lang, target_lang =
 			EC_TRANSLATE_INC_SRC_LANG:GetString(),
 			EC_TRANSLATE_INC_TARGET_LANG:GetString()
@@ -3197,6 +3200,7 @@ if CLIENT then
 		-- this is for the best
 		function GAMEMODE:OnPlayerChat(ply, msg, is_team, is_dead, is_local)
 			if EasyChat.IsBlockedPlayer(ply) then return true end
+			if EC_ONLY_LOCAL:GetBool() and not is_local then return true end
 
 			local msg_components = {}
 
