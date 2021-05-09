@@ -21,6 +21,7 @@ local EC_PLAYER_PASTEL = get_cvar("easychat_pastel")
 -- misc
 local EC_SECONDARY = get_cvar("easychat_secondary_mode")
 local EC_ALWAYS_LOCAL = get_cvar("easychat_always_local")
+local EC_ONLY_LOCAL = get_cvar("easychat_only_local")
 local EC_LOCAL_MSG_DIST = get_cvar("easychat_local_msg_distance")
 local EC_TICK_SOUND = get_cvar("easychat_tick_sound")
 local EC_USE_ME = get_cvar("easychat_use_me")
@@ -78,6 +79,7 @@ local function create_default_settings()
 
 		settings:AddConvarSettingsSet(category_name, {
 			[EC_ALWAYS_LOCAL] = "Always talk in local mode by default",
+			[EC_ONLY_LOCAL] = "Only receive local messages"
 			[EC_LINKS_CLIPBOARD] = "Automatically copy links to your clipboard",
 			[EC_TEAMS] = "Display teams",
 			[EC_TEAMS_COLOR] = "Color the team tags",

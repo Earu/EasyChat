@@ -95,6 +95,10 @@ if CLIENT then
 
             if ent:IsPlayer() then
                 chat.AddText(ply, green_color, INDICATION_TEXT, ent)
+                if ent == LocalPlayer() then
+                    system.FlashWindow()
+                end
+
                 return
             end
         end
