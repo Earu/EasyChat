@@ -9,6 +9,7 @@ git push
 gmad.exe create -folder "./" -out ".gma"
 if exist ".gma" (
 	gmpublish.exe update -addon ".gma" -id "1182471500" -changes "%changes%"
+	gmpublish.exe update -addon ".gma" -id "1182471500" -changes "%changes%"
 ) else (
 	echo Could not create gma archive, aborting
 )
