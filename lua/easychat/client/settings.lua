@@ -79,7 +79,7 @@ local function create_default_settings()
 
 		settings:AddConvarSettingsSet(category_name, {
 			[EC_ALWAYS_LOCAL] = "Always talk in local mode by default",
-			[EC_ONLY_LOCAL] = "Only receive local messages"
+			[EC_ONLY_LOCAL] = "Only receive local messages",
 			[EC_LINKS_CLIPBOARD] = "Automatically copy links to your clipboard",
 			[EC_TEAMS] = "Display teams",
 			[EC_TEAMS_COLOR] = "Color the team tags",
