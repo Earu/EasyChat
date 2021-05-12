@@ -460,6 +460,7 @@ function SETTINGS:AddCategory(category_name, icon)
 
 			if self == categories:GetActiveButton() then
 				surface.SetDrawColor(color_white)
+				surface.DrawOutlinedRect(0, 0, w, h)
 				surface.DrawRect(w - 4, 0, 4, h)
 			end
 		end
