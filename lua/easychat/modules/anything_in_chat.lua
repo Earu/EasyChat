@@ -272,10 +272,12 @@ if SERVER then
             local obj = data.Entity
             if IsValid(obj) then
                 local passengers = {}
-                for i = 1, MAX_PASSENGERS_CHECK do
-                    local passenger = obj:GetPassenger(i)
-                    if IsValid(passenger) then
-                        table.insert(passengers, passenger)
+                if obj.GetPassenger then
+                    for i = 1, MAX_PASSENGERS_CHECK do
+                        local passenger = obj:GetPassenger(i)
+                        if IsValid(passenger) then
+                            table.insert(passengers, passenger)
+                        end
                     end
                 end
 
@@ -287,7 +289,7 @@ if SERVER then
 
 
                 data.Owner = obj.CPPIGetOwner and obj:CPPIGetOwner()
-                data.Driver = obj:GetDriver()
+                data.Driver = obj.GetDriver and obj:GetDriver()
                 data.Passengers = passengers
                 data.Velocity = vel
                 data.Position = obj:GetPos()
@@ -346,7 +348,7 @@ if SERVER then
             if IsValid(obj) then
                 data.Owner = obj.CPPIGetOwner and obj:CPPIGetOwner()
                 data.Position = obj:GetPos()
-                data.IsHostile = data.Entity:Disposition(ply) == 1
+                data.IsHostile = obj.Disposition and obj:Disposition(ply) == 1 or false
                 data.Health = obj.Health and obj:Health() or -1
                 data.Weapon = obj.GetActiveWeapon and obj:GetActiveWeapon()
             end
