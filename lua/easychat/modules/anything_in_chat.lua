@@ -122,7 +122,7 @@ if CLIENT then
             panel:AppendClickableText(text, function()
                 if IsValid(ent) then
                     local lp = LocalPlayer()
-                    lp:SetEyeAngles((lp:EyePos() - ent:WorldSpaceCenter()):Angle())
+                    lp:SetEyeAngles((ent:WorldSpaceCenter() - lp:EyePos()):Angle())
                 end
 
                 local frame = EasyChat.CreateFrame()
