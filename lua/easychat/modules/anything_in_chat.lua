@@ -111,7 +111,6 @@ if CLIENT then
         local panel = EasyChat.GUI and EasyChat.GUI.RichText
         local chathud = EasyChat.ChatHUD
         if IsValid(panel) and chathud then
-
             local text = ("[Object: %s]"):format(category)
             if data.Name then
                 text = ("[Object: %s, Name: %s]"):format(category, data.Name)
@@ -121,6 +120,11 @@ if CLIENT then
 
             EasyChat.AddText(panel, ply, green_color, INDICATION_TEXT, gray_color)
             panel:AppendClickableText(text, function()
+                if IsValid(ent) then
+                    local lp = LocalPlayer()
+                    lp:SetEyeAngles((lp:EyePos() - ent:WorldSpaceCenter()):Angle())
+                end
+
                 local frame = EasyChat.CreateFrame()
                 frame:SetTitle(text)
                 frame:SetWide(400)
