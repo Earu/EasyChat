@@ -96,7 +96,16 @@ if CLIENT then
 
 		EasyChat.CmdSuggestions:AddSuggestionHandler("ULX", "!", generate_ulx_cmds_lookup(), 9999)
 	elseif FAdmin then
-		-- do nothing, this is here as priority order
+		hook.Remove("ChatTextChanged", "FAdmin_Chat_autocomplete")
+		hook.Remove("HUDPaint", "FAdmin_Chat_autocomplete")
+		hook.Remove("OnChatTab", "FAdmin_Chat_autocompletRemove")
+
+		local fadmin_cmds = {}
+		for cmd_name, cmd in pairs(FAdmin.Commands.List) do
+			fadmin_cmds[cmd_name] = cmd.ExtraArgs or {}
+		end
+
+		EasyChat.CmdSuggestions:AddSuggestionHandler("FAdmin", "/", fadmin_cmds)
 	elseif sam and sam.command then
 		local function generate_sam_cmds_lookup()
 			local sam_cmds = {}
@@ -164,6 +173,15 @@ if CLIENT then
 		end
 
 		EasyChat.CmdSuggestions:AddSuggestionHandler("ChatCommands", "[!/\\%.]", commands, -1)
+	end
+
+	if gmod.GetGamemode().Name == "DarkRP" and _G.DarkRP and _G.DarkRP.chatCommands then
+		local commands = {}
+		for chat_cmd, _ in pairs(_G.DarkRP.chatCommands) do
+			commands[chat_cmd] = {}
+		end
+
+		EasyChat.CmdSuggestions:AddSuggestionHandler("DarkRP", "/", commands, -1)
 	end
 
 	local active_options_index = 0
