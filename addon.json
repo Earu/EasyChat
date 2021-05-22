@@ -7,9 +7,10 @@
     "*.vcproj",
     "*.svn*",
     "*.md",
-	".git/*",
-	".gitignore",
-	"update.bat",
-	".gma"
+    ".git/*",
+    ".gitignore",
+    "update.bat",
+    ".gma",
+    "glualint.json"
   ]
 }
