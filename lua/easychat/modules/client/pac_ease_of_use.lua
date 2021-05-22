@@ -104,7 +104,7 @@ local function pac_in_editor()
 				end
 
 				local pos_3d = ply:NearestPoint(ply:EyePos()) + Vector(0,0,5)
-				local alpha = math.Clamp(pos_3d:Distance(EyePos()) * -1 + 500, 0, 500)/500
+				local alpha = math.Clamp(pos_3d:Distance(EyePos()) * -1 + 500, 0, 500) / 500
 				if alpha > 0 then
 					local pos_2d = pos_3d:ToScreen()
 					draw.DrawText("In PAC3 Editor", "ChatFont", pos_2d.x, pos_2d.y, Color(255, 255, 255, alpha * 255), 1)

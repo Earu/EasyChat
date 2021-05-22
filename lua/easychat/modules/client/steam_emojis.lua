@@ -1,4 +1,4 @@
-local function count(a, n)
+local function emoji_count(a, n)
 	if not a then return 0 end
 
 	local x = 0
@@ -22,8 +22,8 @@ file.CreateDir(FOLDER, "DATA")
 local EMOTS = FOLDER .. "/steam_emoticons.txt"
 local function parse_emote_file() end
 
-local url =	"http://g1.metastruct.net:20080/opendata/public/emote_lzma.dat"
-http.Fetch(url, function(dat, len, hdr, ret)
+local EMOTE_PACKAGE_URL =	"http://g1.metastruct.net:20080/opendata/public/emote_lzma.dat"
+http.Fetch(EMOTE_PACKAGE_URL, function(dat, len, hdr, ret)
 	if not dat or ret ~= 200 then
 		EasyChat.Print(true, "Steam emojis update failed")
 		return
@@ -32,7 +32,7 @@ http.Fetch(url, function(dat, len, hdr, ret)
 	dat = util.Decompress(dat)
 
 	file.Write(EMOTS, dat)
-	local count = count(dat, ",")
+	local count = emoji_count(dat, ",")
 	EasyChat.Print(("Saved steam emojis lookup table with %d references to: %s"):format(count, EMOTS))
 	parse_emote_file(dat)
 end, function(err)
@@ -102,7 +102,7 @@ local function get_steam_emote(name)
 			return fail("ending")
 		end
 
-		local start2, ending2 = data:find([["]], ending + 64, true)
+		local start2, _ = data:find([["]], ending + 64, true)
 		if not start2 then
 			return fail("start2")
 		end
