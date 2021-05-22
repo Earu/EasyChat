@@ -77,7 +77,7 @@ function PANEL:OnKeyCodeTyped(key_code)
 		self:DoUndo()
 		return true
 	end
-	
+
 	if key_code == KEY_TAB then
 		self:OnTab()
 		return true
@@ -158,7 +158,7 @@ end
 --	local msg = self:GetValue()
 --
 --	self:AddUndo(msg)
---	
+--
 --end
 
 vgui.Register("TextEntryLegacy", PANEL, "DTextEntry")

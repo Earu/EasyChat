@@ -245,7 +245,7 @@ if CLIENT then
     end)
 
     local EC_INDICATIONS = CreateConVar("easychat_indications", "1", FCVAR_ARCHIVE, "Allows you to indicate objects in the chat by pressing mouse3 and shift")
-	EasyChat.RegisterConvar(EC_INDICATIONS, "Indicates objects when pressing mouse3 and shift")
+    EasyChat.RegisterConvar(EC_INDICATIONS, "Indicates objects when pressing mouse3 and shift")
 
     local was_pressed = false
     hook.Add("Think", TAG, function()

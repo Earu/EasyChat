@@ -3,7 +3,8 @@ if SERVER then return end
 local OLD_PATH = "easychat"
 local NEW_PATH = "easychat/history"
 
-for _, f in pairs((file.Find(("%s/*_history.txt"):format(OLD_PATH),"DATA"))) do
+local files = (file.Find(("%s/*_history.txt"):format(OLD_PATH),"DATA"))
+for _, f in pairs(files) do
 	local old_file_path = ("%s/%s"):format(OLD_PATH, f)
 	local new_file_path = ("%s/%s"):format(NEW_PATH, f)
 

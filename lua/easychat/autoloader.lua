@@ -28,7 +28,8 @@ local function load_modules(path)
 	path = path or EC_MODULE_PATH
 
 	local start_time = SysTime()
-	for _, file_name in pairs((file.Find(path .. "*.lua", "LUA"))) do
+	local shared_files = (file.Find(path .. "*.lua", "LUA"))
+	for _, file_name in pairs(shared_files) do
 		AddCSLuaFile(path .. file_name)
 		local module = CompileFile(path .. file_name)
 		local succ, module_name = xpcall(module, function(err)
@@ -41,7 +42,8 @@ local function load_modules(path)
 	end
 
 	if SERVER then
-		for _, file_name in pairs((file.Find(path .. "server/*.lua", "LUA"))) do
+		local server_files = (file.Find(path .. "server/*.lua", "LUA"))
+		for _, file_name in pairs(server_files) do
 			local module = CompileFile(path .. "server/" .. file_name)
 			local succ, module_name = xpcall(module, function(err)
 				module_error(file_name, err, "SV")
@@ -52,13 +54,15 @@ local function load_modules(path)
 			end
 		end
 
-		for _, file_name in pairs((file.Find(path .. "client/*.lua", "LUA"))) do
+		local client_files = (file.Find(path .. "client/*.lua", "LUA"))
+		for _, file_name in pairs(client_files) do
 			AddCSLuaFile(path .. "client/" .. file_name)
 		end
 	end
 
 	if CLIENT then
-		for _, file_name in pairs((file.Find(path .. "client/*.lua", "LUA"))) do
+		local client_files = (file.Find(path .. "client/*.lua", "LUA"))
+		for _, file_name in pairs(client_files) do
 			local module = CompileFile(path .. "client/" .. file_name)
 			local succ, module_name = xpcall(module, function(err)
 				module_error(file_name, err, "CL")

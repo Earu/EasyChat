@@ -74,8 +74,8 @@ if SERVER then
 	function config:Load()
 		if file.Exists(CONFIG_PATH, "DATA") then
 			local json = file.Read(CONFIG_PATH, "DATA")
-			local config = util.JSONToTable(json) or {}
-			for k, v in pairs(config) do
+			local config_data = util.JSONToTable(json) or {}
+			for k, v in pairs(config_data) do
 				self[k] = v
 			end
 		end
@@ -271,10 +271,10 @@ if CLIENT then
 			return
 		end
 
-		local config = util.JSONToTable(util.Decompress(data))
-		if not config then return end
+		local config_data = util.JSONToTable(util.Decompress(data))
+		if not config_data then return end
 
-		for k, v in pairs(config) do
+		for k, v in pairs(config_data) do
 			EasyChat.Config[k] = v
 		end
 

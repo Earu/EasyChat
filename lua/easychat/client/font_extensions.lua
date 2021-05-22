@@ -40,7 +40,7 @@ function surface.CreateFont(font_name, font_data)
 	font_data.extended = true -- why would you want ascii only?
 
 	-- this can error even with native gmod fonts
-    -- possible cause: not enough memory ?
+	-- possible cause: not enough memory ?
 	local success, result = pcall(surface_CreateFont, font_name, font_data)
 
 	local font_name_lower = font_name:lower()

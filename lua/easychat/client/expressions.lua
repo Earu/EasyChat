@@ -18,7 +18,7 @@ local expr_env = {
 
 	pwm = function(offset, w)
 		w = w or 0.5
-		return offset%1 > w and 1 or 0
+		return offset % 1 > w and 1 or 0
 	end,
 
 	square = function(x)

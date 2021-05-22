@@ -94,16 +94,12 @@ local MAIN_TAB = {
 		local function on_picker_mouse_pressed()
 			if not IsValid(self) then return end
 
-			if IsValid(self.EmotePicker) then
-				if not self.EmotePicker:MouseInBounds() then
-					self.EmotePicker:SetVisible(false)
-				end
+			if IsValid(self.EmotePicker) and not self.EmotePicker:MouseInBounds() then
+				self.EmotePicker:SetVisible(false)
 			end
 
-			if IsValid(self.ColorPicker) then
-				if not self.ColorPicker:MouseInBounds() then
-					self.ColorPicker:SetVisible(false)
-				end
+			if IsValid(self.ColorPicker) and not self.ColorPicker:MouseInBounds() then
+				self.ColorPicker:SetVisible(false)
 			end
 		end
 

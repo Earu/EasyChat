@@ -201,7 +201,7 @@ local function utf8_byte(char, offset)
 			-- invalid sequence
 			byte = -1
 		end
-	else
+	--else
 		-- single byte sequence
 	end
 	return byte, length
@@ -475,9 +475,9 @@ function text_part:PreLinePush(line, last_index)
 
 	-- not found, then look for previous lines
 	for i = line_index - 1, 1, -1 do
-		local line = self.HUD.Lines[i]
-		for j = #line.Components, 1, -1 do
-			local component = line.Components[j]
+		local previous_line = self.HUD.Lines[i]
+		for j = #previous_line.Components, 1, -1 do
+			local component = previous_line.Components[j]
 			if component.Type == "font" and not component.Invalid then
 				self:SetFont(component.Font)
 				self:CreateShadowFont()
@@ -633,7 +633,7 @@ function text_part:FitWidth()
 			local sub_str = utf8_sub(text, i, i)
 
 			-- try n times before hard breaking
-			for j=1, hard_break_treshold do
+			for j = 1, hard_break_treshold do
 				if breaking_chars[sub_str] then
 					-- we found a breaking char, break here
 					self.Content = utf8_sub(text, 1, i - j)
@@ -737,9 +737,9 @@ function emote_part:PreLinePush(line, last_index)
 
 	-- not found, then look for previous lines
 	for i = line_index - 1, 1, -1 do
-		local line = self.HUD.Lines[i]
-		for j = #line.Components, 1, -1 do
-			local component = line.Components[j]
+		local previous_line = self.HUD.Lines[i]
+		for j = #previous_line.Components, 1, -1 do
+			local component = previous_line.Components[j]
 			if component.Type == "font" and not component.Invalid then
 				self.Height = draw_GetFontHeight(component.Font)
 				self:ComputeSize()
@@ -804,11 +804,9 @@ function emote_part:TryGetEmote(name, requested_provider_name)
 	-- look for providers with a priority set
 	local found = false
 	for _, provider_name in ipairs(self.HUD.EmotePriorities) do
-		if providers[provider_name] then
-			if self:TryGetProviderEmote(providers[provider_name], name) then
-				found = true
-				break
-			end
+		if providers[provider_name] and self:TryGetProviderEmote(providers[provider_name], name) then
+			found = true
+			break
 		end
 	end
 
@@ -1191,10 +1189,8 @@ function chathud:NormalizeString(str, is_nick)
 	end
 
 	for _, part in pairs(self.Parts) do
-		if part.Enabled then
-			if (is_nick and part.OkInNicks) or not is_nick then
-				str = part:Normalize(str)
-			end
+		if part.Enabled and ((is_nick and part.OkInNicks) or not is_nick) then
+			str = part:Normalize(str)
 		end
 	end
 

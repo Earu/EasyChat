@@ -199,13 +199,13 @@ if SERVER then
 
 		local filter = {}
 		local broken_count = 1
-		local function add_to_filter(ply)
-			local id = ply:AccountID()
+		local function add_to_filter(ply_to_add)
+			local id = ply_to_add:AccountID()
 			if not id then
-				filter[broken_count] = ply
+				filter[broken_count] = ply_to_add
 				broken_count = broken_count + 1
 			else
-				filter[id] = ply
+				filter[id] = ply_to_add
 			end
 		end
 
@@ -561,9 +561,9 @@ if CLIENT then
 	local EC_SECONDARY = CreateConVar("easychat_secondary_mode", "team", FCVAR_ARCHIVE, "Opens the chat in the selected mode with the secondary chat bind")
 	local EC_ALWAYS_LOCAL = CreateConVar("easychat_always_local", "0", FCVAR_ARCHIVE, "Should we always type in local chat by default")
 	local EC_ONLY_LOCAL = CreateConVar("easychat_only_local", "0", FCVAR_ARCHIVE, "Only receive local messages")
-	local EC_LOCAL_MSG_DIST = CreateConVar("easychat_local_msg_distance", "300", {FCVAR_ARCHIVE, FCVAR_USERINFO}, "Set the maximum distance for users to receive local messages", 150, 1000)
+	local _ = CreateConVar("easychat_local_msg_distance", "300", {FCVAR_ARCHIVE, FCVAR_USERINFO}, "Set the maximum distance for users to receive local messages", 150, 1000)
 	local EC_TICK_SOUND = CreateConVar("easychat_tick_sound", "0", FCVAR_ARCHIVE, "Should a tick sound be played on new messages or not")
-	local EC_USE_ME = CreateConVar("easychat_use_me", "0", FCVAR_ARCHIVE, 'Should the chat display your name or "me"')
+	local EC_USE_ME = CreateConVar("easychat_use_me", "0", FCVAR_ARCHIVE, [[Should the chat display your name or "me"]])
 	local EC_LINKS_CLIPBOARD = CreateConVar("easychat_links_to_clipboard", "0", FCVAR_ARCHIVE, "Automatically copies links to your clipboard")
 	local EC_GM_COMPLETE = CreateConVar("easychat_gm_complete", "0", FCVAR_ARCHIVE, "Use the gamemode bad auto-completion")
 	local EC_NICK_COMPLETE = CreateConVar("easychat_nick_complete", "1", FCVAR_ARCHIVE, "Auto-completes player names")
@@ -589,15 +589,15 @@ if CLIENT then
 	local EC_LEGACY_TEXT = CreateConVar("easychat_legacy_text", "0", FCVAR_ARCHIVE, "Uses the legacy text output")
 
 	-- chathud
-	local EC_HUD_SMOOTH = CreateConVar("easychat_hud_smooth", "1", FCVAR_ARCHIVE, "Enables chat smoothing")
-	local EC_HUD_TTL = CreateConVar("easychat_hud_ttl", "16", FCVAR_ARCHIVE, "How long messages stay before vanishing")
+	local _ = CreateConVar("easychat_hud_smooth", "1", FCVAR_ARCHIVE, "Enables chat smoothing")
+	local _ = CreateConVar("easychat_hud_ttl", "16", FCVAR_ARCHIVE, "How long messages stay before vanishing")
 	local EC_HUD_FOLLOW = CreateConVar("easychat_hud_follow", "1", FCVAR_ARCHIVE, "Set the chat hud to follow the chatbox")
 	local EC_HUD_SH_CLEAR = CreateConVar("easychat_hud_sh_clear", "1", FCVAR_ARCHIVE, "Should \'sh\' clear the chat hud tags")
 	local EC_HUD_CUSTOM = CreateConVar("easychat_hud_custom", "1", FCVAR_ARCHIVE, "Use EasyChat's custom chat hud")
 	local EC_HUD_POS_X = CreateConVar("easychat_hud_pos_x", "0", FCVAR_ARCHIVE, "Changes the position of the chat hud on the x axis")
 	local EC_HUD_POS_Y = CreateConVar("easychat_hud_pos_y", "0", FCVAR_ARCHIVE, "Changes the position of the chat hud on the y axis")
 	local EC_HUD_WIDTH = CreateConVar("easychat_hud_width", "0", FCVAR_ARCHIVE, "Changes the width of the chat hud")
-	local EC_HUD_FADELEN = CreateConVar("easychat_hud_fadelen", "1", FCVAR_ARCHIVE, "Changes the amount of time it takes for the hud to fade")
+	local _ = CreateConVar("easychat_hud_fadelen", "1", FCVAR_ARCHIVE, "Changes the amount of time it takes for the hud to fade")
 
 	-- translation
 	local EC_TRANSLATE_INC_MSG = CreateConVar("easychat_translate_inc_msg", "0", FCVAR_ARCHIVE, "Translates incoming chat messages")
@@ -606,7 +606,7 @@ if CLIENT then
 	local EC_TRANSLATE_OUT_MSG = CreateConVar("easychat_translate_out_msg", "0", FCVAR_ARCHIVE, "Translates your chat messages")
 	local EC_TRANSLATE_OUT_SRC_LANG = CreateConVar("easychat_translate_out_source_lang", "auto", FCVAR_ARCHIVE, "Language used in your chat messages")
 	local EC_TRANSLATE_OUT_TARGET_LANG = CreateConVar("easychat_translate_out_target_lang", "en", FCVAR_ARCHIVE, "Language to translate your chat messages to")
-	local EC_TRANSLATE_API_KEY = CreateConVar("easychat_translate_api_key", "", FCVAR_ARCHIVE, "Yandex provided API key")
+	local _ = CreateConVar("easychat_translate_api_key", "", FCVAR_ARCHIVE, "Yandex provided API key")
 
 	EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
 
@@ -1196,7 +1196,7 @@ if CLIENT then
 		end
 
 		base64 = base64:gsub("[^" .. BASE64 .. "=]", "")
-		return (base64:gsub(".", function(x)
+		base64 = (base64:gsub(".", function(x)
 			if (x == "=") then return "" end
 			local r, f = "", (BASE64:find(x) - 1)
 			for i = 6, 1, -1 do
@@ -1207,12 +1207,14 @@ if CLIENT then
 		end):gsub("%d%d%d?%d?%d?%d?%d?%d?", function(x)
 			if (#x ~= 8) then return "" end
 			local c = 0
-			for i=1, 8 do
+			for i = 1, 8 do
 				c = c + (x:sub(i, i) == "1" and 2^(8 - i) or 0)
 			end
 
 			return c:char()
 		end))
+
+		return base64
 	end
 
 	local function on_imgur_failure(err)
@@ -1295,12 +1297,12 @@ if CLIENT then
 	end
 
 	local ec_addtext_handles = {}
-	function EasyChat.SetAddTextTypeHandle(type, callback)
-		ec_addtext_handles[type] = callback
+	function EasyChat.SetAddTextTypeHandle(handle_type, callback)
+		ec_addtext_handles[handle_type] = callback
 	end
 
-	function EasyChat.GetSetAddTextTypeHandle(type)
-		return ec_addtext_handles[type]
+	function EasyChat.GetSetAddTextTypeHandle(handle_type)
+		return ec_addtext_handles[handle_type]
 	end
 
 	local function should_use_server_settings(ply)
@@ -2142,8 +2144,8 @@ if CLIENT then
 				end
 			end
 
-			function chat.Open(input)
-				local is_team = input ~= 1
+			function chat.Open(chat_input)
+				local is_team = chat_input ~= 1
 				open_chatbox(is_team)
 			end
 
@@ -2661,7 +2663,7 @@ if CLIENT then
 				return
 			end
 
-			local steam_id = value:match("^STEAM_%d%:%d%:%d+")
+			steam_id = value:match("^STEAM_%d%:%d%:%d+")
 			if steam_id then
 				handle_steam_id(steam_id)
 				return
@@ -2767,18 +2769,16 @@ if CLIENT then
 			if not EasyChat.IsOpened() then return end
 
 			local tab = EasyChat.GUI.TabControl:GetActiveTab()
-			if tab.FocusOn and not tab.FocusOn:HasFocus() then
-				if is_chat_key_pressed(key_code) then
-					local key_name = input.GetKeyName(key_code)
-					if key_name == "ENTER" or key_name == "TAB" then
-						key_name = ""
-					end
-
-					local cur_text = tab.FocusOn:GetText()
-					tab.FocusOn:RequestFocus()
-					tab.FocusOn:SetText(cur_text .. key_name)
-					tab.FocusOn:SetCaretPos(#tab.FocusOn:GetText())
+			if tab.FocusOn and not tab.FocusOn:HasFocus() and is_chat_key_pressed(key_code) then
+				local key_name = input.GetKeyName(key_code)
+				if key_name == "ENTER" or key_name == "TAB" then
+					key_name = ""
 				end
+
+				local cur_text = tab.FocusOn:GetText()
+				tab.FocusOn:RequestFocus()
+				tab.FocusOn:SetText(cur_text .. key_name)
+				tab.FocusOn:SetCaretPos(#tab.FocusOn:GetText())
 			end
 		end
 
@@ -2897,12 +2897,12 @@ if CLIENT then
 		-- teamchange = true, -- annoying
 		-- chat = true, -- deprecated
 		-- joinleave = true, -- we handle it ourselves
-		hook.Add("ChatText", TAG, function(index, name, text, type)
-			if type == "none" then
+		hook.Add("ChatText", TAG, function(index, name, text, chat_text_type)
+			if chat_text_type == "none" then
 				chat.AddText(color_white, text)
 			end
 
-			if type == "servermsg" and EC_SERVER_MSG:GetBool() then
+			if chat_text_type == "servermsg" and EC_SERVER_MSG:GetBool() then
 				local cvar_name, cvar_value = text:match("^Server cvar '([a-zA-Z_]+)' changed to (.+)$")
 				if cvar_name and cvar_value then
 					chat.AddText(COLOR_GRAY, "Server ", COLOR_RED, cvar_name, COLOR_GRAY, " changed to ", COLOR_RED, cvar_value)
@@ -3135,18 +3135,16 @@ if CLIENT then
 	function EasyChat.AddNameTags(ply, msg_components)
 		msg_components = msg_components or {}
 
-		if EC_ENABLE:GetBool() then
-			if IsValid(ply) then
-				if should_use_server_settings(ply) then
-					-- dont do anything here, we want to process this more deeply so
-					-- usergroup prefixes can be fancy (rainbow, etc...)
-				elseif EC_TEAMS:GetBool() then
-					if EC_TEAMS_COLOR:GetBool() then
-						local team_color = team.GetColor(ply:Team())
-						table.insert(msg_components, team_color)
-					end
-					table.insert(msg_components, "[" .. team.GetName(ply:Team()) .. "] - ")
+		if EC_ENABLE:GetBool() and IsValid(ply) then
+			if should_use_server_settings(ply) then
+				-- dont do anything here, we want to process this more deeply so
+				-- usergroup prefixes can be fancy (rainbow, etc...)
+			elseif EC_TEAMS:GetBool() then
+				if EC_TEAMS_COLOR:GetBool() then
+					local team_color = team.GetColor(ply:Team())
+					table.insert(msg_components, team_color)
 				end
+				table.insert(msg_components, "[" .. team.GetName(ply:Team()) .. "] - ")
 			end
 		end
 
