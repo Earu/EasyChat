@@ -30,14 +30,14 @@ do
 		generate_lookup_table(data)
 		EasyChat.Print("Loaded twemojis lookup table from from: " .. data_path)
 	else
-		http.Fetch("http://g1.metastruct.net:20080/twemojis.txt.lzma", function(data, _, _, code)
+		http.Fetch("http://g1.metastruct.net:20080/twemojis.txt.lzma", function(new_data, _, _, code)
 			if code ~= 200 then return end
 
-			data = util.Decompress(data)
-			if not data or #data < 100 or not data:find("\n") then return end
+			new_data = util.Decompress(new_data)
+			if not new_data or #new_data < 100 or not new_data:find("\n") then return end
 
-			file.Write(("%s/%s"):format(FOLDER, "twemojis.txt"), data)
-			local ret = generate_lookup_table(data)
+			file.Write(("%s/%s"):format(FOLDER, "twemojis.txt"), new_data)
+			local ret = generate_lookup_table(new_data)
 			if not ret or not next(ret) then return end
 
 			EasyChat.Print("Loaded twemojis lookup table")
@@ -63,17 +63,15 @@ local function twemojify_unsafe(str)
 		lastend = lastend or char_pos
 		local found_twemoji_part = look[code_point]
 
-		if not found_twemoji_part and seq then
-			if code_point ~= variant_selector_16 then
-				local beginning = seq[1][1]
-				table.insert(res, str:sub(lastend, beginning - 1))
-				table.insert(res, seq)
-				lastend = char_pos
+		if not found_twemoji_part and seq and code_point ~= variant_selector_16 then
+			local beginning = seq[1][1]
+			table.insert(res, str:sub(lastend, beginning - 1))
+			table.insert(res, seq)
+			lastend = char_pos
 
-				seq = nil
-				look = lookup
-				found_twemoji_part = look[code_point]
-			end
+			seq = nil
+			look = lookup
+			found_twemoji_part = look[code_point]
 		end
 
 		if found_twemoji_part then
@@ -90,10 +88,8 @@ local function twemojify_unsafe(str)
 		lastend = nil
 	end
 
-	if next(res) then
-		if res[1] == "" then
-			table.remove(res, 1)
-		end
+	if next(res) and res[1] == "" then
+		table.remove(res, 1)
 	end
 
 	if next(res) then
@@ -119,7 +115,7 @@ local function twemojify(str)
 end
 
 local function get_twemoji_code_points(str)
-	local tbl, err = twemojify(str)
+	local tbl, _ = twemojify(str)
 	if not tbl or not tbl[1] or tbl[2] then return end
 
 	local res = {}

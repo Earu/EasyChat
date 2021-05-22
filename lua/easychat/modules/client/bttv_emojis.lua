@@ -63,14 +63,20 @@ local function gif_material(name, path)
 		["$vertexcolor"] = 1,
 		["$vertexalpha"] = 1,
 		["$transparent"] = 1,
-		["Proxies"] = {AnimatedTexture = {animatedtexturevar = '$basetexture', animatedtextureframenumvar = '$frame', animatedtextureframerate = (framerate_cache[name] or 8)}},
+		["Proxies"] = {
+			AnimatedTexture = {
+				animatedtexturevar = "$basetexture",
+				animatedtextureframenumvar = "$frame",
+				animatedtextureframerate = framerate_cache[name] or 8,
+			}
+		},
 	})
 end
 
 local function get_bttv_url(name)
 	if lookup_gif[name] then
-		http.Fetch(GIFINFO_URL:format(URLEncode(BTTV_CDN_URL:format(lookup_gif[name]))), function(data, len, hdr, code)
-			if code ~= 200 or len <= 222 then
+		http.Fetch(GIFINFO_URL:format(URLEncode(BTTV_CDN_URL:format(lookup_gif[name]))), function(data, len, hdr, http_code)
+			if http_code ~= 200 or len <= 222 then
 				return function(code)
 					EasyChat.Print(true, "Could not get GIF framerate for ", name, ": " .. code)
 				end

@@ -1,32 +1,30 @@
 local EASYCHAT_AUTO_COMPLETION = "EASY_CHAT_MODULE_CMDS_AUTO_COMPLETION"
 
-if SERVER then
-	if aowl then
-		util.AddNetworkString(EASYCHAT_AUTO_COMPLETION)
+if SERVER and aowl then
+	util.AddNetworkString(EASYCHAT_AUTO_COMPLETION)
 
-		net.Receive(EASYCHAT_AUTO_COMPLETION, function(_, ply)
-			local cmds_str = ""
-			if aowl.cmds then
-				for cmd_name in pairs(aowl.cmds) do
-					cmds_str = ("%s,%s"):format(cmds_str, cmd_name)
-				end
-			elseif aowl.Commands then
-				for cmd_name in pairs(aowl.Commands) do
-					cmds_str = ("%s,%s"):format(cmds_str, cmd_name)
-				end
-			elseif aowl.commands then
-				for cmd_name in pairs(aowl.commands) do
-					cmds_str = ("%s,%s"):format(cmds_str, cmd_name)
-				end
+	net.Receive(EASYCHAT_AUTO_COMPLETION, function(_, ply)
+		local cmds_str = ""
+		if aowl.cmds then
+			for cmd_name in pairs(aowl.cmds) do
+				cmds_str = ("%s,%s"):format(cmds_str, cmd_name)
 			end
+		elseif aowl.Commands then
+			for cmd_name in pairs(aowl.Commands) do
+				cmds_str = ("%s,%s"):format(cmds_str, cmd_name)
+			end
+		elseif aowl.commands then
+			for cmd_name in pairs(aowl.commands) do
+				cmds_str = ("%s,%s"):format(cmds_str, cmd_name)
+			end
+		end
 
-			EasyChat.RunOnNextFrame(function()
-				net.Start(EASYCHAT_AUTO_COMPLETION)
-				net.WriteString(cmds_str)
-				net.Send(ply)
-			end)
+		EasyChat.RunOnNextFrame(function()
+			net.Start(EASYCHAT_AUTO_COMPLETION)
+			net.WriteString(cmds_str)
+			net.Send(ply)
 		end)
-	end
+	end)
 end
 
 if CLIENT then
@@ -271,10 +269,10 @@ if CLIENT then
 			local localui_panel = EasyChat.GUI.LocalPanel
 			local is_local_mode = cur_mode and cur_mode.Name == "Local" and IsValid(localui_panel)
 
-			local i = 0
+			local j = 0
 			local max_w = 0
 			for option, option_args in SortedPairs(all_options) do
-				local pos_y = chat_y + (i * option_h)
+				local pos_y = chat_y + (j * option_h)
 				local option_w = draw.WordBox(4, pos_x, pos_y, option, option_font, black_color, color_white)
 				if option_w and option_w > max_w then max_w = option_w end
 
@@ -283,7 +281,7 @@ if CLIENT then
 					if arg_w and (arg_index * 130) + arg_w > max_w then max_w = (arg_index * 130) + arg_w end
 				end
 
-				i = i + 1
+				j = j + 1
 			end
 
 			if above_screen_height then

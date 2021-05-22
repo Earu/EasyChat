@@ -6,7 +6,7 @@ for k,v in pairs(chathud) do
 	clean_chathud[k] = v
 end
 clean_chathud.Pos = { X = 0, Y = 0 }
-clean_chathud.Size = { W = maxwidth or 9999, H = 0 }
+clean_chathud.Size = { W = 9999, H = 0 }
 clean_chathud:Clear()
 
 local smoothed_parts = {
@@ -155,14 +155,14 @@ function ec_markup.AdvancedParse(str, data)
 	end
 
 	function obj:GetString()
-		local str = ""
+		local ret = ""
 		for _, line in ipairs(self.Lines) do
 			for _, component in ipairs(line.Components) do
-				str = str .. component:ToString()
+				ret = ret .. component:ToString()
 			end
 		end
 
-		return str
+		return ret
 	end
 
 	obj.DrawContext = obj:CreateDrawContext()

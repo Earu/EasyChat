@@ -16,9 +16,9 @@ function macro_processor:ProcessPerCharacter(value, str)
 				new_str = new_str .. value .. component:ToString()
 			elseif component.Type == "text" then
 				local chars = component.Content:Split("")
-				for i, char in ipairs(chars) do
+				for j, char in ipairs(chars) do
 					if char ~= " " then
-						chars[i] = value .. char
+						chars[j] = value .. char
 					end
 				end
 

@@ -37,7 +37,8 @@ local color_hex_part = {
 }
 
 function color_hex_part:HexToRGB(hex)
-	local hex = hex:Replace("#","")
+	hex = hex:Replace("#","")
+
 	local function n(input) return tonumber(input) or 255 end
 
 	if #hex == 3 then

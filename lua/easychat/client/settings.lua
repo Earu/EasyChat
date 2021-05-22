@@ -191,9 +191,9 @@ local function create_default_settings()
 
 		settings:AddSpacer(category_name)
 
-		local setting_timestamps = settings:AddConvarSetting(category_name, "boolean", EC_TIMESTAMPS, "Display timestamps")
-		local setting_timestamps_12 = settings:AddConvarSetting(category_name, "boolean", EC_TIMESTAMPS_12, "12 hours mode timestamps")
-		local setting_timestamps_hud = settings:AddConvarSetting(category_name, "boolean", EC_HUD_TIMESTAMPS, "Display timestamps in Chat HUD")
+		settings:AddConvarSetting(category_name, "boolean", EC_TIMESTAMPS, "Display timestamps")
+		settings:AddConvarSetting(category_name, "boolean", EC_TIMESTAMPS_12, "12 hours mode timestamps")
+		settings:AddConvarSetting(category_name, "boolean", EC_HUD_TIMESTAMPS, "Display timestamps in Chat HUD")
 
 		local setting_timestamps_color = settings:AddSetting(category_name, "color", "Timestamp Color")
 		setting_timestamps_color:SetColor(EasyChat.TimestampColor)
@@ -529,22 +529,22 @@ local function create_default_settings()
 			local setting_restricted_tabs = settings:AddSetting(category_name, "list", "Restricted Tabs")
 			setting_restricted_tabs:SetParent(frame)
 
-			local tab_list = setting_restricted_tabs.List
-			tab_list:SetMultiSelect(true)
-			tab_list:AddColumn("Tab Name")
+			local frame_tab_list = setting_restricted_tabs.List
+			frame_tab_list:SetMultiSelect(true)
+			frame_tab_list:AddColumn("Tab Name")
 
-			local function build_tab_list()
-				tab_list:Clear()
+			local function build_frame_tab_list()
+				frame_tab_list:Clear()
 
 				for tab_name, is_allowed in pairs(EasyChat.Config.Tabs) do
 					if not is_allowed then
-						tab_list:AddLine(tab_name)
+						frame_tab_list:AddLine(tab_name)
 					end
 				end
 			end
 
-			build_tab_list()
-			hook.Add("ECServerConfigUpdate", frame, build_tab_list)
+			build_frame_tab_list()
+			hook.Add("ECServerConfigUpdate", frame, build_frame_tab_list)
 
 			local setting_unrestrict_tab = settings:AddSetting(category_name, "action", "Unrestrict Tab")
 			setting_unrestrict_tab:SetParent(frame)
@@ -672,9 +672,9 @@ local function create_default_settings()
 
 		settings:AddSpacer(category_name)
 
-		local setting_hud_w = settings:AddConvarSetting(category_name, "number", EC_HUD_WIDTH, "HUD Width", 1250, 250)
-		local setting_hud_x = settings:AddConvarSetting(category_name, "number", EC_HUD_POS_X, "HUD X Pos", 5000, 0)
-		local setting_hud_y = settings:AddConvarSetting(category_name, "number", EC_HUD_POS_Y, "HUD Y Pos", 5000, 0)
+		settings:AddConvarSetting(category_name, "number", EC_HUD_WIDTH, "HUD Width", 1250, 250)
+		settings:AddConvarSetting(category_name, "number", EC_HUD_POS_X, "HUD X Pos", 5000, 0)
+		settings:AddConvarSetting(category_name, "number", EC_HUD_POS_Y, "HUD Y Pos", 5000, 0)
 
 		local setting_reset_hud_bounds = settings:AddSetting(category_name, "action", "Reset HUD Bounds")
 		setting_reset_hud_bounds.DoClick = function()
