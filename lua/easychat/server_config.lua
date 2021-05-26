@@ -251,7 +251,7 @@ if SERVER then
 		file.Write(MODULE_IGNORE_LIST_PATH, table.concat(ignore_paths, "\n"))
 
 		EasyChat.Print(("%s changed the module ignore list, a restart is required"):format(ply))
-		EasyChat.Warn("EasyChat's module ignore list updated. A restart is required.")
+		EasyChat.Warn(ply, "EasyChat's module ignore list updated. A restart is required.")
 		EasyChat.RunOnNextFrame(function()
 			net.Start(NET_MODULE_IGNORE_LIST)
 			net.WriteTable(ignore_paths)
