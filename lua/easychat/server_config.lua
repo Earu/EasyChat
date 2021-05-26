@@ -9,6 +9,7 @@ local NET_WRITE_SETTING_OVERRIDE = "EASY_CHAT_SERVER_SETTING_WRITE_OVERRIDE"
 local NET_WRITE_TAGS_IN_NAMES = "EASY_CHAT_TAGS_IN_NAMES"
 local NET_WRITE_TAGS_IN_MESSAGES = "EASY_CHAT_TAGS_IN_MESSAGES"
 local NET_WRITE_PLY_NAME = "EASY_CHAT_WRITE_PLY_NAME"
+local NET_MODULE_IGNORE_LIST = "EASY_CHAT_MODULE_IGNORE_LIST"
 
 local default_config = {
 	OverrideClientSettings = true,
@@ -58,6 +59,7 @@ if SERVER then
 	util.AddNetworkString(NET_WRITE_TAGS_IN_NAMES)
 	util.AddNetworkString(NET_WRITE_TAGS_IN_MESSAGES)
 	util.AddNetworkString(NET_WRITE_PLY_NAME)
+	util.AddNetworkString(NET_MODULE_IGNORE_LIST)
 
 	local CONFIG_PATH = "easychat/server_config.json"
 	function config:Save()
@@ -124,8 +126,19 @@ if SERVER then
 
 	config:Load()
 
+	local MODULE_IGNORE_LIST_PATH = "easychat/module_ignore_list.txt"
 	net.Receive(NET_SEND_CONFIG, function(_, ply)
 		config:Send(ply, false)
+
+		if ply:IsAdmin() and file.Exists(MODULE_IGNORE_LIST_PATH, "DATA") then
+			EasyChat.RunOnNextFrame(function()
+				local file_contents = file.Read(MODULE_IGNORE_LIST_PATH, "DATA")
+				local paths = ("\r?\n"):Explode(file_contents)
+				net.Start(NET_MODULE_IGNORE_LIST)
+				net.WriteTable(paths)
+				net.Send(ply)
+			end)
+		end
 	end)
 
 	local function restricted_receive(net_string, callback)
@@ -228,12 +241,30 @@ if SERVER then
 
 		EasyChat.SafeHookRun("ECPlayerNameChange", ply, target_ply, target_ply:Nick(), name)
 	end)
+
+	restricted_receive(NET_MODULE_IGNORE_LIST, function(_, ply)
+		local ignore_paths = net.ReadTable()
+		if file.Exists(MODULE_IGNORE_LIST_PATH, "DATA") then
+			file.Delete(MODULE_IGNORE_LIST_PATH)
+		end
+
+		file.Write(MODULE_IGNORE_LIST_PATH, table.concat(ignore_paths, "\n"))
+
+		EasyChat.Print(("%s changed the module ignore list, a restart is required"):format(ply))
+		EasyChat.Warn("EasyChat's module ignore list updated. A restart is required.")
+		EasyChat.RunOnNextFrame(function()
+			net.Start(NET_MODULE_IGNORE_LIST)
+			net.WriteTable(ignore_paths)
+			net.Broadcast()
+		end)
+	end)
 end
 
 if CLIENT then
 	local ADMIN_WARN = "You need to be an admin to do that"
 
 	local config = default_config
+	config.ModuleIgnoreList = {}
 	EasyChat.Config = config
 
 	hook.Add("InitPostEntity", TAG, function()
@@ -279,6 +310,12 @@ if CLIENT then
 		end
 
 		process_tabs_config()
+		EasyChat.SafeHookRun("ECServerConfigUpdate", EasyChat.Config)
+	end)
+
+	net.Receive(NET_MODULE_IGNORE_LIST, function()
+		local paths = net.ReadTable()
+		EasyChat.Config.ModuleIgnoreList = paths
 		EasyChat.SafeHookRun("ECServerConfigUpdate", EasyChat.Config)
 	end)
 
@@ -398,6 +435,16 @@ if CLIENT then
 		net.Start(NET_WRITE_PLY_NAME)
 		net.WriteEntity(ply)
 		net.WriteString(name)
+		net.SendToServer()
+
+		return true
+	end
+
+	function config:WriteModuleIgnoreList(paths)
+		if not LocalPlayer():IsAdmin() then return false, ADMIN_WARN end
+
+		net.Start(NET_MODULE_IGNORE_LIST)
+		net.WriteTable(paths)
 		net.SendToServer()
 
 		return true
