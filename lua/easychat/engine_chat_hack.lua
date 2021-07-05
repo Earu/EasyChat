@@ -4,6 +4,7 @@ if SERVER then
 	-- handle messages that are run by the engine (usually the say or sayteam commands)
 	hook.Add("PlayerSay", TAG, function(ply, msg, is_team, is_local)
 		if _G.EC_PLAYER_SAY_CALL then return end
+		if not IsValid(ply) then return end -- for console just let source handle it I guess
 
 		EasyChat.ReceiveGlobalMessage(ply, msg, is_team, is_local or false)
 		return "" -- we handled it dont network it back the source way
