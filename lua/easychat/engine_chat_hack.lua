@@ -1,33 +1,12 @@
 local TAG = "EasyChatEngineChatHack"
 
--- if a server has slog, use it to make "say" use our networking
--- https://github.com/Heyter/gbins/tree/master/slog/src
 if SERVER then
-	pcall(require, "slog")
+	-- handle messages that are run by the engine (usually the say or sayteam commands)
+	hook.Add("PlayerSay", TAG, function(ply, msg, is_team, is_local)
+		if _G.EC_PLAYER_SAY_CALL then return end
 
-	local say_cmds = {
-		["^say%s+"] = function(ply, msg)
-			EasyChat.ReceiveGlobalMessage(ply, msg, false, false)
-		end,
-		["^say%_team%s+"] = function(ply, msg)
-			EasyChat.ReceiveGlobalMessage(ply, msg, true, false)
-		end,
-	}
-	hook.Add("ExecuteStringCommand", TAG, function(steam_id, command)
-		for say_cmd_pattern, say_cmd_callback in pairs(say_cmds) do
-			if command:match(say_cmd_pattern) then
-				local ply = player.GetBySteamID(steam_id)
-				if not IsValid(ply) then return end
-
-				local msg = command
-					:gsub(say_cmd_pattern, "") -- remove the command
-					:gsub("\"", "") -- remove quotes added by RunConsoleCommand
-
-				say_cmd_callback(ply, msg)
-
-				return true
-			end
-		end
+		EasyChat.ReceiveGlobalMessage(ply, msg, is_team, is_local or false)
+		return "" -- we handled it dont network it back the source way
 	end)
 
 	local PLY = FindMetaTable("Player")
@@ -52,13 +31,13 @@ if CLIENT then
 		local label = parent_panel:GetChildren()[1]
 		--engine_panel:SetKeyboardInputEnabled(false) -- lets not do that lol
 
-		local text_entry = parent_panel:Add("DTextEntry")
+		local text_entry = parent_panel:Add("TextEntryLegacy")
 		text_entry:SetZPos(9999999)
 		text_entry:SetFocusTopLevel(true)
 		text_entry:SetFont("ChatFont")
 		text_entry:SetTextColor(color_white)
 		text_entry:SetUpdateOnType(true)
-		EC_CHAT_HACK = text_entry
+		_G.EC_CHAT_HACK = text_entry
 
 		local selection_color = Color(255, 0, 0, 127)
 		function text_entry:Paint()
@@ -121,6 +100,10 @@ if CLIENT then
 				local msg = self:GetText()
 				if not EasyChat.IsStringEmpty(msg) then
 					msg = EasyChat.ExtendedStringTrim(self:GetText())
+
+					local should_send = EasyChat.SafeHookRun("ECShouldSendMessage", msg)
+					if should_send == false then return end
+
 					local is_team = label:GetText():lower():match("team")
 					EasyChat.SendGlobalMessage(msg, is_team, false)
 				end
