@@ -100,6 +100,17 @@ function EasyChat.ExtendedStringTrim(str, control_chars)
 	return str:Trim()
 end
 
+-- lets not break the addon with bad third-party code but still notify the
+-- developers with an error
+local function safe_hook_run(hook_name, ...)
+	local succ, a, b, c, d, e, f = xpcall(hook.Run, function(err)
+		ErrorNoHalt(debug.traceback(err))
+	end, hook_name, ...)
+	if not succ then return nil end
+	return a, b, c, d, e, f
+end
+EasyChat.SafeHookRun = safe_hook_run
+
 function EasyChat.IsStringEmpty(str)
 	return #EasyChat.ExtendedStringTrim(str, true) == 0
 end
@@ -128,16 +139,31 @@ function PLY:IsTyping()
 	end
 end
 
--- lets not break the addon with bad third-party code but still notify the
--- developers with an error
-local function safe_hook_run(hook_name, ...)
-	local succ, a, b, c, d, e, f = xpcall(hook.Run, function(err)
-		ErrorNoHalt(debug.traceback(err))
-	end, hook_name, ...)
-	if not succ then return nil end
-	return a, b, c, d, e, f
+local function say_override(ply, msg, is_team, is_local)
+	if not msg then return end
+
+	msg = EasyChat.ExtendedStringTrim(msg:GetText())
+	if #msg == 0 then return end
+
+	if SERVER then
+		EasyChat.ReceiveGlobalMessage(ply, msg, is_team or false, is_local or false)
+	end
+
+	if CLIENT then
+		if ply ~= LocalPlayer() then return end
+
+		local should_send = safe_hook_run("ECShouldSendMessage", msg)
+		if should_send == false then return end
+
+		EasyChat.SendGlobalMessage(msg, is_team or false, is_local or false)
+	end
 end
-EasyChat.SafeHookRun = safe_hook_run
+
+_G.Say = say_override
+PLY.old_Say = PLY.old_Say or PLY.Say -- in case we need the old version
+function PLY:Say(msg, is_team, is_local)
+	say_override(msg, is_team, is_local)
+end
 
 include("easychat/server_config.lua")
 
@@ -191,7 +217,10 @@ if SERVER then
 	end
 
 	function EasyChat.SendGlobalMessage(ply, str, is_team, is_local)
-		local msg = hook.Run("PlayerSay", ply, str, is_team, is_local)
+		_G.EC_PLAYER_SAY_CALL = true
+		local msg = safe_hook_run("PlayerSay", ply, str, is_team, is_local)
+		_G.EC_PLAYER_SAY_CALL = false
+
 		if type(msg) ~= "string" then return end
 
 		msg = EasyChat.ExtendedStringTrim(msg)
@@ -3178,6 +3207,11 @@ if CLIENT then
 		return msg_components
 	end
 
+	function EasyChat.GetMainTextEntry()
+		if EC_ENABLE:GetBool() then return EasyChat.GUI.TextEntry end
+		return EC_CHAT_HACK
+	end
+
 	hook.Add("Initialize", TAG, function()
 		if EC_ENABLE:GetBool() then
 			EasyChat.Init()
@@ -3188,7 +3222,12 @@ if CLIENT then
 		function GAMEMODE:ECShouldSendMessage(msg)
 			if #msg > EC_MAX_CHARS:GetInt() then
 				surface.PlaySound("buttons/button11.wav")
-				EasyChat.GUI.TextEntry:TriggerBlink("TOO BIG")
+
+				local text_entry = EasyChat.GetMainTextEntry()
+				if IsValid(text_entry) then
+					text_entry:TriggerBlink("TOO BIG")
+				end
+
 				return false
 			end
 
