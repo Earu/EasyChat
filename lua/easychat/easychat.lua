@@ -142,11 +142,11 @@ end
 local function say_override(ply, msg, is_team, is_local)
 	if not msg then return end
 
-	msg = EasyChat.ExtendedStringTrim(msg:GetText())
+	msg = EasyChat.ExtendedStringTrim(msg)
 	if #msg == 0 then return end
 
 	if SERVER then
-		EasyChat.ReceiveGlobalMessage(ply, msg, is_team or false, is_local or false)
+		RunConsoleCommand(is_team and "sayteam" or "say", msg)
 	end
 
 	if CLIENT then
@@ -159,10 +159,19 @@ local function say_override(ply, msg, is_team, is_local)
 	end
 end
 
-_G.Say = say_override
 PLY.old_Say = PLY.old_Say or PLY.Say -- in case we need the old version
 function PLY:Say(msg, is_team, is_local)
-	say_override(msg, is_team, is_local)
+	say_override(self, msg, is_team, is_local)
+end
+
+function Say(msg, is_team, is_local)
+	if CLIENT then
+		say_override(LocalPlayer(), msg, is_team, is_local)
+	end
+
+	if SERVER then
+		say_override(nil, msg, is_team, is_local)
+	end
 end
 
 include("easychat/server_config.lua")
@@ -177,6 +186,8 @@ if SERVER then
 	local EC_VERSION_WARNING = CreateConVar("easychat_version_warnings", "1", FCVAR_ARCHIVE, "Should we warn users if EasyChat is outdated")
 
 	function EasyChat.PlayerAddText(ply, ...)
+		if not istable(ply) and not IsValid(ply) then return end
+
 		net.Start(NET_ADD_TEXT)
 		net.WriteTable({ ... })
 		net.Send(ply)
