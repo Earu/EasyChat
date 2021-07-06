@@ -1,7 +1,7 @@
 local TAG = "EasyChatEngineChatHack"
 
 if SERVER then
-	hook.Add("PostGamemodeLoaded", TAG, function()
+	--[[hook.Add("PostGamemodeLoaded", TAG, function()
 		local existing_callbacks = hook.GetTable().PlayerSay or {}
 		for identifier, callback in pairs(existing_callbacks) do
 			hook.Remove("PlayerSay", identifier)
@@ -38,7 +38,7 @@ if SERVER then
 		function GAMEMODE:ECPlayerSay(ply, msg, is_team, is_local)
 			return self:PlayerSay(ply, msg, is_team, is_local)
 		end
-	end)
+	end)]]--
 end
 
 -- this is inspired off
