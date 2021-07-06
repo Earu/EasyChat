@@ -1,7 +1,7 @@
 local TAG = "EasyChatEngineChatHack"
 
 if SERVER then
-	--[[hook.Add("PostGamemodeLoaded", TAG, function()
+	hook.Add("PostGamemodeLoaded", TAG, function()
 		local existing_callbacks = hook.GetTable().PlayerSay or {}
 		for identifier, callback in pairs(existing_callbacks) do
 			hook.Remove("PlayerSay", identifier)
@@ -9,12 +9,12 @@ if SERVER then
 		end
 
 		hook.NativeAdd = hook.NativeAdd or hook.Add
-		function hook.Add(event_name, identifier, callback)
+		function hook.Add(event_name, ...)
 			if event_name == "PlayerSay" then
 				event_name = "ECPlayerSay"
 			end
 
-			hook.NativeAdd(event_name, identifier, callback)
+			hook.NativeAdd(event_name, ...)
 		end
 
 		hook.NativeCall = hook.NativeCall or hook.Call
@@ -23,7 +23,7 @@ if SERVER then
 				event_name = "ECPlayerSay"
 			end
 
-			hook.NativeCall(event_name, ...)
+			return hook.NativeCall(event_name, ...)
 		end
 
 		-- handle messages that are run by the engine (usually the say or sayteam commands)
@@ -38,7 +38,7 @@ if SERVER then
 		function GAMEMODE:ECPlayerSay(ply, msg, is_team, is_local)
 			return self:PlayerSay(ply, msg, is_team, is_local)
 		end
-	end)]]--
+	end)
 end
 
 -- this is inspired off
