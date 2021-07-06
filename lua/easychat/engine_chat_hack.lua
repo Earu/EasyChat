@@ -1,40 +1,40 @@
 local TAG = "EasyChatEngineChatHack"
 
 if SERVER then
-	local existing_callbacks = hook.GetTable().PlayerSay or {}
-	for identifier, callback in pairs(existing_callbacks) do
-		hook.Remove("PlayerSay", identifier)
-		hook.Add("ECPlayerSay", identifier, callback)
-	end
-
-	hook.NativeAdd = hook.NativeAdd or hook.Add
-	function hook.Add(event_name, identifier, callback)
-		if event_name == "PlayerSay" then
-			event_name = "ECPlayerSay"
-		end
-
-		hook.NativeAdd(event_name, identifier, callback)
-	end
-
-	hook.NativeCall = hook.NativeCall or hook.Call
-	function hook.Call(event_name, ...)
-		if event_name == "PlayerSay" then
-			event_name = "ECPlayerSay"
-		end
-
-		hook.NativeCall(event_name, ...)
-	end
-
-	-- handle messages that are run by the engine (usually the say or sayteam commands)
-	hook.NativeAdd("PlayerSay", TAG, function(ply, msg, is_team, is_local)
-		if not IsValid(ply) then return end -- for console just let source handle it I guess
-
-		EasyChat.ReceiveGlobalMessage(ply, msg, is_team, is_local or false)
-		return "" -- we handled it dont network it back the source way
-	end)
-
-	-- make the default behavior follow the gamemode PlayerSay one
 	hook.Add("PostGamemodeLoaded", TAG, function()
+		local existing_callbacks = hook.GetTable().PlayerSay or {}
+		for identifier, callback in pairs(existing_callbacks) do
+			hook.Remove("PlayerSay", identifier)
+			hook.Add("ECPlayerSay", identifier, callback)
+		end
+
+		hook.NativeAdd = hook.NativeAdd or hook.Add
+		function hook.Add(event_name, identifier, callback)
+			if event_name == "PlayerSay" then
+				event_name = "ECPlayerSay"
+			end
+
+			hook.NativeAdd(event_name, identifier, callback)
+		end
+
+		hook.NativeCall = hook.NativeCall or hook.Call
+		function hook.Call(event_name, ...)
+			if event_name == "PlayerSay" then
+				event_name = "ECPlayerSay"
+			end
+
+			hook.NativeCall(event_name, ...)
+		end
+
+		-- handle messages that are run by the engine (usually the say or sayteam commands)
+		hook.NativeAdd("PlayerSay", TAG, function(ply, msg, is_team, is_local)
+			if not IsValid(ply) then return end -- for console just let source handle it I guess
+
+			EasyChat.ReceiveGlobalMessage(ply, msg, is_team, is_local or false)
+			return "" -- we handled it dont network it back the source way
+		end)
+
+		-- make the default behavior follow the gamemode PlayerSay one
 		function GAMEMODE:ECPlayerSay(ply, msg, is_team, is_local)
 			return self:PlayerSay(ply, msg, is_team, is_local)
 		end
