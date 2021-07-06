@@ -226,6 +226,9 @@ end
 function mentions:IsMention(msg)
 	if not EC_MENTION:GetBool() then return false end
 
+	local should_mention = EasyChat.SafeHookRun("ECShouldBeMention", msg)
+	if should_mention == false then return false end
+
 	local stripped_msg = ec_markup.Parse(msg):GetText():lower()
 	if filter_match(stripped_msg) then return true end
 
