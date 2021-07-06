@@ -146,7 +146,12 @@ local function say_override(ply, msg, is_team, is_local)
 	if #msg == 0 then return end
 
 	if SERVER then
-		RunConsoleCommand(is_team and "sayteam" or "say", msg)
+		if not IsValid(ply) then
+			RunConsoleCommand(is_team and "sayteam" or "say", msg)
+			return
+		end
+
+		EasyChat.ReceiveGlobalMessage(ply, msg, is_team or false, is_local or false)
 	end
 
 	if CLIENT then
@@ -228,10 +233,8 @@ if SERVER then
 	end
 
 	function EasyChat.SendGlobalMessage(ply, str, is_team, is_local)
-		_G.EC_PLAYER_SAY_CALL = true
-		local msg = safe_hook_run("PlayerSay", ply, str, is_team, is_local)
-		_G.EC_PLAYER_SAY_CALL = false
-
+		-- we run our own hook because we use the original PlayerSay to detect native source calls
+		local msg = safe_hook_run("ECPlayerSay", ply, str, is_team, is_local)
 		if type(msg) ~= "string" then return end
 
 		msg = EasyChat.ExtendedStringTrim(msg)
