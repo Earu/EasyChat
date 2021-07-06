@@ -147,7 +147,7 @@ local function say_override(ply, msg, is_team, is_local)
 
 	if SERVER then
 		if not IsValid(ply) then
-			RunConsoleCommand(is_team and "sayteam" or "say", msg)
+			RunConsoleCommand(is_team and "say_team" or "say", msg)
 			return
 		end
 
