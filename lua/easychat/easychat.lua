@@ -233,8 +233,7 @@ if SERVER then
 	end
 
 	function EasyChat.SendGlobalMessage(ply, str, is_team, is_local)
-		-- we run our own hook because we use the original PlayerSay to detect native source calls
-		local msg = safe_hook_run("ECPlayerSay", ply, str, is_team, is_local)
+		local msg = safe_hook_run("PlayerSay", ply, str, is_team, is_local)
 		if type(msg) ~= "string" then return end
 
 		msg = EasyChat.ExtendedStringTrim(msg)
