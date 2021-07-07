@@ -17,7 +17,7 @@ jobs:
 
       # Creates a GMA and publishes it to the Steam Workshop
       - name: Publish to Steam Workshop
-        uses: Earu/GWS-action@v1
+        uses: Earu/GSW-action@V1
         with:
           steam-token: ''
           workshop-id: '1182471500'
