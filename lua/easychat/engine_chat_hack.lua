@@ -35,6 +35,12 @@ if SERVER then
 			end
 		end)
 
+	--[[
+	---------------------------------------------------------------------
+		THIS ONLY WORKS IN SANDBOX, DARKRP DOES WEIRD STUFF WITH ITS
+	 	GAMEMODE PLAYERSAY HOOK SO IT WONT WORK (SAME WITH MURDER)
+	---------------------------------------------------------------------
+
 	-- otherwise override the hook library and move a few things around
 	-- to achieve the same effect in a more cursed manner
 	else
@@ -75,7 +81,7 @@ if SERVER then
 			function GAMEMODE:ECPlayerSay(ply, msg, is_team, is_local)
 				return self:PlayerSay(ply, msg, is_team, is_local)
 			end
-		end)
+		end)]]--
 	end
 end
 
