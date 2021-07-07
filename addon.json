@@ -11,6 +11,8 @@
     ".gitignore",
     "update.bat",
     ".gma",
-    "glualint.json"
+    "glualint.json",
+    ".github/*",
+    "bin/*"
   ]
 }
