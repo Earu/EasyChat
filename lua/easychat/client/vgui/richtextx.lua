@@ -208,7 +208,7 @@ function PANEL:AppendText(text)
 		isAtBottom = atBottom();
 		RICHTEXT.appendChild(span);
 
-		if (]] .. limit .. [[!= -1 && ]] .. limit .. [[ <= RICHTEXT.childElementCount && RICHTEXT.children[0]) {
+		if (]] .. limit .. [[> 0 && ]] .. limit .. [[ <= RICHTEXT.childElementCount && RICHTEXT.children[0]) {
 			RICHTEXT.children[0].remove();
 		}
 
@@ -237,7 +237,7 @@ function PANEL:AppendImageURL(url)
 		RICHTEXT.appendChild(img);
 		RICHTEXT.appendChild(document.createElement("br"));
 
-		if (]] .. limit .. [[!= -1 && ]] .. limit .. [[ <= RICHTEXT.childElementCount && RICHTEXT.children[0]) {
+		if (]] .. limit .. [[> 0 && ]] .. limit .. [[ <= RICHTEXT.childElementCount && RICHTEXT.children[0]) {
 			RICHTEXT.children[0].remove();
 		}
 
