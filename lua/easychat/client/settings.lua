@@ -48,6 +48,7 @@ local EC_FONT_SIZE = get_cvar("easychat_font_size")
 local EC_PEEK_COMPLETION = get_cvar("easychat_peek_completion")
 local EC_LEGACY_ENTRY = get_cvar("easychat_legacy_entry")
 local EC_LEGACY_TEXT = get_cvar("easychat_legacy_text")
+local EC_MODERN_TEXT_HISTORY_LIMIT = get_cvar("easychat_modern_text_history_limit")
 
 -- chathud
 local EC_HUD_FOLLOW = get_cvar("easychat_hud_follow")
@@ -642,6 +643,10 @@ local function create_default_settings()
 		end
 
 		settings:AddSpacer(category_name)
+
+		if EasyChat.GUI.RichText and EasyChat.GUI.RichText.ClassName == "RichTextX" then
+			settings:AddConvarSetting(category_name, "number", EC_MODERN_TEXT_HISTORY_LIMIT, "History Line Amount Limit", 5000, -1)
+		end
 
 		if EasyChat.CanUseCEFFeatures() then
 			local setting_legacy_entry = settings:AddSetting(category_name, "action", EC_LEGACY_ENTRY:GetBool() and "Use Modern Textbox" or "Use Legacy Textbox")

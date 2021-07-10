@@ -132,12 +132,12 @@ function PANEL:Init()
 
 	local last_color = self:GetFGColor()
 	local old_insert_color_change = self.InsertColorChange
-	self.InsertColorChange = function(self, r, g, b, a)
+	self.InsertColorChange = function(_, r, g, b, a)
 		last_color = istable(r) and Color(r.r, r.g, r.b) or Color(r, g, b)
 		old_insert_color_change(self, last_color.r, last_color.g, last_color.b, last_color.a)
 	end
 
-	self.GetLastColorChange = function(self) return last_color end
+	self.GetLastColorChange = function(_) return last_color end
 end
 
 function PANEL:AddInternalCallback(name, callback)
@@ -186,8 +186,11 @@ end
 function PANEL:OnTextHover(text_value, is_hover)
 end
 
+local AVERAGE_AMOUNT_OF_ELEMENTS_PER_LINE = 5
 function PANEL:AppendText(text)
 	text = text:JavascriptSafe()
+
+	local limit = GetConVar("easychat_modern_text_history_limit"):GetInt() * AVERAGE_AMOUNT_OF_ELEMENTS_PER_LINE
 	local css_color = ("rgb(%d,%d,%d)"):format(self.CurrentColor.r, self.CurrentColor.g, self.CurrentColor.b)
 	local js = (self.ClickableTextValue and [[
 		span = document.createElement("span");
@@ -204,6 +207,11 @@ function PANEL:AppendText(text)
 		span.textContent = `]] .. text .. [[`;
 		isAtBottom = atBottom();
 		RICHTEXT.appendChild(span);
+
+		if (]] .. limit .. [[!= -1 && ]] .. limit .. [[ <= RICHTEXT.childElementCount && RICHTEXT.children[0]) {
+			RICHTEXT.children[0].remove();
+		}
+
 		if (isAtBottom) {
 			window.scrollTo(0, BODY.scrollHeight);
 		}
@@ -214,6 +222,8 @@ end
 
 function PANEL:AppendImageURL(url)
 	url = url:JavascriptSafe()
+
+	local limit = GetConVar("easychat_modern_text_history_limit"):GetInt() * AVERAGE_AMOUNT_OF_ELEMENTS_PER_LINE
 	self:QueueJavascript([[
 		img = document.createElement("img");
 		img.onclick = () => RichTextX.OnClick(`]] .. url .. [[`);
@@ -222,9 +232,18 @@ function PANEL:AppendImageURL(url)
 		img.style.maxWidth = `80%`;
 		img.style.maxHeight = `300px`;
 
+		isAtBottom = atBottom();
 		RICHTEXT.appendChild(document.createElement("br"));
 		RICHTEXT.appendChild(img);
 		RICHTEXT.appendChild(document.createElement("br"));
+
+		if (]] .. limit .. [[!= -1 && ]] .. limit .. [[ <= RICHTEXT.childElementCount && RICHTEXT.children[0]) {
+			RICHTEXT.children[0].remove();
+		}
+
+		if (isAtBottom) {
+			window.scrollTo(0, BODY.scrollHeight);
+		}
 	]])
 end
 
