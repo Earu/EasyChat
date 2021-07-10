@@ -645,7 +645,7 @@ local function create_default_settings()
 		settings:AddSpacer(category_name)
 
 		if EasyChat.GUI.RichText and EasyChat.GUI.RichText.ClassName == "RichTextX" then
-			settings:AddConvarSetting(category_name, "number", EC_MODERN_TEXT_HISTORY_LIMIT, "History Line Amount Limit", 5000, -1)
+			settings:AddConvarSetting(category_name, "number", EC_MODERN_TEXT_HISTORY_LIMIT, "History Line Limit", 5000, -1)
 		end
 
 		if EasyChat.CanUseCEFFeatures() then
