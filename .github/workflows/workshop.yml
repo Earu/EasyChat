@@ -15,7 +15,7 @@ jobs:
 
       # Creates a GMA and publishes it to the Steam Workshop
       - name: Publish to Steam Workshop
-        uses: Earu/GSW-action@V1
+        uses: Earu/GSW-action@V2
         with:
           account-name: ${{secrets.STEAM_NAME}}
           account-password: ${{secrets.STEAM_PASSWORD}}
