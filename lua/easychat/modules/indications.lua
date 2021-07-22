@@ -1,4 +1,4 @@
-local TAG = "AnythingInChat"
+local TAG = "EasyChatModuleIndicate"
 
 if CLIENT then
     local function categorize_object(obj)
@@ -44,7 +44,10 @@ if CLIENT then
             }
         end,
         world = function(obj)
-            return { Name = game.GetMap() }
+            return {
+                Name = game.GetMap(),
+                WorldPos = LocalPlayer():GetEyeTrace().HitPos
+            }
         end,
         prop = function(obj)
             return {
@@ -89,9 +92,11 @@ if CLIENT then
         local data = net.ReadTable()
 
         local ent = data.Entity
+        local indicate_pos
         if IsValid(ent) then
             table.insert(indicated_ents, ent)
             ent.IndicationEndTime = CurTime() + INDICATION_DURATION
+            indicate_pos = ent:WorldSpaceCenter()
 
             if ent:IsPlayer() then
                 chat.AddText(ply, green_color, INDICATION_TEXT, ent)
@@ -103,8 +108,35 @@ if CLIENT then
             end
         end
 
+        local ply_name = EasyChat.GetProperNick(ply)
+        local hook_name = TAG .. ply_name
+        indicate_pos = data.WorldPos and data.WorldPos or indicate_pos
+        if indicate_pos then
+            timer.Simple(INDICATION_DURATION, function() hook.Remove("HUDPaint", hook_name) end)
+            hook.Add("HUDPaint", hook_name, function()
+                local screen_pos = indicate_pos:ToScreen()
+                if not screen_pos.visible then return end
+
+                surface.SetTextColor(white_color)
+                surface.SetFont("DermaLarge")
+                local tw, th = surface.GetTextSize(ply_name)
+
+                surface.SetDrawColor(EasyChat.OutlayColor)
+                surface.DrawRect(screen_pos.x - tw / 2 - 5, screen_pos.y - th / 2 - 31, tw + 10, th + 2)
+
+                surface.SetTextPos(screen_pos.x - tw / 2, screen_pos.y - th / 2 - 30)
+                surface.DrawText(ply_name)
+
+                surface.DrawCircle(screen_pos.x, screen_pos.y, 4, EasyChat.OutlayColor)
+                surface.DrawCircle(screen_pos.x, screen_pos.y, 5, green_color)
+                surface.DrawCircle(screen_pos.x, screen_pos.y, 6, green_color)
+                surface.DrawCircle(screen_pos.x, screen_pos.y, 7, green_color)
+                surface.DrawCircle(screen_pos.x, screen_pos.y, 8, EasyChat.OutlayColor)
+            end)
+        end
+
         if not EC_ENABLE:GetBool() then
-            chat.AddText(ply, green_color, INDICATION_TEXT, gray_color, util.TableToJSON(data, true))
+            chat.AddText(ply, green_color, INDICATION_TEXT, gray_color, data.WorldPos and "a position" or util.TableToJSON(data, true))
             return
         end
 
@@ -114,6 +146,10 @@ if CLIENT then
             local text = ("[Object: %s]"):format(category)
             if data.Name then
                 text = ("[Object: %s, Name: %s]"):format(category, data.Name)
+            end
+
+            if data.WorldPos then
+                text = "a position"
             end
 
             chathud:AddText(ply, green_color, INDICATION_TEXT, gray_color, text)
@@ -251,6 +287,10 @@ if CLIENT then
     hook.Add("Think", TAG, function()
         if input.LookupBinding("+ec_indicate", true) then return end
         if not EC_INDICATIONS:GetBool() then return end
+        if input.LookupKeyBinding(MOUSE_MIDDLE) then
+            EC_INDICATIONS:SetBool(false)
+            return
+        end
 
         if (input.IsKeyDown(KEY_LSHIFT) or input.IsKeyDown(KEY_RSHIFT)) and input.IsMouseDown(MOUSE_MIDDLE) then
             using = true
@@ -385,4 +425,4 @@ if SERVER then
     end)
 end
 
-return "Anything In Chat"
+return "Indicate"
