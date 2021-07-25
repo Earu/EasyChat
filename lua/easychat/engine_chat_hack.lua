@@ -1,88 +1,80 @@
 local TAG = "EasyChatEngineChatHack"
 
+-- if a server has slog or sourcenet, use them to route say commands to our networking
+-- https://github.com/Heyter/gbins/tree/master/slog/src
+-- https://github.com/danielga/gm_sourcenet
 if SERVER then
-	local has_slog = #file.Find("lua/bin/*slog*","GAME") > 0
+	local has_slog = #file.Find("lua/bin/gmsv_slog*","GAME") > 0
+	local has_sourcenet = #file.Find("lua/bin/*sourcenet*", "GAME") > 0
 	if has_slog then
 		has_slog = pcall(require, "slog")
 	end
 
-	-- if a server has slog, use it to make "say" use our networking
-	-- https://github.com/Heyter/gbins/tree/master/slog/src
-	if has_slog then
-		local say_cmds = {
-			["^say%s+"] = function(ply, msg)
-				EasyChat.ReceiveGlobalMessage(ply, msg, false, false)
-			end,
-			["^say%_team%s+"] = function(ply, msg)
-				EasyChat.ReceiveGlobalMessage(ply, msg, true, false)
-			end,
-		}
+	if not has_slog and has_sourcenet then
+		has_sourcenet = pcall(require, "sourcenet") 
+		if has_sourcenet then
+			include("sourcenet/incoming.lua")
 
-		hook.Add("ExecuteStringCommand", TAG, function(steam_id, command)
-			for say_cmd_pattern, say_cmd_callback in pairs(say_cmds) do
-				if command:match(say_cmd_pattern) then
-					local ply = player.GetBySteamID(steam_id)
-					if not IsValid(ply) then return end
+			local cache = {}
+			local function steamid_from_addr(addr)
+				local cached = cache[addr]
+				if cached then return cached end
 
-					local msg = command
-						:gsub(say_cmd_pattern, "") -- remove the command
-						:gsub("\"", "") -- remove quotes added by RunConsoleCommand
-
-					say_cmd_callback(ply, msg)
-
-					return true
-				end
-			end
-		end)
-
-	--[[
-	---------------------------------------------------------------------
-		THIS ONLY WORKS IN SANDBOX, DARKRP DOES WEIRD STUFF WITH ITS
-	 	GAMEMODE PLAYERSAY HOOK SO IT WONT WORK (SAME WITH MURDER)
-	---------------------------------------------------------------------
-
-	-- otherwise override the hook library and move a few things around
-	-- to achieve the same effect in a more cursed manner
-	else
-		hook.Add("PostGamemodeLoaded", TAG, function()
-			local existing_callbacks = hook.GetTable().PlayerSay or {}
-			for identifier, callback in pairs(existing_callbacks) do
-				hook.Remove("PlayerSay", identifier)
-				hook.Add("ECPlayerSay", identifier, callback)
-			end
-
-			hook.NativeAdd = hook.NativeAdd or hook.Add
-			function hook.Add(event_name, ...)
-				if event_name == "PlayerSay" then
-					event_name = "ECPlayerSay"
+				for _, ply in pairs(player.GetHumans()) do
+					if ply:IPAddress() == addr then
+						local steam_id = ply:SteamID()
+						cache[addr] = steam_id
+						return steam_id
+					end
 				end
 
-				hook.NativeAdd(event_name, ...)
+				return nil
 			end
 
-			hook.NativeCall = hook.NativeCall or hook.Call
-			function hook.Call(event_name, ...)
-				if event_name == "PlayerSay" then
-					event_name = "ECPlayerSay"
-				end
+			FilterIncomingMessage(net_StringCmd, function(net_chan, read, write)
+				local cmd = read:ReadString()
+				local steam_id = steamid_from_addr(net_chan:GetAddress():ToString())
+				if not steam_id then return end
 
-				return hook.NativeCall(event_name, ...)
-			end
-
-			-- handle messages that are run by the engine (usually the say or say_team commands)
-			hook.NativeAdd("PlayerSay", TAG, function(ply, msg, is_team, is_local)
-				if not IsValid(ply) then return end -- for console just let source handle it I guess
-
-				EasyChat.ReceiveGlobalMessage(ply, msg, is_team, is_local or false)
-				return "" -- we handled it dont network it back the source way
+				if hook.Call("ExecuteStringCommand", nil, steam_id, cmd) == true then return end
+				write:WriteUInt(net_StringCmd, NET_MESSAGE_BITS)
+				write:WriteString(cmd)
 			end)
-
-			-- make the default behavior follow the gamemode PlayerSay one
-			function GAMEMODE:ECPlayerSay(ply, msg, is_team, is_local)
-				return self:PlayerSay(ply, msg, is_team, is_local)
-			end
-		end)]]--
+		end
 	end
+
+	if not has_slog and not has_sourcenet then
+		EasyChat.Print("Could not find a proper installation of slog or sourcenet,\n" 
+			.. "chat console commands will use the engine networking as a result.\n"
+			.. "If you care about console commands please install either of these two:\n"
+			.. "- https://github.com/danielga/gm_sourcenet\n- https://github.com/Heyter/gbins/tree/master/slog/src")
+	end
+
+	local say_cmds = {
+		["^say%s+"] = function(ply, msg)
+			EasyChat.ReceiveGlobalMessage(ply, msg, false, false)
+		end,
+		["^say%_team%s+"] = function(ply, msg)
+			EasyChat.ReceiveGlobalMessage(ply, msg, true, false)
+		end,
+	}
+
+	hook.Add("ExecuteStringCommand", TAG, function(steam_id, command)
+		for say_cmd_pattern, say_cmd_callback in pairs(say_cmds) do
+			if command:match(say_cmd_pattern) then
+				local ply = player.GetBySteamID(steam_id)
+				if not IsValid(ply) then return end
+
+				local msg = command
+					:gsub(say_cmd_pattern, "") -- remove the command
+					:gsub("\"", "") -- remove quotes added by RunConsoleCommand
+
+				say_cmd_callback(ply, msg)
+
+				return true
+			end
+		end
+	end)
 end
 
 -- this is inspired off
