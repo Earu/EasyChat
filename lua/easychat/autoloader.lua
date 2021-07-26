@@ -4,7 +4,7 @@ local ignore_list = {}
 local MODULE_IGNORE_LIST_PATH = "easychat/module_ignore_list.txt"
 if file.Exists(MODULE_IGNORE_LIST_PATH, "DATA") then
 	local file_contents = file.Read(MODULE_IGNORE_LIST_PATH, "DATA")
-	local lines = ("\r?\n"):Explode(file_contents)
+	local lines = ("\r?\n"):Explode(file_contents, true)
 	for _, line in pairs(lines) do
 		line = line:Trim()
 		if #line > 0 then

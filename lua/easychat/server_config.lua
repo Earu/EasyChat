@@ -133,7 +133,7 @@ if SERVER then
 		if ply:IsAdmin() and file.Exists(MODULE_IGNORE_LIST_PATH, "DATA") then
 			EasyChat.RunOnNextFrame(function()
 				local file_contents = file.Read(MODULE_IGNORE_LIST_PATH, "DATA")
-				local paths = ("\r?\n"):Explode(file_contents)
+				local paths = ("\r?\n"):Explode(file_contents, true)
 				net.Start(NET_MODULE_IGNORE_LIST)
 				net.WriteTable(paths)
 				net.Send(ply)
