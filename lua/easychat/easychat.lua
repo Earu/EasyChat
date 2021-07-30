@@ -2026,6 +2026,9 @@ if CLIENT then
 
 		EasyChat.SetAddTextTypeHandle("string", function(str) return global_append_text_url(str) end)
 
+		-- the source chat apparently does not display booleans, so lets follow that rule
+		EasyChat.SetAddTextTypeHandle("boolean", function() end)
+
 		EasyChat.SetAddTextTypeHandle("Player", function(ply)
 			local data = {}
 
