@@ -81,6 +81,7 @@ end
 -- https://github.com/meepen/gmodchatmod
 if CLIENT then
 	local EC_ENABLED = GetConVar("easychat_enable")
+	local EC_SKIP_STARTUP_MSG = GetConVar("easychat_skip_startup_msg")
 
 	local color_white = color_white
 
@@ -193,5 +194,36 @@ if CLIENT then
 
 	hook.Add("FinishChat", TAG, function()
 		is_chat_opened = false
+	end)
+
+	local STACK_SIZE = 5
+	local function is_easychat_calling()
+		for i = 1, STACK_SIZE do
+			local data = debug.getinfo(i)
+			if data and data.source:match("^%@lua%/easychat") then
+				return true
+			end
+		end
+
+		return false
+	end
+
+	chat.old_EC_HackAddText = chat.old_EC_HackAddText or chat.AddText
+	chat.AddText = function(...)
+		if not is_easychat_calling() and EC_SKIP_STARTUP_MSG:GetBool() then
+			if EasyChat and EasyChat.SkippedAnnoyingMessages then
+				chat.old_EC_HackAddText(...)
+			else
+				MsgC(...)
+			end
+		else
+			chat.old_EC_HackAddText(...)
+		end
+	end
+
+	hook.Add("InitPostEntity", TAG, function()
+		EasyChat.RunOnNextFrame(function()
+			EasyChat.SkippedAnnoyingMessages = true
+		end)
 	end)
 end

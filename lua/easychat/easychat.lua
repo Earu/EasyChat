@@ -612,6 +612,7 @@ if CLIENT then
 	local EC_NICK_PRIORITIZE = CreateConVar("easychat_nick_prioritize", "0", FCVAR_ARCHIVE, "Prioritize player nick completion over everything else")
 	local EC_OUT_CLICK_CLOSE = CreateConVar("easychat_out_click_close", "1", FCVAR_ARCHIVE, "Clicking outside the chatbox closes it")
 	local EC_SERVER_MSG = CreateConVar("easychat_server_msg", "1", FCVAR_ARCHIVE, "Shows convars being changed on the server")
+	local _ = CreateConVar("easychat_skip_startup_msg", "1", FCVAR_ARCHIVE, "Displays random addons startup messages in the console")
 
 	-- timestamps
 	local EC_TIMESTAMPS = CreateConVar("easychat_timestamps", "0", FCVAR_ARCHIVE, "Display timestamps in the chatbox")
@@ -2161,15 +2162,15 @@ if CLIENT then
 		end)
 
 		do
-			chat.old_AddText = chat.old_AddText or chat.AddText
-			chat.old_GetChatBoxPos = chat.old_GetChatBoxPos or chat.GetChatBoxPos
-			chat.old_GetChatBoxSize = chat.old_GetChatBoxSize or chat.GetChatBoxSize
-			chat.old_Open = chat.old_Open or chat.Open
-			chat.old_Close = chat.old_Close or chat.Close
+			chat.old_EC_AddText = chat.old_EC_AddText or chat.AddText
+			chat.old_EC_GetChatBoxPos = chat.old_EC_GetChatBoxPos or chat.GetChatBoxPos
+			chat.old_EC_GetChatBoxSize = chat.old_EC_GetChatBoxSize or chat.GetChatBoxSize
+			chat.old_EC_Open = chat.old_EC_Open or chat.Open
+			chat.old_EC_Close = chat.old_EC_Close or chat.Close
 
 			chat.AddText = function(...)
 				local processed_args = EasyChat.GlobalAddText(...)
-				chat.old_AddText(unpack(processed_args))
+				chat.old_EC_AddText(unpack(processed_args))
 			end
 
 			function chat.GetChatBoxPos()
@@ -2177,7 +2178,7 @@ if CLIENT then
 					local x, y, _, _ = EasyChat.GUI.ChatBox:GetBounds()
 					return x, y
 				else
-					return chat.old_GetChatBoxPos()
+					return chat.old_EC_GetChatBoxPos()
 				end
 			end
 
@@ -2186,7 +2187,7 @@ if CLIENT then
 					local _, _, w, h = EasyChat.GUI.ChatBox:GetBounds()
 					return w, h
 				else
-					return chat.old_GetChatBoxSize()
+					return chat.old_EC_GetChatBoxSize()
 				end
 			end
 
@@ -3313,12 +3314,12 @@ function EasyChat.Destroy()
 		hook.Remove("PlayerBindPress", TAG)
 		hook.Remove("HUDShouldDraw", TAG)
 
-		if chat.old_AddText then
-			chat.AddText = chat.old_AddText
-			chat.GetChatBoxPos = chat.old_GetChatBoxPos
-			chat.GetChatBoxSize = chat.old_GetChatBoxSize
-			chat.Open = chat.old_Open
-			chat.Close = chat.old_Close
+		if chat.old_EC_AddText then
+			chat.AddText = chat.old_EC_AddText
+			chat.GetChatBoxPos = chat.old_EC_GetChatBoxPos
+			chat.GetChatBoxSize = chat.old_EC_GetChatBoxSize
+			chat.Open = chat.old_EC_Open
+			chat.Close = chat.old_EC_Close
 		end
 
 		EasyChat.ModeCount = 0
