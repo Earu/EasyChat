@@ -197,9 +197,10 @@ if CLIENT then
 	end)
 
 	local STACK_SIZE = 5
+	local STACK_OFFSET = 2 -- we start at 2 because 1 is this file and we dont want to match against it
 	local function is_easychat_calling()
 		local stack = {}
-		for i = 1, STACK_SIZE do
+		for i = STACK_OFFSET, STACK_SIZE do
 			local data = debug.getinfo(i)
 			if data then
 				table.insert(stack, data.source)
