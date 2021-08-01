@@ -196,33 +196,34 @@ if CLIENT then
 		is_chat_opened = false
 	end)
 
-	local STACK_SIZE = 5
-	local STACK_OFFSET = 2 -- we start at 2 because 1 is this file and we dont want to match against it
+	local STACK_OFFSET = 4 -- we start at 4 because to ignore all the calls from the interns of easychat
 	local function is_easychat_calling()
-		local stack = {}
-		for i = STACK_OFFSET, STACK_SIZE do
-			local data = debug.getinfo(i)
-			if data then
-				table.insert(stack, data.source)
-				if data.source:match("^%@lua%/easychat") then return true, stack end
-			end
+		local data = debug.getinfo(STACK_OFFSET)
+		print(data and data.source)
+		if data then
+			local ret = data.source:match("^@lua/easychat") ~= nil
+			if ret then return true end
+
+			return data.source:match("^@addons/easychat/lua/easychat") ~= nil
 		end
 
-		return false, stack
+		return false
 	end
 
 	chat.old_EC_HackAddText = chat.old_EC_HackAddText or chat.AddText
 	chat.AddText = function(...)
-		local calling, stack = is_easychat_calling()
-		if EC_SKIP_STARTUP_MSG:GetBool() then
-			PrintTable(stack)
-
-			if not calling then
-				if EasyChat and EasyChat.SkippedAnnoyingMessages then
-					chat.old_EC_HackAddText(...)
-				else
-					MsgC(...)
-				end
+		local calling = is_easychat_calling()
+		if EC_SKIP_STARTUP_MSG:GetBool() and not calling then
+			if EasyChat and EasyChat.SkippedAnnoyingMessages then
+				local processed_args = EasyChat.GlobalAddText(...)
+				chat.old_EC_HackAddText(processed_args)
+			else
+				MsgC("\n", ...)
+			end
+		else
+			if EasyChat then
+				local processed_args = EasyChat.GlobalAddText(...)
+				chat.old_EC_HackAddText(processed_args)
 			else
 				chat.old_EC_HackAddText(...)
 			end

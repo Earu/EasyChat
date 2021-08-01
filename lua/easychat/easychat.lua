@@ -612,7 +612,7 @@ if CLIENT then
 	local EC_NICK_PRIORITIZE = CreateConVar("easychat_nick_prioritize", "0", FCVAR_ARCHIVE, "Prioritize player nick completion over everything else")
 	local EC_OUT_CLICK_CLOSE = CreateConVar("easychat_out_click_close", "1", FCVAR_ARCHIVE, "Clicking outside the chatbox closes it")
 	local EC_SERVER_MSG = CreateConVar("easychat_server_msg", "1", FCVAR_ARCHIVE, "Shows convars being changed on the server")
-	local _ = CreateConVar("easychat_skip_startup_msg", "1", FCVAR_ARCHIVE, "Displays random addons startup messages in the console")
+	local EC_SKIP_STARTUP_MSG = CreateConVar("easychat_skip_startup_msg", "1", FCVAR_ARCHIVE, "Displays random addons startup messages in the console")
 
 	-- timestamps
 	local EC_TIMESTAMPS = CreateConVar("easychat_timestamps", "0", FCVAR_ARCHIVE, "Display timestamps in the chatbox")
@@ -2169,6 +2169,11 @@ if CLIENT then
 			chat.old_EC_Close = chat.old_EC_Close or chat.Close
 
 			chat.AddText = function(...)
+				if EC_SKIP_STARTUP_MSG:GetBool() and not EasyChat.SkippedAnnoyingMessages then
+					chat.old_EC_AddText(...)
+					return
+				end
+
 				local processed_args = EasyChat.GlobalAddText(...)
 				chat.old_EC_AddText(unpack(processed_args))
 			end
