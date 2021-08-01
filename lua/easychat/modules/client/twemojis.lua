@@ -30,7 +30,7 @@ do
 		generate_lookup_table(data)
 		EasyChat.Print("Loaded twemojis lookup table from from: " .. data_path)
 	else
-		http.Fetch("http://g1.metastruct.net:20080/twemojis.txt.lzma", function(new_data, _, _, code)
+		http.Fetch("https://raw.githubusercontent.com/Earu/EasyChat/master/external_data/twemojis.txt.lzma", function(new_data, _, _, code)
 			if code ~= 200 then return end
 
 			new_data = util.Decompress(new_data)
