@@ -22,24 +22,20 @@ file.CreateDir(FOLDER, "DATA")
 local EMOTS = FOLDER .. "/steam_emoticons.txt"
 local function parse_emote_file() end
 
-local EMOTE_PACKAGE_URL =	"http://g1.metastruct.net:20080/opendata/public/emote_lzma.dat"
-http.Fetch(EMOTE_PACKAGE_URL, function(dat, len, hdr, ret)
-	if not dat or ret ~= 200 then
+local EMOTE_PACKAGE_URL = "https://raw.githubusercontent.com/Earu/EasyChat/master/external_data/steam_emoticons.txt"
+http.Fetch(EMOTE_PACKAGE_URL, function(body, _, _, code)
+	if not body or code ~= 200 then
 		EasyChat.Print(true, "Steam emojis update failed")
 		return
 	end
 
-	dat = util.Decompress(dat)
-
-	file.Write(EMOTS, dat)
-	local count = emoji_count(dat, ",")
+	file.Write(EMOTS, body)
+	local count = emoji_count(#body, ",")
 	EasyChat.Print(("Saved steam emojis lookup table with %d references to: %s"):format(count, EMOTS))
-	parse_emote_file(dat)
+	parse_emote_file(body)
 end, function(err)
 	EasyChat.Print(true, err)
-end, {
-	Referer = "http://steam.tools/emoticons/"
-})
+end)
 
 local function material_data(mat)
 	return Material("../data/" .. mat)
