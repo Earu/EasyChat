@@ -93,8 +93,8 @@ local function create_default_settings()
 			[EC_NICK_COMPLETE] = "Auto-complete player names",
 			[EC_NICK_PRIORITIZE] = "Prioritize player name completions over everything else",
 			[EC_OUT_CLICK_CLOSE] = "Close the chat when clicking away",
-			[EC_SERVER_MSG] = "Show changes made to the server cvars"
-			[EC_SKIP_STARTUP_MSG] = "Skips annoying addon startup messages (displays in console)"
+			[EC_SERVER_MSG] = "Show changes made to the server cvars",
+			[EC_SKIP_STARTUP_MSG] = "Skips annoying addon startup messages (displays in console)",
 		})
 
 		settings:AddSpacer(category_name)
