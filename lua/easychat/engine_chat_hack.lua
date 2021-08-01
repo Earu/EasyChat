@@ -198,19 +198,24 @@ if CLIENT then
 
 	local STACK_SIZE = 5
 	local function is_easychat_calling()
+		local stack = {}
 		for i = 1, STACK_SIZE do
 			local data = debug.getinfo(i)
-			if data and data.source:match("^%@lua%/easychat") then
-				return true
+			if data then
+				table.insert(stack, data.source)
+				if data.source:match("^%@lua%/easychat") then return true, stack end
 			end
 		end
 
-		return false
+		return false, stack
 	end
 
 	chat.old_EC_HackAddText = chat.old_EC_HackAddText or chat.AddText
 	chat.AddText = function(...)
-		if not is_easychat_calling() and EC_SKIP_STARTUP_MSG:GetBool() then
+		local calling, stack = is_easychat_calling()
+		PrintTable(stack)
+		
+		if not calling and EC_SKIP_STARTUP_MSG:GetBool() then
 			if EasyChat and EasyChat.SkippedAnnoyingMessages then
 				chat.old_EC_HackAddText(...)
 			else
