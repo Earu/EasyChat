@@ -199,7 +199,6 @@ if CLIENT then
 	local STACK_OFFSET = 4 -- we start at 4 because to ignore all the calls from the interns of easychat
 	local function is_easychat_calling()
 		local data = debug.getinfo(STACK_OFFSET)
-		print(data and data.source)
 		if data then
 			local ret = data.source:match("^@lua/easychat") ~= nil
 			if ret then return true end
