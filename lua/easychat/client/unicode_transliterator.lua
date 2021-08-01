@@ -1,4 +1,4 @@
-local LOOKUP_URL = "https://gist.githubusercontent.com/Earu/c53daf7627c105d057a5a67b79471033/raw/0fbcafb3538af6663ae558c70b0b4be1f4e61e56/transliteration_lookup.json"
+local LOOKUP_URL = "https://raw.githubusercontent.com/Earu/EasyChat/master/external_data/transliteration_lookup.json"
 local LOOKUP_PATH = "easychat/transliteration_lookup.json"
 local MAX_SUPPORTED_UNICODE = 0xFFFF -- gmod cannot render anything above this codepoint
 

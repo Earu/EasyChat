@@ -1,4 +1,4 @@
-local DISCORD_LOOKUP_TABLE_URL = "https://raw.githubusercontent.com/Cynosphere/emojis.json/master/emojis.json"
+local DISCORD_LOOKUP_TABLE_URL = "https://raw.githubusercontent.com/Earu/EasyChat/master/external_data/twemojis.json"
 
 local FOLDER = "easychat/emojis/twemojis"
 file.CreateDir(FOLDER, "DATA")
