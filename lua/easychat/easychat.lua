@@ -2170,8 +2170,8 @@ if CLIENT then
 
 			chat.AddText = function(...)
 				if EC_SKIP_STARTUP_MSG:GetBool() and not EasyChat.SkippedAnnoyingMessages then
-					chat.old_EC_AddText(...)
-					return
+					local ret = chat.old_EC_AddText(...)
+					if ret == "EC_SKIP_MESSAGE" then return end
 				end
 
 				local processed_args = EasyChat.GlobalAddText(...)
