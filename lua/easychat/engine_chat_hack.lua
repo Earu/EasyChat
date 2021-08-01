@@ -215,18 +215,13 @@ if CLIENT then
 		local calling = is_easychat_calling()
 		if EC_SKIP_STARTUP_MSG:GetBool() and not calling then
 			if EasyChat and EasyChat.SkippedAnnoyingMessages then
-				local processed_args = EasyChat.GlobalAddText(...)
-				chat.old_EC_HackAddText(processed_args)
+				chat.old_EC_HackAddText(...)
 			else
 				MsgC("\n", ...)
+				return "EC_SKIP_MESSAGE"
 			end
 		else
-			if EasyChat then
-				local processed_args = EasyChat.GlobalAddText(...)
-				chat.old_EC_HackAddText(processed_args)
-			else
-				chat.old_EC_HackAddText(...)
-			end
+			chat.old_EC_HackAddText(...)
 		end
 	end
 
