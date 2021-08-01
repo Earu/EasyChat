@@ -1,15 +1,15 @@
-local function emoji_count(a, n)
-	if not a then return 0 end
+local function emoji_count(content, char)
+	if not content then return 0 end
 
 	local x = 0
 	local pos = 1
-	for i = 1, #a do
-		local newpos = a:find(n, pos, true)
-		if not newpos then
+	for i = 1, #content do
+		local new_pos = content:find(char, pos, true)
+		if not new_pos then
 			break
 		end
 
-		pos = newpos + 1
+		pos = new_pos + 1
 		x = x + 1
 	end
 
@@ -30,7 +30,7 @@ http.Fetch(EMOTE_PACKAGE_URL, function(body, _, _, code)
 	end
 
 	file.Write(EMOTS, body)
-	local count = emoji_count(#body, ",")
+	local count = emoji_count(body, ",")
 	EasyChat.Print(("Saved steam emojis lookup table with %d references to: %s"):format(count, EMOTS))
 	parse_emote_file(body)
 end, function(err)
@@ -45,15 +45,14 @@ local UNCACHED = false
 local PROCESSING = true
 
 local cache = {}
-
 parse_emote_file = function(EMOTICONS)
-	local inSplitPattern = ","
-	local theStart = 1
-	local theSplitStart, theSplitEnd = EMOTICONS:find(inSplitPattern, theStart, true)
-	while theSplitStart do
-		cache[EMOTICONS:sub(theStart, theSplitStart - 1)] = UNCACHED
-		theStart = theSplitEnd + 1
-		theSplitStart, theSplitEnd = EMOTICONS:find(inSplitPattern, theStart, true)
+	local split_pattern = ","
+	local start = 1
+	local split_start, split_end = EMOTICONS:find(split_pattern, start, true)
+	while split_start do
+		cache[EMOTICONS:sub(start, split_start - 1)] = UNCACHED
+		start = split_end + 1
+		split_start, split_end = EMOTICONS:find(split_pattern, start, true)
 	end
 	cache[EMOTICONS:sub(theStart)] = UNCACHED
 end
