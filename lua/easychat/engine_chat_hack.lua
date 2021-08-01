@@ -213,16 +213,18 @@ if CLIENT then
 	chat.old_EC_HackAddText = chat.old_EC_HackAddText or chat.AddText
 	chat.AddText = function(...)
 		local calling, stack = is_easychat_calling()
-		PrintTable(stack)
-		
-		if not calling and EC_SKIP_STARTUP_MSG:GetBool() then
-			if EasyChat and EasyChat.SkippedAnnoyingMessages then
-				chat.old_EC_HackAddText(...)
+		if EC_SKIP_STARTUP_MSG:GetBool() then
+			PrintTable(stack)
+
+			if not calling then
+				if EasyChat and EasyChat.SkippedAnnoyingMessages then
+					chat.old_EC_HackAddText(...)
+				else
+					MsgC(...)
+				end
 			else
-				MsgC(...)
+				chat.old_EC_HackAddText(...)
 			end
-		else
-			chat.old_EC_HackAddText(...)
 		end
 	end
 
