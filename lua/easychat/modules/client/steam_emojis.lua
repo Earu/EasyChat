@@ -54,7 +54,8 @@ parse_emote_file = function(EMOTICONS)
 		start = split_end + 1
 		split_start, split_end = EMOTICONS:find(split_pattern, start, true)
 	end
-	cache[EMOTICONS:sub(theStart)] = UNCACHED
+	
+	cache[EMOTICONS:sub(start)] = UNCACHED
 end
 
 local function get_steam_emote(name)
