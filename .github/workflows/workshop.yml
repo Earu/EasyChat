@@ -14,13 +14,13 @@ jobs:
         uses: actions/checkout@v2
 
       - name: GLua Linter
-              uses: TASSIA710/action-glua-lint@v1.1.4
-              with:
-                lint_maxScopeDepth: 99
-                lint_deprecated: false
-                lint_emptyBlocks: false
-                lint_unusedParameters: false
-                lint_unusedLoopVars: false
+        uses: TASSIA710/action-glua-lint@v1.1.4
+        with:
+          lint_maxScopeDepth: 99
+          lint_deprecated: false
+          lint_emptyBlocks: false
+          lint_unusedParameters: false
+          lint_unusedLoopVars: false
                 
       # Creates a GMA and publishes it to the Steam Workshop
       - name: Publish to Steam Workshop
