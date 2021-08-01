@@ -6,10 +6,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  workshop-publish:
+  # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+  linter:
     runs-on: ubuntu-latest
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout
         uses: actions/checkout@v2
 
@@ -21,8 +21,12 @@ jobs:
           lint_emptyBlocks: false
           lint_unusedParameters: false
           lint_unusedLoopVars: false
-                
-      # Creates a GMA and publishes it to the Steam Workshop
+          
+ # Creates a GMA and publishes it to the Steam Workshop          
+  workshop-publish:
+    needs: linter
+    runs-on: ubuntu-latest
+    steps:
       - name: Publish to Steam Workshop
         uses: Earu/GSW-action@V2.1
         with:
