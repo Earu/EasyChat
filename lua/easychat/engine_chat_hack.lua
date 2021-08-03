@@ -196,14 +196,17 @@ if CLIENT then
 		is_chat_opened = false
 	end)
 
-	local STACK_OFFSET = 4 -- we start at 4 because to ignore all the calls from the interns of easychat
+	local STACK_OFFSET = 4 -- we start at 4 to ignore all the calls from the internals of easychat
 	local function is_easychat_calling()
 		local data = debug.getinfo(STACK_OFFSET)
 		if data then
-			local ret = data.source:match("^@lua/easychat") ~= nil
+			local ret = data.source:match("^@lua/easychat") ~= nil or data.source:match("^@addons/easychat/lua/easychat") ~= nil
 			if ret then return true end
 
-			return data.source:match("^@addons/easychat/lua/easychat") ~= nil
+			if data.source:match("^@addons") then
+				local chunks = data.source:Split("/")
+				return chunks[1] == "@addons" and chunks[3] == "lua" and chunks[4] == "easychat"
+			end
 		end
 
 		return false
