@@ -7,7 +7,7 @@
     "lint_whitespaceStyle":             true,
     "lint_beginnerMistakes":            true,
     "lint_emptyBlocks":                 false,
-    "lint_shadowing":                   true,
+    "lint_shadowing":                   false,
     "lint_gotos":                       true,
     "lint_doubleNegations":             true,
     "lint_redundantIfStatements":       true,
