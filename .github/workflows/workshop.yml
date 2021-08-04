@@ -21,15 +21,17 @@ jobs:
           lint_emptyBlocks: false
           lint_unusedParameters: false
           lint_unusedLoopVars: false
-          
- # Creates a GMA and publishes it to the Steam Workshop          
+          lint_shadowing: false
+          lint_inconsistentVariableStyle: false
+
+ # Creates a GMA and publishes it to the Steam Workshop
   workshop-publish:
     needs: linter
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-        
+
       - name: Publish to Steam Workshop
         uses: Earu/GSW-action@V2.1
         with:
