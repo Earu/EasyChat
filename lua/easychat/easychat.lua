@@ -553,9 +553,9 @@ if SERVER then
 		hook.Remove("Think", TAG)
 	end)
 
-	local has_version_warned = false
 	hook.Add("ECOpened", TAG, function(ply)
-		if has_version_warned then return end
+		if not ply:IsAdmin() then return end
+		if ply.ECHasVersionWarned then return end
 
 		if is_outdated and EC_VERSION_WARNING:GetBool() then
 			local msg_components = { COLOR_GRAY, "The server is running an", COLOR_RED, " outdated ", COLOR_GRAY, "version of", COLOR_RED, " EasyChat" }
@@ -571,7 +571,7 @@ if SERVER then
 			ply:SendLua([[cookie.Delete("ECChromiumWarn")]])
 		end
 
-		has_version_warned = true
+		ply.ECHasVersionWarned = true
 	end)
 
 	hook.Add("PlayerCanSeePlayersChat", TAG, EasyChat.PlayerCanSeePlayersChat)
