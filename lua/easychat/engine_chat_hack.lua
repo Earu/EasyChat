@@ -200,6 +200,7 @@ if CLIENT then
 	local function is_easychat_calling()
 		local data = debug.getinfo(STACK_OFFSET)
 		if data then
+			print(data.source)
 			local ret = data.source:match("^@lua/easychat") ~= nil or data.source:match("^@addons/easychat/lua/easychat") ~= nil
 			if ret then return true end
 
