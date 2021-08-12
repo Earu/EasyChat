@@ -82,6 +82,7 @@ end
 if CLIENT then
 	local EC_ENABLED = GetConVar("easychat_enable")
 	local EC_SKIP_STARTUP_MSG = GetConVar("easychat_skip_startup_msg")
+	local MSG_BLOCK_TIME = 5 -- how many seconds after InitPostEntity do we still block messages
 
 	local color_white = color_white
 
@@ -200,7 +201,6 @@ if CLIENT then
 	local function is_easychat_calling()
 		local data = debug.getinfo(STACK_OFFSET)
 		if data then
-			print(data.source)
 			local ret = data.source:match("^@lua/easychat") ~= nil or data.source:match("^@addons/easychat/lua/easychat") ~= nil
 			if ret then return true end
 
@@ -229,8 +229,10 @@ if CLIENT then
 	end
 
 	hook.Add("InitPostEntity", TAG, function()
-		EasyChat.RunOnNextFrame(function()
+		timer.Simple(MSG_BLOCK_TIME, function()
 			EasyChat.SkippedAnnoyingMessages = true
 		end)
+
+		hook.Remove("InitPostEntity", TAG)
 	end)
 end
