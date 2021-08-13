@@ -6,7 +6,7 @@ if debug.getinfo(old_nick).source == "=[C]" then
 	function PLY_META:Nick()
 		-- we do this because steam censors player's names if they have "steam" in there
 		-- which results in valid names like "PipeSteam" not to work.
-		local proper_nick = old_nick:gsub("%*%*%*%*%*", "steam")
+		local proper_nick = old_nick(self):gsub("%*%*%*%*%*", "steam")
 		return proper_nick -- don't return varargs
 	end
 
