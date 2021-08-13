@@ -427,8 +427,8 @@ if SERVER then
 
 		local files, _ = file.Find("addons/easychat/.git/refs/heads/","GAME")
 		local found_ref = false
-		if #files > 0 and file.Exists("addons/easychat/.git/refs/heads/master") then
-			local git_sha = (file.Read("addons/easychat/.git/refs/heads/master") or ""):Trim()
+		if #files > 0 and file.Exists("addons/easychat/.git/refs/heads/master", "GAME") then
+			local git_sha = (file.Read("addons/easychat/.git/refs/heads/master", "GAME") or ""):Trim()
 			if  #git_sha > 0 and current_sha ~= git_sha then
 				current_sha = git_sha
 				cookie.Set("ECLatestSHA", git_sha)
@@ -439,8 +439,8 @@ if SERVER then
 
 		if not found_ref then
 			files, _ = file.Find("lua/easychat/.git/refs/heads/", "GAME")
-			if #files > 0 and file.Exists("lua/easychat/.git/refs/heads/master") then
-				local git_sha = (file.Read("lua/easychat/.git/refs/heads/master") or ""):Trim()
+			if #files > 0 and file.Exists("lua/easychat/.git/refs/heads/master", "GAME") then
+				local git_sha = (file.Read("lua/easychat/.git/refs/heads/master", "GAME") or ""):Trim()
 				if #git_sha > 0 and current_sha ~= git_sha then
 					current_sha = git_sha
 					cookie.Set("ECLatestSHA", git_sha)
