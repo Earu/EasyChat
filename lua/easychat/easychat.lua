@@ -421,6 +421,36 @@ if SERVER then
 		return time
 	end
 
+	-- ensures the sha is always sync'd with git if the folder can be found
+	local function get_known_version_sha()
+		local current_sha = cookie.GetString("ECLatestSHA")
+
+		local files, _ = file.Find("addons/easychat/.git/refs/heads/","GAME")
+		local found_ref = false
+		if #files > 0 and file.Exists("addons/easychat/.git/refs/heads/master") then
+			local git_sha = (file.Read("addons/easychat/.git/refs/heads/master") or ""):Trim()
+			if  #git_sha > 0 and current_sha ~= git_sha then
+				current_sha = git_sha
+				cookie.Set("ECLatestSHA", git_sha)
+			end
+
+			found_ref = true
+		end
+
+		if not found_ref then
+			files, _ = file.Find("lua/easychat/.git/refs/heads/", "GAME")
+			if #files > 0 and file.Exists("lua/easychat/.git/refs/heads/master") then
+				local git_sha = (file.Read("lua/easychat/.git/refs/heads/master") or ""):Trim()
+				if #git_sha > 0 and current_sha ~= git_sha then
+					current_sha = git_sha
+					cookie.Set("ECLatestSHA", git_sha)
+				end
+			end
+		end
+
+		return current_sha
+	end
+
 	local DEFAULT_FILE_PATH = "lua/easychat/easychat.lua"
 	local is_outdated = false
 	local old_version, new_version
@@ -451,7 +481,7 @@ if SERVER then
 				end
 			end
 
-			local latest_sha = cookie.GetString("ECLatestSHA")
+			local latest_sha = get_known_version_sha()
 			if not latest_sha then
 				-- we dont want to set the SHA if we have an outdated version
 				if commit_time > cur_edit_time then
