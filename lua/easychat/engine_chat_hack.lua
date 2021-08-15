@@ -1,7 +1,7 @@
 local TAG = "EasyChatEngineChatHack"
 
 local PLY_META = FindMetaTable("Player")
-local old_nick = PLY_META.Nick
+local old_nick = PLY_META.EngineNick or PLY_META.Nick
 if debug.getinfo(old_nick).source == "=[C]" then
 	function PLY_META:Nick()
 		-- we do this because steam censors player's names if they have "steam" in there
