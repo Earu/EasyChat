@@ -1,18 +1,22 @@
 local TAG = "EasyChatEngineChatHack"
 
 local PLY_META = FindMetaTable("Player")
-local old_nick = PLY_META.EngineNick or PLY_META.Nick
-if debug.getinfo(old_nick).source == "=[C]" then
-	function PLY_META:Nick()
-		-- we do this because steam censors player's names if they have "steam" in there
-		-- which results in valid names like "PipeSteam" not to work.
-		local proper_nick = old_nick(self):gsub("%*%*%*%*%*", "steam")
+local function remove_steam_censor(func_name)
+	local old_func = PLY_META[func_name]
+	if not old_func then return end
+
+	PLY_META[func_name] = function(self)
+		local proper_nick = old_func(self):gsub("%*%*%*%*%*", "steam")
 		return proper_nick -- don't return varargs
 	end
-
-	PLY_META.Name = PLY_META.Nick
-	PLY_META.GetName = PLY_META.Nick
 end
+
+-- we do this because steam censors player's names if they have "steam" in there
+-- which results in valid names like "PipeSteam" not to work.
+remove_steam_censor("Nick")
+remove_steam_censor("EngineNick")
+PLY_META.Name = PLY_META.Nick
+PLY_META.GetName = PLY_META.Nick
 
 -- if a server has slog or sourcenet, use them to route say commands to our networking
 -- https://github.com/Heyter/gbins/tree/master/slog/src
