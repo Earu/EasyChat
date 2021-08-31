@@ -1,3 +1,4 @@
+AddCSLuaFile("easychat/networking.lua")
 AddCSLuaFile("easychat/server_config.lua")
 AddCSLuaFile("easychat/migrations.lua")
 AddCSLuaFile("easychat/easychat.lua")
