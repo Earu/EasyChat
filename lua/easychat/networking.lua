@@ -122,7 +122,8 @@ if SERVER then
 
 		local is_dead = not ply:Alive()
 		net.Start(NET_BROADCAST_MSG)
-		net.WriteEntity(ply)
+		net.WriteUInt(ply:UserID(), 16)
+		net.WriteString(ply:Nick())
 		net.WriteString(msg)
 		net.WriteBool(is_dead)
 		net.WriteBool(is_team)
@@ -289,6 +290,16 @@ if CLIENT then
 	local EC_TRANSLATE_OUT_SRC_LANG = CreateConVar("easychat_translate_out_source_lang", "auto", FCVAR_ARCHIVE, "Language used in your chat messages")
 	local EC_TRANSLATE_OUT_TARGET_LANG = CreateConVar("easychat_translate_out_target_lang", "en", FCVAR_ARCHIVE, "Language to translate your chat messages to")
 
+	function user_id_to_ply(user_id)
+		for _, ply in ipairs(player.GetAll()) do
+			if ply:UserID() == user_id then
+				return ply
+			end
+		end
+
+		return false
+	end
+
 	function EasyChat.ReceiveGlobalMessage(ply, msg, is_dead, is_team, is_local)
 		if EasyChat.IsBlockedPlayer(ply) then return end
 
@@ -327,14 +338,46 @@ if CLIENT then
 		end
 	end
 
+	local MAX_RETRIES = 40
+	local RETRY_DELAY = 0.25
+	local DISCONNECTED_COLOR = Color(110, 247, 177)
 	net.Receive(NET_BROADCAST_MSG, function()
-		local ply = net.ReadEntity()
+		local user_id = net.ReadUInt(16)
+		local user_name = net.ReadString()
 		local msg = net.ReadString()
 		local is_dead = net.ReadBool()
 		local is_team = net.ReadBool()
 		local is_local = net.ReadBool()
 
-		EasyChat.ReceiveGlobalMessage(ply, msg, is_dead, is_team, is_local)
+		local function receive(retries)
+			retries = retries or 0
+
+			local ply = user_id_to_ply(user_id)
+			if not IsValid(ply) then
+				if retries > MAX_RETRIES then
+					chat.AddText(
+						DISCONNECTED_COLOR,
+						"[DISCONNECTED] ",
+						COLOR_PRINT_CHAT_MSG,
+						user_name,
+						COLOR_PRINT_CHAT_MSG,
+						(": %s"):format(msg)
+					)
+
+					return
+				end
+
+				timer.Simple(RETRY_DELAY, function()
+					receive(retries + 1)
+				end)
+
+				return
+			end
+
+			EasyChat.ReceiveGlobalMessage(ply, msg, is_dead, is_team, is_local)
+		end
+
+		receive()
 	end)
 
 	net.Receive(NET_ADD_TEXT, function()
