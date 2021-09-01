@@ -191,14 +191,14 @@ if SERVER then
 		if #msg > EC_MAX_CHARS:GetInt() then
 			EasyChat.SafeHookRun("ECBlockedMessage", ply, msg, is_team, is_local, "too big")
 			EasyChat.Warn(ply, ("NOT SENT (TOO BIG): %s..."):format(msg:sub(1, 100)))
-			return
+			return false
 		end
 
 		-- anti-spam
 		if spam_watch(ply, msg) then
 			EasyChat.SafeHookRun("ECBlockedMessage", ply, msg, is_team, is_local, "spam")
 			EasyChat.Warn(ply, ("NOT SENT (SPAM): %s..."):format(msg:sub(1, 100)))
-			return
+			return false
 		end
 
 		-- trim the message to remove any oddities so its clean to process for hooks etc...
@@ -206,7 +206,7 @@ if SERVER then
 
 		-- Transform text before PlayerSay
 		local datapack = { msg, is_team, is_local }
-		if EasyChat.SafeHookRun("PlayerSayTransform", ply, datapack, is_team, is_local) == false then return end
+		if EasyChat.SafeHookRun("PlayerSayTransform", ply, datapack, is_team, is_local) == false then return false end
 
 		local skip_player_say = datapack.SkipPlayerSay
 		msg, is_team, is_local = unpack(datapack, 1, 3)
@@ -257,10 +257,13 @@ if SERVER then
 			if not IsValid(listener) or not IsValid(speaker) then
 				return false
 			end
+
 			if is_local and listener:GetPos():Distance(speaker:GetPos()) > speaker:GetInfoNum("easychat_local_msg_distance", 150) then
 				return false
 			end
 		end
+
+		if EasyChat.IsBlockedPlayer(listener, speaker:SteamID()) then return false end
 	end
 
 	function EasyChat.PlayerCanHearPlayersVoice(listener, talker)
@@ -286,13 +289,7 @@ if CLIENT then
 	local EC_TRANSLATE_OUT_SRC_LANG = CreateConVar("easychat_translate_out_source_lang", "auto", FCVAR_ARCHIVE, "Language used in your chat messages")
 	local EC_TRANSLATE_OUT_TARGET_LANG = CreateConVar("easychat_translate_out_target_lang", "en", FCVAR_ARCHIVE, "Language to translate your chat messages to")
 
-	net.Receive(NET_BROADCAST_MSG, function()
-		local ply = net.ReadEntity()
-		local msg = net.ReadString()
-		local is_dead = net.ReadBool()
-		local is_team = net.ReadBool()
-		local is_local = net.ReadBool()
-
+	function EasyChat.ReceiveGlobalMessage(ply, msg, is_dead, is_team, is_local)
 		if EasyChat.IsBlockedPlayer(ply) then return end
 
 		-- so we never have the two together
@@ -328,6 +325,16 @@ if CLIENT then
 		else
 			hook.Run("OnPlayerChat", ply, msg, is_team, is_dead, is_local)
 		end
+	end
+
+	net.Receive(NET_BROADCAST_MSG, function()
+		local ply = net.ReadEntity()
+		local msg = net.ReadString()
+		local is_dead = net.ReadBool()
+		local is_team = net.ReadBool()
+		local is_local = net.ReadBool()
+
+		EasyChat.ReceiveGlobalMessage(ply, msg, is_dead, is_team, is_local)
 	end)
 
 	net.Receive(NET_ADD_TEXT, function()
@@ -335,17 +342,21 @@ if CLIENT then
 		chat.AddText(unpack(args))
 	end)
 
-	function EasyChat.SendGlobalMessage(msg, is_team, is_local)
+	function EasyChat.SendGlobalMessage(msg, is_team, is_local, no_translate)
+		if msg:find("\0", 1, true) then
+			ErrorNoHalt("Null byte on chat message, unhandled!")
+		end
+
 		msg = EasyChat.MacroProcessor:ProcessString(msg)
 
 		local ply = LocalPlayer()
 
 		-- transform text before PlayerSay
 		local datapack = { msg }
-		if EasyChat.SafeHookRun("PlayerSayTransform", ply, datapack, is_team, is_local) == false then return end
+		if EasyChat.SafeHookRun("PlayerSayTransform", ply, datapack, is_team, is_local) == false then return false end
 
 		msg = EasyChat.ExtendedStringTrim(datapack[1])
-		if #msg == 0 then return end
+		if #msg == 0 then return false end
 
 		--  this isn't in the specs but it is now :|
 		native = false
@@ -359,23 +370,23 @@ if CLIENT then
 			msg = EasyChat.ExtendedStringTrim(result)
 		end
 
-		if #msg == 0 then return end
+		if #msg == 0 then return false end
 
 		-- Transform text after PlayerSay
 		datapack = { msg }
-		if EasyChat.SafeHookRun("PlayerSayPostTransform", ply, datapack, is_team, is_local) == false then return end
+		if EasyChat.SafeHookRun("PlayerSayPostTransform", ply, datapack, is_team, is_local) == false then return false end
 
 		msg = EasyChat.ExtendedStringTrim(datapack[1])
-		if #msg == 0 then return end
+		if #msg == 0 then return false end
 
 		local result = EasyChat.SafeHookRun("SendChatMessage", msg, is_team, is_local)
-		if result == false then return end
+		if result == false then return false end
 
 		local source_lang, target_lang =
 			EC_TRANSLATE_OUT_SRC_LANG:GetString(),
 			EC_TRANSLATE_OUT_TARGET_LANG:GetString()
 
-		if EC_TRANSLATE_OUT_MSG:GetBool() and source_lang ~= target_lang then
+		if not no_translate and EC_TRANSLATE_OUT_MSG:GetBool() and source_lang ~= target_lang then
 			EasyChat.Translator:Translate(msg, source_lang, target_lang, function(success, _, translation)
 				net.Start(NET_SEND_MSG)
 				net.WriteString(success and translation or msg)
