@@ -11,6 +11,11 @@ local COLOR_PRINT_CHAT_TIME = Color(0, 161, 255)
 local COLOR_PRINT_CHAT_NICK = Color(222, 222, 255)
 local COLOR_PRINT_CHAT_MSG = Color(255, 255, 255)
 
+local native = true
+function EasyChat.IsCallingNativeHooks()
+	return native
+end
+
 if SERVER then
 	local msgc_native = _G._MsgC or _G.MsgC -- epoe compat
 
@@ -61,9 +66,30 @@ if SERVER then
 		msgc_native(unpack(print_args))
 	end
 
-	function EasyChat.SendGlobalMessage(ply, str, is_team, is_local)
-		local msg = EasyChat.SafeHookRun("PlayerSay", ply, str, is_team, is_local)
-		if type(msg) ~= "string" then return end
+	function EasyChat.SendGlobalMessage(ply, str, is_team, is_local, skip_player_say)
+		local msg
+		if not skip_player_say then
+			native = true
+			local result = hook.Run("PlayerSay", ply, str, is_team, is_local)
+			native = false
+
+			if result == true then return -- kill the message
+			elseif result == false then -- let the message pass
+			elseif type(result) == "string" then -- replace the message
+				msg = result
+			end
+		else
+			msg = str
+		end
+
+		msg = EasyChat.ExtendedStringTrim(msg)
+		if #msg == 0 then return end
+
+		-- transform text after PlayerSay
+		local datapack = { msg, is_team, is_local }
+		if EasyChat.SafeHookRun("PlayerSayPostTransform", ply, datapack, is_team, is_local) == false then return end
+
+		msg, is_team, is_local = unpack(datapack)
 
 		msg = EasyChat.ExtendedStringTrim(msg)
 		if #msg == 0 then return end
@@ -166,13 +192,24 @@ if SERVER then
 			return
 		end
 
+		-- anti-spam
 		if spam_watch(ply, msg) then
 			EasyChat.SafeHookRun("ECBlockedMessage", ply, msg, is_team, is_local, "spam")
 			EasyChat.Warn(ply, ("NOT SENT (SPAM): %s..."):format(msg:sub(1, 100)))
 			return
 		end
 
-		EasyChat.SendGlobalMessage(ply, msg, is_team, is_local)
+		-- trim the message to remove any oddities so its clean to process for hooks etc...
+		msg = EasyChat.ExtendedStringTrim(msg)
+
+		-- Transform text before PlayerSay
+		local datapack = { msg, is_team, is_local }
+		if EasyChat.SafeHookRun("PlayerSayTransform", ply, datapack, is_team, is_local) == false then return end
+
+		local skip_player_say = datapack.SkipPlayerSay
+		msg, is_team, is_local = unpack(datapack, 1, 3)
+
+		EasyChat.SendGlobalMessage(ply, msg, is_team, is_local, skip_player_say)
 	end
 
 	EasyChat.BlockedPlayers = {}
@@ -296,11 +333,6 @@ if CLIENT then
 		chat.AddText(unpack(args))
 	end)
 
-	local native = true
-	function EasyChat.IsProcessingNative()
-		return native
-	end
-
 	function EasyChat.SendGlobalMessage(msg, is_team, is_local)
 		msg = EasyChat.MacroProcessor:ProcessString(msg)
 
@@ -311,6 +343,7 @@ if CLIENT then
 		if EasyChat.SafeHookRun("PlayerSayTransform", ply, datapack, is_team, is_local) == false then return end
 
 		msg = EasyChat.ExtendedStringTrim(datapack[1])
+		if #msg == 0 then return end
 
 		--  this isn't in the specs but it is now :|
 		native = false
@@ -324,11 +357,14 @@ if CLIENT then
 			msg = EasyChat.ExtendedStringTrim(result)
 		end
 
+		if #msg == 0 then return end
+
 		-- Transform text after PlayerSay
 		datapack = { msg }
 		if EasyChat.SafeHookRun("PlayerSayPostTransform", ply, datapack, is_team, is_local) == false then return end
 
 		msg = EasyChat.ExtendedStringTrim(datapack[1])
+		if #msg == 0 then return end
 
 		local result = EasyChat.SafeHookRun("SendChatMessage", msg, is_team, is_local)
 		if result == false then return end
