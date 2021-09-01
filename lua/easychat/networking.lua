@@ -150,6 +150,8 @@ if SERVER then
 	end
 
 	local function spam_watch(ply, msg)
+		if ply:IsAdmin() then return false end
+
 		local time = RealTime()
 		local last_msg = spam_watch_lookup[ply] or { Time = 0, Message = "" }
 
