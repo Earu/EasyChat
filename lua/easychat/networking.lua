@@ -264,7 +264,9 @@ if SERVER then
 			end
 		end
 
-		if EasyChat.IsBlockedPlayer(listener, speaker:SteamID()) then return false end
+		if IsValid(listener) and IsValid(speaker) and EasyChat.IsBlockedPlayer(listener, speaker:SteamID()) then
+			return false
+		end
 	end
 
 	function EasyChat.PlayerCanHearPlayersVoice(listener, talker)
