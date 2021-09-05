@@ -382,6 +382,7 @@ if CLIENT then
 	local EC_LEGACY_ENTRY = CreateConVar("easychat_legacy_entry", "0", FCVAR_ARCHIVE, "Uses the legacy textbox entry")
 	local EC_LEGACY_TEXT = CreateConVar("easychat_legacy_text", "0", FCVAR_ARCHIVE, "Uses the legacy text output")
 	local _ = CreateConVar("easychat_modern_text_history_limit", "-1", FCVAR_ARCHIVE, "Limits how many messages are shown in the modern chat output")
+	local _ = CreateConVar("easychat_non_qwerty", "0", FCVAR_ARCHIVE, "Lets you tell EasyChat that you keyboard layout is not qwerty")
 
 	-- chathud
 	local _ = CreateConVar("easychat_hud_smooth", "1", FCVAR_ARCHIVE, "Enables chat smoothing")
