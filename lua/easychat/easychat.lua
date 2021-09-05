@@ -2769,7 +2769,7 @@ if CLIENT then
 		if jit.arch == "x64" and not cookie.GetString("ECChromiumWarn") then
 			-- warn related to chromium regression
 			EasyChat.AddText(EasyChat.GUI.RichText, COLOR_RED, "IF YOU ARE HAVING TROUBLES TO TYPE SOME CHARACTERS PLEASE TYPE", color_white, " easychat_legacy_entry 1 ",
-			COLOR_RED, "IN YOUR CONSOLE. THE ISSUE IS DUE TO A REGRESSION IN CHROMIUM. MORE INFO HERE: https://github.com/Facepunch/garrysmod-issues/issues/4414\n"
+			COLOR_RED, "OR" ,color_white, " easychat_non_qwerty 1", COLOR_RED, "IN YOUR CONSOLE. THE ISSUE IS DUE TO A REGRESSION IN CHROMIUM. MORE INFO HERE: https://github.com/Facepunch/garrysmod-issues/issues/4414\n"
 			.. "IF YOU STILL HAVE ISSUES PLEASE DO REPORT THEM HERE: https://github.com/Earu/EasyChat/issues")
 			cookie.Set("ECChromiumWarn", "1")
 		end
