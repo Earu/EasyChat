@@ -112,15 +112,15 @@ function PANEL:Init()
 		TEXT_ENTRY.addEventListener("contextmenu", (_) => TextEntryX.OnRightClick());
 		TEXT_ENTRY.addEventListener("paste", (ev) => {
 			if (!ev.clipboardData && !window.clipboardData) return;
-			let items = (ev.clipboardData || window.clipboardData).items;
+			const items = (ev.clipboardData || window.clipboardData).items;
 			if (!items) return;
 
-			for (let item of items) {
+			for (const item of items) {
 				if (item.type.match("^image/")) {
-					let file = item.getAsFile();
-					let reader = new FileReader();
+					const file = item.getAsFile();
+					const reader = new FileReader();
 					reader.onload = () => {
-						let b64 = btoa(reader.result);
+						const b64 = btoa(reader.result);
 						TextEntryX.OnImagePaste(file.name, b64);
 					};
 
@@ -129,6 +129,7 @@ function PANEL:Init()
 				}
 			}
 		});
+
 		TEXT_ENTRY.addEventListener("input", (ev) => TextEntryX.OnChange(ev.target.value, ev.target.selectionStart));
 		TEXT_ENTRY.addEventListener("keydown", (ev) => {
 			switch (ev.which) {
@@ -155,6 +156,45 @@ function PANEL:Init()
 					break;
 			}
 		});
+	]])
+
+	local EC_NON_QWERTY = GetConVar("easychat_non_qwerty")
+	cvars.RemoveChangeCallback("easychat_non_qwerty", "TextEntryX")
+	cvars.AddChangeCallback("easychat_non_qwerty", function()
+		self:QueueJavascript([[TEXT_ENTRY.NonQwertyKeyboard = ]] .. tostring(EC_NON_QWERTY:GetBool()) .. [[;]])
+	end, "TextEntryX")
+
+	self:QueueJavascript([[
+		TEXT_ENTRY.NonQwertyKeyboard = ]] .. tostring(EC_NON_QWERTY:GetBool()) .. [[;
+
+		function insertAtCursor(text) {
+			const val = TEXT_ENTRY.value;
+			TEXT_ENTRY.value = val + text;
+			TextEntryX.OnChange(TEXT_ENTRY.value, TEXT_ENTRY.selectionStart);
+		}
+
+		TEXT_ENTRY.addEventListener("beforeinput", (ev) => {
+			if (!TEXT_ENTRY.NonQwertyKeyboard) return;
+
+			if (ev.data == "¨" || ev.data == "¨") {
+				insertAtCursor("~");
+				ev.preventDefault();
+			}
+		});
+
+		TEXT_ENTRY.addEventListener("keyup", (ev) => {
+			if (!TEXT_ENTRY.NonQwertyKeyboard) return;
+
+			if (ev.key == "[") { insertAtCursor("[") }
+			if (ev.key == "]") { insertAtCursor("]") }
+			if (ev.key == "{") { insertAtCursor("{") }
+			if (ev.key == "}") { insertAtCursor("}") }
+			if (ev.key == "¨") {
+				insertAtCursor("~");
+				ev.preventDefault();
+			}
+		});
+
 		TEXT_ENTRY.click();
 		TEXT_ENTRY.focus();
 	]])
