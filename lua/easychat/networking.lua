@@ -330,7 +330,7 @@ if CLIENT then
 				if not suppress then
 					-- call the gamemode function if we're not suppressed otherwise it wont display
 					GAMEMODE:OnPlayerChat(ply, msg, is_team, is_dead, is_local)
-					if msg ~= translation then
+					if translation and msg ~= translation then
 						chat.AddText(ply, ("▲ %s ▲"):format(translation))
 					end
 				end
