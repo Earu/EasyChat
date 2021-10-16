@@ -195,7 +195,7 @@ function PANEL:AppendText(text)
 	local js = (self.ClickableTextValue and [[
 		span = document.createElement("span");
 		span.onclick = () => RichTextX.OnClick(`]] .. self.ClickableTextValue .. [[`);
-		span.onmouseenter = () => RichTextX.OnTextHover(`]] .. self.ClickableTextValue .. [[`,true);
+		span.onmouseenter = () => RichTextX.OnTextHover(`]] .. self.ClickableTextValue .. [[`, true);
 		span.onmouseleave = () => RichTextX.OnTextHover(`]] .. self.ClickableTextValue .. [[`, false);
 		span.clickableText = true;
 		span.style.cursor = "pointer";

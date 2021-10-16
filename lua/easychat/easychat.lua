@@ -2450,6 +2450,7 @@ if CLIENT then
 			end
 
 			-- handle more hovering hacks (?)
+			safe_hook_run("ECOnTextHover", self, text_value, is_hover)
 		end
 
 		function EasyChat.GUI.RichText:AppendClickableText(text, callback)
