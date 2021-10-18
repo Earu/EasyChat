@@ -2465,7 +2465,7 @@ if CLIENT then
 
 			local interaction_id = tonumber(text_value:match("^CustomInteraction: (%d+)"))
 			if interaction_id and hoverable_callbacks[interaction_id] then
-				hoverable_callbacks[interaction_id](self, text_value, is_hover)
+				hoverable_callbacks[interaction_id](self, is_hover)
 				return
 			end
 
