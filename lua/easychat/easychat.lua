@@ -2354,7 +2354,21 @@ if CLIENT then
 		end
 
 		local clickable_callback_id = 0
+		local callback_expirations = {}
 		local clickable_callbacks = {}
+		local hoverable_callbacks = {}
+
+		-- clear the callbacks after 5 minutes to prevent memory leaking
+		timer.Create("EasyChatTextCallbackExpiration", 60, 0, function()
+			for id, expiration in pairs(callback_expirations) do
+				if CurTime() > expiration then
+					clickable_callbacks[id] = nil
+					hoverable_callbacks[id] = nil
+					callback_expirations[id] = nil
+				end
+			end
+		end)
+
 		function EasyChat.GUI.RichText:ActionSignal(name, value)
 			if name ~= "TextClicked" then return end
 
@@ -2449,16 +2463,25 @@ if CLIENT then
 				return
 			end
 
+			local interaction_id = tonumber(text_value:match("^CustomInteraction: (%d+)"))
+			if interaction_id and hoverable_callbacks[interaction_id] then
+				hoverable_callbacks[interaction_id](self, text_value, is_hover)
+				return
+			end
+
 			-- handle more hovering hacks (?)
 			safe_hook_run("ECOnTextHover", self, text_value, is_hover)
 		end
 
-		function EasyChat.GUI.RichText:AppendClickableText(text, callback)
+		-- the hover callback only works with RichTextX
+		function EasyChat.GUI.RichText:AppendClickableText(text, click_callback, hover_callback)
 			self:InsertClickableTextStart(("CustomInteraction: %d"):format(clickable_callback_id))
 			append_text(self, text)
 			self:InsertClickableTextEnd()
 
-			clickable_callbacks[clickable_callback_id] = callback
+			clickable_callbacks[clickable_callback_id] = click_callback
+			hoverable_callbacks[clickable_callback_id] = hover_callback
+			callback_expirations[clickable_callback_id] = CurTime() + 60 * 5
 			clickable_callback_id = clickable_callback_id + 1
 		end
 
