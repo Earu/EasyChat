@@ -1547,6 +1547,7 @@ if CLIENT then
 				local succ, ret = xpcall(callback, function(err)
 					ErrorNoHalt(debug.traceback(err))
 				end, arg)
+
 				if succ and ret then
 					if is_color(ret) or isstring(ret) then
 						table.insert(data, ret)
@@ -1695,7 +1696,7 @@ if CLIENT then
 			return color_white
 		end)
 
-		EasyChat.SetAddTextTypeHandle("TextInteraction", function(tbl)
+		EasyChat.SetAddTextTypeHandle("TextInteraction", function(interaction)
 			if isstring(interaction.text) then
 				EasyChat.GUI.RichText:AppendClickableText(interaction.text, interaction.on_click, interaction.on_hover)
 				chathud_append_text(interaction.text)
