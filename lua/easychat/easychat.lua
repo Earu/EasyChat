@@ -1538,9 +1538,11 @@ if CLIENT then
 		local args = {...}
 		for _, arg in pairs(args) do
 			local arg_type = type(arg)
-			if arg_type == "table" and isstring(arg_type.__type) then
-				arg_type = arg_type.__type
+			if arg_type == "table" and isstring(arg.__type) then
+				arg_type = arg.__type
 			end
+
+			print(arg_type)
 
 			local callback = ec_addtext_handles[arg_type]
 			if callback then
