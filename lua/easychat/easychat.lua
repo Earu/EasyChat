@@ -1542,8 +1542,6 @@ if CLIENT then
 				arg_type = arg.__type
 			end
 
-			print(arg_type)
-
 			local callback = ec_addtext_handles[arg_type]
 			if callback then
 				local succ, ret = xpcall(callback, function(err)
