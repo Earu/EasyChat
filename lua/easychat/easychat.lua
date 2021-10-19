@@ -2430,7 +2430,7 @@ if CLIENT then
 				if IsValid(ply) then
 					local info_panel = vgui.Create("AvatarImage")
 					info_panel:SetSize(128, 128)
-					info_panel:SetPos(gui.MouseX(), gui.MouseY() - 132)
+					info_panel:SetPos(gui.MouseX(), gui.MouseY() - (info_panel:GetTall() + 20))
 					info_panel:SetPlayer(ply, 128)
 					info_panel:SetDrawOnTop(true)
 					info_panel.Think = function()
@@ -2454,7 +2454,7 @@ if CLIENT then
 						local info_panel = vgui.Create("DPanel")
 						local mk = ec_markup.Parse(steam_name, nil, true)
 						info_panel:SetSize(mk:GetWide() + 10, mk:GetTall() + 10)
-						info_panel:SetPos(gui.MouseX(), gui.MouseY() - info_panel:GetTall())
+						info_panel:SetPos(gui.MouseX(), gui.MouseY() - (info_panel:GetTall() + 20))
 						info_panel:SetDrawOnTop(true)
 						info_panel.Think = function()
 							if not IsValid(self) or not self:IsHovered() then
