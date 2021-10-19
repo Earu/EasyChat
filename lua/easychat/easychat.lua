@@ -776,6 +776,15 @@ if CLIENT then
 		gui.OpenURL(url)
 	end
 
+	function EasyChat.CreateTextInteraction(text, on_click, on_hover)
+		return {
+			text = text,
+			on_click = on_click,
+			on_hover = on_hover,
+			__type = "TextInteraction"
+		}
+	end
+
 	function EasyChat.CreateFrame()
 		local frame = vgui.Create("DFrame")
 		frame.btnMaxim:Hide()
@@ -1528,7 +1537,12 @@ if CLIENT then
 
 		local args = {...}
 		for _, arg in pairs(args) do
-			local callback = ec_addtext_handles[type(arg)]
+			local arg_type = type(arg)
+			if arg_type == "table" and isstring(arg_type.__type) then
+				arg_type = arg_type.__type
+			end
+
+			local callback = ec_addtext_handles[arg_type]
 			if callback then
 				local succ, ret = xpcall(callback, function(err)
 					ErrorNoHalt(debug.traceback(err))
@@ -1679,6 +1693,17 @@ if CLIENT then
 			end
 
 			return color_white
+		end)
+
+		EasyChat.EasyChat.SetAddTextTypeHandle("TextInteraction", function(tbl)
+			if isstring(interaction.text) then
+				EasyChat.GUI.RichText:AppendClickableText(interaction.text, interaction.on_click, interaction.on_hover)
+				chathud_append_text(interaction.text)
+
+				return interaction.text
+			end
+
+			return ""
 		end)
 
 		EasyChat.SetAddTextTypeHandle("string", function(str) return global_append_text_url(str) end)
