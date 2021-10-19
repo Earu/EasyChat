@@ -1695,7 +1695,7 @@ if CLIENT then
 			return color_white
 		end)
 
-		EasyChat.EasyChat.SetAddTextTypeHandle("TextInteraction", function(tbl)
+		EasyChat.SetAddTextTypeHandle("TextInteraction", function(tbl)
 			if isstring(interaction.text) then
 				EasyChat.GUI.RichText:AppendClickableText(interaction.text, interaction.on_click, interaction.on_hover)
 				chathud_append_text(interaction.text)
