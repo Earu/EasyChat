@@ -86,7 +86,6 @@ if CLIENT then
 
     local INDICATION_DURATION = 5
     local INDICATION_TEXT = " has indicated "
-    local EC_ENABLE = GetConVar("easychat_enable")
     local green_color = Color(100, 230, 100)
     local gray_color = Color(200, 200, 200)
     local white_color = Color(255, 255, 255)
@@ -142,96 +141,86 @@ if CLIENT then
             end)
         end
 
-        if not EC_ENABLE:GetBool() then
-            chat.AddText(ply, green_color, INDICATION_TEXT, gray_color, data.WorldPos and "a position" or util.TableToJSON(data, true))
-            return
+        local text = ("[Object: %s]"):format(category)
+        if data.Name then
+            text = ("[Object: %s, Name: %s]"):format(category, data.Name)
         end
 
-        local panel = EasyChat.GUI and EasyChat.GUI.RichText
-        local chathud = EasyChat.ChatHUD
-        if IsValid(panel) and chathud then
-            local text = ("[Object: %s]"):format(category)
-            if data.Name then
-                text = ("[Object: %s, Name: %s]"):format(category, data.Name)
+        if data.WorldPos then
+            text = "a position"
+        end
+
+        local interaction = EasyChat.CreateTextInteraction(text,  function()
+            if IsValid(ent) then
+                local lp = LocalPlayer()
+                lp:SetEyeAngles((ent:WorldSpaceCenter() - lp:EyePos()):Angle())
             end
 
-            if data.WorldPos then
-                text = "a position"
-            end
+            local frame = EasyChat.CreateFrame()
+            frame:SetTitle(text)
+            frame:SetWide(400)
 
-            chathud:AddText(ply, green_color, INDICATION_TEXT, gray_color, text)
+            data["Indicated By"] = ply
 
-            EasyChat.AddText(panel, ply, green_color, INDICATION_TEXT, gray_color)
-            panel:AppendClickableText(text, function()
-                if IsValid(ent) then
-                    local lp = LocalPlayer()
-                    lp:SetEyeAngles((ent:WorldSpaceCenter() - lp:EyePos()):Angle())
-                end
+            for k, v in pairs(data) do
+                local line = frame:Add("DPanel")
+                line:Dock(TOP)
+                line:SetTall(25)
+                line.Paint = function() end
 
-                local frame = EasyChat.CreateFrame()
-                frame:SetTitle(text)
-                frame:SetWide(400)
+                local lbl_key = line:Add("DLabel")
+                lbl_key:Dock(LEFT)
+                lbl_key:DockMargin(5, 0, 0, 0)
+                lbl_key:SetTextColor(green_color)
+                lbl_key:SetFont("DermaDefault")
+                lbl_key:SetText(tostring(k))
+                lbl_key:SetTall(25)
+                lbl_key:SetWide(100)
 
-                data["Indicated By"] = ply
-
-                for k, v in pairs(data) do
-                    local line = frame:Add("DPanel")
-                    line:Dock(TOP)
-                    line:SetTall(25)
-                    line.Paint = function() end
-
-                    local lbl_key = line:Add("DLabel")
-                    lbl_key:Dock(LEFT)
-                    lbl_key:DockMargin(5, 0, 0, 0)
-                    lbl_key:SetTextColor(green_color)
-                    lbl_key:SetFont("DermaDefault")
-                    lbl_key:SetText(tostring(k))
-                    lbl_key:SetTall(25)
-                    lbl_key:SetWide(100)
-
-                    local lbl_value = line:Add("DLabel")
-                    lbl_value:Dock(LEFT)
-                    lbl_value:SetWrap(true)
-                    lbl_value:SetFont("DermaDefault")
-                    lbl_value:SetText(tostring(v))
-                    lbl_value:SetTall(25)
-                    lbl_value:SetWide(300)
-
-                    if not EasyChat.UseDermaSkin then
-                        lbl_value:SetTextColor(white_color)
-                    end
-                end
-
-                local ok_btn = frame:Add("DButton")
-                ok_btn:Dock(TOP)
-                ok_btn:SetTall(25)
-                ok_btn:SetText("OK")
-                ok_btn.DoClick = function()
-                    frame:Close()
-                end
+                local lbl_value = line:Add("DLabel")
+                lbl_value:Dock(LEFT)
+                lbl_value:SetWrap(true)
+                lbl_value:SetFont("DermaDefault")
+                lbl_value:SetText(tostring(v))
+                lbl_value:SetTall(25)
+                lbl_value:SetWide(300)
 
                 if not EasyChat.UseDermaSkin then
-                    ok_btn:SetTextColor(white_color)
-                    ok_btn.Paint = function(self, w, h)
-                        local prim_color, sec_color = EasyChat.OutlayColor, EasyChat.TabOutlineColor
-                        if self:IsHovered() then
-                            prim_color = Color(prim_color.r + 50, prim_color.g + 50, prim_color.b + 50, prim_color.a + 50)
-                            sec_color = Color(255 - sec_color.r, 255 - sec_color.g, 255 - sec_color.b, 255 - sec_color.a)
-                        end
-
-                        surface.SetDrawColor(prim_color)
-                        surface.DrawRect(0, 0, w, h)
-                        surface.SetDrawColor(sec_color)
-                        surface.DrawOutlinedRect(0, 0, w, h)
-                    end
+                    lbl_value:SetTextColor(white_color)
                 end
+            end
 
-                frame:InvalidateChildren(true)
-                frame:SizeToChildren(true, true)
-                frame:Center()
-                frame:MakePopup()
-            end)
-        end
+            local ok_btn = frame:Add("DButton")
+            ok_btn:Dock(TOP)
+            ok_btn:SetTall(25)
+            ok_btn:SetText("OK")
+            ok_btn.DoClick = function()
+                frame:Close()
+            end
+
+            if not EasyChat.UseDermaSkin then
+                ok_btn:SetTextColor(white_color)
+                ok_btn.Paint = function(self, w, h)
+                    local prim_color, sec_color = EasyChat.OutlayColor, EasyChat.TabOutlineColor
+                    if self:IsHovered() then
+                        prim_color = Color(prim_color.r + 50, prim_color.g + 50, prim_color.b + 50, prim_color.a + 50)
+                        sec_color = Color(255 - sec_color.r, 255 - sec_color.g, 255 - sec_color.b, 255 - sec_color.a)
+                    end
+
+                    surface.SetDrawColor(prim_color)
+                    surface.DrawRect(0, 0, w, h)
+                    surface.SetDrawColor(sec_color)
+                    surface.DrawOutlinedRect(0, 0, w, h)
+                end
+            end
+
+            frame:InvalidateChildren(true)
+            frame:SizeToChildren(true, true)
+            frame:Center()
+            frame:MakePopup()
+        end)
+
+        chat.AddText(ply, green_color, INDICATION_TEXT, gray_color, interaction)
     end)
 
     local function handle_object(obj)

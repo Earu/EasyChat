@@ -777,12 +777,12 @@ if CLIENT then
 	end
 
 	function EasyChat.CreateTextInteraction(text, on_click, on_hover)
-		return {
+		return EC_ENABLE:GetBool() and {
 			text = text,
 			on_click = on_click,
 			on_hover = on_hover,
 			__type = "TextInteraction"
-		}
+		} or text
 	end
 
 	function EasyChat.CreateFrame()
