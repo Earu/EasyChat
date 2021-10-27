@@ -2,11 +2,12 @@
 if not CLIENT then return end
 if surface.GetLuaFonts then return end
 
---gotta catch 'em all or very broken stuff
+--gotta catch "em all or very broken stuff
 local fonts = {}
 local created = {}
 local processed = {}
 local bad_fonts = {}
+local crashing_fonts = {}
 local surface_CreateFont = surface.CreateFont
 local surface_SetFont = surface.SetFont
 
@@ -42,6 +43,9 @@ function surface.CreateFont(font_name, font_data)
 	-- this can error even with native gmod fonts
 	-- possible cause: not enough memory ?
 	local success, result = pcall(surface_CreateFont, font_name, font_data)
+	if not success then
+		crashing_fonts[font_name] = true
+	end
 
 	local font_name_lower = font_name:lower()
 	created[font_name_lower] = false
@@ -67,8 +71,15 @@ local function process_font(font_name)
 	end
 end
 
+local default_font = "DermaDefault"
 function surface.SetFont(font_name)
 	process_font(font_name)
+
+	if system.IsLinux() and crashing_fonts[font_name] then
+		surface_SetFont(default_font)
+		return
+	end
+
 	return surface_SetFont(font_name)
 end
 
