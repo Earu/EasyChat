@@ -3,8 +3,10 @@ local TAG = "EasyChatModuleIndicate"
 if CLIENT then
     local EC_INDICATIONS = CreateConVar("easychat_indications", "1", FCVAR_ARCHIVE, "Allows you to indicate objects in the chat by pressing mouse3 and shift")
     local EC_INDICATIONS_SHOW = CreateConVar("easychat_indications_show", "1", FCVAR_ARCHIVE, "Should we show indications or not")
+    local EC_INDICATIONS_TEAM = CreateConVar("easychat_indications_team", "1", FCVAR_ARCHIVE, "Show your indications only to your team")
     EasyChat.RegisterConvar(EC_INDICATIONS, "Indicates objects when pressing mouse3 and shift")
     EasyChat.RegisterConvar(EC_INDICATIONS_SHOW, "Shows indications from other players")
+    EasyChat.RegisterConvar(EC_INDICATIONS_TEAM, "Show your indications only to your team")
 
     local function categorize_object(obj)
         local t = type(obj)
@@ -409,11 +411,25 @@ if SERVER then
         end
 
         EasyChat.RunOnNextFrame(function()
+            local filter = {}
+            if ply:GetInfoNum("easychat_indications_team") >= 1 then
+                for _, p in ipairs(player.GetHumans()) do
+                    if p:Team() == ply:Team() then
+                        table.insert(filter, p)
+                    end
+                end
+            end
+
             net.Start(TAG)
             net.WriteEntity(ply)
             net.WriteString(category)
             net.WriteTable(data)
-            net.SendPVS(ply:GetPos())
+
+            if #filter == 0 then
+                net.SendPVS(ply:GetPos())
+            else
+                net.Send(filter)
+            end
         end)
     end)
 end
