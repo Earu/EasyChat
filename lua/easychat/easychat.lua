@@ -1027,7 +1027,7 @@ if CLIENT then
 	end
 
 	function EasyChat.UploadToImgur(img_base64, callback)
-		local ply_nick, ply_steamid = LocalPlayer():Nick(), LocalPlayer():SteamID()
+		local ply_nick, ply_steamid = EasyChat.GetProperNick(LocalPlayer()), LocalPlayer():SteamID()
 		local params = {
 			image = img_base64,
 			type = "base64",
