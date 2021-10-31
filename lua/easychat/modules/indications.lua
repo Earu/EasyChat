@@ -412,7 +412,7 @@ if SERVER then
 
         EasyChat.RunOnNextFrame(function()
             local filter = {}
-            if ply:GetInfoNum("easychat_indications_team") >= 1 then
+            if ply:GetInfoNum("easychat_indications_team", 1) >= 1 then
                 for _, p in ipairs(player.GetHumans()) do
                     if p:Team() == ply:Team() then
                         table.insert(filter, p)
