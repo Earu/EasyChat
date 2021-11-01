@@ -7,6 +7,8 @@ local surface_SetMaterial = surface.SetMaterial
 local surface_DrawTexturedRect = surface.DrawTexturedRect
 local surface_DrawRect = surface.DrawRect
 local surface_DrawLine = surface.DrawLine
+local surface_SetAlphaMultiplier = surface.SetAlphaMultiplier
+local surface_GetAlphaMultiplier = surface.GetAlphaMultiplier
 
 local draw_NoTexture = draw.NoTexture
 
@@ -197,6 +199,52 @@ function flash_part:Draw(ctx)
 end
 
 chathud:RegisterPart("flash", flash_part, "%<(flash)%>")
+
+--[[-----------------------------------------------------------------------------
+	Alpha Component
+
+	Alpha modulation.
+]]-------------------------------------------------------------------------------
+local alpha_part = {
+	Alpha = 255,
+	Usage = "<flash> or <flash=alpha>",
+	Examples = {
+		"<flash=155>Going half transparent",
+		"<flash>Going fully transparent",
+	}
+}
+
+function alpha_part:Ctor(expr)
+	local succ, ret = compile_expression(expr)
+	if succ then
+		self.RunExpression = ret
+	end
+
+	return self
+end
+
+function alpha_part:ComputeAlpha()
+	local succ, alpha = pcall(self.RunExpression)
+	self.Alpha = succ and tonumber(alpha) or 255
+end
+
+function alpha_part:PreTextDraw()
+	self:ComputeAlpha()
+	self.PreviousAlpha = surface_GetAlphaMultiplier()
+
+	surface_SetAlphaMultiplier(self.Alpha / 255)
+end
+
+function alpha_part:PostTextDraw()
+	surface_SetAlphaMultiplier(self.PreviousAlpha)
+end
+
+function alpha_part:Draw(ctx)
+	ctx:PushPostTextDraw(self)
+	ctx:PushPreTextDraw(self)
+end
+
+chathud:RegisterPart("a", alpha_part)
 
 --[[-----------------------------------------------------------------------------
 	Horizontal Scan Component
