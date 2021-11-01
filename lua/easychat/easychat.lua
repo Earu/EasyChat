@@ -372,6 +372,7 @@ if CLIENT then
 	local EC_TIMESTAMPS_COLOR = CreateConVar("easychat_timestamps_color", "255 255 255", FCVAR_ARCHIVE, "Color timestamps display in")
 
 	-- chatbox panel
+	local EC_TAGS_IN_CHATBOX = CreateConVar("easychat_tags_in_chatbox", "1", FCVAR_ARCHIVE, "Display tags in the chatbox")
 	local EC_GLOBAL_ON_OPEN = CreateConVar("easychat_global_on_open", "1", FCVAR_ARCHIVE, "Set the chat to always open global chat tab on open")
 	local EC_FONT = CreateConVar("easychat_font", "Roboto", FCVAR_ARCHIVE, "Set the font to use for the chat")
 	local EC_FONT_SIZE = CreateConVar("easychat_font_size", "17", FCVAR_ARCHIVE, "Set the font size for chatbox")
@@ -1134,6 +1135,11 @@ if CLIENT then
 	end
 
 	local function append_text(richtext, text)
+		if not EC_TAGS_IN_CHATBOX:GetBool() and ec_markup then
+			-- expensive but its not a behavior we want to encourage, so too bad :v
+			text = ec_markup.Parse(text):GetText()
+		end
+
 		if richtext.HistoryName then
 			richtext.Log = richtext.Log and richtext.Log .. text or text
 		end
