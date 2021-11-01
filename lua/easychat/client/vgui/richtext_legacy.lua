@@ -34,6 +34,11 @@ function PANEL:Init()
 		local signal_value = last_value
 		local timer_name = "ECLegacyRichTextHoverHack_" .. cur_id
 		timer.Create(timer_name, 0.1, 0, function()
+			if not IsValid(self) then
+				timer.Remove(timer_name)
+				return
+			end
+
 			local children = self:GetChildren()
 			local count = #children
 			if pre_count ~= count then
