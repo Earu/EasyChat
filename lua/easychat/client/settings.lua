@@ -41,6 +41,7 @@ local EC_HUD_TIMESTAMPS = get_cvar("easychat_hud_timestamps")
 local EC_TIMESTAMPS_COLOR = get_cvar("easychat_timestamps_color")
 
 -- chatbox
+local EC_TAGS_IN_CHATBOX = get_cvar("easychat_tags_in_chatbox")
 local EC_USE_DERMASKIN = get_cvar("easychat_use_dermaskin")
 local EC_HISTORY = get_cvar("easychat_history")
 local EC_GLOBAL_ON_OPEN = get_cvar("easychat_global_on_open")
@@ -328,6 +329,7 @@ local function create_default_settings()
 		settings:AddConvarSettingsSet(category_name, {
 			[EC_GLOBAL_ON_OPEN] = "Open in the global tab",
 			[EC_HISTORY] = "Enable history",
+			[EC_TAGS_IN_CHATBOX] = "Shows tags in the chatbox",
 			[EC_IMAGES] = "Display images",
 			[EC_PEEK_COMPLETION] = "Peek at the possible chat completion",
 			[EC_NON_QWERTY] = "Specify whether you have a QWERTY keyboard or not",
