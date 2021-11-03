@@ -101,10 +101,12 @@ if CLIENT then
 
         local ent = data.Entity
         local indicate_pos
+        local is_ent_pos = false
         if IsValid(ent) then
             table.insert(indicated_ents, ent)
             ent.IndicationEndTime = CurTime() + INDICATION_DURATION
             indicate_pos = ent:WorldSpaceCenter()
+            is_ent_pos = true
 
             if ent:IsPlayer() then
                 chat.AddText(ply, green_color, INDICATION_TEXT, ent)
@@ -123,6 +125,10 @@ if CLIENT then
             timer.Simple(INDICATION_DURATION, function() hook.Remove("HUDPaint", hook_name) end)
             hook.Add("HUDPaint", hook_name, function()
                 local screen_pos = indicate_pos:ToScreen()
+                if is_ent_pos and IsValid(ent) then
+                    screen_pos = ent:WorldSpaceCenter():ToScreen()
+                end
+
                 if not screen_pos.visible then return end
 
                 surface.SetTextColor(white_color)
