@@ -742,16 +742,15 @@ if CLIENT then
 	end
 	EasyChat.Close = close_chatbox
 
+	local url_patterns = {
+		"https?://[^%s%\"%>%<]+",
+		"ftp://[^%s%\"%>%<]+",
+		"steam://[^%s%\"%>%<]+",
+		"www%.[^%s%\"]+%.[^%s%\"]+",
+		"STEAM_%d%:%d%:%d+"
+	}
 	function EasyChat.IsURL(str)
-		local patterns = {
-			"https?://[^%s%\"%>%<]+",
-			"ftp://[^%s%\"%>%<]+",
-			"steam://[^%s%\"%>%<]+",
-			"www%.[^%s%\"]+%.[^%s%\"]+",
-			"STEAM_%d%:%d%:%d+"
-		}
-
-		for _, pattern in ipairs(patterns) do
+		for _, pattern in ipairs(url_patterns) do
 			local start_pos, end_pos = str:find(pattern, 1, false)
 			if start_pos then
 				return start_pos, end_pos
@@ -1511,6 +1510,8 @@ if CLIENT then
 			return { ... }
 		end
 
+		safe_hook_run("ECPreAddText", ...)
+
 		local data = {}
 
 		if EC_HUD_CUSTOM:GetBool() then
@@ -1578,6 +1579,8 @@ if CLIENT then
 		if EC_TICK_SOUND:GetBool() then
 			chat.PlaySound()
 		end
+
+		safe_hook_run("ECPostAddText", ...)
 
 		return data
 	end
