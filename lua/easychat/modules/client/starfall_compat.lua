@@ -16,6 +16,7 @@ hook.Add("ECPreAddText", TAG, function()
 end)
 
 hook.Add("ECPostAddText", TAG, function()
+	if not is_starfall() then return end
 	_G.SF.runningOps = previous_ops_state
 end)
 
