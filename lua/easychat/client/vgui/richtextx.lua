@@ -190,6 +190,9 @@ local AVERAGE_AMOUNT_OF_ELEMENTS_PER_LINE = 5
 function PANEL:AppendText(text)
 	text = text:JavascriptSafe()
 
+	-- turns out JavascriptSafe isnt safe, also cant escape ` apparently
+	text = text:gsub("`", "")
+
 	local limit = GetConVar("easychat_modern_text_history_limit"):GetInt() * AVERAGE_AMOUNT_OF_ELEMENTS_PER_LINE
 	local css_color = ("rgb(%d,%d,%d)"):format(self.CurrentColor.r, self.CurrentColor.g, self.CurrentColor.b)
 	local js = (self.ClickableTextValue and [[
