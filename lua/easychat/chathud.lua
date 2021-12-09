@@ -10,22 +10,22 @@ local table_insert = _G.table.insert
 local table_remove = _G.table.remove
 local table_concat = _G.table.concat
 
-local surface_SetDrawColor = _G.surface.SetDrawColor
-local surface_SetTextColor = _G.surface.SetTextColor
-local surface_GetTextSize = _G.surface.GetTextSize
-local surface_SetFont = _G.surface.SetFont
-local surface_SetTextPos = _G.surface.SetTextPos
-local surface_DrawText = _G.surface.DrawText
-local surface_CreateFont = _G.surface.CreateFont
-local surface_GetLuaFonts = _G.surface.GetLuaFonts
-local surface_SetMaterial = _G.surface.SetMaterial
-local surface_DrawTexturedRect = _G.surface.DrawTexturedRect
+local surface_SetDrawColor = CLIENT and _G.surface.SetDrawColor
+local surface_SetTextColor = CLIENT and _G.surface.SetTextColor
+local surface_GetTextSize = CLIENT and _G.surface.GetTextSize
+local surface_SetFont = CLIENT and _G.surface.SetFont
+local surface_SetTextPos = CLIENT and _G.surface.SetTextPos
+local surface_DrawText = CLIENT and _G.surface.DrawText
+local surface_CreateFont = CLIENT and _G.surface.CreateFont
+local surface_GetLuaFonts = CLIENT and _G.surface.GetLuaFonts
+local surface_SetMaterial = CLIENT and _G.surface.SetMaterial
+local surface_DrawTexturedRect = CLIENT and _G.surface.DrawTexturedRect
 
-local draw_GetFontHeight = _G.draw.GetFontHeight
-local draw_NoTexture = _G.draw.NoTexture
+local draw_GetFontHeight = CLIENT and _G.draw.GetFontHeight
+local draw_NoTexture = CLIENT and _G.draw.NoTexture
 
-local gui_mousex = _G.gui.MouseX
-local gui_mousey = _G.gui.MouseY
+local gui_mousex = CLIENT and _G.gui.MouseX
+local gui_mousey = CLIENT and _G.gui.MouseY
 
 --local render_OverrideBlend = _G.render.OverrideBlend
 --local BLEND_ZERO, BLEND_ONE_MINUS_SRC_ALPHA = _G.BLEND_ZERO, _G.BLEND_ONE_MINUS_SRC_ALPHA
@@ -90,81 +90,83 @@ engine_fonts_info["dermadefaultbold"] = {
 }
 
 local chathud = {
+	Parts = {},
+	SpecialPatterns = {},
+	Lines = {},
+	TagPattern = "<(.-)=%[?(.-)%]?>",
+	DefaultColor = Color(255, 255, 255),
+	DefaultFont = "ECHUDDefault",
+	DefaultShadowFont = "ECHUDShadowDefault",
 	FadeTime = 16,
 	FadeTimeEnd = 3,
 	-- default bounds for EasyChat
 	Pos = { X = 0, Y = 0 },
 	Size = { W = 400, H = 0 },
-	Lines = {},
-	Parts = {},
-	SpecialPatterns = {},
-	EmotePriorities = {},
-	TagPattern = "<(.-)=%[?(.-)%]?>",
 	ShouldClean = false,
-	DefaultColor = Color(255, 255, 255),
-	DefaultFont = "ECHUDDefault",
-	DefaultShadowFont = "ECHUDShadowDefault",
+	EmotePriorities = {},
 }
 
 local EC_HUD_TTL = GetConVar("easychat_hud_ttl")
 local EC_HUD_FADELEN = GetConVar("easychat_hud_fadelen")
 local EC_HUD_SMOOTH = GetConVar("easychat_hud_smooth")
 
-chathud.FadeTime = EC_HUD_TTL:GetInt()
-cvars.AddChangeCallback(EC_HUD_TTL:GetName(), function()
+if CLIENT then
 	chathud.FadeTime = EC_HUD_TTL:GetInt()
-end)
+	cvars.AddChangeCallback(EC_HUD_TTL:GetName(), function()
+		chathud.FadeTime = EC_HUD_TTL:GetInt()
+	end)
 
-chathud.FadeTimeEnd = math_clamp(EC_HUD_FADELEN:GetInt(), 0, 5)
-cvars.AddChangeCallback(EC_HUD_FADELEN:GetName(), function()
 	chathud.FadeTimeEnd = math_clamp(EC_HUD_FADELEN:GetInt(), 0, 5)
-end)
+	cvars.AddChangeCallback(EC_HUD_FADELEN:GetName(), function()
+		chathud.FadeTimeEnd = math_clamp(EC_HUD_FADELEN:GetInt(), 0, 5)
+	end)
 
-cvars.AddChangeCallback("easychat_hud_follow", function()
-	chathud:InvalidateLayout()
-end)
+	cvars.AddChangeCallback("easychat_hud_follow", function()
+		chathud:InvalidateLayout()
+	end)
 
-function chathud:ApplyCustomFontSettings()
-	if not file.Exists(CUSTOM_FONT_SETTINGS_PATH, "DATA") then return end
+	function chathud:ApplyCustomFontSettings()
+		if not file.Exists(CUSTOM_FONT_SETTINGS_PATH, "DATA") then return end
 
-	local json = file.Read(CUSTOM_FONT_SETTINGS_PATH, "DATA")
-	local data = util.JSONToTable(json)
-	local shadow_data = table_copy(data)
-	shadow_data.blursize = SHADOW_FONT_BLURSIZE
+		local json = file.Read(CUSTOM_FONT_SETTINGS_PATH, "DATA")
+		local data = util.JSONToTable(json)
+		local shadow_data = table_copy(data)
+		shadow_data.blursize = SHADOW_FONT_BLURSIZE
 
-	surface_CreateFont(self.DefaultFont, data)
-	surface_CreateFont(self.DefaultShadowFont, shadow_data)
+		surface_CreateFont(self.DefaultFont, data)
+		surface_CreateFont(self.DefaultShadowFont, shadow_data)
 
-	-- when this is called early, this function might not exists
-	if self.InvalidateLayout then
-		self:InvalidateLayout()
+		-- when this is called early, this function might not exists
+		if self.InvalidateLayout then
+			self:InvalidateLayout()
+		end
 	end
+
+	function chathud:UpdateFontSize(size)
+		surface_CreateFont(self.DefaultFont, {
+			font = "Roboto",
+			extended = true,
+			size = size,
+			weight = 530,
+			shadow = true,
+			read_speed = 100,
+		})
+
+		surface_CreateFont(self.DefaultShadowFont, {
+			font = "Roboto",
+			extended = true,
+			size = size,
+			weight = 530,
+			shadow = true,
+			blursize = SHADOW_FONT_BLURSIZE,
+			read_speed = 100,
+		})
+
+		self:ApplyCustomFontSettings()
+	end
+
+	chathud:UpdateFontSize(16)
 end
-
-function chathud:UpdateFontSize(size)
-	surface_CreateFont(self.DefaultFont, {
-		font = "Roboto",
-		extended = true,
-		size = size,
-		weight = 530,
-		shadow = true,
-		read_speed = 100,
-	})
-
-	surface_CreateFont(self.DefaultShadowFont, {
-		font = "Roboto",
-		extended = true,
-		size = size,
-		weight = 530,
-		shadow = true,
-		blursize = SHADOW_FONT_BLURSIZE,
-		read_speed = 100,
-	})
-
-	self:ApplyCustomFontSettings()
-end
-
-chathud:UpdateFontSize(16)
 
 -- taken from https://github.com/notcake/glib/blob/master/lua/glib/unicode/utf8.lua#L15
 local function utf8_byte(char, offset)
@@ -304,15 +306,9 @@ function chathud:RegisterPart(name, part, pattern, exception_patterns)
 	end
 
 	new_part.Type = name
+	self.Parts[name] = new_part
 
-	if pattern then
-		self.SpecialPatterns[name] = {
-			Pattern = pattern,
-			ExceptionPatterns = exception_patterns or {}
-		}
-	end
-
-	if not blacklist[name] then
+	if CLIENT and not blacklist[name] then
 		local cvar_name = "easychat_tag_" .. name
 		local cvar = CreateClientConVar(cvar_name, new_part.Enabled and "1" or "0", true, false)
 		new_part.Enabled = cvar:GetBool()
@@ -321,7 +317,12 @@ function chathud:RegisterPart(name, part, pattern, exception_patterns)
 		end)
 	end
 
-	self.Parts[name] = new_part
+	if pattern then
+		self.SpecialPatterns[name] = {
+			Pattern = pattern,
+			ExceptionPatterns = exception_patterns or {}
+		}
+	end
 end
 
 --[[-----------------------------------------------------------------------------
@@ -500,6 +501,11 @@ function text_part:PostLinePush()
 end
 
 function text_part:ComputeSize()
+	if SERVER then
+		self.Size = { W = 0, H = 0 }
+		return
+	end
+
 	surface_SetFont(self.Font)
 	local w, h = surface_GetTextSize(self.Content)
 	self.Size = { W = w, H = h }
@@ -700,7 +706,7 @@ function emote_part:Ctor(str)
 		self.Height = size
 		self.HasSetHeight = true
 	else
-		self.Height = draw_GetFontHeight(self.HUD.DefaultFont)
+		self.Height = SERVER and 32 or draw_GetFontHeight(self.HUD.DefaultFont)
 	end
 
 	if requested_provider then
@@ -1431,7 +1437,7 @@ function chathud:InsertColorChange(r, g, b)
 end
 
 -- examples & help
-do
+if CLIENT then
 	concommand.Add("easychat_hud_examples", function()
 		local frame = EasyChat.CreateFrame()
 		frame:SetSize(640, 480)

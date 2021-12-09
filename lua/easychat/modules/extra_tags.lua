@@ -1,19 +1,19 @@
 local chathud = EasyChat.ChatHUD
-local compile_expression = EasyChat.Expressions.Compile
+local compile_expression = CLIENT and EasyChat.Expressions.Compile and function() return false end
 local pcall = _G.pcall
 
-local surface_SetDrawColor = surface.SetDrawColor
-local surface_SetMaterial = surface.SetMaterial
-local surface_DrawTexturedRect = surface.DrawTexturedRect
-local surface_DrawRect = surface.DrawRect
-local surface_DrawLine = surface.DrawLine
-local surface_SetAlphaMultiplier = surface.SetAlphaMultiplier
-local surface_GetAlphaMultiplier = surface.GetAlphaMultiplier
+local surface_SetDrawColor = CLIENT and surface.SetDrawColor
+local surface_SetMaterial = CLIENT and surface.SetMaterial
+local surface_DrawTexturedRect = CLIENT and surface.DrawTexturedRect
+local surface_DrawRect = CLIENT and surface.DrawRect
+local surface_DrawLine = CLIENT and surface.DrawLine
+local surface_SetAlphaMultiplier = CLIENT and surface.SetAlphaMultiplier
+local surface_GetAlphaMultiplier = CLIENT and surface.GetAlphaMultiplier
 
-local draw_NoTexture = draw.NoTexture
+local draw_NoTexture = CLIENT and draw.NoTexture
 
-local cam_PushModelMatrix = cam.PushModelMatrix
-local cam_PopModelMatrix = cam.PopModelMatrix
+local cam_PushModelMatrix = CLIENT and cam.PushModelMatrix
+local cam_PopModelMatrix = CLIENT and cam.PopModelMatrix
 
 local math_sin = math.sin
 local math_abs = math.abs
