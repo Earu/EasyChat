@@ -36,7 +36,9 @@ function ec_markup.AdvancedParse(str, data)
 	local old_CreateComponent = obj.CreateComponent
 	function obj:CreateComponent(name, ...)
 		local component = old_CreateComponent(self, name, ...)
-		if smoothed_parts[name] and component then
+		if not component then return end
+
+		if smoothed_parts[name] then
 			-- disable smoothing of some parts
 			function component:ComputePos()
 				self.RealPos.Y = self.Pos.Y
@@ -226,6 +228,10 @@ function ec_markup.CachePlayer(id, ply, callback)
 	sub_cache[ply] = { Markup = mk, Nick = nick, TeamColor = team_color }
 
 	return mk
+end
+
+function ec_markup.GetText(str)
+	return ec_markup.Parse(str, nil, true):GetText()
 end
 
 _G.ECMarkup = ec_markup.Parse

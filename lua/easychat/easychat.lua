@@ -269,6 +269,10 @@ if SERVER then
 	end
 
 	function EasyChat.Init()
+		EasyChat.Transliterator = include("easychat/unicode_transliterator.lua")
+		EasyChat.ChatHUD = include("easychat/chathud.lua")
+		include("easychat/markup.lua")
+
 		safe_hook_run("ECPreLoadModules")
 		load_modules()
 		safe_hook_run("ECPostLoadModules")
@@ -517,15 +521,15 @@ if CLIENT then
 	EasyChat.Mode = 0
 	EasyChat.Modes = { [0] = default_chat_mode }
 	EasyChat.Expressions = include("easychat/client/expressions.lua")
-	EasyChat.Transliterator = include("easychat/client/unicode_transliterator.lua")
+	EasyChat.Transliterator = include("easychat/unicode_transliterator.lua")
 	EasyChat.Translator = include("easychat/client/translator.lua")
-	EasyChat.ChatHUD = include("easychat/client/chathud.lua")
+	EasyChat.ChatHUD = include("easychat/chathud.lua")
 	EasyChat.MacroProcessor = include("easychat/client/macro_processor.lua")
 	EasyChat.ModeCount = 0
 
 	include("easychat/client/blur_panel.lua")
 	include("easychat/client/settings.lua")
-	include("easychat/client/markup.lua")
+	include("easychat/markup.lua")
 
 	local ec_tabs = {}
 	local ec_convars = {}
@@ -1145,7 +1149,7 @@ if CLIENT then
 	local function append_text(richtext, text)
 		if not EC_TAGS_IN_CHATBOX:GetBool() and ec_markup then
 			-- expensive but its not a behavior we want to encourage, so too bad :v
-			text = ec_markup.Parse(text):GetText()
+			text = ec_markup.GetText(text)
 		end
 
 		if richtext.HistoryName then
@@ -1679,14 +1683,14 @@ if CLIENT then
 		EasyChat.Mode = 0
 		EasyChat.Modes = { [0] = default_chat_mode }
 		EasyChat.Expressions = include("easychat/client/expressions.lua")
-		EasyChat.Transliterator = include("easychat/client/unicode_transliterator.lua")
+		EasyChat.Transliterator = include("easychat/unicode_transliterator.lua")
 		EasyChat.Translator = include("easychat/client/translator.lua")
-		EasyChat.ChatHUD = include("easychat/client/chathud.lua")
+		EasyChat.ChatHUD = include("easychat/chathud.lua")
 		EasyChat.MacroProcessor = include("easychat/client/macro_processor.lua")
 		EasyChat.ModeCount = 0
 
 		include("easychat/client/settings.lua")
-		include("easychat/client/markup.lua")
+		include("easychat/markup.lua")
 
 		ec_convars = {}
 		ec_addtext_handles = {}
@@ -2965,7 +2969,7 @@ if CLIENT then
 			if EasyChat.Config.AllowTagsInMessages then
 				table.insert(msg_components, ": " .. msg)
 			else
-				local stripped_msg = ec_markup and ec_markup.Parse(msg):GetText() or msg
+				local stripped_msg = ec_markup and ec_markup.GetText(msg) or msg
 				table.insert(msg_components, ": " .. stripped_msg)
 			end
 
