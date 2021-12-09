@@ -171,7 +171,7 @@ if CLIENT then
 		end
 
 		local ply_col = team.GetColor(team_id)
-		if EasyChat.IsStringEmpty(name) then
+		if EasyChat.IsStringEmpty(name, true) then
 			name = "[NO NAME]"
 			ply_col = UNKNOWN_COLOR
 		else
@@ -209,7 +209,7 @@ if CLIENT then
 
 		if not friend_ids[network_id] then return end
 		if EasyChat.BlockedPlayers[network_id] then return end -- friends can block each others on steam
-		if EasyChat.IsStringEmpty(name) then name = "[NO NAME]" end
+		if EasyChat.IsStringEmpty(name, true) then name = "[NO NAME]" end
 		chat.AddText(green_color, " ● Friend joining ", white_color, name, gray_color, " (" .. network_id .. ")")
 	end)
 end

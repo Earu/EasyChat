@@ -101,8 +101,16 @@ local function safe_hook_run(hook_name, ...)
 end
 EasyChat.SafeHookRun = safe_hook_run
 
-function EasyChat.IsStringEmpty(str)
-	return #EasyChat.ExtendedStringTrim(str, true) == 0
+function EasyChat.IsStringEmpty(str, is_nick)
+	local sanitized_str = EasyChat.ExtendedStringTrim(str, true)
+	if #sanitized_str == 0 then return true end
+
+	-- if its a nick dont allow under 2 chars
+	if is_nick and utf8.len(sanitized_str) < 2 then
+		return true
+	end
+
+	return false
 end
 
 local load_modules, get_modules = include("easychat/autoloader.lua")
@@ -1460,7 +1468,7 @@ if CLIENT then
 						ply_col = EasyChat.PastelizeNick(nick)
 					end
 
-					local empty_nick = EasyChat.IsStringEmpty(nick)
+					local empty_nick = EasyChat.IsStringEmpty(nick, true)
 					if empty_nick then
 						ply_col = UNKNOWN_COLOR
 					end
@@ -1815,7 +1823,7 @@ if CLIENT then
 				ply_col = EasyChat.PastelizeNick(stripped_ply_nick)
 			end
 
-			local empty_nick = EasyChat.IsStringEmpty(stripped_ply_nick)
+			local empty_nick = EasyChat.IsStringEmpty(stripped_ply_nick, true)
 			if empty_nick then
 				ply_col = UNKNOWN_COLOR
 			end
