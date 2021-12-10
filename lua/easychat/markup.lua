@@ -133,6 +133,8 @@ function ec_markup.AdvancedParse(str, data)
 
 	local old_Draw = obj.Draw
 	function obj:Draw(x, y)
+		if SERVER then return end
+
 		if x and y then
 			self:SetPos(x, y)
 		end
@@ -230,8 +232,8 @@ function ec_markup.CachePlayer(id, ply, callback)
 	return mk
 end
 
-function ec_markup.GetText(str)
-	return ec_markup.Parse(str, nil, true):GetText()
+function ec_markup.GetText(str, is_nick)
+	return ec_markup.Parse(str, nil, is_nick):GetText()
 end
 
 _G.ECMarkup = ec_markup.Parse
