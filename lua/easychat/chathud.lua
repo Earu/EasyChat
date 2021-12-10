@@ -90,20 +90,20 @@ engine_fonts_info["dermadefaultbold"] = {
 }
 
 local chathud = {
-	Parts = {},
-	SpecialPatterns = {},
-	Lines = {},
-	TagPattern = "<(.-)=%[?(.-)%]?>",
-	DefaultColor = Color(255, 255, 255),
-	DefaultFont = "ECHUDDefault",
-	DefaultShadowFont = "ECHUDShadowDefault",
 	FadeTime = 16,
 	FadeTimeEnd = 3,
 	-- default bounds for EasyChat
 	Pos = { X = 0, Y = 0 },
 	Size = { W = 400, H = 0 },
-	ShouldClean = false,
+	Lines = {},
+	Parts = {},
+	SpecialPatterns = {},
 	EmotePriorities = {},
+	TagPattern = "<(.-)=%[?(.-)%]?>",
+	ShouldClean = false,
+	DefaultColor = Color(255, 255, 255),
+	DefaultFont = "ECHUDDefault",
+	DefaultShadowFont = "ECHUDShadowDefault",
 }
 
 local EC_HUD_TTL = GetConVar("easychat_hud_ttl")
@@ -502,7 +502,7 @@ end
 
 function text_part:ComputeSize()
 	if SERVER then
-		self.Size = { W = 0, H = 0 }
+		self.Size = { W = 16 * #self.Content, H = 16 }
 		return
 	end
 
@@ -706,7 +706,7 @@ function emote_part:Ctor(str)
 		self.Height = size
 		self.HasSetHeight = true
 	else
-		self.Height = SERVER and 32 or draw_GetFontHeight(self.HUD.DefaultFont)
+		self.Height = SERVER and 16 or draw_GetFontHeight(self.HUD.DefaultFont)
 	end
 
 	if requested_provider then
