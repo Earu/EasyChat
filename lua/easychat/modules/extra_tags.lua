@@ -1,5 +1,5 @@
 local chathud = EasyChat.ChatHUD
-local compile_expression = CLIENT and EasyChat.Expressions.Compile and function() return false end
+local compile_expression = CLIENT and EasyChat.Expressions.Compile or function() return false end
 local pcall = _G.pcall
 
 local surface_SetDrawColor = CLIENT and surface.SetDrawColor
