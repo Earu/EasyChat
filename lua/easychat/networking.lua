@@ -36,7 +36,7 @@ if SERVER then
 		EasyChat.PlayerAddText(ply, COLOR_RED, "[WARN] " ..  msg)
 	end
 
-	function print_chat_msg(ply, msg, is_team, is_dead)
+	local function print_chat_msg(ply, msg, is_team, is_dead)
 		local print_args = {}
 
 		table.insert(print_args, COLOR_PRINT_CHAT_TIME)
