@@ -614,10 +614,20 @@ function text_part:Draw(ctx)
 	ctx:CallPostTextDrawFunctions(x, y, self.Size.W, self.Size.H)
 end
 
-function text_part:IsTextWider(text, width)
-	surface_SetFont(self.Font)
-	local w, _ = surface_GetTextSize(text)
-	return w >= width
+if CLIENT then
+	function text_part:IsTextWider(text, width)
+		surface_SetFont(self.Font)
+		local w, _ = surface_GetTextSize(text)
+		return w >= width
+	end
+end
+
+-- assume we're using the default font on server
+if SERVER then
+	function text_part:IsTextWider(text, width)
+		local w, _ = #text * 16
+		return w >= width
+	end
 end
 
 local hard_break_treshold = 10
