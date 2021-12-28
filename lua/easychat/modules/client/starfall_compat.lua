@@ -13,6 +13,7 @@ local previous_ops_state = false
 hook.Add("ECPreAddText", TAG, function()
 	if not is_starfall() then return end
 	previous_ops_state = _G.SF.runningOps
+	_G.SF.runningOps = false
 end)
 
 hook.Add("ECPostAddText", TAG, function()
