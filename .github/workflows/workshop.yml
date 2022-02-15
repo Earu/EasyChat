@@ -27,13 +27,13 @@ jobs:
  # Creates a GMA and publishes it to the Steam Workshop
   workshop-publish:
     needs: linter
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
       - name: Publish to Steam Workshop
-        uses: Earu/GSW-action@V3.0.2
+        uses: Earu/GSW-action@V3.0.3
         with:
           account-name: ${{secrets.STEAM_NAME}}
           account-password: ${{secrets.STEAM_PASSWORD}}
