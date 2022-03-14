@@ -208,6 +208,7 @@ chathud:RegisterPart("flash", flash_part, "%<(flash)%>")
 local alpha_part = {
 	Alpha = 255,
 	Usage = "<flash> or <flash=alpha>",
+	OkInNicks = false,
 	Examples = {
 		"<flash=155>Going half transparent",
 		"<flash>Going fully transparent",
