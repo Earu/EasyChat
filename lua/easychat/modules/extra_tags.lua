@@ -505,6 +505,12 @@ function texture_part:Ctor(str)
 
 	local path = texture_components[1]:Trim()
 	local mat = Material(path, path:EndsWith(".png") and "nocull noclamp" or nil)
+	if not mat then
+		self.Invalid = true
+		self.TextureSize = math.Clamp(tonumber(texture_components[2]) or draw.GetFontHeight(self.HUD.DefaultFont), 16, 64)
+		return self
+	end
+
 	local shader = mat:GetShader()
 	if shader == "VertexLitGeneric" or shader == "Cable" then
 		local tex_path = mat:GetString("$basetexture")
