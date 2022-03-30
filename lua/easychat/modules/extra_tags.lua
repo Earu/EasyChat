@@ -504,6 +504,8 @@ function texture_part:Ctor(str)
 	local texture_components = str:Split(",")
 
 	local path = texture_components[1]:Trim()
+	if path:lower():match("^debug%/") then path = "" end -- invalidate debug textures, crashy
+
 	local mat = Material(path, path:EndsWith(".png") and "nocull noclamp" or nil)
 	if not mat then
 		self.Invalid = true
