@@ -581,7 +581,7 @@ local function create_default_settings()
 			end
 		end
 
-		local setting_manage_tabs = settings:AddSetting(category_name, "action", "Manage Tabs")
+		local setting_manage_tabs = settings:AddSetting(category_name, "action", "(ADMIN) Manage Tabs")
 		setting_manage_tabs:SetImage("icon16/shield.png")
 		setting_manage_tabs.DoClick = function()
 			local frame = EasyChat.CreateFrame()
@@ -687,8 +687,29 @@ local function create_default_settings()
 		local category_name = "Chat HUD"
 		settings:AddCategory(category_name)
 
-		local setting_tags_names = settings:AddSetting(category_name, "boolean", "Allow tags in names")
-		local setting_tags_msgs = settings:AddSetting(category_name, "boolean", "Allow tags in messages")
+		local function create_admin_shield_icon(src_panel)
+			local icon = vgui.Create("DButton", src_panel:GetParent())
+			icon:SetImage("icon16/shield.png")
+			icon:SetSize(20, 20)
+			icon.Paint = function() end
+
+			icon.Think = function(self)
+				if not IsValid(src_panel) then return end
+				local x, y = src_panel:GetPos()
+				surface.SetFont(src_panel.Label:GetFont() or "DermaDefault")
+				local w, _ = surface.GetTextSize(src_panel.Label:GetText() .. (" "):rep(4))
+
+				self:SetPos(x + w + 5, y)
+			end
+
+			return icon
+		end
+
+		local setting_tags_names = settings:AddSetting(category_name, "boolean", "(ADMIN) Allow tags in names")
+		create_admin_shield_icon(setting_tags_names)
+
+		local setting_tags_msgs = settings:AddSetting(category_name, "boolean", "(ADMIN) Allow tags in messages")
+		create_admin_shield_icon(setting_tags_msgs)
 
 		setting_tags_names:SetChecked(EasyChat.Config.AllowTagsInNames)
 		setting_tags_msgs:SetChecked(EasyChat.Config.AllowTagsInMessages)
@@ -991,17 +1012,17 @@ local function create_default_settings()
 
 		build_usergroup_list()
 
-		local setting_add_usergroup = settings:AddSetting(category_name, "action", "Setup New Rank")
+		local setting_add_usergroup = settings:AddSetting(category_name, "action", "(ADMIN) Setup New Rank")
 		setting_add_usergroup:SetImage("icon16/shield.png")
 		setting_add_usergroup.DoClick = function()
 			setup_rank()
 		end
 
-		local setting_modify_usergroup = settings:AddSetting(category_name, "action", "Modify Rank")
+		local setting_modify_usergroup = settings:AddSetting(category_name, "action", "(ADMIN) Modify Rank")
 		setting_modify_usergroup:SetImage("icon16/shield.png")
 		setting_modify_usergroup.DoClick = modify_rank
 
-		local setting_del_usergroup = settings:AddSetting(category_name, "action", "Delete Rank")
+		local setting_del_usergroup = settings:AddSetting(category_name, "action", "(ADMIN) Delete Rank")
 		setting_del_usergroup:SetImage("icon16/shield.png")
 		setting_del_usergroup.DoClick = delete_rank
 
