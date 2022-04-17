@@ -143,6 +143,49 @@ local function create_default_settings()
 			build_blocked_players_list()
 		end
 
+		local setting_blocked_strings = settings:AddSetting(category_name, "list", "Blocked Words")
+		local blocked_strings_list = setting_blocked_strings.List
+		blocked_strings_list:SetMultiSelect(true)
+		blocked_strings_list:AddColumn("Id")
+		blocked_strings_list:AddColumn("Content")
+		blocked_strings_list:AddColumn("Pattern")
+
+		local function build_blocked_strings_list()
+			blocked_strings_list:Clear()
+			for i = 1, #EasyChat.BlockedStrings do
+				local blocked_str = EasyChat.BlockedStrings[i]
+				blocked_strings_list:AddLine(tostring(i), blocked_str.Content, tostring(blocked_str.IsPattern))
+			end
+		end
+
+		build_blocked_strings_list()
+
+		local setting_block_string = settings:AddSetting(category_name, "action", "Block Word")
+		setting_block_string.DoClick = function()
+			local frame
+			frame = EasyChat.AskForInput("Block a word", function(str)
+				EasyChat.BlockString(str, frame.IsPattern:GetChecked())
+				build_blocked_strings_list()
+			end, false)
+
+			frame:SetTall(125)
+			frame.IsPattern = frame:Add("DCheckBoxLabel")
+			frame.IsPattern:SetText("Pattern")
+			frame.IsPattern:Dock(FILL)
+		end
+
+		local setting_unblock_string = settings:AddSetting(category_name, "action", "Unblock Word")
+		setting_unblock_string.DoClick = function()
+			local lines = blocked_strings_list:GetSelected()
+			for _, line in pairs(lines) do
+				local id = tonumber(line:GetColumnText(1))
+				if not id then continue end
+				EasyChat.UnblockString(id)
+			end
+
+			build_blocked_strings_list()
+		end
+
 		settings:AddSpacer(category_name)
 
 		local setting_secondary_mode = settings:AddConvarSetting(category_name, "string", EC_SECONDARY, "Secondary Message Mode")
