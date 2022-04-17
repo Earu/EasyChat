@@ -283,6 +283,7 @@ end
 
 if CLIENT then
 	local BLOCKED_PLAYERS_PATH = "easychat/blocked_players.json"
+	local BLOCKED_STRINGS_PATH = "easychat/BLOCKED_STRINGS.json"
 
 	-- translation
 	local EC_TRANSLATE_INC_MSG = CreateConVar("easychat_translate_inc_msg", "0", FCVAR_ARCHIVE, "Translates incoming chat messages")
@@ -302,6 +303,48 @@ if CLIENT then
 		return false
 	end
 
+	local BLOCKED_STRINGS = file.Read(BLOCKED_STRINGS_PATH, "DATA") or ""
+	EasyChat.BlockedStrings = util.JSONToTable(BLOCKED_STRINGS) or {}
+
+	function EasyChat.BlockString(word, is_pattern)
+		table.insert(EasyChat.BlockedStrings, {
+			Content = word,
+			IsPattern = is_pattern or false
+		})
+
+		file.Write(BLOCKED_STRINGS_PATH, util.TableToJSON(EasyChat.BlockedStrings))
+	end
+
+	function EasyChat.UnblockString(id)
+		table.remove(EasyChat.BlockedStrings, id)
+		file.Write(BLOCKED_STRINGS_PATH, util.TableToJSON(EasyChat.BlockedStrings))
+	end
+
+	function EasyChat.FilterString(str)
+		local original_str = str
+		local _, original_count = str:gsub("%*", "*")
+
+		str = util.FilterText(ec_markup.GetText(str)) -- respect the Steam filter settings
+
+		for _, blocked_str in ipairs(EasyChat.BlockedStrings) do
+			local content = blocked_str.Content
+			if not blocked_str.IsPattern then
+				content = blocked_str.Content:PatternSafe()
+			end
+
+			str = str:gsub(content, function(match)
+				return ("*"):rep(#match)
+			end)
+		end
+
+		local _, final_count = str:gsub("%*", "*")
+		if final_count ~= original_count then
+			return str
+		end
+
+		return original_str
+	end
+
 	function EasyChat.ReceiveGlobalMessage(ply, msg, is_dead, is_team, is_local)
 		if EasyChat.IsBlockedPlayer(ply) then return end
 
@@ -312,6 +355,8 @@ if CLIENT then
 
 		local only_local = GetConVar("easychat_only_local")
 		if only_local and only_local:GetBool() and not is_local then return end
+
+		msg = EasyChat.FilterString(msg)
 
 		local source_lang, target_lang =
 			EC_TRANSLATE_INC_SRC_LANG:GetString(),
