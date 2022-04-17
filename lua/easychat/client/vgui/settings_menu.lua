@@ -422,7 +422,7 @@ function SETTINGS:AddCategory(category_name, icon)
 	if not EasyChat.UseDermaSkin then
 		panel.Paint = function() end
 
-		local scrollbar = panel:GetVBar()
+		--[[local scrollbar = panel:GetVBar()
 		scrollbar:SetHideButtons(true)
 		scrollbar.Paint = function(self, w, h)
 			surface.SetDrawColor(EasyChat.OutlayColor)
@@ -433,7 +433,7 @@ function SETTINGS:AddCategory(category_name, icon)
 			local outlay_col = EasyChat.OutlayColor
 			surface.SetDrawColor(outlay_col.r, outlay_col.g, outlay_col.b, 150)
 			surface.DrawRect(0, 0, w, h)
-		end
+		end]]--
 	end
 
 	local new_category = self.Categories:AddSheet(category_name, panel)
