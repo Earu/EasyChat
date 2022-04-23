@@ -322,7 +322,6 @@ if CLIENT then
 
 	function EasyChat.FilterString(str)
 		local original_str = str
-		local _, original_count = str:gsub("%*", "*")
 
 		str = util.FilterText(ec_markup.GetText(str)) -- respect the Steam filter settings
 
@@ -337,8 +336,7 @@ if CLIENT then
 			end)
 		end
 
-		local _, final_count = str:gsub("%*", "*")
-		if final_count ~= original_count then
+		if original_str ~= str then
 			return str
 		end
 
