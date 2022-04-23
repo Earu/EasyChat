@@ -322,8 +322,9 @@ if CLIENT then
 
 	function EasyChat.FilterString(str)
 		local original_str = str
+		local base_str = ec_markup.GetText(str)
 
-		str = util.FilterText(ec_markup.GetText(str)) -- respect the Steam filter settings
+		str = util.FilterText(base_str) -- respect the Steam filter settings
 
 		for _, blocked_str in ipairs(EasyChat.BlockedStrings) do
 			local content = blocked_str.Content
@@ -336,7 +337,7 @@ if CLIENT then
 			end)
 		end
 
-		if original_str ~= str then
+		if base_str ~= str then
 			return str
 		end
 
