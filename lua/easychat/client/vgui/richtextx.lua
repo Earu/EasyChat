@@ -55,6 +55,15 @@ function PANEL:Init()
 					width: 100%;
 					height: 95%;
 				}
+
+				img {
+					filter: blur(20px);
+					overflow: hidden;
+				}
+
+				img:hover {
+					filter: none;
+				}
 			</style>
 			<pre id="main"></pre>
 		</body>
@@ -228,16 +237,22 @@ function PANEL:AppendImageURL(url)
 
 	local limit = GetConVar("easychat_modern_text_history_limit"):GetInt() * AVERAGE_AMOUNT_OF_ELEMENTS_PER_LINE
 	self:QueueJavascript([[
+		imgContainer = document.createElement("div");
+		imgContainer.style.overflow = "hidden";
+		imgContainer.style.display = "inline-block";
+
 		img = document.createElement("img");
 		img.onclick = () => RichTextX.OnClick(`]] .. url .. [[`);
 		img.style.cursor = "pointer";
 		img.src = `]] .. url .. [[`;
 		img.style.maxWidth = `80%`;
 		img.style.maxHeight = `300px`;
+		img.onhover = () =>
 
 		isAtBottom = atBottom();
 		RICHTEXT.appendChild(document.createElement("br"));
-		RICHTEXT.appendChild(img);
+		imgContainer.appendChild(img);
+		RICHTEXT.appendChild(imgContainer);
 		RICHTEXT.appendChild(document.createElement("br"));
 
 		if (]] .. limit .. [[> 0 && ]] .. limit .. [[ <= RICHTEXT.childElementCount && RICHTEXT.children[0]) {
