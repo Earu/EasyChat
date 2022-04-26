@@ -903,6 +903,7 @@ local image_part = {
 	OkInNicks = false,
 	ImgWidth = MAX_IMAGE_WIDTH,
 	ImgHeight = 0,
+	Enabled = false, -- disable embedding by default
 }
 
 function image_part:Ctor(url)
