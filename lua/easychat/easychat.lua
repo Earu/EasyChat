@@ -398,6 +398,7 @@ if CLIENT then
 	local EC_FORCE_ALLOW_CEF = CreateConVar("easychat_force_allow_cef", "0", FCVAR_ARCHIVE, "Allow usage of CEF features on linux systems")
 	local _ = CreateConVar("easychat_modern_text_history_limit", "-1", FCVAR_ARCHIVE, "Limits how many messages are shown in the modern chat output")
 	local _ = CreateConVar("easychat_non_qwerty", "0", FCVAR_ARCHIVE, "Lets you tell EasyChat that you keyboard layout is not qwerty")
+	local _ = CreateConVar("easychat_blur_images", "1", FCVAR_ARCHIVE, "Blur images in the chatbox")
 
 	-- chathud
 	local _ = CreateConVar("easychat_hud_smooth", "1", FCVAR_ARCHIVE, "Enables chat smoothing")
