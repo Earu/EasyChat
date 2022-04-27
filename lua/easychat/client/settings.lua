@@ -52,6 +52,7 @@ local EC_LEGACY_ENTRY = get_cvar("easychat_legacy_entry")
 local EC_LEGACY_TEXT = get_cvar("easychat_legacy_text")
 local EC_MODERN_TEXT_HISTORY_LIMIT = get_cvar("easychat_modern_text_history_limit")
 local EC_NON_QWERTY = get_cvar("easychat_non_qwerty")
+local EC_BLUR_IMAGES = get_cvar("easychat_blur_images")
 
 -- chathud
 local EC_HUD_FOLLOW = get_cvar("easychat_hud_follow")
@@ -376,6 +377,7 @@ local function create_default_settings()
 			[EC_IMAGES] = "Display images",
 			[EC_PEEK_COMPLETION] = "Peek at the possible chat completion",
 			[EC_NON_QWERTY] = "Specify whether you have a QWERTY keyboard or not",
+			[EC_BLUR_IMAGES] = "Blur images in the chatbox",
 		})
 
 		settings:AddSpacer(category_name)
