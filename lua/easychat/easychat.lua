@@ -399,6 +399,7 @@ if CLIENT then
 	local _ = CreateConVar("easychat_modern_text_history_limit", "-1", FCVAR_ARCHIVE, "Limits how many messages are shown in the modern chat output")
 	local _ = CreateConVar("easychat_non_qwerty", "0", FCVAR_ARCHIVE, "Lets you tell EasyChat that you keyboard layout is not qwerty")
 	local _ = CreateConVar("easychat_blur_images", "1", FCVAR_ARCHIVE, "Blur images in the chatbox")
+	local _ = CreateConVar("easychat_background_blur", "1", FCVAR_ARCHIVE, "Blurs the background of the chatbox and its windows")
 
 	-- chathud
 	local _ = CreateConVar("easychat_hud_smooth", "1", FCVAR_ARCHIVE, "Enables chat smoothing")
