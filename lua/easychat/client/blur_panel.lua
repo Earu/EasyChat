@@ -7,8 +7,15 @@ local render_UpdateScreenEffectTexture = _G.render.UpdateScreenEffectTexture
 
 local ScrW, ScrH = _G.ScrW, _G.ScrH
 
+local BLUR_CVAR = GetConVar("easychat_background_blur")
 local blur = Material("pp/blurscreen")
 local function blur_rect(x, y, w, h, layers, quality)
+	if not BLUR_CVAR then
+		BLUR_CVAR = GetConVar("easychat_background_blur")
+	end
+
+	if not BLUR_CVAR:GetBool() then return end
+
 	surface_SetMaterial(blur)
 	surface_SetDrawColor(255, 255, 255)
 

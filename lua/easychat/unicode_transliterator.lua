@@ -22,26 +22,43 @@ if file.Exists(LOOKUP_PATH, "DATA") then
 	local json = file.Read(LOOKUP_PATH, "DATA")
 	load_lookup(json)
 else
-	http.Fetch(LOOKUP_URL, function(json, size, _, code)
-		if code ~= 200 then
-			fail("Could not fetch transliteration lookup: " .. ("HTTP CODE %d"):format(code))
-			return
-		end
+	-- ISteamHTTP is sometimes not available on initialize, thanks Garry
+	local function fetch_lookup(retries)
+		retries = retries or 0
 
-		if size == 0 then
-			fail("Transliteration lookup is empty?!")
-			return
-		end
+		local success, err = pcall(http.Fetch, LOOKUP_URL, function(json, size, _, code)
+			if code ~= 200 then
+				fail("Could not fetch transliteration lookup: " .. ("HTTP CODE %d"):format(code))
+				return
+			end
 
-		if not file.Exists("easychat", "DATA") then
-			file.CreateDir("easychat")
-		end
+			if size == 0 then
+				fail("Transliteration lookup is empty?!")
+				return
+			end
 
-		file.Write(LOOKUP_PATH, json)
-		load_lookup(json)
-	end, function(err)
-		fail("Could not fetch transliteration lookup: " .. err)
-	end)
+			if not file.Exists("easychat", "DATA") then
+				file.CreateDir("easychat")
+			end
+
+			file.Write(LOOKUP_PATH, json)
+			load_lookup(json)
+		end, function(err)
+			fail("Could not fetch transliteration lookup: " .. err)
+			timer.Simple(retries * 5, function()
+				fetch_lookup(retries + 1)
+			end)
+		end)
+
+		if not success then
+			fail("Could not fetch transliteration lookup: " .. err)
+			timer.Simple(retries * 5, function()
+				fetch_lookup(retries + 1)
+			end)
+		end
+	end
+
+	fetch_lookup()
 end
 
 function transliterator:IsRenderable(input)
