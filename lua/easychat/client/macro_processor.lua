@@ -74,6 +74,9 @@ function macro_processor:ProcessMacro(macro, str)
 	local str_chunk = str:sub(previous_end_pos)
 	new_str = new_str .. self:ProcessPerCharacter(macro.Value, str_chunk)
 
+	local ret = EasyChat.SafeHookRun("ECOnProcessMacro", macro, str, new_str)
+	if isstring(ret) then return ret end
+
 	return new_str
 end
 
