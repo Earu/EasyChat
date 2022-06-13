@@ -49,7 +49,11 @@ function macro_processor:ProcessMacro(macro, str)
 	local previous_end_pos = 1
 	local start_pos, _, other_macro_name = str:find(self.Pattern, 1, false)
 	if not start_pos then -- no need to waste time on non-existent things
-		return self:ProcessPerCharacter(macro.Value, str)
+		local new_str = self:ProcessPerCharacter(macro.Value, str)
+		local ret = EasyChat.SafeHookRun("ECOnProcessMacro", macro, str, new_str)
+		if isstring(ret) then return ret end
+
+		return new_str
 	end
 
 	local new_str = ""
