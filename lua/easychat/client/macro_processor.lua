@@ -49,11 +49,7 @@ function macro_processor:ProcessMacro(macro, str)
 	local previous_end_pos = 1
 	local start_pos, _, other_macro_name = str:find(self.Pattern, 1, false)
 	if not start_pos then -- no need to waste time on non-existent things
-		local new_str = self:ProcessPerCharacter(macro.Value, str)
-		local ret = EasyChat.SafeHookRun("ECOnProcessMacro", macro, str, new_str)
-		if isstring(ret) then return ret end
-
-		return new_str
+		return self:ProcessPerCharacter(macro.Value, str)
 	end
 
 	local new_str = ""
@@ -76,12 +72,7 @@ function macro_processor:ProcessMacro(macro, str)
 
 	-- complete the new string
 	local str_chunk = str:sub(previous_end_pos)
-	new_str = new_str .. self:ProcessPerCharacter(macro.Value, str_chunk)
-
-	local ret = EasyChat.SafeHookRun("ECOnProcessMacro", macro, str, new_str)
-	if isstring(ret) then return ret end
-
-	return new_str
+	return new_str .. self:ProcessPerCharacter(macro.Value, str_chunk)
 end
 
 -- TODO: figure out why the fuck this acts weird when passing macro names that dont exist
@@ -91,7 +82,11 @@ function macro_processor:ProcessString(str)
 		local macro = self.Macros[macro_name]
 		local pos_offset = ("<%s>"):format(macro_name):len()
 		if macro then
-			local str_chunk = self:ProcessMacro(macro, str:sub(start_pos + pos_offset))
+			local str_input = str:sub(start_pos + pos_offset)
+			local str_chunk = self:ProcessMacro(macro, str_input)
+			local ret = EasyChat.SafeHookRun("ECOnProcessMacro", macro, str_input, str_chunk)
+			if isstring(ret) then str_chunk = ret end
+
 			if not isstring(str_chunk) then
 				ErrorNoHalt(("[EasyChat] > macro [%s] did not have any return value or was not a string\n"):format(macro_name))
 				str_chunk = ""
