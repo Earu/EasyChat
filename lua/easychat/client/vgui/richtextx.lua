@@ -75,7 +75,8 @@ function PANEL:Init()
 
 	local function find_text()
 		EasyChat.AskForInput("Find", function(input)
-			self:QueueJavascript(("window.find(%q);"):format(input:JavascriptSafe()))
+			input = input:JavascriptSafe():gsub("`", ""):gsub("%$[%{%}]", "")
+			self:QueueJavascript(("window.find(%q);"):format(input))
 		end, false)
 	end
 
@@ -194,10 +195,8 @@ end
 
 local AVERAGE_AMOUNT_OF_ELEMENTS_PER_LINE = 5
 function PANEL:AppendText(text)
-	text = text:JavascriptSafe()
-
-	-- turns out JavascriptSafe isnt safe, also cant escape ` apparently
-	text = text:gsub("`", "")
+	-- turns out JavascriptSafe isnt safe, also cant escape ` apparently OR INTERPOLATION FUCK ME
+	text = text:JavascriptSafe():gsub("`", ""):gsub("%$[%{%}]", "")
 
 	local limit = GetConVar("easychat_modern_text_history_limit"):GetInt() * AVERAGE_AMOUNT_OF_ELEMENTS_PER_LINE
 	local css_color = ("rgb(%d,%d,%d)"):format(self.CurrentColor.r, self.CurrentColor.g, self.CurrentColor.b)
@@ -230,7 +229,7 @@ function PANEL:AppendText(text)
 end
 
 function PANEL:AppendImageURL(url)
-	url = url:JavascriptSafe()
+	url = url:JavascriptSafe():gsub("`", ""):gsub("%$[%{%}]", "")
 
 	local limit = GetConVar("easychat_modern_text_history_limit"):GetInt() * AVERAGE_AMOUNT_OF_ELEMENTS_PER_LINE
 	self:QueueJavascript([[{
