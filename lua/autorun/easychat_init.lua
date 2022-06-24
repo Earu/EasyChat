@@ -4,8 +4,7 @@ if CLIENT then
 		return str:JavascriptSafe()
 			:gsub("`", "")
 			:gsub("%$%s*{", "")
-			:gsub("RUNLUA", "")
-			:gsub("runlua", "")
+			:gsub("[Rr][Uu][Nn][Ll][Uu][Aa]", "")
 	end
 end
 
