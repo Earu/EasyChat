@@ -908,7 +908,7 @@ local image_part = {
 
 function image_part:Ctor(url)
 	local browser = vgui.Create("DHTML")
-	browser:SetAllowLua(true)
+	browser:SetAllowLua(false)
 	browser:SetSize(0, 0)
 	browser:SetPaintedManually(true)
 	browser:AddFunction("Img", "Size", function(w, h)

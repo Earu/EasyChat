@@ -1,13 +1,3 @@
-if CLIENT then
-	-- fuck you rubat
-	function WORKING_JS_SAFE(str)
-		return str:JavascriptSafe()
-			:gsub("`", "")
-			:gsub("%$%s*{", "")
-			:gsub("[Rr][Uu][Nn][Ll][Uu][Aa]", "")
-	end
-end
-
 AddCSLuaFile("easychat/networking.lua")
 AddCSLuaFile("easychat/server_config.lua")
 AddCSLuaFile("easychat/migrations.lua")

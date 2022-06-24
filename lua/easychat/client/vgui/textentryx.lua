@@ -96,13 +96,20 @@ function PANEL:Init()
 		local paste_menu = DermaMenu()
 		paste_menu:AddOption("Paste", function()
 			self:QueueJavascript([[{
-				let ev = new ClipboardEvent("paste");
+				const ev = new ClipboardEvent("paste");
 				TEXT_ENTRY.dispatchEvent(ev);
 			}]])
 		end)
 		paste_menu:AddSpacer()
 		paste_menu:AddOption("Cancel", function() paste_menu:Remove() end)
 		paste_menu:Open()
+	end)
+
+	self:AddInternalCallback("GetCurrentValue", function()
+		return self:GetText() or ""
+	end)
+	self:AddInternalCallback("GetPlaceholderText", function()
+		return self.PlaceholderText or ""
 	end)
 
 	self:AddInternalCallback("Debug", print)
@@ -273,8 +280,7 @@ function PANEL:SetText(text)
 
 	self.CurrentValue = text
 
-	local html_input = WORKING_JS_SAFE(text)
-	self:QueueJavascript(([[TEXT_ENTRY.value = `%s`;]]):format(html_input))
+	self:QueueJavascript([[TextEntryX.GetCurrentValue(x => TEXT_ENTRY.value = x);]])
 end
 
 function PANEL:SetValue(text)
@@ -296,13 +302,15 @@ function PANEL:SetTextColor(col)
 end
 
 function PANEL:SetPlaceholderText(text)
-	self:QueueJavascript(([[TEXT_ENTRY.placeholder = `%s`;]]):format(WORKING_JS_SAFE(text)))
+	self.PlaceholderText = text
+
+	self:QueueJavascript([[TextEntryX.GetPlaceholderText(x => TEXT_ENTRY.placeholder = x);]])
 end
 
 function PANEL:SetPlaceholderColor(col)
 	self.PlaceholderColor = col
 	self:QueueJavascript([[{
-		let style = document.createElement("style");
+		const style = document.createElement("style");
 		style.type = "text/css";
 		style.innerHTML = "#text-entry::placeholder { color: ]] .. color_to_css(col)  .. [[; }";
 		document.getElementsByTagName("head")[0].appendChild(style);

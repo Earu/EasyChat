@@ -1,4 +1,5 @@
 local color_white = color_white
+local AVERAGE_AMOUNT_OF_ELEMENTS_PER_LINE = 5
 
 local PANEL = {
 	CurrentColor = Color(255, 255, 255),
@@ -6,7 +7,7 @@ local PANEL = {
 }
 
 function PANEL:Init()
-	self:SetAllowLua(true)
+	self:SetAllowLua(false)
 	self:SetHTML([[<html>
 		<body>
 			<style>
@@ -73,14 +74,17 @@ function PANEL:Init()
 		self:ActionSignal("TextClicked", signal_value)
 	end)
 
+	self.FindText = nil
+	self:AddInternalCallback("GetFindText", function() return self.FindText end)
+
 	local function find_text()
 		EasyChat.AskForInput("Find", function(input)
-			input = WORKING_JS_SAFE(input)
-			self:QueueJavascript(("window.find(%q);"):format(input))
+			self.FindText = input
+			self:QueueJavascript("RichTextX.GetFindText(window.find);")
 		end, false)
 	end
-
 	self:AddInternalCallback("Find", find_text)
+
 	self:AddInternalCallback("OnRightClick", function(selected_text)
 		local copy_menu = DermaMenu()
 		copy_menu:AddOption("Copy", function() SetClipboardText(selected_text) end)
@@ -96,6 +100,26 @@ function PANEL:Init()
 
 	self:AddInternalCallback("OnTextHover", function(text_value, is_hover)
 		self:OnTextHover(text_value, is_hover)
+	end)
+
+	self.TextToAppend = {}
+	self:AddInternalCallback("GetTextToAppend", function()
+		local limit = GetConVar("easychat_modern_text_history_limit"):GetInt() * AVERAGE_AMOUNT_OF_ELEMENTS_PER_LINE
+
+		local data = self.TextToAppend[1] or ""
+		table.remove(self.TextToAppend, 1)
+
+		local text, clickable_text_value, css_color = data[1], data[2], data[3]
+		return text, clickable_text_value, css_color, limit
+	end)
+	self.ImageURLToAppend = {}
+	self:AddInternalCallback("GetImageURLToAppend", function()
+		local limit = GetConVar("easychat_modern_text_history_limit"):GetInt() * AVERAGE_AMOUNT_OF_ELEMENTS_PER_LINE
+		local blur = GetConVar("easychat_blur_images"):GetBool()
+
+		local url = self.ImageURLToAppend[1] or ""
+		table.remove(self.ImageURLToAppend, 1)
+		return url, limit, blur
 	end)
 
 	self:AddInternalCallback("Debug", print)
@@ -117,7 +141,7 @@ function PANEL:Init()
 				return;
 			}
 
-			let selection = window.getSelection();
+			const selection = window.getSelection();
 			RichTextX.OnRightClick(selection.toString());
 		});
 
@@ -129,7 +153,6 @@ function PANEL:Init()
 			}
 		});
 
-		let isAtBottom = false;
 		function atBottom() {
 			if (BODY.scrollTop === 0) return true;
 
@@ -193,75 +216,72 @@ end
 function PANEL:OnTextHover(text_value, is_hover)
 end
 
-local AVERAGE_AMOUNT_OF_ELEMENTS_PER_LINE = 5
 function PANEL:AppendText(text)
-	text = WORKING_JS_SAFE(text)
-
-	local limit = GetConVar("easychat_modern_text_history_limit"):GetInt() * AVERAGE_AMOUNT_OF_ELEMENTS_PER_LINE
 	local css_color = ("rgb(%d,%d,%d)"):format(self.CurrentColor.r, self.CurrentColor.g, self.CurrentColor.b)
-	local js = (self.ClickableTextValue and [[{
-		let span = document.createElement("span");
-		span.onclick = () => RichTextX.OnClick(`]] .. self.ClickableTextValue .. [[`);
-		span.onmouseenter = () => RichTextX.OnTextHover(`]] .. self.ClickableTextValue .. [[`, true);
-		span.onmouseleave = () => RichTextX.OnTextHover(`]] .. self.ClickableTextValue .. [[`, false);
-		span.clickableText = true;
-		span.style.cursor = "pointer";
-		span.style.color = `]] .. css_color .. [[`;
-	]] or [[{
-		span = document.createElement("span");
-		span.style.color = `]] .. css_color .. [[`;
-	]]) .. [[
-		span.textContent = `]] .. text .. [[`;
-		isAtBottom = atBottom();
-		RICHTEXT.appendChild(span);
+	self.TextToAppend[#self.TextToAppend + 1] = { text, self.ClickableTextValue, css_color }
 
-		if (]] .. limit .. [[> 0 && ]] .. limit .. [[ <= RICHTEXT.childElementCount && RICHTEXT.children[0]) {
-			RICHTEXT.children[0].remove();
-		}
+	self:QueueJavascript([[
+		RichTextX.GetTextToAppend((text, clickableTextValue, cssColor, limit) => {
+			const span = document.createElement("span");
+			if (clickableTextValue) {
+				span.onclick = () => RichTextX.OnClick(clickableTextValue);
+				span.onmouseenter = () => RichTextX.OnTextHover(clickableTextValue, true);
+				span.onmouseleave = () => RichTextX.OnTextHover(clickableTextValue, false);
+				span.clickableText = true;
+				span.style.cursor = "pointer";
+			}
+			span.style.color = cssColor;
+			span.textContent = text;
+			isAtBottom = atBottom();
+			RICHTEXT.appendChild(span);
 
-		if (isAtBottom) {
-			window.scrollTo(0, BODY.scrollHeight);
-		}
-	}]]
+			if (limit > 0 && limit <= RICHTEXT.childElementCount && RICHTEXT.children[0]) {
+				RICHTEXT.children[0].remove();
+			}
 
-	self:QueueJavascript(js)
+			if (isAtBottom) {
+				window.scrollTo(0, BODY.scrollHeight);
+			}
+		});
+	]])
 end
 
 function PANEL:AppendImageURL(url)
-	url = url:JavascriptSafe():gsub("`", ""):gsub("%$[%{%}]", "")
+	self.ImageURLToAppend[#self.ImageURLToAppend + 1] = url
 
-	local limit = GetConVar("easychat_modern_text_history_limit"):GetInt() * AVERAGE_AMOUNT_OF_ELEMENTS_PER_LINE
-	self:QueueJavascript([[{
-		let imgContainer = document.createElement("div");
-		imgContainer.style.overflow = "hidden";
-		imgContainer.style.display = "inline-block";
+	self:QueueJavascript([[
+		RichTextX.GetImageURLToAppend((url, limit, blur) => {
+			const imgContainer = document.createElement("div");
+			imgContainer.style.overflow = "hidden";
+			imgContainer.style.display = "inline-block";
 
-		let img = document.createElement("img");
-		img.onclick = () => RichTextX.OnClick(`]] .. url .. [[`);
-		img.style.cursor = "pointer";
-		img.src = `]] .. url .. [[`;
-		img.style.maxWidth = `80%`;
-		img.style.maxHeight = `300px`;
-		if (]] .. (GetConVar("easychat_blur_images"):GetBool() and "true" or "false") .. [[) {
-			img.classList.add('blur');
-			img.onmouseover = () => img.classList.remove('blur');
-			img.onmouseout = () => img.classList.add('blur');
-		}
+			const img = document.createElement("img");
+			img.onclick = () => RichTextX.OnClick(url);
+			img.style.cursor = "pointer";
+			img.src = url;
+			img.style.maxWidth = `80%`;
+			img.style.maxHeight = `300px`;
+			if (blur) {
+				img.classList.add('blur');
+				img.onmouseover = () => img.classList.remove('blur');
+				img.onmouseout = () => img.classList.add('blur');
+			}
 
-		isAtBottom = atBottom();
-		RICHTEXT.appendChild(document.createElement("br"));
-		imgContainer.appendChild(img);
-		RICHTEXT.appendChild(imgContainer);
-		RICHTEXT.appendChild(document.createElement("br"));
+			isAtBottom = atBottom();
+			RICHTEXT.appendChild(document.createElement("br"));
+			imgContainer.appendChild(img);
+			RICHTEXT.appendChild(imgContainer);
+			RICHTEXT.appendChild(document.createElement("br"));
 
-		if (]] .. limit .. [[> 0 && ]] .. limit .. [[ <= RICHTEXT.childElementCount && RICHTEXT.children[0]) {
-			RICHTEXT.children[0].remove();
-		}
+			if (limit > 0 && limit <= RICHTEXT.childElementCount && RICHTEXT.children[0]) {
+				RICHTEXT.children[0].remove();
+			}
 
-		if (isAtBottom) {
-			window.scrollTo(0, BODY.scrollHeight);
-		}
-	}]])
+			if (isAtBottom) {
+				window.scrollTo(0, BODY.scrollHeight);
+			}
+		});
+	]])
 end
 
 function PANEL:InsertColorChange(r, g, b)
