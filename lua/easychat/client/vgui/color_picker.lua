@@ -17,6 +17,7 @@ local PICKER = {
 		self.Mixer.ValueChanged = function(_, new_col)
 			local col_str = ("<color=%d,%d,%d>"):format(new_col.r or 255, new_col.g or 255, new_col.b or 255)
 			self.BtnColor:SetText(col_str)
+            self.BtnColor:SetColor(new_col)
 			self.BtnColor.CurrentColorString = col_str
 		end
 		self.Mixer:SetColor(table.Copy(color_white))
