@@ -272,7 +272,9 @@ function PANEL:SetText(text)
 	text = isstring(text) and text or ""
 
 	self.CurrentValue = text
-	self:QueueJavascript(([[TEXT_ENTRY.value = `%s`;]]):format(text:JavascriptSafe()))
+
+	local html_input = text:JavascriptSafe():gsub("`", ""):gsub("%$[%{%}]", "")
+	self:QueueJavascript(([[TEXT_ENTRY.value = `%s`;]]):format(html_input))
 end
 
 function PANEL:SetValue(text)
