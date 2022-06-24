@@ -82,6 +82,8 @@ function macro_processor:ProcessString(str)
 		local macro = self.Macros[macro_name]
 		local pos_offset = ("<%s>"):format(macro_name):len()
 		if macro then
+			macro.Name = macro_name -- for the hook
+
 			local str_input = str:sub(start_pos + pos_offset)
 			local str_chunk = self:ProcessMacro(macro, str_input)
 			local ret = EasyChat.SafeHookRun("ECOnProcessMacro", macro, str_input, str_chunk)
