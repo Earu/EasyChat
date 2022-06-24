@@ -75,7 +75,7 @@ function PANEL:Init()
 
 	local function find_text()
 		EasyChat.AskForInput("Find", function(input)
-			input = input:JavascriptSafe():gsub("`", ""):gsub("%$[%{%}]", "")
+			input = WORKING_JS_SAFE(input)
 			self:QueueJavascript(("window.find(%q);"):format(input))
 		end, false)
 	end
@@ -195,8 +195,7 @@ end
 
 local AVERAGE_AMOUNT_OF_ELEMENTS_PER_LINE = 5
 function PANEL:AppendText(text)
-	-- turns out JavascriptSafe isnt safe, also cant escape ` apparently OR INTERPOLATION FUCK ME
-	text = text:JavascriptSafe():gsub("`", ""):gsub("%$[%{%}]", "")
+	text = WORKING_JS_SAFE(text)
 
 	local limit = GetConVar("easychat_modern_text_history_limit"):GetInt() * AVERAGE_AMOUNT_OF_ELEMENTS_PER_LINE
 	local css_color = ("rgb(%d,%d,%d)"):format(self.CurrentColor.r, self.CurrentColor.g, self.CurrentColor.b)
