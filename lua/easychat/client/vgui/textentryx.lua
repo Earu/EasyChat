@@ -273,7 +273,7 @@ function PANEL:SetText(text)
 
 	self.CurrentValue = text
 
-	local html_input = text:JavascriptSafe():gsub("`", ""):gsub("%$[%{%}]", "")
+	local html_input = WORKING_JS_SAFE(text)
 	self:QueueJavascript(([[TEXT_ENTRY.value = `%s`;]]):format(html_input))
 end
 
@@ -296,7 +296,7 @@ function PANEL:SetTextColor(col)
 end
 
 function PANEL:SetPlaceholderText(text)
-	self:QueueJavascript(([[TEXT_ENTRY.placeholder = `%s`;]]):format(text:JavascriptSafe()))
+	self:QueueJavascript(([[TEXT_ENTRY.placeholder = `%s`;]]):format(WORKING_JS_SAFE(text)))
 end
 
 function PANEL:SetPlaceholderColor(col)
