@@ -52,7 +52,7 @@ if SERVER then
 			table.insert(print_args, "*DEAD* ")
 		end
 
-		local stripped_ply_nick = ply:Nick():gsub("<.->", "")
+		local stripped_ply_nick = ply:Nick()
 		if #stripped_ply_nick > 20 then
 			stripped_ply_nick = stripped_ply_nick:sub(1, 20) .. "..."
 		end
@@ -123,7 +123,7 @@ if SERVER then
 		local is_dead = not ply:Alive()
 		net.Start(NET_BROADCAST_MSG)
 		net.WriteUInt(ply:UserID(), 16)
-		net.WriteString(ply:Nick())
+		net.WriteString(ply:RichNick())
 		net.WriteString(msg)
 		net.WriteBool(is_dead)
 		net.WriteBool(is_team)
