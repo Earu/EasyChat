@@ -1409,7 +1409,7 @@ function chathud:AddText(...)
 				if IsValid(lp) and lp == arg and EC_USE_ME:GetBool() then
 					self:AppendNick("me")
 				else
-					self:AppendNick(arg:Nick())
+					self:AppendNick(arg:RichNick())
 				end
 			end
 

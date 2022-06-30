@@ -47,7 +47,7 @@ function panel:Paint(w, h)
 			self:SetTall(5 + (20 * (i + 1)))
 
 			ec_markup.CachePlayer("LocalUI", ply, function()
-				return ec_markup.AdvancedParse(ply:Nick(), {
+				return ec_markup.AdvancedParse(ply:RichNick(), {
 					nick = true,
 					default_font = "EasyChatFont",
 					default_color = team.GetColor(ply:Team()),

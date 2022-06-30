@@ -953,7 +953,7 @@ local function create_default_settings()
 					input_str = ("%s %s"):format(input_str, emote_tag)
 				end
 
-				input_str = ("%s %s<stop>: Hello!"):format(input_str, LocalPlayer():Nick())
+				input_str = ("%s %s<stop>: Hello!"):format(input_str, LocalPlayer():RichNick())
 				mk = ec_markup.Parse(input_str)
 			end
 
@@ -1029,7 +1029,7 @@ local function create_default_settings()
 					input_str = ("%s %s"):format(input_str, emote_display)
 				end
 
-				input_str = ("%s %s"):format(input_str, LocalPlayer():Nick())
+				input_str = ("%s %s"):format(input_str, LocalPlayer():RichNick())
 				local mk = ec_markup.Parse(input_str)
 				local mk_w, mk_h = mk:GetWide(), mk:GetTall()
 
