@@ -63,7 +63,7 @@ end
 function PANEL:Setup(ply)
 	self.ply = ply
 
-	self.Markup = ec_markup.Parse(ply:Nick(), nil, true)
+	self.Markup = ec_markup.Parse(ply:RichNick(), nil, true)
 	self.LabelName:SetText("")
 
 	self.Avatar:SetPlayer(ply, 64)
@@ -125,7 +125,7 @@ end
 
 function PANEL:Think()
 	if IsValid(self.ply) and not self.Markup then
-		self.LabelName:SetText(self.ply:Nick())
+		self.LabelName:SetText(self.ply:RichNick())
 	end
 
 	if self.RemoveTime and CurTime() >= self.RemoveTime then

@@ -68,7 +68,7 @@ if CLIENT then
 					for _, ply in ipairs(player.GetAll()) do
 						if ply:IsAdmin() then
 							local mk = ec_markup.CachePlayer("AdminTab", ply, function()
-								return ec_markup.AdvancedParse(ply:Nick(), {
+								return ec_markup.AdvancedParse(ply:RichNick(), {
 									default_font = "EasyChatFont",
 									default_color = team.GetColor(ply:Team()),
 									nick = true,
@@ -100,7 +100,7 @@ if CLIENT then
 					for _, ply in ipairs(player.GetAll()) do
 						if ply:IsAdmin() then
 							local mk = ec_markup.CachePlayer("AdminTab", ply, function()
-								return ec_markup.AdvancedParse(ply:Nick(), {
+								return ec_markup.AdvancedParse(ply:RichNick(), {
 									default_font = "EasyChatFont",
 									default_color = team.GetColor(ply:Team()),
 									nick = true,

@@ -239,7 +239,7 @@ if SERVER then
 		local name = net.ReadString()
 		if not IsValid(target_ply) then return end
 
-		EasyChat.SafeHookRun("ECPlayerNameChange", ply, target_ply, target_ply:Nick(), name)
+		EasyChat.SafeHookRun("ECPlayerNameChange", ply, target_ply, target_ply:RichNick(), name)
 	end)
 
 	restricted_receive(NET_MODULE_IGNORE_LIST, function(_, ply)

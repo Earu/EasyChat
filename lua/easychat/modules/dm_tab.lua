@@ -182,7 +182,7 @@ if CLIENT then
 
 			self.DMList:Clear()
 			for _, chat in pairs(self.Chats) do
-				local line = self.DMList:AddLine(chat.Player:Nick())
+				local line = self.DMList:AddLine(chat.Player:RichNick())
 				chat.Line = line
 				line.Player = chat.Player
 			end
@@ -220,9 +220,9 @@ if CLIENT then
 				if not IsValid(chat.Player) then return end
 
 				if chat.NewMessages > 0 then
-					line:SetColumnText(1, chat.Player:Nick() .. " (" .. chat.NewMessages .. ")")
+					line:SetColumnText(1, chat.Player:RichNick() .. " (" .. chat.NewMessages .. ")")
 				else
-					line:SetColumnText(1, chat.Player:Nick())
+					line:SetColumnText(1, chat.Player:RichNick())
 				end
 			end
 		end,

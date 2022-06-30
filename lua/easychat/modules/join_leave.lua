@@ -20,7 +20,7 @@ if SERVER then
 
 			net.Start(NET_SPAWN_LEAVE)
 			net.WriteBool(true)
-			net.WriteString(ply:Nick())
+			net.WriteString(ply:RichNick())
 			net.WriteInt(ply:Team(), 32)
 			net.WriteString(ply:SteamID())
 

@@ -114,6 +114,51 @@ function EasyChat.IsStringEmpty(str, is_nick)
 	return false
 end
 
+local function get_unknown_name(ply)
+	-- NULL is "pure", its not the same as a player becoming NULL
+	-- therefore this will only work if the ply is the server console
+	if ply == NULL then return "[SERVER]" end
+
+	-- this is always going to be a player thats not been networked yet or some weird
+	-- stuff that gmod is responsible for
+	return "[UNKNOWN]"
+end
+
+EasyChat.NativeNick = EasyChat.NativeNick or PLY.Nick
+function EasyChat.GetProperNick(ply)
+	if not IsValid(ply) then return get_unknown_name(ply) end
+
+	local ply_nick = EasyChat.NativeNick(ply)
+	if not ec_markup then return ply_nick end
+	local mk = ec_markup.CachePlayer("EasyChat", ply, function()
+		return ec_markup.Parse(ply_nick, nil, true)
+	end)
+
+	return mk and mk:GetText() or ply_nick
+end
+
+function PLY:Nick()
+	return EasyChat.GetProperNick(self)
+end
+PLY.Name = PLY.Nick
+PLY.GetName = PLY.Nick
+PLY.GetNick = PLY.Nick
+
+PLY.RealNick = PLY.EngineNick
+PLY.RealName = PLY.EngineNick
+PLY.GetRealName = PLY.EngineNick
+
+function PLY:RichNick()
+	return EasyChat.NativeNick(self)
+end
+PLY.RichName = PLY.RichNick
+PLY.GetRichNick = PLY.RichNick
+PLY.GetRichName = PLY.RichNick
+PLY.GetNameDecorated = PLY.RichNick
+PLY.GetNickDecorated = PLY.RichNick
+PLY.NickDecorated = PLY.RichNick
+PLY.NameDecorated = PLY.RichNick
+
 local load_modules, get_modules = include("easychat/autoloader.lua")
 EasyChat.GetModules = get_modules -- maybe useful for modules?
 
@@ -1119,28 +1164,6 @@ if CLIENT then
 		return math.fmod(counter, 4294967291) -- 2^32 - 5: Prime (and different from the prime in the loop)
 	end
 
-	local function get_unknown_name(ply)
-		-- NULL is "pure", its not the same as a player becoming NULL
-		-- therefore this will only work if the ply is the server console
-		if ply == NULL then return "[SERVER]" end
-
-		-- this is always going to be a player thats not been networked yet or some weird
-		-- stuff that gmod is responsible for
-		return "[UNKNOWN]"
-	end
-
-	function EasyChat.GetProperNick(ply)
-		if not IsValid(ply) then return get_unknown_name(ply) end
-
-		local ply_nick = ply:Nick()
-		if not ec_markup then return ply_nick end
-		local mk = ec_markup.CachePlayer("EasyChat", ply, function()
-			return ec_markup.Parse(ply_nick, nil, true)
-		end)
-
-		return mk and mk:GetText() or ply_nick
-	end
-
 	function EasyChat.PastelizeNick(nick)
 		local hue = string_hash(nick)
 		local saturation, value = hue % 3 == 0, hue % 127 == 0
@@ -1495,7 +1518,7 @@ if CLIENT then
 						if empty_nick then
 							append_text(richtext, "[NO NAME]")
 						else
-							local tags_data = extract_tags_data(arg:Nick(), true)
+							local tags_data = extract_tags_data(arg:RichNick(), true)
 							for _, tag_data in ipairs(tags_data) do
 								if is_color(tag_data) then
 									richtext:InsertColorChange(tag_data.r, tag_data.g, tag_data.b, 255)
@@ -1857,7 +1880,7 @@ if CLIENT then
 					table.insert(data, UNKNOWN_COLOR)
 					table.insert(data, "[NO NAME]")
 				else
-					local nick = EasyChat.Config.AllowTagsInNames and ply:Nick() or stripped_ply_nick
+					local nick = EasyChat.Config.AllowTagsInNames and ply:RichNick() or stripped_ply_nick
 					local nick_data = global_append_nick(nick)
 					table.Add(data, nick_data)
 				end
@@ -2466,7 +2489,7 @@ if CLIENT then
 						end
 					end
 
-					local mk = ec_markup.Parse(ply:Nick(), nil, true)
+					local mk = ec_markup.Parse(ply:RichNick(), nil, true)
 					info_panel.PaintOver = function(_, w, h)
 						surface.SetDrawColor(0, 0, 0, 200)
 						surface.DrawOutlinedRect(0, 0, w, h)
