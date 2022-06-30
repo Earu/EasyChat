@@ -137,15 +137,7 @@ function EasyChat.GetProperNick(ply)
 	return mk and mk:GetText() or ply_nick
 end
 
--- little hack to ensure we're always on top
 PLY.Nick = EasyChat.GetProperNick
-timer.Create("ec_fix_nick_override", 1, 0, function()
-	if PLY.Nick ~= EasyChat.GetProperNick then
-		EasyChat.NativeNick = PLY.Nick
-		PLY.Nick = EasyChat.GetProperNick
-	end
-end)
-
 PLY.Name = PLY.Nick
 PLY.GetName = PLY.Nick
 PLY.GetNick = PLY.Nick
