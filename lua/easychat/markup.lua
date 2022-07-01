@@ -142,6 +142,8 @@ function ec_markup.AdvancedParse(str, data)
 	end
 
 	function obj:GetText()
+		if self.CachedGetText then return self.CachedGetText end
+
 		local text = ""
 		for i, line in ipairs(self.Lines) do
 			for _, component in ipairs(line.Components) do
@@ -155,7 +157,8 @@ function ec_markup.AdvancedParse(str, data)
 			end
 		end
 
-		return text
+		self.CachedGetText = text
+		return self.CachedGetText
 	end
 
 	function obj:GetString()
