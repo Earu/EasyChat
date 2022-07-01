@@ -129,7 +129,13 @@ function EasyChat.GetProperNick(ply)
 	if not IsValid(ply) then return get_unknown_name(ply) end
 
 	local ply_nick = EasyChat.NativeNick(ply)
-	if not ec_markup then return ply_nick end
+	if ec_markup then
+		local mk = ec_markup.CachePlayer("EasyChat", ply, function()
+			return ec_markup.AdvancedParse(ply_nick, { nick = true })
+		end)
+
+		return mk:GetText()
+	end
 
 	return ec_markup.GetText(ply_nick, true)
 end
