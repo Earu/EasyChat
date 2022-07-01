@@ -130,11 +130,8 @@ function EasyChat.GetProperNick(ply)
 
 	local ply_nick = EasyChat.NativeNick(ply)
 	if not ec_markup then return ply_nick end
-	local mk = ec_markup.CachePlayer("EasyChat", ply, function()
-		return ec_markup.Parse(ply_nick, nil, true)
-	end)
 
-	return mk and mk:GetText() or ply_nick
+	return ec_markup.GetText(ply_nick, true)
 end
 
 PLY.Nick = EasyChat.GetProperNick
