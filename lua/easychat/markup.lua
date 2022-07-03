@@ -220,7 +220,7 @@ function ec_markup.CachePlayer(id, ply, callback)
 		sub_cache = player_cache[id]
 	end
 
-	local nick, team_color = EasyChat.NativeNick(ply), team.GetColor(ply:Team())
+	local nick, team_color = ply:RichNick(), team.GetColor(ply:Team())
 	local cache = sub_cache[ply]
 	if cache and cache.Nick == nick and cache.TeamColor == team_color then
 		return cache.Markup
