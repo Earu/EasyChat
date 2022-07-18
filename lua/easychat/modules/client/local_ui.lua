@@ -19,6 +19,7 @@ end
 panel:SetWide(150)
 panel.old_paint = panel.Paint
 local panel_title = "Message Receivers"
+local ec_cvar_dist = GetConVar("easychat_local_msg_distance")
 function panel:Paint(w, h)
 	if not EasyChat.IsOpened() then return end
 	if EasyChat.GetActiveTab().Name ~= "Global" then return end
@@ -41,9 +42,7 @@ function panel:Paint(w, h)
 
 	local i = 1
 	for _, ply in pairs(player.GetAll()) do
-		if ply ~= LocalPlayer()
-			and ply:GetPos():Distance(LocalPlayer():GetPos()) <= GetConVar("easychat_local_msg_distance"):GetInt()
-		then
+		if ply ~= LocalPlayer() and ply:GetPos():Distance(LocalPlayer():GetPos()) <= ec_cvar_dist:GetInt() then
 			self:SetTall(5 + (20 * (i + 1)))
 
 			ec_markup.CachePlayer("LocalUI", ply, function()
