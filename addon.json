@@ -7,12 +7,14 @@
     "*.vcproj",
     "*.svn*",
     "*.md",
+    "*.dll",
     ".git/*",
     ".gitignore",
     "update.bat",
     ".gma",
     "glualint.json",
     ".github/*",
-    "bin/*"
+    "bin/*",
+    "external_data/*"
   ]
 }
