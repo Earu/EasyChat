@@ -140,7 +140,7 @@ if CLIENT then
 
 			local chat = {
 				Player = ply,
-				Name = EasyChat.GetProperNick(ply),
+				Name = ply:Nick(),
 				RichText = richtext,
 				NewMessages = 0
 			}

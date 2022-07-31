@@ -140,7 +140,48 @@ function EasyChat.GetProperNick(ply)
 	return ec_markup.GetText(ply_nick, true)
 end
 
-PLY.Nick = EasyChat.GetProperNick
+local wrappers = {}
+local wrapper_addr
+local function make_nick_override_wrapper()
+	local native_nick = EasyChat.NativeNick
+	local function wrapper(ply)
+		local fn_addr = tostring(wrapper)
+		if not wrappers[fn_addr] then return native_nick(ply) end
+
+		return EasyChat.GetProperNick(ply)
+	end
+
+	wrapper_addr = tostring(wrapper)
+	wrappers[wrapper_addr] = true
+
+	return wrapper
+end
+
+local function rich_nick_wrapper(ply)
+	return EasyChat.NativeNick(ply)
+end
+
+local clean_name_fns = { "Nick", "Name", "GetName", "GetNick" }
+local tagged_name_fns = { "RichNick", "RichName", "GetRichName", "GetRichNick", "NickDecorated", "NameDecorated", "GetNameDecorated", "GetNickDecorated" }
+local function check_nick_override_wrapper_status()
+	if wrapper_addr and wrapper_addr ~= tostring(PLY.Nick) then
+		wrappers[wrapper_addr] = nil
+		EasyChat.NativeNick = PLY.Nick
+
+		local new_wrapper = make_nick_override_wrapper()
+		for _, fn_name in ipairs(clean_name_fns) do
+			PLY[fn_name] = new_wrapper
+		end
+
+		for _, fn_name in ipairs(tagged_name_fns) do
+			PLY[fn_name] = rich_nick_wrapper
+		end
+	end
+
+	timer.Simple(1, check_nick_override_wrapper_status)
+end
+
+PLY.Nick = make_nick_override_wrapper()
 PLY.Name = PLY.Nick
 PLY.GetName = PLY.Nick
 PLY.GetNick = PLY.Nick
@@ -149,9 +190,7 @@ PLY.RealNick = PLY.EngineNick
 PLY.RealName = PLY.EngineNick
 PLY.GetRealName = PLY.EngineNick
 
-function PLY:RichNick()
-	return EasyChat.NativeNick(self)
-end
+PLY.RichNick = rich_nick_wrapper
 PLY.RichName = PLY.RichNick
 PLY.GetRichNick = PLY.RichNick
 PLY.GetRichName = PLY.RichNick
@@ -159,6 +198,8 @@ PLY.GetNameDecorated = PLY.RichNick
 PLY.GetNickDecorated = PLY.RichNick
 PLY.NickDecorated = PLY.RichNick
 PLY.NameDecorated = PLY.RichNick
+
+timer.Simple(1, check_nick_override_wrapper_status)
 
 local load_modules, get_modules = include("easychat/autoloader.lua")
 EasyChat.GetModules = get_modules -- maybe useful for modules?
@@ -1090,7 +1131,7 @@ if CLIENT then
 	end
 
 	function EasyChat.UploadToImgur(img_base64, callback)
-		local ply_nick, ply_steamid = EasyChat.GetProperNick(LocalPlayer()), LocalPlayer():SteamID()
+		local ply_nick, ply_steamid = LocalPlayer():Nick(), LocalPlayer():SteamID()
 		local params = {
 			image = img_base64,
 			type = "base64",
@@ -1496,7 +1537,7 @@ if CLIENT then
 					append_text(richtext, get_unknown_name(arg))
 				else
 					local ply_col = EC_PLAYER_COLOR:GetBool() and team.GetColor(arg:Team()) or color_white
-					local nick = EasyChat.GetProperNick(arg)
+					local nick = arg:Nick()
 					if EC_PLAYER_PASTEL:GetBool() then
 						ply_col = EasyChat.PastelizeNick(nick)
 					end
@@ -1851,7 +1892,7 @@ if CLIENT then
 			end
 
 			local ply_col = EC_PLAYER_COLOR:GetBool() and team.GetColor(ply:Team()) or color_white
-			local stripped_ply_nick = EasyChat.GetProperNick(ply)
+			local stripped_ply_nick = ply:Nick()
 			if EC_PLAYER_PASTEL:GetBool() then
 				ply_col = EasyChat.PastelizeNick(stripped_ply_nick)
 			end
@@ -2129,7 +2170,7 @@ if CLIENT then
 			local max_perc = 0
 			local res
 			for _, ply in ipairs(player.GetAll()) do
-				local nick = EasyChat.GetProperNick(ply)
+				local nick = ply:Nick()
 				local match = nick:lower():match(last_word:lower():PatternSafe())
 				if match and not text:EndsWith(nick) then
 					local perc = #match / #nick

@@ -72,7 +72,7 @@ if CLIENT then
         end,
         player = function(obj)
             return {
-                Name = EasyChat.GetProperNick(obj),
+                Name = obj:Nick(),
                 Entity = obj,
             }
         end,
@@ -118,7 +118,7 @@ if CLIENT then
             end
         end
 
-        local ply_name = EasyChat.GetProperNick(ply)
+        local ply_name = ply:Nick()
         local hook_name = TAG .. ply_name
         indicate_pos = data.WorldPos and data.WorldPos or indicate_pos
         if indicate_pos then
