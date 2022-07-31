@@ -182,23 +182,18 @@ local function check_nick_override_wrapper_status()
 	timer.Simple(1, check_nick_override_wrapper_status)
 end
 
-PLY.Nick = make_nick_override_wrapper()
-PLY.Name = PLY.Nick
-PLY.GetName = PLY.Nick
-PLY.GetNick = PLY.Nick
+local new_wrapper = make_nick_override_wrapper()
+for _, fn_name in ipairs(clean_name_fns) do
+	PLY[fn_name] = new_wrapper
+end
+
+for _, fn_name in ipairs(tagged_name_fns) do
+	PLY[fn_name] = rich_nick_wrapper
+end
 
 PLY.RealNick = PLY.EngineNick
 PLY.RealName = PLY.EngineNick
 PLY.GetRealName = PLY.EngineNick
-
-PLY.RichNick = rich_nick_wrapper
-PLY.RichName = PLY.RichNick
-PLY.GetRichNick = PLY.RichNick
-PLY.GetRichName = PLY.RichNick
-PLY.GetNameDecorated = PLY.RichNick
-PLY.GetNickDecorated = PLY.RichNick
-PLY.NickDecorated = PLY.RichNick
-PLY.NameDecorated = PLY.RichNick
 
 timer.Simple(1, check_nick_override_wrapper_status)
 
