@@ -232,7 +232,7 @@ function mentions:IsMention(msg)
 	local stripped_msg = ec_markup.GetText(msg):lower()
 	if filter_match(stripped_msg) then return true end
 
-	local ply_name = EasyChat.GetProperNick(LocalPlayer()):lower():PatternSafe()
+	local ply_name = LocalPlayer():Nick():lower():PatternSafe()
 	local nick_mention = stripped_msg:match(ply_name)
 	local is_nick_match = not stripped_msg:match("^[%!%.%/]") and nick_mention
 	return is_nick_match and #nick_mention > 1
