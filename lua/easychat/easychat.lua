@@ -144,13 +144,14 @@ local wrappers = {}
 local wrapper_addr
 local function make_nick_override_wrapper()
 	local native_nick = EasyChat.NativeNick
+	local fn_addr
 	local function wrapper(ply)
-		local fn_addr = tostring(wrapper)
-		if not wrappers[fn_addr] then return native_nick(ply) end
+		if not fn_addr or not wrappers[fn_addr] then return native_nick(ply) end
 
 		return EasyChat.GetProperNick(ply)
 	end
 
+	fn_addr = tostring(wrapper)
 	wrapper_addr = tostring(wrapper)
 	wrappers[wrapper_addr] = true
 
