@@ -282,7 +282,7 @@ twemoji_part.Examples = nil
 function twemoji_part:Ctor(str)
 	local em_components = str:Split(",")
 	local name = em_components[1]
-	self.Height = draw.GetFontHeight(self.HUD.DefaultFont)
+	self.Height = CLIENT and draw.GetFontHeight(self.HUD.DefaultFont) or 16
 
 	self:TryGetEmote(name)
 	self:ComputeSize()
