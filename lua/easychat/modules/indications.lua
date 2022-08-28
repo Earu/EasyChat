@@ -99,6 +99,8 @@ if CLIENT then
         local category = net.ReadString()
         local data = net.ReadTable()
 
+        if not IsValid(ply) then return end
+
         local ent = data.Entity
         local indicate_pos
         local is_ent_pos = false
