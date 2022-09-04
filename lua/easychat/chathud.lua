@@ -1392,11 +1392,12 @@ function chathud:AddText(...)
 		if t == "string" then
 			self:AppendText(arg)
 		elseif t == "Player" then
-			if not IsValid(arg) then
+			local ply = arg
+			if not IsValid(ply) then
 				self:InsertColorChange(110, 247, 177)
 				self:AppendText("???")
 			else
-				local team_col = team.GetColor(arg:Team())
+				local team_col = team.GetColor(ply:Team())
 				self:InsertColorChange(team_col.r, team_col.g, team_col.b)
 
 				if EC_PLAYER_PASTEL:GetBool() then
@@ -1406,7 +1407,7 @@ function chathud:AddText(...)
 				end
 
 				local lp = LocalPlayer()
-				if IsValid(lp) and lp == arg and EC_USE_ME:GetBool() then
+				if IsValid(lp) and lp == ply and EC_USE_ME:GetBool() then
 					self:AppendNick("me")
 				else
 					self:AppendNick(arg:RichNick())
