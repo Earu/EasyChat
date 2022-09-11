@@ -22,7 +22,6 @@ if file.Exists(LOOKUP_PATH, "DATA") then
 	local json = file.Read(LOOKUP_PATH, "DATA")
 	load_lookup(json)
 else
-	-- ISteamHTTP is sometimes not available on initialize, thanks Garry
 	local function fetch_lookup(retries)
 		retries = retries or 0
 
@@ -70,7 +69,9 @@ else
 		end
 	end
 
-	fetch_lookup()
+	timer.Simple(0, function()
+		fetch_lookup()
+	end)
 end
 
 function transliterator:IsRenderable(input)
