@@ -26,32 +26,44 @@ else
 	local function fetch_lookup(retries)
 		retries = retries or 0
 
-		local success, err = pcall(http.Fetch, LOOKUP_URL, function(json, size, _, code)
-			if code ~= 200 then
-				fail("Could not fetch transliteration lookup: " .. ("HTTP CODE %d"):format(code))
-				return
-			end
+		local http_params = {
+			url = LOOKUP_URL,
+			method = "get",
+			headers = {},
+			success = function(code, json)
+				local size = json:len()
+				if code ~= 200 then
+					fail("Could not fetch transliteration lookup: " .. ("HTTP CODE %d"):format(code))
+					return
+				end
 
-			if size == 0 then
-				fail("Transliteration lookup is empty?!")
-				return
-			end
+				if size == 0 then
+					fail("Transliteration lookup is empty?!")
+					timer.Simple(retries * 5, function()
+						fetch_lookup(retries + 1)
+					end)
+					
+					return
+				end
 
-			if not file.Exists("easychat", "DATA") then
-				file.CreateDir("easychat")
-			end
+				if not file.Exists("easychat", "DATA") then
+					file.CreateDir("easychat")
+				end
 
-			file.Write(LOOKUP_PATH, json)
-			load_lookup(json)
-		end, function(err)
-			fail("Could not fetch transliteration lookup: " .. err)
-			timer.Simple(retries * 5, function()
-				fetch_lookup(retries + 1)
-			end)
-		end)
-
-		if not success then
-			fail("Could not fetch transliteration lookup: " .. err)
+				file.Write(LOOKUP_PATH, json)
+				load_lookup(json)
+			end,
+			failed = function(err)
+				fail("Could not fetch transliteration lookup: " .. err)
+				timer.Simple(retries * 5, function()
+					fetch_lookup(retries + 1)
+				end)
+			end,
+		}
+		
+		local success, err = pcall(HTTP, http_params)
+		if not success or (success and err ~= true) then
+			fail("Could not fetch transliteration lookup: " .. (err or "unsuccessfull"))
 			timer.Simple(retries * 5, function()
 				fetch_lookup(retries + 1)
 			end)
