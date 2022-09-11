@@ -69,6 +69,7 @@ else
 		end
 	end
 
+	-- ISteamHTTP will fail on lua startup, it gets initialized later so we delay it
 	timer.Simple(0, function()
 		fetch_lookup()
 	end)
