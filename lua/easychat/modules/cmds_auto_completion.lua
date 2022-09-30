@@ -1,19 +1,19 @@
 local EASYCHAT_AUTO_COMPLETION = "EASY_CHAT_MODULE_CMDS_AUTO_COMPLETION"
 
-if SERVER and aowl then
+if SERVER and istable(_G.aowl) then
 	util.AddNetworkString(EASYCHAT_AUTO_COMPLETION)
 
 	net.Receive(EASYCHAT_AUTO_COMPLETION, function(_, ply)
 		local cmds_str = ""
-		if aowl.cmds then
+		if istable(_G.aowl.cmds) then
 			for cmd_name in pairs(aowl.cmds) do
 				cmds_str = ("%s,%s"):format(cmds_str, cmd_name)
 			end
-		elseif aowl.Commands then
+		elseif istable(_G.aowl.Commands) then
 			for cmd_name in pairs(aowl.Commands) do
 				cmds_str = ("%s,%s"):format(cmds_str, cmd_name)
 			end
-		elseif aowl.commands then
+		elseif istable(_G.aowl.commands) then
 			for cmd_name in pairs(aowl.commands) do
 				cmds_str = ("%s,%s"):format(cmds_str, cmd_name)
 			end
@@ -61,7 +61,7 @@ if CLIENT then
 		end
 	end
 
-	if ulx and ULib then
+	if istable(_G.ulx) and istable(_G.ULib) then
 		local categories = ulx.cmdsByCategory
 		local ulx_args_lookup = {
 			[ULib.cmds.NumArg] = "Number",
@@ -93,7 +93,7 @@ if CLIENT then
 		end
 
 		EasyChat.CmdSuggestions:AddSuggestionHandler("ULX", "!", generate_ulx_cmds_lookup(), 9999)
-	elseif FAdmin then
+	elseif istable(_G.FAdmin) then
 		hook.Remove("ChatTextChanged", "FAdmin_Chat_autocomplete")
 		hook.Remove("HUDPaint", "FAdmin_Chat_autocomplete")
 		hook.Remove("OnChatTab", "FAdmin_Chat_autocompletRemove")
@@ -104,7 +104,7 @@ if CLIENT then
 		end
 
 		EasyChat.CmdSuggestions:AddSuggestionHandler("FAdmin", "/", fadmin_cmds)
-	elseif sam and sam.command then
+	elseif istable(_G.sam) and istable(_G.sam.command) then
 		local function generate_sam_cmds_lookup()
 			local sam_cmds = {}
 			for _, cmd in pairs(sam.command:get_commands()) do
@@ -123,7 +123,7 @@ if CLIENT then
 		end
 
 		EasyChat.CmdSuggestions:AddSuggestionHandler("sam", "[!%~]", generate_sam_cmds_lookup())
-	elseif aowl then
+	elseif istable(_G.aowl) then
 		net.Receive(EASYCHAT_AUTO_COMPLETION, function()
 			local aowl_cmds = {}
 			local cmds_str = net.ReadString()
@@ -154,7 +154,7 @@ if CLIENT then
 			net.SendToServer()
 			hook.Remove("StartChat", hook_name)
 		end)
-	elseif Mercury and Mercury.Commands and Mercury.Commands.CommandTable then
+	elseif istable(_G.Mercury) and istable(_G.Mercury.Commands) and istable(_G.Mercury.Commands.CommandTable) then
 		local mercury_cmds = {}
 		for cmd_name in pairs(Mercury.Commands.CommandTable) do
 			mercury_cmds[cmd_name] = {}
