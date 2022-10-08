@@ -497,9 +497,12 @@ if CLIENT then
 		EasyChat.BlockedPlayers = util.JSONToTable(BLOCKED_PLAYERS) or {}
 
 		local lookup = {}
-		for _, ply in ipairs(player.GetAll()) do
-			if ply:GetFriendStatus() == "blocked" then
-				table.insert(lookup, ply:SteamID())
+
+		if GetConVar("easychat_sync_steam_blocks"):GetBool() then
+			for _, ply in ipairs(player.GetAll()) do
+				if ply:GetFriendStatus() == "blocked" then
+					table.insert(lookup, ply:SteamID())
+				end
 			end
 		end
 
@@ -515,7 +518,7 @@ if CLIENT then
 		end)
 	end
 
-	EasyChat.LoadBlockedPlayers()
+	hook.Add("Initialize", "EasyChatBlockListInit", EasyChat.LoadBlockedPlayers)
 
 	function EasyChat.BlockPlayer(steam_id)
 		EasyChat.BlockedPlayers[steam_id] = true
@@ -549,8 +552,10 @@ if CLIENT then
 		if not IsValid(ply) then return false end
 		if not ply:IsPlayer() then return false end
 
-		local steam_blocked = (ply:GetFriendStatus() or "") == "blocked"
-		if steam_blocked then return true end
+		if GetConVar("easychat_sync_steam_blocks"):GetBool() then
+			local steam_blocked = (ply:GetFriendStatus() or "") == "blocked"
+			if steam_blocked then return true end
+		end
 
 		local steam_id = ply:SteamID() or ""
 		if LocalPlayer():SteamID() == steam_id then return false end
@@ -561,6 +566,8 @@ if CLIENT then
 	-- sync up data for players joining, we dont want a funny steam blocked person to avoid blocking
 	gameevent.Listen("player_spawn")
 	hook.Add("player_spawn", TAG, function(data)
+		if not GetConVar("easychat_sync_steam_blocks"):GetBool() then return end
+
 		timer.Simple(10, function()
 			local ply = Player(data.userid)
 			if not IsValid(ply) then return end

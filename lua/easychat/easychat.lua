@@ -460,6 +460,7 @@ if CLIENT then
 	local EC_OUT_CLICK_CLOSE = CreateConVar("easychat_out_click_close", "1", FCVAR_ARCHIVE, "Clicking outside the chatbox closes it")
 	local EC_SERVER_MSG = CreateConVar("easychat_server_msg", "1", FCVAR_ARCHIVE, "Shows convars being changed on the server")
 	local EC_SKIP_STARTUP_MSG = CreateConVar("easychat_skip_startup_msg", "1", FCVAR_ARCHIVE, "Displays random addons startup messages in the console")
+	local _ = CreateConVar("easychat_sync_steam_blocks", "1", FCVAR_ARCHIVE, "Sync Steam blocked users with EasyChat")
 
 	-- timestamps
 	local EC_TIMESTAMPS = CreateConVar("easychat_timestamps", "0", FCVAR_ARCHIVE, "Display timestamps in the chatbox")
