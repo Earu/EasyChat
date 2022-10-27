@@ -805,6 +805,6 @@ function mc_color_part:Draw(ctx)
 	ctx:UpdateColor(self.Color)
 end
 
-chathud:RegisterPart("mccol", mc_color_part, "[&§]([0-9a-fr])")
+chathud:RegisterPart("mccol", mc_color_part, "[&\xc2]\xa7?([0-9a-fr])")
 
 return "ChatHUD Extra Tags"
