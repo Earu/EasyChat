@@ -1774,6 +1774,16 @@ if CLIENT then
 		end)
 
 		EasyChat.AddMode("Console", function(text)
+			if IsConCommandBlocked(text) then
+				local text_entry = EasyChat.GetMainTextEntry()
+				if IsValid(text_entry) then
+					local command = text:Split(" ")[1]
+					text_entry:TriggerBlink(("'%s' IS BLOCKED! USE THE CONSOLE!"):format(command))
+				end
+
+				return
+			end
+
 			LocalPlayer():ConCommand(text)
 		end)
 
@@ -2804,6 +2814,12 @@ if CLIENT then
 
 		local chathud = EasyChat.ChatHUD
 		local function chathud_screen_resolution_changed()
+			if not chathud then
+				chathud = EasyChat.ChatHUD
+			end
+
+			if not chathud then return end
+
 			local x, y, w, h = EasyChat.GetDefaultBounds()
 			x, y, w, h = chathud_get_bounds(x, y, w, h)
 
