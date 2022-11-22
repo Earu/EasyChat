@@ -4,8 +4,16 @@ local TAG = "EasyChatEngineChatHack"
 -- https://github.com/Heyter/gbins/tree/master/slog/src
 -- https://github.com/danielga/gm_sourcenet
 if SERVER then
-	local has_slog = #file.Find("lua/bin/gmsv_slog*","GAME") > 0
-	local has_sourcenet = #file.Find("lua/bin/*sourcenet*", "GAME") > 0
+	local function has_bin(name)
+		if util.IsBinaryModuleInstalled then
+			return util.IsBinaryModuleInstalled(name)
+		end
+
+		return #file.Find("lua/bin/*" .. name:PatternSafe() .. "*", "MOD") > 0
+	end
+
+	local has_slog = has_bin("slog")
+	local has_sourcenet = has_bin("sourcenet")
 	if has_slog then
 		has_slog = pcall(require, "slog")
 	end
@@ -13,7 +21,13 @@ if SERVER then
 	if not has_slog and has_sourcenet then
 		has_sourcenet = pcall(require, "sourcenet")
 		if has_sourcenet then
-			include("sourcenet/incoming.lua")
+			local FilterIncomingMessage = function(...) end
+			if file.Exists("sourcenet/incoming.lua", "LUA") then
+				include("sourcenet/incoming.lua")
+				FilterIncomingMessage = _G.FilterIncomingMessage
+			else
+				EasyChat.Print("Your sourcenet installation is corrupted! Missing lua files!")
+			end
 
 			local cache = {}
 			local function steamid_from_addr(addr)
