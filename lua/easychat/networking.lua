@@ -272,7 +272,7 @@ if SERVER then
 	end
 
 	local get_steam_id = FindMetaTable("Player").SteamID
-	local is_ply_blocked = EasyCHat.IsBlockedPlayer
+	local is_ply_blocked = EasyChat.IsBlockedPlayer
 	function EasyChat.PlayerCanHearPlayersVoice(listener, talker)
 		if is_ply_blocked(listener, get_steam_id(talker)) then return false end
 	end
