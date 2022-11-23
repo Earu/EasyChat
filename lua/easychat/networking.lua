@@ -215,11 +215,13 @@ if SERVER then
 		EasyChat.SendGlobalMessage(ply, msg, is_team, is_local, skip_player_say)
 	end
 
-	EasyChat.BlockedPlayers = {}
+	local is_valid = _G.IsValid
+	local blocked_players = EasyChat.BlockedPlayers or {}
+	EasyChat.BlockedPlayers = blocked_players
 	function EasyChat.IsBlockedPlayer(ply, steam_id)
-		if not IsValid(ply) or not steam_id then return false end
+		if not is_valid(ply) or not steam_id then return false end
 
-		local lookup = EasyChat.BlockedPlayers[ply]
+		local lookup = blocked_players[ply]
 		if not lookup then return false end
 		if not lookup[steam_id] then return false end
 
@@ -269,8 +271,10 @@ if SERVER then
 		end
 	end
 
+	local get_steam_id = FindMetaTable("Player").SteamID
+	local is_ply_blocked = EasyCHat.IsBlockedPlayer
 	function EasyChat.PlayerCanHearPlayersVoice(listener, talker)
-		if EasyChat.IsBlockedPlayer(listener, talker:SteamID()) then return false end
+		if is_ply_blocked(listener, get_steam_id(talker)) then return false end
 	end
 
 	hook.Add("PlayerCanSeePlayersChat", TAG, EasyChat.PlayerCanSeePlayersChat)
