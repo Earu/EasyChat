@@ -19,7 +19,8 @@ hook.Add("ECPostInitialized", "EasyChatModuleDarkRP", function()
 
 		EasyChat.AddNameTags(ply, msg_components)
 
-		if prefix then
+		-- Check if prefix is a string, as some text modifiers can return odd things here.
+		if type(prefix) == "string" then
 			if col1 == team.GetColor(ply:Team()) then -- Just prettier
 				col1 = color_white
 			end
