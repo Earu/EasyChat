@@ -232,7 +232,11 @@ function mentions:IsMention(msg)
 	local stripped_msg = ec_markup.GetText(msg):lower()
 	if filter_match(stripped_msg) then return true end
 
-	local ply_name = LocalPlayer():Nick():lower():PatternSafe()
+	local ply = LocalPlayer()
+	if not IsValid(ply) then return false end
+	if not ply.Nick then return false end
+
+	local ply_name = (ply:Nick() or ""):lower():PatternSafe()
 	local nick_mention = stripped_msg:match(ply_name)
 	local is_nick_match = not stripped_msg:match("^[%!%.%/]") and nick_mention
 	return is_nick_match and #nick_mention > 1
