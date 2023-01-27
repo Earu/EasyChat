@@ -661,7 +661,7 @@ local function create_default_settings()
 			setting_unrestrict_tab:SetParent(frame)
 			setting_unrestrict_tab:SetImage("icon16/shield.png")
 			setting_unrestrict_tab.DoClick = function()
-				local lines = tab_list:GetSelected()
+				local lines = frame_tab_list:GetSelected()
 				for _, line in pairs(lines) do
 					local succ, err = EasyChat.Config:WriteTab(line:GetColumnText(1), true)
 					if not succ then
