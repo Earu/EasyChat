@@ -98,9 +98,8 @@ function PANEL:Paint(w, h)
 		self.NextVoiceData = CurTime() + 0.025
 	end
 
-	local wep = LocalPlayer():GetActiveWeapon()
-	if IsValid(wep) and wep:GetClass() == "gmod_camera" then return end
-
+	if hook.Run("HUDShouldDraw","CHudVoiceStatus") == false then return end
+	
 	local bg_color = EasyChat.OutlayColor
 	surface.SetDrawColor(bg_color.r, bg_color.g, bg_color.b, bg_color.a)
 	surface.DrawRect(0, 0, w, h)
