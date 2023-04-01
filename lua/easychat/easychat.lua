@@ -2936,7 +2936,7 @@ if CLIENT then
 
 		hook.Add("ECFactoryReset", TAG, function()
 			cookie.Delete("ECChromiumWarn")
-			cookie.Delete("ECShowDonateButton")
+			--cookie.Delete("ECShowDonateButton")
 		end)
 
 		safe_hook_run("ECInitialized")
