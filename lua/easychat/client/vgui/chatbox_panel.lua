@@ -21,7 +21,7 @@ local CHATBOX = {
 		self.BtnClose = self:Add("DButton")
 		self.BtnMaxim = self:Add("DButton")
 		self.BtnSettings = self:Add("DButton")
-		self.BtnDonate = self:Add("DButton")
+		--self.BtnDonate = self:Add("DButton")
 		self.Tabs = self:Add("DPropertySheet")
 		self.Scroller = self.Tabs.tabScroller
 		self.OldTab = NULL
@@ -70,7 +70,7 @@ local CHATBOX = {
 			EasyChat.OpenSettings()
 		end
 
-		self.BtnDonate:SetSize(30, 29)
+		--[[self.BtnDonate:SetSize(30, 29)
 		self.BtnDonate:SetZPos(10)
 		self.BtnDonate:SetText("")
 		self.BtnDonate:SetTooltip("Donate")
@@ -93,7 +93,7 @@ local CHATBOX = {
 
 		if cookie.GetNumber("ECShowDonateButton") == 1 then
 			self.BtnDonate:Hide()
-		end
+		end]]--
 
 		self.Tabs:SetPos(6, 6)
 		self.Tabs:SetFadeTime(0)
@@ -215,7 +215,7 @@ local CHATBOX = {
 			self.BtnMaxim.Paint = function() end
 			self.BtnClose.Paint = function() end
 			self.BtnSettings.Paint = function() end
-			self.BtnDonate.Paint = function() end
+			--self.BtnDonate.Paint = function() end
 
 			local no_color = Color(0, 0, 0, 0)
 			self.Tabs.Paint = function(self, w, h)
@@ -226,7 +226,7 @@ local CHATBOX = {
 	end,
 	PerformLayout = function(self, w, h)
 		self.Tabs:SetSize(w - 13, h - 11)
-		self.BtnDonate:SetPos(w - self.BtnDonate:GetWide() - 93, -1)
+		--self.BtnDonate:SetPos(w - self.BtnDonate:GetWide() - 93, -1)
 		self.BtnSettings:SetPos(w - self.BtnSettings:GetWide() - 64, -1)
 		self.BtnMaxim:SetPos(w - self.BtnMaxim:GetWide() - 35, -5)
 		self.BtnClose:SetPos(w - self.BtnClose:GetWide() - 6, -2)
