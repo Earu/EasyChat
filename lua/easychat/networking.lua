@@ -357,7 +357,7 @@ if CLIENT then
 		-- Automatically becomes fixed in easychat if ever fixed in GMod (or in steam?) 
 		if broken_filtering ~= nil then return broken_filtering end
 		local broken = "\xe2\x96\x88"
-		local broken_result = util.FilterText("", TEXT_FILTER_UNKNOWN)
+		local broken_result = util.FilterText(broken, TEXT_FILTER_UNKNOWN)
 		broken_filtering = broken ~= broken_result
 	
 		return broken_filtering
