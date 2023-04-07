@@ -323,13 +323,57 @@ if CLIENT then
 		table.remove(EasyChat.BlockedStrings, id)
 		file.Write(BLOCKED_STRINGS_PATH, util.TableToJSON(EasyChat.BlockedStrings))
 	end
-
+	
+	-- Censorship depends on steam language
+	-- shortest racial slur from every language from steam api in 2021
+	local racial_slur_testers = util.Base64Decode("bmlnZ2VyCmhvbW8KYmliYQpwaWNoa3UKbmVncgpsZXNiYQpwZApqaWQKz4DOv8+Nz4PPhM63CmphcMOzCmNoZWNjCuyVoOyekAptYXJpY2EKY2lwCmZ1ZmEKbXVpc3QKZmF4YQpvw6cK0LPQtdC5CsSRxKk="):Split("\n")
+	local is_steam_filtering_chat = nil
+	
+	function EasyChat.IsSteamFilteringChat()
+		if is_steam_filtering_chat ~= nil then return is_steam_filtering_chat end
+	
+		-- we can only loosen restrictions so this should catch most cases
+		-- BUG: We cannot catch custom filtered words, but the player then likely has filtering on regardless
+		for filter_mode = TEXT_FILTER_UNKNOWN, TEXT_FILTER_NAME do
+			for _, racial_slur_test in pairs(racial_slur_testers) do
+				local filtered = util.FilterText(racial_slur_test, filter_mode)
+	
+				if filtered ~= racial_slur_test then
+					is_steam_filtering_chat = true
+	
+					return true
+				end
+			end
+		end
+	
+		is_steam_filtering_chat = false
+	
+		return false
+	end
+	
+	local broken_filtering = nil
+	
+	function EasyChat.IsFilteringBroken()
+		-- Automatically becomes fixed in easychat if ever fixed in GMod (or in steam?) 
+		if broken_filtering ~= nil then return broken_filtering end
+		local broken = "\xe2\x96\x88"
+		local broken_result = util.FilterText(broken, TEXT_FILTER_UNKNOWN)
+		broken_filtering = broken ~= broken_result
+	
+		return broken_filtering
+	end
+	
 	function EasyChat.FilterString(str)
 		local original_str = str
 		local base_str = ec_markup.GetText(str)
-
-		str = util.FilterText(base_str) -- respect the Steam filter settings
-
+		if EasyChat.IsFilteringBroken() and EasyChat.IsSteamFilteringChat() then
+			--TODO: Alternative (better) approach: 
+			--      Redo in Lua all that is being accidentally filtered 
+			--      and check if string matches util.FilterText result
+			
+			str = util.FilterText(base_str) -- respect the Steam filter settings
+		end
+		
 		for _, blocked_str in ipairs(EasyChat.BlockedStrings) do
 			local content = blocked_str.Content
 			if not blocked_str.IsPattern then
