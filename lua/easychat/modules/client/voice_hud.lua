@@ -175,7 +175,7 @@ GAMEMODE.old_PlayerStartVoice = GAMEMODE.old_PlayerStartVoice or GAMEMODE.Player
 GAMEMODE.old_PlayerEndVoice = GAMEMODE.old_PlayerEndVoice or GAMEMODE.PlayerEndVoice
 
 function GAMEMODE:PlayerStartVoice(ply)
-	if EC_VOICE_HUD:GetBool() then
+	if EC_VOICE_HUD:GetBool() and hook.Run("ECVoiceHUD",true) ~= false then
 		player_start_voice(ply)
 	else
 		self:old_PlayerStartVoice(ply)
@@ -183,7 +183,7 @@ function GAMEMODE:PlayerStartVoice(ply)
 end
 
 function GAMEMODE:PlayerEndVoice(ply)
-	if EC_VOICE_HUD:GetBool() then
+	if EC_VOICE_HUD:GetBool() and hook.Run("ECVoiceHUD",false) ~= false then
 		player_end_voice(ply)
 	else
 		self:old_PlayerEndVoice(ply)
