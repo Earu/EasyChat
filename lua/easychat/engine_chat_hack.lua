@@ -59,10 +59,15 @@ if SERVER then
 	end
 
 	if not has_slog and not has_sourcenet then
-		EasyChat.Print("Could not find a proper installation of slog or sourcenet, "
+		MsgC(Color(255, 155, 0), "[EasyChat] [WARN]\n"
+			.. "-------------------------------\n"
+			.. "Could not find a proper installation of slog or sourcenet, "
 			.. "chat console commands will use the engine networking as a result.\n"
 			.. "If you care about console commands please install either of these two:\n"
-			.. "- https://github.com/danielga/gm_sourcenet\n- https://github.com/Heyter/gbins/tree/master/slog/src")
+			.. "- https://github.com/danielga/gm_sourcenet\n"
+			.. "- https://github.com/Heyter/gbins/tree/master/slog/src\n"
+			.. "-------------------------------\n"
+			.. "YOU CAN IGNORE THIS WARNING SAFELY")
 	end
 
 	local say_cmds = {
