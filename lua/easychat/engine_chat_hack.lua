@@ -9,7 +9,8 @@ if SERVER then
 			return util.IsBinaryModuleInstalled(name)
 		end
 
-		return #file.Find("lua/bin/*" .. name:PatternSafe() .. "*", "MOD") > 0
+		local arch = system.IsWindows() and "win" or (system.IsOSX() and "osx" or "linux")
+		return #file.Find("lua/bin/gmsv_" .. name:PatternSafe() .. "_" .. arch .. "*.dll", "MOD") > 0
 	end
 
 	local has_slog = has_bin("slog")
