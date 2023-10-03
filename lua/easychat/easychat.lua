@@ -1182,7 +1182,7 @@ if CLIENT then
 	end
 
 	local function should_use_server_settings(ply)
-		local usergroup_prefix = EasyChat.Config.UserGroups[ply:GetUserGroup()]
+		local usergroup_prefix = EasyChat.Config.UserGroups[ply:GetUserGroup() or "user"]
 		if EasyChat.Config.OverrideClientSettings and usergroup_prefix then return true end
 		if not EasyChat.Config.OverrideClientSettings and EC_TEAMS:GetBool() and usergroup_prefix then return true end
 
@@ -1830,47 +1830,49 @@ if CLIENT then
 			end
 
 			if should_use_server_settings(ply) then
-				local usergroup_prefix = EasyChat.Config.UserGroups[ply:GetUserGroup()]
-				local tags_data = extract_tags_data(usergroup_prefix.Tag)
-				for _, tag_data in ipairs(tags_data) do
-					if is_color(tag_data) then
-						EasyChat.GUI.RichText:InsertColorChange(tag_data.r, tag_data.g, tag_data.b, 255)
-						table.insert(data, tag_data)
-					elseif isstring(tag_data) then
-						append_text(EasyChat.GUI.RichText, tag_data)
-						table.insert(data, tag_data)
+				local usergroup_prefix = EasyChat.Config.UserGroups[ply:GetUserGroup() or "user"]
+				if usergroup_prefix then
+					local tags_data = extract_tags_data(usergroup_prefix.Tag)
+					for _, tag_data in ipairs(tags_data) do
+						if is_color(tag_data) then
+							EasyChat.GUI.RichText:InsertColorChange(tag_data.r, tag_data.g, tag_data.b, 255)
+							table.insert(data, tag_data)
+						elseif isstring(tag_data) then
+							append_text(EasyChat.GUI.RichText, tag_data)
+							table.insert(data, tag_data)
+						end
 					end
-				end
 
-				append_text(EasyChat.GUI.RichText, " ")
-				table.insert(data, " ")
+					append_text(EasyChat.GUI.RichText, " ")
+					table.insert(data, " ")
 
-				if EC_HUD_CUSTOM:GetBool() then
-					EasyChat.ChatHUD:PushPartComponent("stop")
-
-					if #usergroup_prefix.Tag > 0 then
-						EasyChat.ChatHUD:AppendText(usergroup_prefix.Tag .. " ")
+					if EC_HUD_CUSTOM:GetBool() then
 						EasyChat.ChatHUD:PushPartComponent("stop")
-					end
 
-					if #usergroup_prefix.EmoteName > 0 then
-						local tag = ("<emote=%s"):format(usergroup_prefix.EmoteName)
-
-						if usergroup_prefix.EmoteSize ~= -1 then
-							tag = ("%s,%s"):format(tag, usergroup_prefix.EmoteSize)
+						if #usergroup_prefix.Tag > 0 then
+							EasyChat.ChatHUD:AppendText(usergroup_prefix.Tag .. " ")
+							EasyChat.ChatHUD:PushPartComponent("stop")
 						end
 
-						if #usergroup_prefix.EmoteProvider > 0 then
-							-- add a comma here for proper markup parsing
-							if usergroup_prefix.EmoteSize == -1 then
-								tag = ("%s,"):format(tag)
+						if #usergroup_prefix.EmoteName > 0 then
+							local tag = ("<emote=%s"):format(usergroup_prefix.EmoteName)
+
+							if usergroup_prefix.EmoteSize ~= -1 then
+								tag = ("%s,%s"):format(tag, usergroup_prefix.EmoteSize)
 							end
 
-							tag = ("%s,%s"):format(tag, usergroup_prefix.EmoteProvider)
-						end
+							if #usergroup_prefix.EmoteProvider > 0 then
+								-- add a comma here for proper markup parsing
+								if usergroup_prefix.EmoteSize == -1 then
+									tag = ("%s,"):format(tag)
+								end
 
-						tag = ("%s> "):format(tag)
-						EasyChat.ChatHUD:AppendText(tag)
+								tag = ("%s,%s"):format(tag, usergroup_prefix.EmoteProvider)
+							end
+
+							tag = ("%s> "):format(tag)
+							EasyChat.ChatHUD:AppendText(tag)
+						end
 					end
 				end
 			end
