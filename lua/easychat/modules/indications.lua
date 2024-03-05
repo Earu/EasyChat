@@ -407,6 +407,8 @@ if SERVER then
     local RATE_LIMIT = 4
     net.Receive(TAG, function(_, ply)
         if CurTime() <= (ply.NextAIC or 0) then return end
+        local ret = EasyChat.SafeHookRun("ECCanIndicate", ply)
+        if ret == false then return end
 
         ply.NextAIC = CurTime() + RATE_LIMIT
 
