@@ -392,12 +392,18 @@ local font_part = {
 }
 
 function font_part:Ctor(str)
-	local succ, _ = pcall(surface_SetFont, str) -- only way to check if a font is valid
+	if not surface.GetLuaFonts then
+		self.Invalid = true
+		return self
+	end
+
+	local lua_fonts = surface.GetLuaFonts()
+	local succ = lua_fonts[string_lower(str)] ~= nil
 	self.Font = succ and str or self.HUD.DefaultFont
 	if not succ then
 		self.Invalid = true
 	elseif self.HUD == EasyChat.ChatHUD then
-		local font_data = surface.GetLuaFonts()[string_lower(self.Font)]
+		local font_data = lua_fonts[string_lower(self.Font)]
 		local size = font_data and font_data.size or draw_GetFontHeight(self.Font)
 		self.Invalid = size > 32
 	end
