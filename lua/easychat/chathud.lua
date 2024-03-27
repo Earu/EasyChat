@@ -392,12 +392,12 @@ local font_part = {
 }
 
 function font_part:Ctor(str)
-	if not surface.GetLuaFonts then
+	if not surface_GetLuaFonts then
 		self.Invalid = true
 		return self
 	end
 
-	local lua_fonts = surface.GetLuaFonts()
+	local lua_fonts = surface_GetLuaFonts()
 	local succ = lua_fonts[string_lower(str)] ~= nil
 	self.Font = succ and str or self.HUD.DefaultFont
 	if not succ then
