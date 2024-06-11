@@ -1138,7 +1138,7 @@ if CLIENT then
 		}
 
 		local headers = {}
-		headers["Authorization"] = "Client-ID 62f1e31985e240b"
+		headers["Authorization"] = "Client-ID c148510ba377a90"
 
 		local http_data = {
 			failed = function(...)
