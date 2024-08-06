@@ -2677,19 +2677,16 @@ if CLIENT then
 			end
 		end)
 
-		hook.Add("PreRender", TAG, function()
-			if not input.IsKeyDown(KEY_ESCAPE) then return end
+		hook.Add("OnPauseMenuShow", TAG, function()
+    			if IsValid(EasyChat.Settings) and EasyChat.Settings:IsVisible() then
+        			EasyChat.Settings:SetVisible(false)
+				return false
+    			end
 
-			-- handle settings menu if opened, stop there for now
-			if IsValid(EasyChat.Settings) and EasyChat.Settings:IsVisible() then
-				EasyChat.Settings:SetVisible(false)
-				return
-			end
-
-			if EasyChat.IsOpened() then
-				close_chatbox()
-				gui.HideGameUI()
-			end
+   		 	if EasyChat.IsOpened() then
+        			close_chatbox()
+				return false
+    		 	end
 		end)
 
 		hook.Add("GUIMousePressed", TAG, function(mouse_code)
