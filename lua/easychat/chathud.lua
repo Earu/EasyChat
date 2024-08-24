@@ -1,8 +1,9 @@
 --[[-----------------------------------------------------------------------------
 	Micro Optimization
 ]]-------------------------------------------------------------------------------
-local ipairs, pairs, tonumber, select = _G.ipairs, _G.pairs, _G.tonumber, _G.select
+local ipairs, pairs, tonumber, select, pcall, xpcall = _G.ipairs, _G.pairs, _G.tonumber, _G.select, _G.pcall, _G.xpcall
 local Color = _G.Color
+local ErrorNoHaltWithStack = _G.ErrorNoHaltWithStack
 local type, tostring, RealFrameTime, RealTime = _G.type, _G.tostring, _G.RealFrameTime, _G.RealTime
 
 local table_copy = _G.table.Copy
@@ -249,6 +250,18 @@ local function utf8_sub(str, i, j)
 	end
 
 	return string_sub(str, start_byte, end_byte)
+end
+
+
+local function call_component_function(component, fn_name, default, ...)
+	local rets = { xpcall(component[fn_name], function(err)
+		ErrorNoHaltWithStack("[EC] Error in \"" .. fn_name .. "\" function: " .. err)
+	end, component, ...) }
+
+	local success = table.remove(rets, 1)
+	if success then return unpack(rets) end
+
+	return default
 end
 
 local default_part = {
@@ -687,7 +700,7 @@ function text_part:LineBreak()
 		local component = self.HUD:CreateComponent("text", remaining_text)
 		component.Font = self.Font
 		component.ShadowFont = self.ShadowFont
-		remaining_text = component:FitWidth()
+		remaining_text = call_component_function(component, "FitWidth", 0)
 	until remaining_text == ""
 end
 
@@ -1053,7 +1066,7 @@ function base_line:Draw(ctx)
 	ctx.Alpha = self.Alpha
 
 	for _, component in ipairs(self.Components) do
-		component:Draw(ctx)
+		call_component_function(component, "Draw", nil, ctx)
 
 		if RealTime() - ctx.DrawStart > 0.25 then
 			ctx.ShouldDraw = false
@@ -1070,7 +1083,7 @@ function base_line:PushComponent(component)
 	-- need to update width for inserting next components properly
 	self.Size.W = self.Size.W + component.Size.W
 
-	component:PostLinePush()
+	call_component_function(component, "PostLinePush")
 end
 
 function chathud:CreateLine()
@@ -1092,7 +1105,7 @@ function chathud:NewLine()
 		table_remove(self.Lines, 1)
 
 		for _, component in ipairs(oldest_line.Components) do
-			component:OnRemove()
+			call_component_function(component, "OnRemove")
 		end
 	end
 
@@ -1112,7 +1125,7 @@ function chathud:InvalidateLayout()
 		line.Index = i
 
 		for _, component in ipairs(line.Components) do
-			component:ComputeSize()
+			call_component_function(component, "ComputeSize")
 
 			component.Pos.X = self.Pos.X + line.Size.W
 			line.Size.W = line.Size.W + component.Size.W
@@ -1139,7 +1152,8 @@ function chathud:CreateComponent(name, ...)
 	local copy = table_copy(part)
 	copy.HUD = self
 	copy.TextInput = table_concat({ ... }, ",")
-	return copy:Ctor(...)
+
+	return call_component_function(copy, "Ctor", nil, ...)
 end
 
 function chathud:PushPartComponent(name, ...)
@@ -1147,9 +1161,9 @@ function chathud:PushPartComponent(name, ...)
 	if not component then return end
 
 	local line = self:LastLine()
-	component:PreLinePush(line, #line.Components)
+	call_component_function(component, "PreLinePush", nil, line, #line.Components)
 	if line.Size.W + component.Size.W > self.Size.W then
-		component:LineBreak()
+		call_component_function(component, "LineBreak")
 	else
 		line:PushComponent(component)
 	end
@@ -1213,7 +1227,7 @@ function chathud:NormalizeString(str, is_nick)
 
 	for _, part in pairs(self.Parts) do
 		if part.Enabled and ((is_nick and part.OkInNicks) or not is_nick) then
-			str = part:Normalize(str)
+			str = call_component_function(part, "Normalize", "", str)
 		end
 	end
 
@@ -1266,7 +1280,7 @@ function chathud:StopComponents()
 					self.Size = { W = 0, H = 0 }
 				end
 
-				component:OnStop()
+				call_component_function(component, "OnStop")
 			end
 		end
 	end
@@ -1313,13 +1327,13 @@ end
 
 function draw_context:CallPostTextDrawFunctions(x, y, w, h)
 	for _, component in ipairs(self.PostTextDrawFunctions) do
-		component:PostTextDraw(self, x, y, w, h)
+		call_component_function(component, "PostTextDraw", nil, self, x, y, w, h)
 	end
 end
 
 function draw_context:CallPreTextDrawFunctions(x, y, w, h)
 	for _, component in ipairs(self.PreTextDrawFunctions) do
-		component:PreTextDraw(self, x, y, w, h)
+		call_component_function(component, "PreTextDraw", nil, self, x, y, w, h)
 	end
 end
 
@@ -1372,7 +1386,7 @@ function chathud:Draw()
 		for i, line in ipairs(self.Lines) do
 			if line.ShouldRemove then
 				for _, component in ipairs(line.Components) do
-					component:OnRemove()
+					call_component_function(component, "OnRemove")
 				end
 
 				table_remove(self.Lines, i)
