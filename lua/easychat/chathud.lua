@@ -700,7 +700,7 @@ function text_part:LineBreak()
 		local component = self.HUD:CreateComponent("text", remaining_text)
 		component.Font = self.Font
 		component.ShadowFont = self.ShadowFont
-		remaining_text = call_component_function(component, "FitWidth", 0)
+		remaining_text = component:FitWidth()
 	until remaining_text == ""
 end
 
