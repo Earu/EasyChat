@@ -174,7 +174,7 @@ end, function(err)
 end)
 
 local function get_twemoji_url(name)
-	return ("https://twemoji.maxcdn.com/v/latest/72x72/%s.png"):format(discord_lookup[name])
+	return ("https://jdecked.github.io/twemoji/v/latest/72x72/%s.png"):format(discord_lookup[name])
 end
 
 local function get_twemoji_url_codepoints(tbl)
@@ -183,7 +183,7 @@ local function get_twemoji_url_codepoints(tbl)
 		table.insert(formatted, ("%x"):format(num))
 	end
 
-	return ("https://twemoji.maxcdn.com/v/latest/72x72/%s.png"):format(table.concat(formatted, "-"))
+	return ("https://jdecked.github.io/twemoji/v/latest/72x72/%s.png"):format(table.concat(formatted, "-"))
 end
 
 local function to_hex(str)
