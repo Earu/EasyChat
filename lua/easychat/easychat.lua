@@ -2301,7 +2301,7 @@ if CLIENT then
 
 			local caret_pos = self:GetCaretPos()
 			local str = self:GetText()
-			local str_start, str_end = str:sub(1, caret_pos), str:sub(caret_pos + 1)
+			local str_start, str_end = utf8.sub(str, 1, caret_pos), utf8.sub(str, caret_pos + 1)
 			self:SetText(("%s%s%s"):format(str_start, UPLOADING_TEXT, str_end))
 			uploading = true
 
