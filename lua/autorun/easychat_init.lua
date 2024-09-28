@@ -9,6 +9,7 @@ AddCSLuaFile("easychat/autoloader.lua")
 AddCSLuaFile("easychat/engine_chat_hack.lua")
 
 AddCSLuaFile("easychat/client/font_extensions.lua")
+AddCSLuaFile("easychat/client/cef_detection.lua")
 AddCSLuaFile("easychat/client/blur_panel.lua")
 AddCSLuaFile("easychat/client/translator.lua")
 AddCSLuaFile("easychat/client/expressions.lua")

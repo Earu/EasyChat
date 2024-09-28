@@ -41,7 +41,7 @@ else
 					timer.Simple(retries * 5, function()
 						fetch_lookup(retries + 1)
 					end)
-					
+
 					return
 				end
 
@@ -59,7 +59,7 @@ else
 				end)
 			end,
 		}
-		
+
 		local success, err = pcall(HTTP, http_params)
 		if not success or (success and err ~= true) then
 			fail("Could not fetch transliteration lookup: " .. (err or "unsuccessfull"))
