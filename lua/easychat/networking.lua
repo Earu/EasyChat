@@ -124,10 +124,11 @@ if SERVER then
 		net.Start(NET_BROADCAST_MSG)
 		net.WriteUInt(ply:UserID(), 16)
 		net.WriteString(ply:RichNick())
-		net.WriteData(util.Compress(msg))
+
 		net.WriteBool(is_dead)
 		net.WriteBool(is_team)
 		net.WriteBool(is_local)
+		net.WriteData(util.Compress(msg))
 		net.Send(filter)
 
 		if game.IsDedicated() and not is_local then
@@ -438,10 +439,10 @@ if CLIENT then
 	net.Receive(NET_BROADCAST_MSG, function()
 		local user_id = net.ReadUInt(16)
 		local user_name = net.ReadString()
-		local msg = util.Decompress(net.ReadData())
 		local is_dead = net.ReadBool()
 		local is_team = net.ReadBool()
 		local is_local = net.ReadBool()
+		local msg = util.Decompress(net.ReadData(net.BytesLeft()))
 
 		local function receive(retries)
 			retries = retries or 0
