@@ -124,10 +124,11 @@ if SERVER then
 		net.Start(NET_BROADCAST_MSG)
 		net.WriteUInt(ply:UserID(), 16)
 		net.WriteString(ply:RichNick())
-		net.WriteString(msg)
+
 		net.WriteBool(is_dead)
 		net.WriteBool(is_team)
 		net.WriteBool(is_local)
+		net.WriteData(util.Compress(msg))
 		net.Send(filter)
 
 		if game.IsDedicated() and not is_local then
@@ -229,9 +230,9 @@ if SERVER then
 	end
 
 	net.Receive(NET_SEND_MSG, function(_, ply)
-		local msg = net.ReadString()
 		local is_team = net.ReadBool()
 		local is_local = net.ReadBool()
+		local msg = util.Decompress(net.ReadData(net.BytesLeft()))
 
 		EasyChat.ReceiveGlobalMessage(ply, msg, is_team, is_local)
 	end)
@@ -438,10 +439,10 @@ if CLIENT then
 	net.Receive(NET_BROADCAST_MSG, function()
 		local user_id = net.ReadUInt(16)
 		local user_name = net.ReadString()
-		local msg = net.ReadString()
 		local is_dead = net.ReadBool()
 		local is_team = net.ReadBool()
 		local is_local = net.ReadBool()
+		local msg = util.Decompress(net.ReadData(net.BytesLeft()))
 
 		local function receive(retries)
 			retries = retries or 0
@@ -526,16 +527,16 @@ if CLIENT then
 		if not no_translate and EC_TRANSLATE_OUT_MSG:GetBool() and source_lang ~= target_lang then
 			EasyChat.Translator:Translate(msg, source_lang, target_lang, function(success, _, translation)
 				net.Start(NET_SEND_MSG)
-				net.WriteString(success and translation or msg)
 				net.WriteBool(is_team)
 				net.WriteBool(is_local)
+				net.WriteData(util.Compress(success and translation or msg))
 				net.SendToServer()
 			end)
 		else
 			net.Start(NET_SEND_MSG)
-			net.WriteString(msg)
 			net.WriteBool(is_team)
 			net.WriteBool(is_local)
+			net.WriteData(util.Compress(msg))
 			net.SendToServer()
 		end
 	end
