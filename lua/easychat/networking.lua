@@ -230,9 +230,9 @@ if SERVER then
 	end
 
 	net.Receive(NET_SEND_MSG, function(_, ply)
-		local msg = net.ReadString()
 		local is_team = net.ReadBool()
 		local is_local = net.ReadBool()
+		local msg = util.Decompress(net.ReadData(net.BytesLeft()))
 
 		EasyChat.ReceiveGlobalMessage(ply, msg, is_team, is_local)
 	end)
@@ -527,16 +527,16 @@ if CLIENT then
 		if not no_translate and EC_TRANSLATE_OUT_MSG:GetBool() and source_lang ~= target_lang then
 			EasyChat.Translator:Translate(msg, source_lang, target_lang, function(success, _, translation)
 				net.Start(NET_SEND_MSG)
-				net.WriteString(success and translation or msg)
 				net.WriteBool(is_team)
 				net.WriteBool(is_local)
+				net.WriteData(util.Compress(success and translation or msg))
 				net.SendToServer()
 			end)
 		else
 			net.Start(NET_SEND_MSG)
-			net.WriteString(msg)
 			net.WriteBool(is_team)
 			net.WriteBool(is_local)
+			net.WriteData(util.Compress(msg))
 			net.SendToServer()
 		end
 	end
