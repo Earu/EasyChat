@@ -604,7 +604,7 @@ function text_part:DrawShadow(ctx)
 	if not self.ShouldDrawShadow then return end
 
 	shadow_col.a = ctx.Alpha
-	surface_SetTextColor(shadow_col)
+	surface_SetTextColor(shadow_col.r, shadow_col.g, shadow_col.b, shadow_col.a)
 	surface_SetFont(self.ShadowFont and self.ShadowFont or self.HUD.DefaultShadowFont)
 
 	local x, y = self:GetTextDrawPos(ctx)
@@ -624,8 +624,9 @@ function text_part:Draw(ctx)
 
 	self:DrawShadow(ctx)
 
+	local color = ctx.Color
 	surface_SetTextPos(x, y)
-	surface_SetTextColor(ctx.Color)
+	surface_SetTextColor(color.r, color.g, color.b, color.a)
 	surface_SetFont(self.Font)
 	surface_DrawText(self.Content)
 
@@ -1305,8 +1306,8 @@ local draw_context = {
 
 function draw_context:UpdateColor(col)
 	col.a = self.Alpha
-	surface_SetDrawColor(col)
-	surface_SetTextColor(col)
+	surface_SetDrawColor(col.r, col.g, col.b, col.a)
+	surface_SetTextColor(col.r, col.g, col.b, col.a)
 	self.Color = col
 end
 
@@ -1344,8 +1345,8 @@ end
 
 function draw_context:ResetColors()
 	local default_col = self.HUD.DefaultColor
-	surface_SetDrawColor(default_col)
-	surface_SetTextColor(default_col)
+	surface_SetDrawColor(default_col.r, default_col.g, default_col.b, default_col.a)
+	surface_SetTextColor(default_col.r, default_col.g, default_col.b, default_col.a)
 	self.Color = Color(default_col.r, default_col.g, default_col.b, self.Alpha)
 end
 
