@@ -403,10 +403,10 @@ if SERVER then
 	end)
 
 	-- we can't do that in Initialize because the http lib is sometimes not available
-	hook.Add("Think", TAG, function()
+	--[[hook.Add("Think", TAG, function()
 		check_version()
 		hook.Remove("Think", TAG)
-	end)
+	end)]]
 
 	hook.Add("ECOpened", TAG, function(ply)
 		if not ply:IsAdmin() then return end
