@@ -25,7 +25,7 @@ local ec_cvar_dist = GetConVar("easychat_local_msg_distance")
 local horizontal_padding = 15
 local vertical_padding = 5
 
-hook.Add( "EasyChat.GUI.ChatBox.Paint", "LocalUI", function( chatbox, w, h )
+hook.Add( "ECChatboxPaint", "LocalUI", function( chatbox, w, h )
 	panel:PaintManual()
 end )
 

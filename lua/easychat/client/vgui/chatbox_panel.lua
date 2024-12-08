@@ -207,7 +207,7 @@ local CHATBOX = {
 			EasyChat.BlurPanel(self, 6, 0, -13, -5)
 			self:NoClipping(true)
 			self.Paint = function(self, w, h)
-				hook.Run( 'EasyChat.GUI.ChatBox.Paint', self, w, h )
+				hook.Run( 'ECChatboxPaint', self, w, h )
 
 				surface_SetDrawColor(EasyChat.OutlayColor)
 				surface_DrawRect(6, 0, w - 13, 28)
