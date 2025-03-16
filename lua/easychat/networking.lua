@@ -94,6 +94,14 @@ if SERVER then
 		msg = EasyChat.ExtendedStringTrim(msg)
 		if #msg == 0 then return end
 
+		-- compact with gameevent
+		hook.Run("player_say", { 
+			priority = 1, 
+			userid = IsValid(ply) and ply:UserID() or 0,
+			text = msg,
+			teamonly = is_team and 1 or 0,
+		})
+
 		local filter = {}
 		local broken_count = 1
 		local function add_to_filter(ply_to_add)
@@ -425,10 +433,26 @@ if CLIENT then
 					if translation and msg ~= translation then
 						chat.AddText(ply, ("▲ %s ▲"):format(translation))
 					end
+
+					-- compact with gameevent
+					hook.Run("player_say", { 
+						priority = 1, 
+						userid = IsValid(ply) and ply:UserID() or 0,
+						text = msg,
+						teamonly = is_team and 1 or 0,
+					})
 				end
 			end)
 		else
 			hook.Run("OnPlayerChat", ply, msg, is_team, is_dead, is_local)
+			
+			-- compact with gameevent
+			hook.Run("player_say", { 
+				priority = 1, 
+				userid = IsValid(ply) and ply:UserID() or 0,
+				text = msg,
+				teamonly = is_team and 1 or 0,
+			})
 		end
 	end
 
