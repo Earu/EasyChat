@@ -6,6 +6,14 @@ local PANEL = {
 	CaretPos = 0,
 }
 
+local EC_PRESERVE_MESSAGE_IN_PROGRESS = CreateConVar("easychat_preserve_message_in_progress", "1", {FCVAR_ARCHIVE, FCVAR_USERINFO}, "Preserve the message in progress.")
+
+EC_PRESERVE_MESSAGE_IN_PROGRESS:AddChangeCallback("TextEntryX", function()
+	if not EC_PRESERVE_MESSAGE_IN_PROGRESS:GetBool() then
+		PANEL.ValueInProgress = ""
+	end
+end)
+
 function PANEL:Init()
 	self:SetFocusTopLevel(true)
 	self:SetKeyboardInputEnabled(true)
@@ -58,8 +66,11 @@ function PANEL:Init()
 
 	self:AddInternalCallback("OnChange", function(value, caret_pos)
 		self.CurrentValue = value
-		self.ValueInProgress = value
 		self.CaretPos = caret_pos
+
+		if EC_PRESERVE_MESSAGE_IN_PROGRESS:GetBool() then
+			self.ValueInProgress = value
+		end
 
 		self:OnChange()
 		self:OnValueChange(value)
@@ -68,17 +79,20 @@ function PANEL:Init()
 	self:AddInternalCallback("OnArrowUp", function(caret_pos)
 		self.CaretPos = caret_pos
 
-		local textInProgress = self:GetTextInProgress()
+		if EC_PRESERVE_MESSAGE_IN_PROGRESS:GetBool() and self.HistoryPos == 0 then
+			local textInProgress = self:GetTextInProgress()
 
-		-- bring back message in progress
-		if self.HistoryPos == 0 and textInProgress ~= self:GetText() and textInProgress ~= self.History[#self.History] then
-			self:SetText(self:GetTextInProgress())
-			self:OnChange()
-			self:OnValueChange(self:GetTextInProgress())
-		else
-			self.HistoryPos = self.HistoryPos - 1
-			self:UpdateFromHistory()
+			if textInProgress ~= self:GetText() and textInProgress ~= self.History[#self.History] then
+				-- bring back message in progress
+				self:SetText(self:GetTextInProgress())
+				self:OnChange()
+				self:OnValueChange(self:GetTextInProgress())
+				return
+			end
 		end
+
+		self.HistoryPos = self.HistoryPos - 1
+		self:UpdateFromHistory()
 	end)
 
 	self:AddInternalCallback("OnArrowDown", function(caret_pos)
@@ -256,7 +270,7 @@ function PANEL:UpdateFromHistory()
 	if pos < 0 then pos = #self.History end
 	if pos > #self.History then pos = 0 end
 
-	local text = pos == 0 and self:GetTextInProgress() or self.History[pos]
+	local text = (EC_PRESERVE_MESSAGE_IN_PROGRESS:GetBool() and pos == 0) and self:GetTextInProgress() or self.History[pos]
 	text = text or ""
 
 	self:SetValue(text)
