@@ -6,13 +6,13 @@ local PANEL = {
 	CaretPos = 0,
 }
 
-local EC_PRESERVE_MESSAGE_IN_PROGRESS = CreateConVar("easychat_preserve_message_in_progress", "1", {FCVAR_ARCHIVE, FCVAR_USERINFO}, "Preserve the message in progress.")
+local EC_PRESERVE_MESSAGE_IN_PROGRESS = GetConVar("easychat_preserve_message_in_progress")
 
-EC_PRESERVE_MESSAGE_IN_PROGRESS:AddChangeCallback("TextEntryX", function()
+cvars.AddChangeCallback("easychat_preserve_message_in_progress", function()
 	if not EC_PRESERVE_MESSAGE_IN_PROGRESS:GetBool() then
 		PANEL.ValueInProgress = ""
 	end
-end)
+end, "clear_value_in_progress_on_disable")
 
 function PANEL:Init()
 	self:SetFocusTopLevel(true)
