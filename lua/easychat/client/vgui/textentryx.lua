@@ -1,5 +1,6 @@
 local PANEL = {
 	CurrentValue = "",
+	ValueInProgress = "",
 	History = {},
 	HistoryPos = 0,
 	CaretPos = 0,
@@ -57,6 +58,7 @@ function PANEL:Init()
 
 	self:AddInternalCallback("OnChange", function(value, caret_pos)
 		self.CurrentValue = value
+		self.ValueInProgress = value
 		self.CaretPos = caret_pos
 
 		self:OnChange()
@@ -65,8 +67,18 @@ function PANEL:Init()
 
 	self:AddInternalCallback("OnArrowUp", function(caret_pos)
 		self.CaretPos = caret_pos
-		self.HistoryPos = self.HistoryPos - 1
-		self:UpdateFromHistory()
+
+		local textInProgress = self:GetTextInProgress()
+
+		-- bring back message in progress
+		if self.HistoryPos == 0 and textInProgress ~= self:GetText() and textInProgress ~= self.History[#self.History] then
+			self:SetText(self:GetTextInProgress())
+			self:OnChange()
+			self:OnValueChange(self:GetTextInProgress())
+		else
+			self.HistoryPos = self.HistoryPos - 1
+			self:UpdateFromHistory()
+		end
 	end)
 
 	self:AddInternalCallback("OnArrowDown", function(caret_pos)
@@ -244,7 +256,7 @@ function PANEL:UpdateFromHistory()
 	if pos < 0 then pos = #self.History end
 	if pos > #self.History then pos = 0 end
 
-	local text = self.History[pos]
+	local text = pos == 0 and self:GetTextInProgress() or self.History[pos]
 	text = text or ""
 
 	self:SetValue(text)
@@ -274,6 +286,11 @@ function PANEL:GetText()
 	return self.CurrentValue
 end
 PANEL.GetValue = PANEL.GetText
+
+function PANEL:GetTextInProgress()
+	return self.ValueInProgress
+end
+PANEL.GetValueInProgress = PANEL.GetTextInProgress
 
 function PANEL:SetText(text)
 	text = isstring(text) and text or ""
