@@ -45,6 +45,7 @@ local EC_TIMESTAMPS_COLOR = get_cvar("easychat_timestamps_color")
 local EC_TAGS_IN_CHATBOX = get_cvar("easychat_tags_in_chatbox")
 local EC_USE_DERMASKIN = get_cvar("easychat_use_dermaskin")
 local EC_HISTORY = get_cvar("easychat_history")
+local EC_PRESERVE_MESSAGE_IN_PROGRESS = get_cvar("easychat_preserve_message_in_progress")
 local EC_GLOBAL_ON_OPEN = get_cvar("easychat_global_on_open")
 local EC_FONT = get_cvar("easychat_font")
 local EC_FONT_SIZE = get_cvar("easychat_font_size")
@@ -376,6 +377,7 @@ local function create_default_settings()
 		settings:AddConvarSettingsSet(category_name, {
 			[EC_GLOBAL_ON_OPEN] = "Open in the global tab",
 			[EC_HISTORY] = "Enable history",
+			[EC_PRESERVE_MESSAGE_IN_PROGRESS] = "Preserve message in progress",
 			[EC_TAGS_IN_CHATBOX] = "Shows tags in the chatbox",
 			[EC_IMAGES] = "Display images",
 			[EC_PEEK_COMPLETION] = "Peek at the possible chat completion",
