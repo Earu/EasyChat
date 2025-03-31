@@ -1,9 +1,18 @@
 local PANEL = {
 	CurrentValue = "",
+	ValueInProgress = "",
 	History = {},
 	HistoryPos = 0,
 	CaretPos = 0,
 }
+
+local EC_PRESERVE_MESSAGE_IN_PROGRESS = GetConVar("easychat_preserve_message_in_progress")
+
+cvars.AddChangeCallback("easychat_preserve_message_in_progress", function()
+	if not EC_PRESERVE_MESSAGE_IN_PROGRESS:GetBool() then
+		PANEL.ValueInProgress = ""
+	end
+end, "clear_value_in_progress_on_disable")
 
 function PANEL:Init()
 	self:SetFocusTopLevel(true)
@@ -59,12 +68,29 @@ function PANEL:Init()
 		self.CurrentValue = value
 		self.CaretPos = caret_pos
 
+		if EC_PRESERVE_MESSAGE_IN_PROGRESS:GetBool() then
+			self.ValueInProgress = value
+		end
+
 		self:OnChange()
 		self:OnValueChange(value)
 	end)
 
 	self:AddInternalCallback("OnArrowUp", function(caret_pos)
 		self.CaretPos = caret_pos
+
+		if EC_PRESERVE_MESSAGE_IN_PROGRESS:GetBool() and self.HistoryPos == 0 then
+			local textInProgress = self:GetTextInProgress()
+
+			if textInProgress ~= self:GetText() and textInProgress ~= self.History[#self.History] then
+				-- bring back message in progress
+				self:SetText(self:GetTextInProgress())
+				self:OnChange()
+				self:OnValueChange(self:GetTextInProgress())
+				return
+			end
+		end
+
 		self.HistoryPos = self.HistoryPos - 1
 		self:UpdateFromHistory()
 	end)
@@ -244,7 +270,7 @@ function PANEL:UpdateFromHistory()
 	if pos < 0 then pos = #self.History end
 	if pos > #self.History then pos = 0 end
 
-	local text = self.History[pos]
+	local text = (EC_PRESERVE_MESSAGE_IN_PROGRESS:GetBool() and pos == 0) and self:GetTextInProgress() or self.History[pos]
 	text = text or ""
 
 	self:SetValue(text)
@@ -274,6 +300,11 @@ function PANEL:GetText()
 	return self.CurrentValue
 end
 PANEL.GetValue = PANEL.GetText
+
+function PANEL:GetTextInProgress()
+	return self.ValueInProgress
+end
+PANEL.GetValueInProgress = PANEL.GetTextInProgress
 
 function PANEL:SetText(text)
 	text = isstring(text) and text or ""
