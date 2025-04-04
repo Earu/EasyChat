@@ -885,10 +885,6 @@ local function create_default_settings()
 		end
 
 		local function setup_rank(usergroup)
-			usergroup = usergroup or "user"
-
-			-- sanity check to see if wanted usergroup actually exists
-			if usergroup and not EasyChat.Config.UserGroups[usergroup] then return end
 
 			local frame = EasyChat.CreateFrame()
 			frame:SetSize(400, 400)
