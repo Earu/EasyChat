@@ -1,4 +1,4 @@
-if not DarkRP then return "DarkRP Compat" end
+if not DarkRP or DarkRP.MetaName ~= "DarkRP" then return "DarkRP Compat" end
 
 local color_white = color_white
 
