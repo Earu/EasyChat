@@ -1,4 +1,4 @@
-if gmod.GetGamemode().Name ~= "DarkRP" then return "DarkRP Compat" end
+if not DarkRP then return "DarkRP Compat" end
 
 local color_white = color_white
 
