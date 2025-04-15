@@ -8,6 +8,12 @@ local PANEL = {
 
 local EC_PRESERVE_MESSAGE_IN_PROGRESS = GetConVar("easychat_preserve_message_in_progress")
 
+cvars.AddChangeCallback("easychat_preserve_message_in_progress", function()
+	if not EC_PRESERVE_MESSAGE_IN_PROGRESS:GetBool() then
+		PANEL.ValueInProgress = ""
+	end
+end, "clear_value_in_progress_on_disable")
+
 function PANEL:Init()
 	self:SetFocusTopLevel(true)
 	self:SetKeyboardInputEnabled(true)
@@ -76,11 +82,11 @@ function PANEL:Init()
 		if EC_PRESERVE_MESSAGE_IN_PROGRESS:GetBool() and self.HistoryPos == 0 then
 			local textInProgress = self:GetTextInProgress()
 
-			if textInProgress and #textInProgress ~= 0 and self:GetText() ~= textInProgress then
+			if textInProgress ~= self:GetText() and textInProgress ~= self.History[#self.History] then
 				-- bring back message in progress
-				self:SetText(textInProgress)
+				self:SetText(self:GetTextInProgress())
 				self:OnChange()
-				self:OnValueChange(textInProgress)
+				self:OnValueChange(self:GetTextInProgress())
 				return
 			end
 		end
@@ -100,8 +106,6 @@ function PANEL:Init()
 	end)
 
 	self:AddInternalCallback("OnEnter", function(caret_pos)
-		if input.IsKeyDown(KEY_LSHIFT) or input.IsKeyDown(KEY_RSHIFT) then return end
-
 		self.CaretPos = caret_pos
 		self:AddHistory(self:GetText())
 		self.HistoryPos = 0
@@ -297,6 +301,11 @@ function PANEL:GetText()
 end
 PANEL.GetValue = PANEL.GetText
 
+function PANEL:GetTextInProgress()
+	return self.ValueInProgress
+end
+PANEL.GetValueInProgress = PANEL.GetTextInProgress
+
 function PANEL:SetText(text)
 	text = isstring(text) and text or ""
 
@@ -310,16 +319,6 @@ function PANEL:SetValue(text)
 	self:OnChange()
 	self:OnValueChange(text)
 end
-
-function PANEL:GetTextInProgress()
-	return self.ValueInProgress
-end
-PANEL.GetValueInProgress = PANEL.GetTextInProgress
-
-function PANEL:SetTextInProgress(text)
-	self.ValueInProgress = text
-end
-PANEL.SetValueInProgress = PANEL.SetTextInProgress
 
 -- this cannot work due to the limitations of the lua -> js interop
 function PANEL:AllowInput(last_char) end
