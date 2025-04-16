@@ -91,6 +91,19 @@ function PANEL:Init()
 
 	self:AddInternalCallback("OnArrowDown", function(caret_pos)
 		self.CaretPos = caret_pos
+
+		if EC_PRESERVE_MESSAGE_IN_PROGRESS:GetBool() and self.HistoryPos == 0 then
+			local textInProgress = self:GetTextInProgress()
+
+			if textInProgress and #textInProgress ~= 0 and self:GetText() == textInProgress then
+				-- clear text entry from the message in progress
+				self:SetText("")
+				self:OnChange()
+				self:OnValueChange("")
+				return
+			end
+		end
+
 		self.HistoryPos = self.HistoryPos + 1
 		self:UpdateFromHistory()
 	end)
