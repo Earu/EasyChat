@@ -1,5 +1,7 @@
 local color_white = color_white
 
+local EC_PRESERVE_MESSAGE_IN_PROGRESS = GetConVar("easychat_preserve_message_in_progress")
+
 local PANEL = {}
 
 surface.CreateFont("EasyChatCompletionFont", {
@@ -14,6 +16,7 @@ function PANEL:Init()
 	self:SetMultiline(true)
 
 	self.undo_history = {}
+	self.ValueInProgress = ""
 end
 
 function PANEL:OnTab() end
@@ -68,7 +71,6 @@ function PANEL:AddUndo(msg)
 	table.insert(self.undo_history, t)
 end
 
-
 function PANEL:OnKeyCodeTyped(key_code)
 	EasyChat.SetupHistory(self, key_code)
 	EasyChat.UseRegisteredShortcuts(self, key_code)
@@ -83,7 +85,38 @@ function PANEL:OnKeyCodeTyped(key_code)
 		return true
 	elseif key_code == KEY_ENTER or key_code == KEY_PAD_ENTER then
 		self:OnEnter()
+		self:SetTextInProgress("")
+		return true
 	end
+end
+
+function PANEL:GetTextInProgress()
+	return self.ValueInProgress
+end
+PANEL.GetValueInProgress = PANEL.GetTextInProgress
+
+function PANEL:SetTextInProgress(text)
+	self.ValueInProgress = text
+end
+PANEL.SetValueInProgress = PANEL.SetTextInProgress
+
+function PANEL:OnChange()
+	if EC_PRESERVE_MESSAGE_IN_PROGRESS:GetBool() then
+		self.ValueInProgress = self:GetValue()
+	end
+end
+
+function PANEL:UpdateFromHistory()
+	local pos = self.HistoryPos
+	-- is the Pos within bounds?
+	if pos < 0 then pos = #self.History end
+	if pos > #self.History then pos = 0 end
+
+	local text = (EC_PRESERVE_MESSAGE_IN_PROGRESS:GetBool() and pos == 0) and self:GetTextInProgress() or self.History[pos]
+	text = text or ""
+
+	self:SetText(text)
+	self.HistoryPos = pos
 end
 
 local surface_DisableClipping = _G.surface.DisableClipping

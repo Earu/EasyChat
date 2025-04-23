@@ -825,6 +825,10 @@ if CLIENT then
 		EasyChat.GUI.TextEntry:SetText("")
 		EasyChat.GUI.TextEntry.HistoryPos = 0 -- reset history also
 
+		if not EC_PRESERVE_MESSAGE_IN_PROGRESS:GetBool() then
+			EasyChat.GUI.TextEntry:SetTextInProgress("")
+		end
+
 		gui.EnableScreenClicker(false)
 		hook.Run("ChatTextChanged", "")
 		hook.Run("FinishChat")
@@ -1738,9 +1742,29 @@ if CLIENT then
 		if input.IsKeyDown(KEY_LSHIFT) then return end
 
 		if key_code == KEY_UP then
+			if EC_PRESERVE_MESSAGE_IN_PROGRESS:GetBool() and text_entry.HistoryPos == 0 then
+				local textInProgress = text_entry:GetTextInProgress()
+
+				if textInProgress and #textInProgress ~= 0 and text_entry:GetText() ~= textInProgress then
+					-- bring back message in progress
+					text_entry:SetText(textInProgress)
+					return
+				end
+			end
+
 			text_entry.HistoryPos = text_entry.HistoryPos - 1
 			text_entry:UpdateFromHistory()
 		elseif key_code == KEY_DOWN then
+			if EC_PRESERVE_MESSAGE_IN_PROGRESS:GetBool() and text_entry.HistoryPos == 0 then
+				local textInProgress = text_entry:GetTextInProgress()
+
+				if textInProgress and #textInProgress ~= 0 and text_entry:GetText() == textInProgress then
+					-- clear text entry from the message in progress
+					text_entry:SetText("")
+					return
+				end
+			end
+
 			text_entry.HistoryPos = text_entry.HistoryPos + 1
 			text_entry:UpdateFromHistory()
 		end
@@ -2278,6 +2302,7 @@ if CLIENT then
 		function EasyChat.GUI.TextEntry:OnEnter()
 			if input.IsKeyDown(KEY_LSHIFT) or input.IsKeyDown(KEY_RSHIFT) then return end
 
+			self:SetTextInProgress("")
 			local msg = EasyChat.ExtendedStringTrim(self:GetText())
 			self:SetText(msg)
 
