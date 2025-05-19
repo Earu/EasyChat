@@ -90,7 +90,7 @@ function PANEL:Init()
 				autocorrect="off"
 				autocapitalize="off"
 				spellcheck="false"
-			/>
+			></textarea>
 			<div id="completion">
 				<span id="completion-hidden" style="color: transparent"></span><span id="completion-placeholder"></span>
 			</div>
