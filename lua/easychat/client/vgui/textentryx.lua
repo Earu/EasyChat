@@ -334,7 +334,6 @@ function PANEL:Init()
 			size = EC_FONT_SIZE:GetInt(),
 		})
 	end
-
 	cvars.RemoveChangeCallback("easychat_font_size", "TextEntryX")
 	cvars.AddChangeCallback("easychat_font_size", function() setFontSize() end, "TextEntryX")
 	setFontSize(true)
@@ -514,11 +513,11 @@ local function blink(w, h)
 		local text_x, text_y = w / 2 - text_w / 2, -(text_h + 2)
 
 		surface_DisableClipping(true)
-		surface_DrawRect(text_x - 2, text_y - 2, text_w + 4, text_h + 4)
+			surface_DrawRect(text_x - 2, text_y - 2, text_w + 4, text_h + 4)
 
-		surface_SetTextPos(text_x, text_y)
-		surface_SetTextColor(color_white)
-		surface_DrawText(blink_text)
+			surface_SetTextPos(text_x, text_y)
+			surface_SetTextColor(color_white)
+			surface_DrawText(blink_text)
 		surface_DisableClipping(false)
 	end
 end
