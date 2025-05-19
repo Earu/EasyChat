@@ -41,6 +41,8 @@ function PANEL:Init()
 					border: none;
 					padding-left: 5px;
 					padding-top: 4px;
+					padding-bottom: 2px;
+					padding-right: 2px;
 					font-family: 'Roboto', sans-serif;
 					resize: none;
 					text-shadow: ]] .. (EasyChat.UseDermaSkin and "none;" or [[-1px 1px 2px #000,
@@ -59,6 +61,8 @@ function PANEL:Init()
 					border: none;
 					padding-left: 5px;
 					padding-top: 4px;
+					padding-bottom: 2px;
+					padding-right: 2px;
 					font-family: 'Roboto', sans-serif;
 					vertical-align: top;
 					z-index: -1;
@@ -80,6 +84,7 @@ function PANEL:Init()
 				}
 				#completion-placeholder {
 					background: green;
+					color: white;
 				}
 
 				*/
@@ -201,9 +206,6 @@ function PANEL:Init()
 			} else {
 				COMPLETION_PLACEHOLDER.textContent = ' ' + ['<<', completionText, '>>'].join(' ');
 			}
-			// follow the textarea's inner scrolling, as it gets bigger or smaller
-			// this should not break anything visually...
-			COMPLETION.style.top = (-TEXT_ENTRY.scrollTop) + "px";
 		}
 		const RESET_COMPLETION_TEXT = () => {
 			COMPLETION_HIDDEN.textContent = '';
@@ -215,11 +217,16 @@ function PANEL:Init()
 				COMPLETION_PLACEHOLDER.textContent = '';
 			}
 		}
+		TEXT_ENTRY.addEventListener("scroll", (ev) => {
+			// follow the textarea's inner scrolling, as it gets bigger or smaller
+			// this should not break anything visually...
+			COMPLETION.style.top = (-TEXT_ENTRY.scrollTop) + "px";
+		});
+
 		const SET_TEXT_ENTRY = (text) => {
 			TEXT_ENTRY.value = text;
 			RESET_COMPLETION_TEXT();
 		}
-
 		TEXT_ENTRY.addEventListener("contextmenu", (_) => TextEntryX.OnRightClick());
 		TEXT_ENTRY.addEventListener("paste", (ev) => {
 			if (!ev.clipboardData && !window.clipboardData) return;
