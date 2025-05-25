@@ -183,6 +183,7 @@ if CLIENT then
 	end
 
 	local active_options_index = 0
+	local pos_x = 0
 	hook.Add("ChatTextChanged", hook_name, function(text)
 		if not EC_CMDS_SUGGESTIONS:GetBool() then return end
 
@@ -238,8 +239,6 @@ if CLIENT then
 
 		active_options_index = 1
 
-		local pos_x = 0
-
 		hook.Add("HUDPaint", hook_name, function()
 			if not EasyChat.IsOpened() then
 				stop_auto_completion()
@@ -269,6 +268,13 @@ if CLIENT then
 			local localui_panel = EasyChat.GUI.LocalPanel
 			local is_local_mode = cur_mode and cur_mode.Name == "Local" and IsValid(localui_panel)
 
+			if not should_left_side then
+				pos_x = chat_x + chat_w + 2
+				if is_local_mode then
+					pos_x = pos_x + 5 + localui_panel:GetWide()
+				end
+			end
+
 			local j = 0
 			local max_w = 0
 			for option, option_args in SortedPairs(all_options) do
@@ -292,11 +298,6 @@ if CLIENT then
 				pos_x = chat_x - max_w - 2
 				if is_local_mode then
 					pos_x = pos_x - 5 - localui_panel:GetWide()
-				end
-			else
-				pos_x = chat_x + chat_w + 2
-				if is_local_mode then
-					pos_x = pos_x + 5 + localui_panel:GetWide()
 				end
 			end
 		end)
