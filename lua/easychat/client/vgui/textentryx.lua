@@ -201,7 +201,7 @@ function PANEL:Init()
 
 		const SET_COMPLETION_TEXT = (completionText, text) => {
 			COMPLETION_HIDDEN.textContent = text;
-			if (completionText.search(text) == 0) {
+			if (completionText.indexOf(text) == 0) {
 				COMPLETION_PLACEHOLDER.textContent = completionText.slice(text.length);
 			} else {
 				COMPLETION_PLACEHOLDER.textContent = ' ' + ['<<', completionText, '>>'].join(' ');
