@@ -75,7 +75,6 @@ local EC_TRANSLATE_INC_TARGET_LANG = get_cvar("easychat_translate_inc_target_lan
 local EC_TRANSLATE_OUT_MSG = get_cvar("easychat_translate_out_msg")
 local EC_TRANSLATE_OUT_SRC_LANG = get_cvar("easychat_translate_out_source_lang")
 local EC_TRANSLATE_OUT_TARGET_LANG = get_cvar("easychat_translate_out_target_lang")
-local EC_TRANSLATE_API_KEY = get_cvar("easychat_translate_api_key")
 
 local function create_default_settings()
 	local settings = EasyChat.Settings
@@ -1164,8 +1163,12 @@ local function create_default_settings()
 					notification.AddLegacy("Invalid country code", NOTIFY_ERROR, 3)
 					surface.PlaySound("buttons/button11.wav")
 					return
-				elseif not EC_TRANSLATE_API_KEY:GetString():find("trnsl.1.1.") then
-					notification.AddLegacy("You do not have a Yandex API Key.", NOTIFY_ERROR, 3)
+				elseif not util.IsBinaryModuleInstalled("ollama") then
+					notification.AddLegacy("Ollama binary module is not installed.", NOTIFY_ERROR, 3)
+					surface.PlaySound("buttons/button11.wav")
+					return
+				elseif not Ollama or not Ollama.IsRunning() then
+					notification.AddLegacy("Ollama is not running. Please start Ollama server.", NOTIFY_ERROR, 3)
 					surface.PlaySound("buttons/button11.wav")
 					return
 				end
@@ -1174,14 +1177,49 @@ local function create_default_settings()
 			end
 		end
 
-		local yandex_link = settings:GetCategory(category_name):Add("DLabelURL")
-		yandex_link:SetText("Click here for a key to use our thirdparty translation provider.")
-		yandex_link:SetURL("https://translate.yandex.com/developers/keys")
-		yandex_link:Dock(TOP)
-		yandex_link:DockMargin(10, 0, 10, 5)
-		yandex_link:SetColor(Color(220, 0, 0))
+		-- Ollama status indicator
+		local ollama_status = settings:GetCategory(category_name):Add("DLabel")
+		ollama_status:SetFont("ECSettingsFont")
+		ollama_status:Dock(TOP)
+		ollama_status:DockMargin(10, 0, 10, 5)
+		ollama_status:SetAutoStretchVertical(true)
+		
+		local function update_ollama_status()
+			if not IsValid(ollama_status) then return end
+			
+			if not util.IsBinaryModuleInstalled("ollama") then
+				ollama_status:SetText("Ollama binary module not installed")
+				ollama_status:SetTextColor(Color(220, 0, 0))
+			elseif not Ollama or not Ollama.IsRunning() then
+				ollama_status:SetText("Ollama server not running (localhost:11434)")
+				ollama_status:SetTextColor(Color(220, 120, 0))
+			else
+				ollama_status:SetText("Ollama ready - Using gemma3 model for translations")
+				ollama_status:SetTextColor(Color(0, 180, 0))
 
-		settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_API_KEY, "Yandex API Key (Required)")
+				Ollama.IsModelAvailable("gemma3", function(err, available)
+					if err then
+						ollama_status:SetText("Error checking model availability")
+						ollama_status:SetTextColor(Color(220, 0, 0))
+					end
+
+					if not available then
+						ollama_status:SetText("Gemma3 model not available")
+						ollama_status:SetTextColor(Color(220, 0, 0))
+					end
+				end)
+			end
+		end
+		
+		update_ollama_status()
+		timer.Create("ECOllamaStatusCheck", 5, 0, update_ollama_status)
+
+		local ollama_help = settings:GetCategory(category_name):Add("DLabelURL")
+		ollama_help:SetText("Need help setting up Ollama? Click here for installation guide.")
+		ollama_help:SetURL("https://github.com/Earu/gm_ollama")
+		ollama_help:Dock(TOP)
+		ollama_help:DockMargin(10, 0, 10, 10)
+		ollama_help:SetColor(Color(100, 149, 237))
 
 		settings:AddSpacer(category_name)
 
