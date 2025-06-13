@@ -30,8 +30,8 @@ end
 -- Extract translated text from JSON response
 local function extract_translation_from_json(response)
 	-- Try to find JSON in the response
-	local json_start = response:find("{")
-	local json_end = response:find("}", json_start)
+	local json_start = response:find("{") or 1
+	local json_end = response:find("}", json_start) or #response
 
 	local json_str = response:sub(json_start, json_end)
 	local success, json_data = pcall(util.JSONToTable, json_str)
