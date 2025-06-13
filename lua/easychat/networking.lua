@@ -95,8 +95,8 @@ if SERVER then
 		if #msg == 0 then return end
 
 		-- compact with gameevent
-		hook.Run("player_say", { 
-			priority = 1, 
+		hook.Run("player_say", {
+			priority = 1,
 			userid = IsValid(ply) and ply:UserID() or 0,
 			text = msg,
 			teamonly = is_team and 1 or 0,
@@ -417,7 +417,7 @@ if CLIENT then
 			EC_TRANSLATE_INC_SRC_LANG:GetString(),
 			EC_TRANSLATE_INC_TARGET_LANG:GetString()
 
-		if EC_TRANSLATE_INC_MSG:GetBool() and source_lang ~= target_lang and ply ~= LocalPlayer() then
+		if EC_TRANSLATE_INC_MSG:GetBool() and source_lang ~= target_lang and ply ~= LocalPlayer() and target_lang ~= "auto" then
 			EasyChat.Translator:Translate(msg, source_lang, target_lang, function(success, _, translation)
 				local datapack = { msg }
 				if EasyChat.SafeHookRun("OnPlayerChatTransform", ply, datapack, is_team, is_local) == false then return end
@@ -435,8 +435,8 @@ if CLIENT then
 					end
 
 					-- compact with gameevent
-					hook.Run("player_say", { 
-						priority = 1, 
+					hook.Run("player_say", {
+						priority = 1,
 						userid = IsValid(ply) and ply:UserID() or 0,
 						text = msg,
 						teamonly = is_team and 1 or 0,
@@ -445,10 +445,10 @@ if CLIENT then
 			end)
 		else
 			hook.Run("OnPlayerChat", ply, msg, is_team, is_dead, is_local)
-			
+
 			-- compact with gameevent
-			hook.Run("player_say", { 
-				priority = 1, 
+			hook.Run("player_say", {
+				priority = 1,
 				userid = IsValid(ply) and ply:UserID() or 0,
 				text = msg,
 				teamonly = is_team and 1 or 0,
@@ -547,7 +547,7 @@ if CLIENT then
 			EC_TRANSLATE_OUT_SRC_LANG:GetString(),
 			EC_TRANSLATE_OUT_TARGET_LANG:GetString()
 
-		if not no_translate and EC_TRANSLATE_OUT_MSG:GetBool() and source_lang ~= target_lang then
+		if not no_translate and EC_TRANSLATE_OUT_MSG:GetBool() and source_lang ~= target_lang and target_lang ~= "auto" then
 			EasyChat.Translator:Translate(msg, source_lang, target_lang, function(success, _, translation)
 				net.Start(NET_SEND_MSG)
 				net.WriteString(success and translation or msg)
