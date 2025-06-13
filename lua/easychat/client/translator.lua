@@ -37,7 +37,6 @@ local function extract_translation_from_json(response)
 	local success, json_data = pcall(util.JSONToTable, json_str)
 
 	if success and json_data and json_data.translation and json_data.source_language then
-		print("proper json", json_data.translation, json_data.source_language)
 		return json_data.translation:Trim(), json_data.source_language:Trim():lower()
 	end
 
