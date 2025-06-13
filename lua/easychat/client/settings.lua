@@ -1106,12 +1106,13 @@ local function create_default_settings()
 
 		local language_count = table.Count(valid_languages)
 
-		local function build_translation_auto_complete(text_entry)
+		local function build_translation_auto_complete(text_entry, is_target)
 			text_entry.GetAutoComplete = function(self, text)
 				text = text:lower()
 
 				local suggestions = {}
 				for complete_name, shortcut in pairs(valid_languages) do
+					if is_target and shortcut == "auto" then continue end -- dont show auto as a target language
 					if complete_name:lower():match(text) or shortcut:match(text) then
 						table.insert(suggestions, ("%s (%s)"):format(shortcut, complete_name))
 					end
@@ -1183,10 +1184,10 @@ local function create_default_settings()
 		ollama_status:Dock(TOP)
 		ollama_status:DockMargin(10, 0, 10, 5)
 		ollama_status:SetAutoStretchVertical(true)
-		
+
 		local function update_ollama_status()
 			if not IsValid(ollama_status) then return end
-			
+
 			if not util.IsBinaryModuleInstalled("ollama") then
 				ollama_status:SetText("Ollama binary module not installed")
 				ollama_status:SetTextColor(Color(220, 0, 0))
@@ -1210,7 +1211,7 @@ local function create_default_settings()
 				end)
 			end
 		end
-		
+
 		update_ollama_status()
 		timer.Create("ECOllamaStatusCheck", 5, 0, update_ollama_status)
 
@@ -1225,12 +1226,12 @@ local function create_default_settings()
 
 		settings:AddConvarSetting(category_name, "boolean", EC_TRANSLATE_OUT_MSG, "Translate your chat messages")
 		build_translation_auto_complete(settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_OUT_SRC_LANG, "Your language"))
-		build_translation_auto_complete(settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_OUT_TARGET_LANG, "Their language"))
+		build_translation_auto_complete(settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_OUT_TARGET_LANG, "Their language"), true)
 
 		settings:AddSpacer(category_name)
 
 		settings:AddConvarSetting(category_name, "boolean", EC_TRANSLATE_INC_MSG, "Translate other's chat messages")
-		build_translation_auto_complete(settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_INC_TARGET_LANG, "Your language"))
+		build_translation_auto_complete(settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_INC_TARGET_LANG, "Your language"), true)
 		build_translation_auto_complete(settings:AddConvarSetting(category_name, "string", EC_TRANSLATE_INC_SRC_LANG, "Their language"))
 	end
 end
