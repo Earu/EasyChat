@@ -1,3 +1,8 @@
+if util.IsBinaryModuleInstalled("ollama") and not _G.Ollama then
+	require("ollama")
+	_G.Ollama.SetConfig("http://localhost:11434", 60)
+end
+
 local translator = {}
 local language_lookup = {
 	["Automatic"] = "auto",
@@ -43,12 +48,12 @@ function translator:Translate(text, source_lang, target_lang, on_finish, retries
 	end
 
 	-- If Ollama is not loaded, load it
-	if util.IsBinaryModuleInstalled("ollama") and not Ollama then
+	if util.IsBinaryModuleInstalled("ollama") and not _G.Ollama then
 		require("ollama")
-		Ollama.SetConfig("http://localhost:11434", 60)
+		_G.Ollama.SetConfig("http://localhost:11434", 60)
 	end
 
-	if not Ollama.IsRunning() then
+	if not _G.Ollama.IsRunning() then
 		on_finish(false)
 		return
 	end
@@ -78,7 +83,7 @@ Text to translate: %s]], source_language, target_language, text)
 
 	retries = retries or 0
 
-	Ollama.IsModelAvailable("gemma3", function(err, available)
+	_G.Ollama.IsModelAvailable("gemma3", function(err, available)
 		if err then
 			on_finish(false)
 			return
@@ -90,7 +95,7 @@ Text to translate: %s]], source_language, target_language, text)
 		end
 
 		-- Use Ollama to translate
-		Ollama.Generate("gemma3", prompt, nil, function(err, data)
+		_G.Ollama.Generate("gemma3", prompt, nil, function(err, data)
 			if err then
 				on_finish(false)
 				return
