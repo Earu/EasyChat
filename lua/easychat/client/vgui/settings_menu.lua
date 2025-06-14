@@ -186,29 +186,68 @@ function SETTINGS:CreateStringSetting(panel, name)
 end
 
 function SETTINGS:CreateBooleanSetting(panel, description)
-	local checkbox_label = panel:Add("DCheckBoxLabel")
-	checkbox_label:SetText(description)
-	checkbox_label:SetFont("ECSettingsFont")
-	checkbox_label:Dock(TOP)
-	checkbox_label:DockMargin(10, 0, 10, 10)
+	if EasyChat.UseDermaSkin then
+		local checkbox_label = panel:Add("DCheckBoxLabel")
+		checkbox_label:SetText(description)
+		checkbox_label:SetFont("ECSettingsFont")
+		checkbox_label:Dock(TOP)
+		checkbox_label:DockMargin(10, 0, 10, 10)
 
-	if not EasyChat.UseDermaSkin then
-		checkbox_label:SetTextColor(EasyChat.TextColor)
-		checkbox_label.Button.Paint = function(self, w, h)
-			surface.SetDrawColor(EasyChat.OutlayColor)
-			surface.DrawRect(0, 0, w, h)
+		return checkbox_label
+	end
 
-			if self:GetChecked() then
-				surface.SetDrawColor(EasyChat.TextColor)
-				surface.DrawRect(2, 2, w - 4, h - 4)
-			end
+	local toggle_panel = panel:Add("DPanel")
+	toggle_panel:Dock(TOP)
+	toggle_panel:DockMargin(10, 0, 10, 10)
+	toggle_panel:SetTall(22)
+	function toggle_panel:Paint() end
 
-			surface.SetDrawColor(EasyChat.TabOutlineColor)
-			surface.DrawOutlinedRect(0, 0, w, h)
+	local toggle = toggle_panel:Add("DButton")
+	toggle:SetSize(50, draw.GetFontHeight("ECSettingsFont") + 2)
+	toggle:Dock(LEFT)
+	toggle:SetText("")
+	toggle.IsOn = false
+
+	function toggle:SetChecked(checked)
+		self.IsOn = checked
+	end
+
+	local label = toggle_panel:Add("DLabel")
+	label:SetText(description)
+	label:SetFont("ECSettingsFont")
+	label:Dock(FILL)
+	label:SetWide(toggle_panel:GetWide() - 60) -- Leave space for toggle
+	label:DockMargin(10, 0, 0, 0)
+	label:SetTextColor(EasyChat.TextColor)
+	toggle.Label = label
+
+	toggle.Paint = function(self, w, h)
+		local is_on = self.IsOn
+		local pad = 3
+		local bg_color = is_on and EasyChat.TextColor or EasyChat.OutlayColor
+		local knob_color = is_on and EasyChat.OutlayColor or EasyChat.TextColor
+		local outline_color = EasyChat.TabOutlineColor
+		local knob_x = is_on and (w - h + pad) or pad
+
+		surface.SetDrawColor(bg_color)
+		surface.DrawRect(0, 0, w, h)
+
+
+		surface.SetDrawColor(outline_color)
+		surface.DrawOutlinedRect(0, 0, w, h, 2)
+
+		surface.SetDrawColor(knob_color)
+		surface.DrawRect(knob_x, pad, h - pad * 2, h - pad * 2)
+	end
+
+	toggle.DoClick = function(self)
+		self.IsOn = not self.IsOn
+		if self.OnChange then
+			self:OnChange(self.IsOn)
 		end
 	end
 
-	return checkbox_label
+	return toggle
 end
 
 function SETTINGS:CreateActionSetting(panel, name)
@@ -591,18 +630,18 @@ local convar_type_callbacks = {
 		return text_entry
 	end,
 	["boolean"] = function(self, panel, cvar, description)
-		local checkbox_label = self:CreateBooleanSetting(panel, description)
-		checkbox_label:SetChecked(cvar:GetBool())
-		checkbox_label.OnChange = function(_, new_value)
-			cvar:SetBool(new_value)
+		local toggle = self:CreateBooleanSetting(panel, description)
+		toggle.IsOn = cvar:GetBool()
+		toggle.OnToggle = function(self, is_on)
+			cvar:SetBool(is_on)
 		end
 
 		self:AddChangeCallback(cvar, function()
-			if not IsValid(checkbox_label) then return end
-			checkbox_label:SetChecked(cvar:GetBool())
+			if not IsValid(toggle) then return end
+			toggle.IsOn = cvar:GetBool()
 		end)
 
-		return checkbox_label
+		return toggle
 	end,
 }
 
