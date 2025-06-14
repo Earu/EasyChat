@@ -80,7 +80,9 @@ However, preserve these elements exactly as they appear (do not translate them):
 Respond with ONLY a JSON object in this exact format:
 {"translation": "fully translated text with preserved non-text elements", "source_language": "detected language name or 'unknown' if cannot detect"}
 
-Text to translate: %s]], prompt_specifics, text)
+=== START OF TEXT TO TRANSLATE ===
+%s
+=== END OF TEXT TO TRANSLATE ===]], prompt_specifics, text)
 
 	retries = retries or 0
 
