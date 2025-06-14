@@ -237,7 +237,7 @@ if SERVER then
 		return false
 	end
 
-	local function retrieve_commit_time(commit)
+	--[[local function retrieve_commit_time(commit)
 		local time = -1
 		if not commit.commit and commit.commit.author and commit.commit.author.date then
 			return time
@@ -251,10 +251,10 @@ if SERVER then
 		end)
 
 		return time
-	end
+	end]]
 
 	-- ensures the sha is always sync'd with git if the folder can be found
-	local function get_known_version_sha()
+	--[[local function get_known_version_sha()
 		local current_sha = cookie.GetString("ECLatestSHA")
 
 		local files, _ = file.Find("addons/easychat/.git/refs/heads/","GAME")
@@ -281,13 +281,13 @@ if SERVER then
 		end
 
 		return current_sha
-	end
+	end]]
 
-	local DEFAULT_FILE_PATH = "lua/easychat/easychat.lua"
+	--local DEFAULT_FILE_PATH = "lua/easychat/easychat.lua"
 	local is_outdated = false
 	local old_version, new_version
 	local is_new_version = false
-	local function check_version()
+	--[[local function check_version()
 		if EasyChat.IsWorkshopInstall() then
 			EasyChat.Print("Running workshop version")
 			return
@@ -351,7 +351,7 @@ if SERVER then
 				EasyChat.Print("Running version ", latest_sha)
 			end
 		end)
-	end
+	end]]
 
 	function EasyChat.Init()
 		EasyChat.Transliterator = include("easychat/unicode_transliterator.lua")
@@ -1534,6 +1534,7 @@ if CLIENT then
 		end
 
 		local args = {...}
+		local last_color_applied = nil
 		for _, arg in pairs(args) do
 			if isstring(arg) then
 				append_text_url(richtext, arg)
@@ -1581,8 +1582,13 @@ if CLIENT then
 						richtext:InsertClickableTextEnd()
 					end
 				end
+
+				if last_color_applied then
+					richtext:InsertColorChange(last_color_applied.r, last_color_applied.g, last_color_applied.b, isnumber(last_color_applied.a) and last_color_applied.a or 255)
+				end
 			elseif is_color(arg) then
 				richtext:InsertColorChange(arg.r, arg.g, arg.b, isnumber(arg.a) and arg.a or 255)
+				last_color_applied = arg
 			else
 				append_text(richtext, tostring(arg))
 			end
@@ -1631,6 +1637,7 @@ if CLIENT then
 			end
 		end
 
+		local last_color_applied = nil
 		local args = {...}
 		for _, arg in pairs(args) do
 			local arg_type = type(arg)
@@ -1645,10 +1652,19 @@ if CLIENT then
 				end, arg)
 
 				if succ and ret then
+					if arg_type == "table" and is_color(ret) then
+						last_color_applied = ret
+					end
+
 					if is_color(ret) or isstring(ret) then
 						table.insert(data, ret)
 					elseif istable(ret) then
 						table.Add(data, ret)
+					end
+
+					if arg_type == "Player" and last_color_applied then
+						global_insert_color_change(last_color_applied.r, last_color_applied.g, last_color_applied.b)
+						table.insert(data, last_color_applied)
 					end
 				end
 			else
@@ -2708,15 +2724,17 @@ if CLIENT then
 		end)
 
 		hook.Add("OnPauseMenuShow", TAG, function()
-    			if IsValid(EasyChat.Settings) and EasyChat.Settings:IsVisible() then
-        			EasyChat.Settings:SetVisible(false)
-				return false
-    			end
+			if IsValid(EasyChat.Settings) and EasyChat.Settings:IsVisible() then
+				EasyChat.Settings:SetVisible(false)
 
-   		 	if EasyChat.IsOpened() then
-        			close_chatbox()
 				return false
-    		 	end
+			end
+
+			if EasyChat.IsOpened() then
+				close_chatbox()
+
+				return false
+			end
 		end)
 
 		hook.Add("GUIMousePressed", TAG, function(mouse_code)
