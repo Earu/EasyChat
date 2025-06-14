@@ -68,18 +68,19 @@ function translator:Translate(text, source_lang, target_lang, on_finish, retries
 	local target_language = reverse_language_lookup[target_lang]
 	local source_language = reverse_language_lookup[source_lang]
 
-	local prompt
-	if source_lang == "auto" then
-		prompt = string.format([[Translate the following text to %s. IMPORTANT: Preserve URLs, emojis, HTML tags, markdown syntax, and any markup exactly as they appear in the original text. Only translate the actual readable text content. Respond with ONLY a JSON object in this exact format:
-{"translation": "your translated text here with preserved URLs/emojis/markup", "source_language": "the original language of the text (if unknown or non-text content, use 'unknown')"}
+	local prompt_specifics = source_lang == "auto" and ("to " .. target_language) or ("from " .. source_language .. " to " .. target_language)
+	local prompt = string.format([[You must translate the following text %s. TRANSLATE ALL REGULAR TEXT CONTENT - every word, sentence, and phrase should be translated.
 
-Text to translate: %s]], target_language, text)
-	else
-		prompt = string.format([[Translate the following text from %s to %s. IMPORTANT: Preserve URLs, emojis, HTML tags, markdown syntax, and any markup exactly as they appear in the original text. Only translate the actual readable text content. Respond with ONLY a JSON object in this exact format:
-{"translation": "your translated text here with preserved URLs/emojis/markup", "source_language": "the original language of the text (if unknown or non-text content, use 'unknown')"}
+However, preserve these elements exactly as they appear (do not translate them):
+- URLs (http://, https://, www., etc.)
+- HTML tags (<b>, <a>, </div>, etc.)
+- Markdown syntax (**bold**, [link](url), etc.)
+- Emojis and special symbols
 
-Text to translate: %s]], source_language, target_language, text)
-	end
+Respond with ONLY a JSON object in this exact format:
+{"translation": "fully translated text with preserved non-text elements", "source_language": "detected language name or 'unknown' if cannot detect"}
+
+Text to translate: %s]], prompt_specifics, text)
 
 	retries = retries or 0
 
