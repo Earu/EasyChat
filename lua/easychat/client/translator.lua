@@ -112,8 +112,6 @@ Translate now:]], prompt_specifics, text)
 				return
 			end
 
-			print(data.response)
-
 			local translated_text, detected_language = extract_translation_from_json(data.response)
 			if not translated_text or not detected_language then
 				if retries < 3 then
@@ -135,5 +133,4 @@ Translate now:]], prompt_specifics, text)
 	end)
 end
 
-EasyChat.Translator = translator
 return translator
