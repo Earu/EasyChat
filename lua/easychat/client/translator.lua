@@ -1,12 +1,4 @@
 local translator = {}
-
-if util.IsBinaryModuleInstalled("ollama") then
-	require("ollama")
-
-	-- Configure Ollama connection
-	Ollama.SetConfig("http://localhost:11434", 60)
-end
-
 local language_lookup = {
 	["Automatic"] = "auto",
 
@@ -45,7 +37,18 @@ end
 
 function translator:Translate(text, source_lang, target_lang, on_finish, retries)
 	-- Check if Ollama is available
-	if not util.IsBinaryModuleInstalled("ollama") or not Ollama or not Ollama.IsRunning() then
+	if not util.IsBinaryModuleInstalled("ollama") then
+		on_finish(false)
+		return
+	end
+
+	-- If Ollama is not loaded, load it
+	if util.IsBinaryModuleInstalled("ollama") and not Ollama then
+		require("ollama")
+		Ollama.SetConfig("http://localhost:11434", 60)
+	end
+
+	if not Ollama.IsRunning() then
 		on_finish(false)
 		return
 	end
