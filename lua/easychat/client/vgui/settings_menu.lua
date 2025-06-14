@@ -245,6 +245,10 @@ function SETTINGS:CreateBooleanSetting(panel, description)
 		if self.OnChange then
 			self:OnChange(self.IsOn)
 		end
+
+		if self.OnToggle then
+			self:OnToggle(self.IsOn)
+		end
 	end
 
 	return toggle
