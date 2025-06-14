@@ -71,12 +71,12 @@ function translator:Translate(text, source_lang, target_lang, on_finish, retries
 	local prompt
 	if source_lang == "auto" then
 		prompt = string.format([[Translate the following text to %s. Do not translate links, markup, or other non-text content. Respond with ONLY a JSON object in this exact format:
-{"translation": "your translated text here", "source_language": "the original language of the text (if unknown, use 'unknown')"}
+{"translation": "your translated text here", "source_language": "the original language of the text (if unknown or non-text content, use 'unknown')"}
 
 Text to translate: %s]], target_language, text)
 	else
 		prompt = string.format([[Translate the following text from %s to %s. Do not translate links, markup, or other non-text content. Respond with ONLY a JSON object in this exact format:
-{"translation": "your translated text here", "source_language": "the original language of the text (if unknown, use 'unknown')"}
+{"translation": "your translated text here", "source_language": "the original language of the text (if unknown or non-text content, use 'unknown')"}
 
 Text to translate: %s]], source_language, target_language, text)
 	end
