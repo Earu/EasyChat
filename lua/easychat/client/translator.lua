@@ -117,7 +117,7 @@ Text to translate: %s]], source_language, target_language, text)
 				return
 			end
 
-			if detected_language == target_language or detected_language == "unknown" then
+			if detected_language == target_language:lower() or detected_language == "unknown" then
 				on_finish(false) -- dont translate if the language is the same
 				return
 			end
