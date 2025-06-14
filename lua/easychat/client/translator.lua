@@ -70,13 +70,13 @@ function translator:Translate(text, source_lang, target_lang, on_finish, retries
 
 	local prompt
 	if source_lang == "auto" then
-		prompt = string.format([[Translate the following text to %s. Do not translate links, markup, or other non-text content. Respond with ONLY a JSON object in this exact format:
-{"translation": "your translated text here", "source_language": "the original language of the text (if unknown or non-text content, use 'unknown')"}
+		prompt = string.format([[Translate the following text to %s. IMPORTANT: Preserve URLs, emojis, HTML tags, markdown syntax, and any markup exactly as they appear in the original text. Only translate the actual readable text content. Respond with ONLY a JSON object in this exact format:
+{"translation": "your translated text here with preserved URLs/emojis/markup", "source_language": "the original language of the text (if unknown or non-text content, use 'unknown')"}
 
 Text to translate: %s]], target_language, text)
 	else
-		prompt = string.format([[Translate the following text from %s to %s. Do not translate links, markup, or other non-text content. Respond with ONLY a JSON object in this exact format:
-{"translation": "your translated text here", "source_language": "the original language of the text (if unknown or non-text content, use 'unknown')"}
+		prompt = string.format([[Translate the following text from %s to %s. IMPORTANT: Preserve URLs, emojis, HTML tags, markdown syntax, and any markup exactly as they appear in the original text. Only translate the actual readable text content. Respond with ONLY a JSON object in this exact format:
+{"translation": "your translated text here with preserved URLs/emojis/markup", "source_language": "the original language of the text (if unknown or non-text content, use 'unknown')"}
 
 Text to translate: %s]], source_language, target_language, text)
 	end
