@@ -107,7 +107,7 @@ function EasyChat.IsStringEmpty(str, is_nick)
 	if #sanitized_str == 0 then return true end
 
 	-- if its a nick dont allow under 2 chars
-	if is_nick and utf8.len(sanitized_str) < 2 then
+	if is_nick and utf8.len(sanitized_str) < 1 then
 		return true
 	end
 
