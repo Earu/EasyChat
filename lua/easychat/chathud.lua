@@ -398,6 +398,7 @@ chathud:RegisterPart("color", color_part)
 	Font changes.
 ]]-------------------------------------------------------------------------------
 local font_part = {
+	OkInNicks = false,
 	Usage = "<font=font_name>",
 	Examples = {
 		"<font=DermaLarge>I am big!"
