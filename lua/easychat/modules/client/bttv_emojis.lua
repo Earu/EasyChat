@@ -11,51 +11,40 @@ local framerate_cache = {}
 local FOLDER = "easychat/emojis/bttv"
 file.CreateDir(FOLDER, "DATA")
 
-local LOOKUP_TABLE_URL = "https://api.betterttv.net/2/emotes"
+local LOOKUP_TABLE_URL = "https://api.betterttv.net/3/emotes/shared/top?limit=100"
 local lookup = {}
 local lookup_gif = {}
-http.Fetch(LOOKUP_TABLE_URL, function(body)
-	local tbl = util.JSONToTable(body)
-	if not tbl then
-		EasyChat.Print(true, "Could not get the lookup table for BTTV")
+
+
+local function fetchEmotes(depth, before)
+	if depth > 25 then -- Fetch the top 25 pages of approx 100 emotes each, should be enough
+		EasyChat.Print(("Loaded %d BTTV emote references"):format(table.Count(cache)))
 		return
 	end
 
-	for _, v in ipairs(tbl.emotes) do
-		local name = v.code:Replace(":","_")
-		if v.imageType == "gif" then
-			lookup_gif[name] = v.id
-		else
-			lookup[name] = v.id
+	http.Fetch(LOOKUP_TABLE_URL .. (before and ("&before=" .. before) or ""), function(body)
+		local tbl = util.JSONToTable(body)
+		local lastID = nil
+		for _, emote in ipairs(tbl) do
+			local emoteData = emote.emote
+			if emoteData.animated then
+				lookup_gif[emoteData.code] = emoteData.id
+			else
+				lookup[emoteData.code] = emoteData.id
+			end
+			cache[emoteData.code] = UNCACHED
+			lastID = emote.id
 		end
-		cache[name] = UNCACHED
-	end
-end, function(err)
-	EasyChat.Print(true, "Could not get the lookup table for BTTV")
-end)
 
-local function URLEncode(s)
-	s = tostring(s)
-	local new = ""
-
-	for i = 1, #s do
-		local c = s:sub(i, i)
-		local b = c:byte()
-		if (b >= 65 and b <= 90) or (b >= 97 and b <= 122) or
-			(b >= 48 and b <= 57) or
-			c == "_" or c == "." or c == "~" then
-			new = new .. c
-		else
-			new = new .. ("%%%X"):format(b)
-		end
-	end
-
-	return new
+		fetchEmotes(depth + 1, lastID)
+	end, function(err)
+		EasyChat.Print(true, "Could not get the lookup table for BTTV")
+	end)
 end
 
+fetchEmotes(1, nil)
 local BTTV_CDN_URL = "https://cdn.betterttv.net/emote/%s/3x"
-local GIFINFO_URL = "http://sprays.xerasin.com/gifinfo.php?url=%s"
-local GIFTOVTF_URL = "http://sprays.xerasin.com/getimage2.php?url=%s&type=vtf"
+local GIFTOVTF_URL = "https://sprays.xerasin.com/legacy/get"
 
 local function gif_material(name, path)
 	return CreateMaterial("ecemote_" .. name, "UnlitGeneric", {
@@ -73,22 +62,42 @@ local function gif_material(name, path)
 	})
 end
 
-local function get_bttv_url(name)
+local function get_bttv_url(name, callback, attempt)
+	attempt = attempt or 1
+	local MAX_ATTEMPTS = 20
+
 	if lookup_gif[name] then
-		http.Fetch(GIFINFO_URL:format(URLEncode(BTTV_CDN_URL:format(lookup_gif[name]))), function(data, len, hdr, http_code)
-			if http_code ~= 200 or len <= 222 then
-				return function(code)
-					EasyChat.Print(true, "Could not get GIF framerate for ", name, ": " .. code)
-				end
+		local gif_url = BTTV_CDN_URL:format(lookup_gif[name])
+		http.Post(GIFTOVTF_URL, { url = gif_url }, function(data, len, hdr, http_code)
+			if http_code ~= 200 or not data or #data < 10 then
+				EasyChat.Print(true, "Could not get GIF info for ", name, ": " .. tostring(http_code))
+				return
 			end
 
-			framerate_cache[name] = tonumber(data)
+			local info = util.JSONToTable(data)
+			if not info or info.status == 0 then
+				if attempt < MAX_ATTEMPTS then
+					timer.Simple(1, function()
+						get_bttv_url(name, callback, attempt + 1)
+					end)
+				else
+					EasyChat.Print(true, "Invalid GIF info for ", name)
+				end
+				return
+			end
+
+			if info.status < 0 then
+				EasyChat.Print(true, "Error getting GIF info for ", name, " (", tostring(info.status), "): " .. tostring(info.status_text))
+				return
+			end
+
+			framerate_cache[name] = tonumber(info.frame_rate) or 8
+			callback(info.url)
 		end, function(err)
-			EasyChat.Print(true, "Could not get GIF framerate for ", name, ": " .. err)
+			EasyChat.Print(true, "Could not get GIF info for ", name, ": " .. err)
 		end)
-		return GIFTOVTF_URL:format(URLEncode(BTTV_CDN_URL:format(lookup_gif[name]) .. "?_=.gif"))
 	else
-		return BTTV_CDN_URL:format(lookup[name])
+		callback(BTTV_CDN_URL:format(lookup[name]))
 	end
 end
 
@@ -135,37 +144,40 @@ local function get_bttv(name)
 		end
 	end
 
-	local url = get_bttv_url(name)
-
 	local function fail(err, isvariant)
 		EasyChat.Print(true, "Http fetch failed for ", url, ": " .. tostring(err))
 	end
 
-	http.Fetch(url, function(data, len, hdr, code)
-		if code ~= 200 or len <= 222 then
-			return fail(code)
+	get_bttv_url(name, function(url)
+
+		if not url then
+			return fail("No URL returned")
 		end
 
-		if url:EndsWith("&type=vtf") then
-			file.Write(path2, data)
-			local mat = gif_material(name, path2)
-			if not mat or mat:IsError() then
-				file.Delete(path2)
-				return
+		http.Fetch(url, function(data, len, hdr, code)
+			if code ~= 200 or len <= 222 then
+				return fail(code)
 			end
 
-			cache[name] = mat
-		else
-			file.Write(path, data)
-			local mat = material_data(path)
-			if not mat or mat:IsError() then
-				file.Delete(path)
-				return
+			if url:EndsWith(".vtf") then
+				file.Write(path2, data)
+				local mat = gif_material(name, path2)
+				if not mat or mat:IsError() then
+					file.Delete(path2)
+					return
+				end
+				cache[name] = mat
+			else
+				file.Write(path, data)
+				local mat = material_data(path)
+				if not mat or mat:IsError() then
+					file.Delete(path)
+					return
+				end
+				cache[name] = mat
 			end
-
-			cache[name] = mat
-		end
-	end, fail)
+		end, fail)
+	end)
 end
 
 EasyChat.ChatHUD:RegisterEmoteProvider("bttv", get_bttv)
