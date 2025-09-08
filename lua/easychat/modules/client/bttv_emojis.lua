@@ -15,6 +15,9 @@ local LOOKUP_TABLE_URL = "https://api.betterttv.net/3/emotes/shared/top?limit=10
 local lookup = {}
 local lookup_gif = {}
 
+if file.Exists(FOLDER .. "/framerate.txt", "DATA") then
+	framerate_cache = util.JSONToTable(file.Read(FOLDER .. "/framerate.txt", "DATA")) or {}
+end
 
 local function fetchEmotes(depth, before)
 	if depth > 25 then -- Fetch the top 25 pages of approx 100 emotes each, should be enough
@@ -92,6 +95,8 @@ local function get_bttv_url(name, callback, attempt)
 			end
 
 			framerate_cache[name] = tonumber(info.frame_rate) or 8
+			file.Write(FOLDER .. "/framerate.txt", util.TableToJSON(framerate_cache))
+
 			callback(info.url)
 		end, function(err)
 			EasyChat.Print(true, "Could not get GIF info for ", name, ": " .. err)
@@ -135,17 +140,25 @@ local function get_bttv(name)
 			return c
 		end
 	elseif exists2 then
-		local mat = gif_material(name, path2)
-
-		if mat and not mat:IsError() then
-			c = mat
-			cache[name] = c
-			return c
+		local function handleOldGif(url)
+			if url then
+				local mat = gif_material(name, path2)
+				if mat and not mat:IsError() then
+					c = mat
+					cache[name] = c
+					return c
+				end
+			end
 		end
+		if not framerate_cache[name] then
+			get_bttv_url(name, handleOldGif)
+			return
+		end
+		return handleOldGif()
 	end
 
 	local function fail(err, isvariant)
-		EasyChat.Print(true, "Http fetch failed for ", url, ": " .. tostring(err))
+		EasyChat.Print(true, "Http fetch failed for ", name, ": " .. tostring(err))
 	end
 
 	get_bttv_url(name, function(url)
