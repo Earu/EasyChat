@@ -65,10 +65,7 @@ local function gif_material(name, path)
 	})
 end
 
-local function get_bttv_url(name, callback, attempt)
-	attempt = attempt or 1
-	local MAX_ATTEMPTS = 20
-
+local function get_bttv_url(name, callback)
 	if lookup_gif[name] then
 		local gif_url = BTTV_CDN_URL:format(lookup_gif[name])
 		http.Post(GIFTOVTF_URL, { url = gif_url }, function(data, len, hdr, http_code)
@@ -79,13 +76,9 @@ local function get_bttv_url(name, callback, attempt)
 
 			local info = util.JSONToTable(data)
 			if not info or info.status == 0 then
-				if attempt < MAX_ATTEMPTS then
-					timer.Simple(1, function()
-						get_bttv_url(name, callback, attempt + 1)
-					end)
-				else
-					EasyChat.Print(true, "Invalid GIF info for ", name)
-				end
+				timer.Simple(1, function()
+					get_bttv_url(name, callback)
+				end)
 				return
 			end
 
