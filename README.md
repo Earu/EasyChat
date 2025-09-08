@@ -14,13 +14,10 @@ Any contributions are welcome, please follow the naming conventions already pres
 #### __*List of URLs & APIs used*__
 
 Internals:
-- https://api.github.com/repos/Earu/EasyChat/commits/master *(version checking)*
 - https://raw.githubusercontent.com/Earu/EasyChat/master/external_data/transliteration_lookup.json *(character lookup)*
 - https://raw.githubusercontent.com/Earu/EasyChat/master/external_data/steam_emoticons.txt *(steam emotes)*
 - https://raw.githubusercontent.com/Earu/EasyChat/master/external_data/twemojis.json *(twemoji emotes)*
 - https://raw.githubusercontent.com/Earu/EasyChat/master/external_data/twemojis.txt.lzma *(twemoji emotes)*
-- http://3kv.in:9006/stats/submit *(anonymous server stats)*
-- https://paypal.me/easychat *(donations)*
 
 Unlikely to go down:
 - http://steamcommunity-a.akamaihd.net/economy/emoticonhover/ *(steam emotes)*
@@ -28,8 +25,6 @@ Unlikely to go down:
 - https://api.imgur.com/3/image.json *(pasting images in the chat)*
 - https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap *(font)*
 - https://twemoji.maxcdn.com/v/latest/72x72/%s.png *(twemoji emotes)*
-- https://translate.yandex.com/developers/keys *(translation keys)*
-- https://translate.yandex.net/api/v1.5/tr.json/translate?key=%s&text=%s&lang=%s *(translation)*
 
 Uncertain:
 - https://api.betterttv.net/3/emotes/shared/top *(BTTV emotes)*
