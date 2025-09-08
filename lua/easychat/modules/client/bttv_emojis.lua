@@ -76,7 +76,7 @@ local function get_bttv_url(name, callback)
 
 			local info = util.JSONToTable(data)
 			if not info or info.status == 0 then
-				timer.Simple(1, function()
+				timer.Simple(2, function()
 					get_bttv_url(name, callback)
 				end)
 				return
