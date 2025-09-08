@@ -32,8 +32,7 @@ Unlikely to go down:
 - https://translate.yandex.net/api/v1.5/tr.json/translate?key=%s&text=%s&lang=%s *(translation)*
 
 Uncertain:
-- https://api.betterttv.net/2/emotes *(BTTV emotes)*
+- https://api.betterttv.net/3/emotes/shared/top *(BTTV emotes)*
 - https://cdn.betterttv.net/emote/%s/3x *(BTTV emotes)*
-- http://sprays.xerasin.com/gifinfo.php?url=%s *(animated emotes)*
-- http://sprays.xerasin.com/getimage2.php?url=%s&type=vtf *(animated emotes)*
+- https://sprays.xerasin.com/legacy/get *(animated emotes)*
 - https://api.frankerfacez.com/v1/set/global *(FFZ emotes)*
