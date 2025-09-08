@@ -141,13 +141,11 @@ local function get_bttv(name)
 		end
 	elseif exists2 then
 		local function handleOldGif(url)
-			if url then
-				local mat = gif_material(name, path2)
-				if mat and not mat:IsError() then
-					c = mat
-					cache[name] = c
-					return c
-				end
+			local mat = gif_material(name, path2)
+			if mat and not mat:IsError() then
+				c = mat
+				cache[name] = c
+				return c
 			end
 		end
 		if not framerate_cache[name] then
