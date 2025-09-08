@@ -12,7 +12,7 @@ local FOLDER = "easychat/emojis/bttv"
 file.CreateDir(FOLDER, "DATA")
 
 local LOOKUP_SHARED_TABLE_URL = "https://api.betterttv.net/3/emotes/shared/top?limit=100"
-local LOOKUP_GLOBAL_TABLE_URL = "https://api.betterttv.net/3/emotes/global"
+local LOOKUP_GLOBAL_TABLE_URL = "https://api.betterttv.net/3/cached/emotes/global"
 local lookup = {}
 local lookup_gif = {}
 
