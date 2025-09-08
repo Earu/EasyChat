@@ -11,7 +11,8 @@ local framerate_cache = {}
 local FOLDER = "easychat/emojis/bttv"
 file.CreateDir(FOLDER, "DATA")
 
-local LOOKUP_TABLE_URL = "https://api.betterttv.net/3/emotes/shared/top?limit=100"
+local LOOKUP_SHARED_TABLE_URL = "https://api.betterttv.net/3/emotes/shared/top?limit=100"
+local LOOKUP_GLOBAL_TABLE_URL = "https://api.betterttv.net/3/emotes/global"
 local lookup = {}
 local lookup_gif = {}
 
@@ -19,14 +20,31 @@ if file.Exists(FOLDER .. "/framerate.txt", "DATA") then
 	framerate_cache = util.JSONToTable(file.Read(FOLDER .. "/framerate.txt", "DATA")) or {}
 end
 
+
+http.Fetch(LOOKUP_GLOBAL_TABLE_URL, function(body)
+	local tbl = util.JSONToTable(body)
+	if not tbl or #tbl == 0 then return end
+	for _, emoteData in ipairs(tbl) do
+		if emoteData.animated then
+			lookup_gif[emoteData.code] = emoteData.id
+		else
+			lookup[emoteData.code] = emoteData.id
+		end
+		cache[emoteData.code] = UNCACHED
+	end
+end, function(err)
+	EasyChat.Print(true, "Could not get the global lookup table for BTTV")
+end)
+
 local function fetchEmotes(depth, before)
 	if depth > 25 then -- Fetch the top 25 pages of approx 100 emotes each, should be enough
 		EasyChat.Print(("Loaded %d BTTV emote references"):format(table.Count(cache)))
 		return
 	end
 
-	http.Fetch(LOOKUP_TABLE_URL .. (before and ("&before=" .. before) or ""), function(body)
+	http.Fetch(LOOKUP_SHARED_TABLE_URL .. (before and ("&before=" .. before) or ""), function(body)
 		local tbl = util.JSONToTable(body)
+		if not tbl or #tbl == 0 then return end
 		local lastID = nil
 		for _, emote in ipairs(tbl) do
 			local emoteData = emote.emote
