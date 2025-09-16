@@ -290,7 +290,9 @@ if CLIENT then
     hook.Add("Think", TAG, function()
         if input.LookupBinding("+ec_indicate", true) then return end
         if not EC_INDICATIONS:GetBool() then return end
-        if input.LookupKeyBinding(MOUSE_MIDDLE) then
+
+        local middle_mouse_binding = input.LookupKeyBinding(MOUSE_MIDDLE)
+        if middle_mouse_binding and middle_mouse_binding:Trim() ~= "" then
             EC_INDICATIONS:SetBool(false)
             return
         end
