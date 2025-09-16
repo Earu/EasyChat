@@ -31,6 +31,3 @@ include("easychat/client/font_extensions.lua")
 include("easychat/migrations.lua")
 include("easychat/easychat.lua")
 include("easychat/engine_chat_hack.lua")
-if SERVER then
-	include("easychat/server/stats.lua")
-end
