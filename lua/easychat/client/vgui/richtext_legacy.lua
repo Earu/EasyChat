@@ -48,7 +48,7 @@ function PANEL:OnChildAdded(clickpanel)
 		self._think_dirty = true
 
 		for i = 1, 1024 do
-			print("SHIFT", i, signal_value, click_data_prevpos and click_data_prevpos[1])
+			--print("SHIFT", i, signal_value, click_data_prevpos and click_data_prevpos[1])
 			-- oops, linkpanels got the wrong linkage, shift them backwards
 			if not IsValid(clickpanel_old) then break end
 			clickpanel = clickpanel_old
@@ -72,7 +72,7 @@ function PANEL:CleanupDirtyClickList()
 	if not data then return end
 	if not data[3] then return end -- haven't assigned all of them yet
 	-- latest one has been assigned, the old ones stand no chance of being reassigned
-	print("emptying _click_list, len=", table.Count(self._click_list))
+	--print("emptying _click_list, len=", table.Count(self._click_list))
 
 	for i = 1, 1025 do
 		local data = self._click_list[i]
