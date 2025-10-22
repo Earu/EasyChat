@@ -157,7 +157,12 @@ end
 
 local cache = {}
 local discord_lookup = {}
-http.Fetch(DISCORD_LOOKUP_TABLE_URL, function(body)
+http.Fetch(DISCORD_LOOKUP_TABLE_URL, function(body, _, _, code)
+	if code ~= 200 then
+		EasyChat.Print(true, "Could not get the lookup table for twemojis: HTTP " .. tostring(code))
+		return
+	end
+
 	local tbl = util.JSONToTable(body)
 	if not tbl then
 		EasyChat.Print(true, "Could not get the lookup table for twemojis")
