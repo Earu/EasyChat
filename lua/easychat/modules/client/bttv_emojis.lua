@@ -21,7 +21,12 @@ if file.Exists(FOLDER .. "/framerate.txt", "DATA") then
 end
 
 
-http.Fetch(LOOKUP_GLOBAL_TABLE_URL, function(body)
+http.Fetch(LOOKUP_GLOBAL_TABLE_URL, function(body, _, _, code)
+	if code ~= 200 then
+		EasyChat.Print(true, "Could not get the global lookup table for BTTV: HTTP " .. tostring(code))
+		return
+	end
+
 	local tbl = util.JSONToTable(body)
 	if not tbl or #tbl == 0 then return end
 	for _, emoteData in ipairs(tbl) do
@@ -41,8 +46,12 @@ local function fetchEmotes(depth, before)
 		EasyChat.Print(("Loaded %d BTTV emote references"):format(table.Count(cache)))
 		return
 	end
+	local url = LOOKUP_SHARED_TABLE_URL .. (before and ("&before=" .. before) or "")
+	http.Fetch(url, function(body, _, _, code)
+		if code ~= 200 then
+			return
+		end
 
-	http.Fetch(LOOKUP_SHARED_TABLE_URL .. (before and ("&before=" .. before) or ""), function(body)
 		local tbl = util.JSONToTable(body)
 		if not tbl or #tbl == 0 then return end
 		local lastID = nil
