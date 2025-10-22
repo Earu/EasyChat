@@ -12,7 +12,12 @@ file.CreateDir(FOLDER, "DATA")
 
 local LOOKUP_TABLE_URL = "https://api.frankerfacez.com/v1/set/global"
 local lookup = {}
-http.Fetch(LOOKUP_TABLE_URL, function(body)
+http.Fetch(LOOKUP_TABLE_URL, function(body, _, _, code)
+	if code ~= 200 then
+		EasyChat.Print(true, "Could not get the lookup table for FFZ: HTTP " .. tostring(code))
+		return
+	end
+
 	local tbl = util.JSONToTable(body)
 	if not tbl then
 		EasyChat.Print(true, "Could not get the lookup table for FFZ")
