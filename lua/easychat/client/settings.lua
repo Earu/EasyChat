@@ -1275,6 +1275,27 @@ local function create_default_settings()
 			step1_link:SetURL("https://github.com/Earu/gm_ollama/releases")
 			step1_link:SetColor(Color(100, 149, 237))
 			step1_link:SizeToContents()
+			y_offset = y_offset + 20
+
+			local step1_desc2 = content:Add("DLabel")
+			step1_desc2:SetPos(20, y_offset)
+			step1_desc2:SetText("Place the downloaded .dll into your garrysmod/lua/bin folder.")
+			step1_desc2:SetTextColor(EasyChat.TextColor)
+			step1_desc2:SizeToContents()
+			y_offset = y_offset + 20
+
+			local step1_desc3 = content:Add("DLabel")
+			step1_desc3:SetPos(20, y_offset)
+			step1_desc3:SetText("If 'bin' doesn't exist, create the folder.")
+			step1_desc3:SetTextColor(EasyChat.TextColor)
+			step1_desc3:SizeToContents()
+			y_offset = y_offset + 20
+
+			local step1_arch_note = content:Add("DLabel")
+			step1_arch_note:SetPos(20, y_offset)
+			step1_arch_note:SetText("Get the x64 .dll only if you're on Garry's Mod x86-64 branch.")
+			step1_arch_note:SetTextColor(EasyChat.TextColor)
+			step1_arch_note:SizeToContents()
 			y_offset = y_offset + 35
 
 			-- Step 2
