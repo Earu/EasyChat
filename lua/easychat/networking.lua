@@ -100,6 +100,7 @@ if SERVER then
 			userid = IsValid(ply) and ply:UserID() or 0,
 			text = msg,
 			teamonly = is_team and 1 or 0,
+			is_local = is_local and 1 or 0
 		})
 
 		local filter = {}
@@ -440,6 +441,7 @@ if CLIENT then
 						userid = IsValid(ply) and ply:UserID() or 0,
 						text = msg,
 						teamonly = is_team and 1 or 0,
+						is_local = is_local and 1 or 0
 					})
 				end
 			end)
@@ -452,6 +454,7 @@ if CLIENT then
 				userid = IsValid(ply) and ply:UserID() or 0,
 				text = msg,
 				teamonly = is_team and 1 or 0,
+				is_local = is_local and 1 or 0
 			})
 		end
 	end
