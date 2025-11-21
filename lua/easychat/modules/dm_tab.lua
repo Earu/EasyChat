@@ -62,7 +62,7 @@ if CLIENT then
 				end
 			end
 
-			self.TextEntry = self:Add("DTextEntry")
+			self.TextEntry = self:Add("TextEntryLegacy")
 			self.TextEntry:SetTall(20)
 			self.TextEntry:Dock(BOTTOM)
 			self.TextEntry:SetHistoryEnabled(true)
