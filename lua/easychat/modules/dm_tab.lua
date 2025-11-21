@@ -62,7 +62,7 @@ if CLIENT then
 				end
 			end
 
-			self.TextEntry = self:Add("DTextEntry")
+			self.TextEntry = self:Add("TextEntryLegacy")
 			self.TextEntry:SetTall(20)
 			self.TextEntry:Dock(BOTTOM)
 			self.TextEntry:SetHistoryEnabled(true)
@@ -182,7 +182,7 @@ if CLIENT then
 
 			self.DMList:Clear()
 			for _, chat in pairs(self.Chats) do
-				local line = self.DMList:AddLine(chat.Player:RichNick())
+				local line = self.DMList:AddLine(chat.Player:Nick())
 				chat.Line = line
 				line.Player = chat.Player
 			end
@@ -220,9 +220,9 @@ if CLIENT then
 				if not IsValid(chat.Player) then return end
 
 				if chat.NewMessages > 0 then
-					line:SetColumnText(1, chat.Player:RichNick() .. " (" .. chat.NewMessages .. ")")
+					line:SetColumnText(1, chat.Player:Nick() .. " (" .. chat.NewMessages .. ")")
 				else
-					line:SetColumnText(1, chat.Player:RichNick())
+					line:SetColumnText(1, chat.Player:Nick())
 				end
 			end
 		end,
