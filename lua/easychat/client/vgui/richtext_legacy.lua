@@ -83,6 +83,7 @@ function PANEL:CleanupDirtyClickList()
 	table.Empty(self._click_list)
 end
 
+local easychat_legacy_hover_hack = CreateClientConVar("easychat_legacy_hover_hack","0",true,false,"Allow hovering over links in text (WIP: does not always work properly and shows something closeby!)")
 function PANEL:ThinkLinkHover()
 	if self._think_dirty then
 		self._think_dirty = false
@@ -90,7 +91,9 @@ function PANEL:ThinkLinkHover()
 	end
 
 	local hover = vgui.GetHoveredPanel()
-
+	
+	if not easychat_legacy_hover_hack:GetBool() then return end
+	
 	if not hover or hover:GetClassName() ~= "ClickPanel" then
 		self._link_hovering = false
 		local signal_value = self._last_hover_signal_value
