@@ -199,7 +199,7 @@ function macro_processor:LoadSavedMacros()
 		local json = file.Read(path, "DATA")
 
 		local macro = util.JSONToTable(json)
-		if macro.IsLua and not self:CompileLuaMacro(macro) then return end
+		if not macro or macro.IsLua and not self:CompileLuaMacro(macro) then return end
 		self.Macros[macro_name] = macro
 	end
 end
