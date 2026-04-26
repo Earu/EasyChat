@@ -2802,7 +2802,11 @@ if CLIENT then
 		-- teamchange = true, -- annoying
 		-- chat = true, -- deprecated
 		-- joinleave = true, -- we handle it ourselves
-		hook.Add("ChatText", TAG, function(index, name, text, chat_text_type)
+		hook.Add("ChatText", TAG, function(index, name, text, chat_text_type, is_ec_calling)
+			if is_ec_calling then
+				return
+			end
+
 			if chat_text_type == "none" then
 				chat.AddText(color_white, text)
 			end

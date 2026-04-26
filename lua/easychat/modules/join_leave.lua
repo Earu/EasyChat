@@ -86,8 +86,8 @@ if CLIENT then
 	local white_color = Color(255, 255, 255)
 	local black_color = Color(0, 0, 0)
 
-	hook.Add("ChatText", TAG, function(_, _, _, mode)
-		if not EC_JOIN_LEAVE:GetBool() then return end
+	hook.Add("ChatText", TAG, function(_, _, _, mode, is_ec_calling)
+		if is_ec_calling or not EC_JOIN_LEAVE:GetBool() then return end
 		if mode == "joinleave" then return true end
 	end)
 
@@ -120,6 +120,28 @@ if CLIENT then
 
 		local contents = table.concat(table.GetKeys(friend_ids), "\n")
 		file.Write(FRIEND_CACHE_PATH, contents)
+	end
+
+	local function add_text(skip_check, ...)
+		if skip_check then
+			chat.AddText(...)
+			return true
+		end
+
+		local text = ""
+
+		for _, v in ipairs({...}) do
+			if isstring(v) then
+				text = text .. v
+			end
+		end
+
+		if hook.Run("ChatText", 0, "Console", text, "joinleave", true) ~= true then
+			chat.AddText(...)
+			return true
+		end
+
+		return false
 	end
 
 	hook.Add("OnEntityCreated", TAG, function(ent)
@@ -182,23 +204,24 @@ if CLIENT then
 
 		local formatted_id = (" (%s) "):format(network_id)
 		if is_join then
-			chat.AddText(green_color, " ● ", ply_col, name, gray_color, formatted_id, white_color, "has ", green_color, "spawned")
+			local should_show = add_text(false, green_color, " ● ", ply_col, name, gray_color, formatted_id, white_color, "has ", green_color, "spawned")
+			if not should_show then return end
 
 			if last_seen_diff == -1 then
-				chat.AddText(black_color, " ▸ ", white_color, "Joined for the ", cyan_color, "first time", white_color, "!")
+				add_text(true, black_color, " ▸ ", white_color, "Joined for the ", cyan_color, "first time", white_color, "!")
 			else
-				chat.AddText(black_color, " ▸ ", white_color, "Last seen ", cyan_color, seen_date, white_color, " at ", teal_color, os.date("%H:%M", last_seen_time), gray_color, formatted_diff)
+				add_text(true, black_color, " ▸ ", white_color, "Last seen ", cyan_color, seen_date, white_color, " at ", teal_color, os.date("%H:%M", last_seen_time), gray_color, formatted_diff)
 			end
 
 			-- let me be special
 			if network_id == "STEAM_0:0:80006525" then
-				chat.AddText(black_color, " ▸ ", teal_color, "EasyChat", white_color, " Developer!")
+				add_text(true, black_color, " ▸ ", teal_color, "EasyChat", white_color, " Developer!")
 			end
 		else
 			if reason == "Gave up connecting" then
-				chat.AddText(red_color, " ● ", ply_col, name, gray_color, formatted_id, red_color, "gave up", white_color, " connecting")
+				add_text(false, red_color, " ● ", ply_col, name, gray_color, formatted_id, red_color, "gave up", white_color, " connecting")
 			else
-				chat.AddText(red_color, " ● ", ply_col, name, gray_color, formatted_id, white_color, "has ", red_color, "left", white_color, " the server", red_color, " (" .. reason .. ")")
+				add_text(false, red_color, " ● ", ply_col, name, gray_color, formatted_id, white_color, "has ", red_color, "left", white_color, " the server", red_color, " (" .. reason .. ")")
 			end
 		end
 	end)
@@ -210,7 +233,7 @@ if CLIENT then
 		if not friend_ids[network_id] then return end
 		if EasyChat.BlockedPlayers[network_id] then return end -- friends can block each others on steam
 		if EasyChat.IsStringEmpty(name, true) then name = "[NO NAME]" end
-		chat.AddText(green_color, " ● Friend joining ", white_color, name, gray_color, " (" .. network_id .. ")")
+		add_text(false, green_color, " ● Friend joining ", white_color, name, gray_color, " (" .. network_id .. ")")
 	end)
 end
 
