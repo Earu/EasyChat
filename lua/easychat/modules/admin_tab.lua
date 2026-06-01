@@ -150,14 +150,10 @@ if CLIENT then
 				end
 			end
 
-			if EC_HISTORY:GetBool() then
-				local history = EasyChat.ReadFromHistory("admin")
-				if EasyChat.IsStringEmpty(history) then
+			if EC_HISTORY:GetBool() and EasyChat.ChatHistory.Available then
+				EasyChat.ChatHistory.Replay("admin", self.RichText)
+				if EasyChat.ChatHistory.Count("admin") == 0 then
 					EasyChat.AddText(self.RichText, "Welcome to the admin chat!")
-				else
-					self.RichText:AppendText(history) -- so we do not log twice
-					self.RichText:AppendText("\n^^^^^ Last Session History ^^^^^\n\n")
-					self.RichText:GotoTextEnd()
 				end
 			else
 				EasyChat.AddText(self.RichText, "Welcome to the admin chat!")

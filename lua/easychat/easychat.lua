@@ -1223,8 +1223,8 @@ if CLIENT then
 			text = ec_markup.GetText(text)
 		end
 
-		if richtext.HistoryName then
-			richtext.Log = richtext.Log and richtext.Log .. text or text
+		if richtext.HistoryName and richtext._Segments then
+			table.insert(richtext._Segments, { t = "s", v = text })
 		end
 
 		richtext:AppendText(text)
@@ -1259,9 +1259,10 @@ if CLIENT then
 
 	local function save_text(richtext)
 		if not richtext.HistoryName then return end
+		if not richtext._Segments or #richtext._Segments == 0 then return end
 
-		EasyChat.SaveToHistory(richtext.HistoryName, richtext.Log)
-		richtext.Log = ""
+		EasyChat.ChatHistory.Save(richtext.HistoryName, richtext._Segments)
+		richtext._Segments = {}
 	end
 
 	local function chathud_insert_color_change(r, g, b, a)
@@ -1441,62 +1442,15 @@ if CLIENT then
 			EasyChat.GUI.RichText:InsertColorChange(r, g, b, a)
 		end
 
+		if EasyChat.GUI.RichText._Segments then
+			table.insert(EasyChat.GUI.RichText._Segments, { t = "c", r = r, g = g, b = b, a = a })
+		end
+
 		if EC_HUD_CUSTOM:GetBool() then
 			EasyChat.ChatHUD:InsertColorChange(r, g, b)
 		end
 
 		return Color(r, g, b, a)
-	end
-
-	local history_file_handles = {}
-	local HISTORY_DIRECTORY = "easychat/history"
-	function EasyChat.SaveToHistory(name, content)
-		if not name or not content then return end
-		if EasyChat.IsStringEmpty(content) then return end
-
-		if not file.Exists(HISTORY_DIRECTORY, "DATA") then
-			file.CreateDir(HISTORY_DIRECTORY)
-		end
-
-		local file_name = ("%s/%s_history.txt"):format(HISTORY_DIRECTORY, name:lower())
-		local file_handles = history_file_handles[name]
-		if not file_handles then
-			file_handles = {
-				input = file.Open(file_name, "w", "DATA"),
-				output = file.Open(file_name, "r", "DATA"),
-			}
-			history_file_handles[name] = file_handles
-		end
-
-		-- another process is using the file, discard
-		if not file_handles.input or not file_handles.output then return end
-
-		file_handles.input:Seek(0)
-		file_handles.output:Seek(0)
-
-		local pre_content = file_handles.output:Size() >= 10000
-			and "...\n" .. (file_handles.output:Read(10000 - #content) or "")
-			or file_handles.output:Read(10000)
-
-		file_handles.input:Write(pre_content and pre_content .. content or content)
-		file_handles.input:Flush()
-	end
-
-	function EasyChat.ReadFromHistory(name)
-		if not name then return "" end
-
-		local file_name = ("%s/%s_history.txt"):format(HISTORY_DIRECTORY, name:lower())
-		if not file.Exists(file_name, "DATA") then return "" end
-
-		local history_file = file.Open(file_name, "r", "DATA")
-
-		-- another process is using the file, return an empty string
-		if not history_file then return "" end
-
-		local contents = history_file:Read(10000)
-		history_file:Close()
-
-		return contents or ""
 	end
 
 	local function is_valid_richtext(richtext)
@@ -1513,19 +1467,29 @@ if CLIENT then
 			return
 		end
 
+		if richtext.HistoryName then
+			richtext._Segments = {}
+		end
+		local segs = richtext._Segments
+
+		local function icc(r, g, b, a)
+			richtext:InsertColorChange(r, g, b, a or 255)
+			if segs then table.insert(segs, { t = "c", r = r, g = g, b = b, a = a or 255 }) end
+		end
+
 		append_text(richtext, "\n")
 		if not EasyChat.UseDermaSkin then
-			richtext:InsertColorChange(255, 255, 255, 255)
+			icc(255, 255, 255, 255)
 		end
 
 		if EC_TIMESTAMPS:GetBool() then
-			richtext:InsertColorChange(EasyChat.TimestampColor)
+			icc(EasyChat.TimestampColor.r, EasyChat.TimestampColor.g, EasyChat.TimestampColor.b, EasyChat.TimestampColor.a)
 			if EC_TIMESTAMPS_12:GetBool() then
 				append_text(richtext, os.date("%I:%M %p"))
 			else
 				append_text(richtext, os.date("%H:%M"))
 			end
-			richtext:InsertColorChange(255, 255, 255, 255)
+			icc(255, 255, 255, 255)
 			append_text(richtext, " - ")
 		end
 
@@ -1536,7 +1500,7 @@ if CLIENT then
 				append_text_url(richtext, arg)
 			elseif type(arg) == "Player" then
 				if not IsValid(arg) then
-					richtext:InsertColorChange(UNKNOWN_COLOR.r, UNKNOWN_COLOR.g, UNKNOWN_COLOR.b)
+					icc(UNKNOWN_COLOR.r, UNKNOWN_COLOR.g, UNKNOWN_COLOR.b)
 					append_text(richtext, get_unknown_name(arg))
 				else
 					local ply_col = EC_PLAYER_COLOR:GetBool() and team.GetColor(arg:Team()) or color_white
@@ -1550,7 +1514,7 @@ if CLIENT then
 						ply_col = UNKNOWN_COLOR
 					end
 
-					richtext:InsertColorChange(ply_col.r, ply_col.g, ply_col.b, 255)
+					icc(ply_col.r, ply_col.g, ply_col.b, 255)
 					if not arg:IsBot() then
 						richtext:InsertClickableTextStart(("ECPlayerActions: %s|%s")
 							:format(arg:SteamID(), empty_nick and "[NO NAME]" or nick))
@@ -1566,7 +1530,7 @@ if CLIENT then
 							local tags_data = extract_tags_data(arg:RichNick(), true)
 							for _, tag_data in ipairs(tags_data) do
 								if is_color(tag_data) then
-									richtext:InsertColorChange(tag_data.r, tag_data.g, tag_data.b, 255)
+									icc(tag_data.r, tag_data.g, tag_data.b, 255)
 								elseif isstring(tag_data) then
 									append_text(richtext, tag_data)
 								end
@@ -1580,10 +1544,10 @@ if CLIENT then
 				end
 
 				if last_color_applied then
-					richtext:InsertColorChange(last_color_applied.r, last_color_applied.g, last_color_applied.b, isnumber(last_color_applied.a) and last_color_applied.a or 255)
+					icc(last_color_applied.r, last_color_applied.g, last_color_applied.b, isnumber(last_color_applied.a) and last_color_applied.a or 255)
 				end
 			elseif is_color(arg) then
-				richtext:InsertColorChange(arg.r, arg.g, arg.b, isnumber(arg.a) and arg.a or 255)
+				icc(arg.r, arg.g, arg.b, isnumber(arg.a) and arg.a or 255)
 				last_color_applied = arg
 			else
 				append_text(richtext, tostring(arg))
@@ -1602,6 +1566,10 @@ if CLIENT then
 
 		safe_hook_run("ECPreAddText", ...)
 
+		if EasyChat.GUI.RichText.HistoryName then
+			EasyChat.GUI.RichText._Segments = {}
+		end
+
 		local data = {}
 
 		if EC_HUD_CUSTOM:GetBool() then
@@ -1615,10 +1583,18 @@ if CLIENT then
 		if EC_ENABLE:GetBool() then
 			local timestamp = EC_TIMESTAMPS_12:GetBool() and os.date("%I:%M %p") or os.date("%H:%M")
 			if EC_TIMESTAMPS:GetBool() then
-				EasyChat.GUI.RichText:InsertColorChange(EasyChat.TimestampColor)
-				append_text(EasyChat.GUI.RichText, timestamp)
-				EasyChat.GUI.RichText:InsertColorChange(255, 255, 255, 255)
-				append_text(EasyChat.GUI.RichText, " - ")
+				local ric = EasyChat.GUI.RichText
+				ric:InsertColorChange(EasyChat.TimestampColor)
+				if ric._Segments then
+					local c = EasyChat.TimestampColor
+					table.insert(ric._Segments, { t = "c", r = c.r, g = c.g, b = c.b, a = c.a or 255 })
+				end
+				append_text(ric, timestamp)
+				ric:InsertColorChange(255, 255, 255, 255)
+				if ric._Segments then
+					table.insert(ric._Segments, { t = "c", r = 255, g = 255, b = 255, a = 255 })
+				end
+				append_text(ric, " - ")
 			end
 
 			if EC_HUD_TIMESTAMPS:GetBool() then
@@ -2176,18 +2152,8 @@ if CLIENT then
 			end
 
 			global_tab.RichText.HistoryName = "global"
-			if EC_HISTORY:GetBool() then
-				local history = EasyChat.ReadFromHistory("global")
-				if not EasyChat.IsStringEmpty(history) then
-					if EasyChat.UseDermaSkin then
-						local new_col = global_tab.RichText:GetSkin().text_normal
-						global_tab.RichText:InsertColorChange(new_col.r, new_col.g, new_col.b, new_col.a)
-					end
-
-					global_tab.RichText:AppendText(history)
-					local historynotice = "\n^^^^^ Last Session History ^^^^^\n\n"
-					global_tab.RichText:AppendText(historynotice)
-				end
+			if EC_HISTORY:GetBool() and EasyChat.ChatHistory.Available then
+				EasyChat.ChatHistory.Replay("global", global_tab.RichText)
 			end
 
 			-- Checks if this table already has panels, if so remove them and clear the table

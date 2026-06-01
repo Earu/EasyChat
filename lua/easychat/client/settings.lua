@@ -723,9 +723,13 @@ local function create_default_settings()
 
 		local setting_clear_history = settings:AddSetting(category_name, "action", "Clear History")
 		setting_clear_history.DoClick = function()
-			local files, _ = file.Find("easychat/history/*_history.txt", "DATA")
-			for _, f in pairs(files) do
-				file.Delete("easychat/" .. f)
+			if EasyChat.ChatHistory.Available then
+				EasyChat.ChatHistory.Clear()
+			else
+				local files, _ = file.Find("easychat/history/*_history.txt", "DATA")
+				for _, f in pairs(files) do
+					file.Delete("easychat/" .. f)
+				end
 			end
 
 			EasyChat.Reload()

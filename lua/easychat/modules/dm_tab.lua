@@ -158,13 +158,10 @@ if CLIENT then
 				self.ActiveChat = chat
 			end
 
-			if EC_HISTORY:GetBool() then
-				local history = EasyChat.ReadFromHistory(id64)
-				if EasyChat.IsStringEmpty(history) then
+			if EC_HISTORY:GetBool() and EasyChat.ChatHistory.Available then
+				EasyChat.ChatHistory.Replay(id64, richtext)
+				if EasyChat.ChatHistory.Count(id64) == 0 then
 					EasyChat.AddText(richtext, "This is the beginning of your conversation!\n\n")
-				else
-					richtext:AppendText(history) -- so we do not log twice
-					richtext:AppendText("\n^^^^^ Last Session History ^^^^^\n\n")
 				end
 			else
 				EasyChat.AddText(richtext, "This is the beginning of your conversation!\n\n")
