@@ -161,6 +161,12 @@ if CLIENT then
 
 			if EC_HISTORY:GetBool() and EC_HISTORY_PM:GetBool() and EasyChat.ChatHistory.Available then
 				EasyChat.ChatHistory.Replay(id64, richtext)
+				richtext:InsertColorChange(130, 130, 130)
+				richtext:AppendText("(")
+				richtext:AppendText(language.GetPhrase("chat"))
+				richtext:AppendText(" ")
+				richtext:AppendText(language.GetPhrase("history"))
+				richtext:AppendText("! Disable with easychat_history_pm 0)\n\n")
 			else
 				EasyChat.AddText(richtext, "This is the beginning of your conversation!\n\n")
 			end

@@ -21,6 +21,12 @@ local COLOR_PRINT_HEAD = Color(244, 167, 66)
 local COLOR_PRINT_GOOD = Color(0, 160, 220)
 local COLOR_PRINT_BAD = Color(255, 127, 127)
 
+-- PM channels are named by SteamID64 (all digits) or SteamID (STEAM_ format)
+-- Don't save PM messages when easy chat history_pm is disabled
+local function is_pm_channel(name)
+	return name:match("^%d+$") or name:match("^STEAM_")
+end
+
 function EasyChat.RunOnNextFrame(func)
 	timer.Simple(0, func)
 end
@@ -1263,7 +1269,10 @@ if CLIENT then
 		if not richtext.HistoryName then return end
 		if not richtext._Segments or #richtext._Segments == 0 then return end
 
-		EasyChat.ChatHistory.Save(richtext.HistoryName, richtext._Segments)
+		local name = richtext.HistoryName
+		if not EC_HISTORY_PM:GetBool() and is_pm_channel(name) then return end
+
+		EasyChat.ChatHistory.Save(name, richtext._Segments)
 		richtext._Segments = {}
 	end
 

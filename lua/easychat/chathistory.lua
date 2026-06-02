@@ -4,7 +4,8 @@ _G.EasyChat = EasyChat
 local ChatHistory = {}
 EasyChat.ChatHistory = ChatHistory
 
-local MAX_MESSAGES = 100
+local EC_HISTORY_MAX = CreateConVar("easychat_history_max", "200", FCVAR_ARCHIVE, "Max history messages per channel")
+local function max_messages() return math.max(1, EC_HISTORY_MAX:GetInt()) end
 
 local function query(sql_str)
 	local res = sql.Query(sql_str)
@@ -99,12 +100,12 @@ function ChatHistory.Save(channel, segments)
 		[[DELETE FROM ec_history WHERE channel_id = %d AND id NOT IN (
 			SELECT id FROM ec_history WHERE channel_id = %d ORDER BY id DESC LIMIT %d
 		)]],
-		cid, cid, MAX_MESSAGES
+		cid, cid, max_messages()
 	))
 end
 
 function ChatHistory.Get(channel, limit)
-	limit = limit or MAX_MESSAGES
+	limit = limit or max_messages()
 	local cid = CHANNEL_IDS[tostring(channel)]
 	if not cid then return {} end
 
@@ -177,7 +178,8 @@ function ChatHistory.Replay(channel, richtext)
 			elseif seg.t == "p" then
 				local ply = seg.s and player.GetBySteamID64 and player.GetBySteamID64(seg.s)
 				if IsValid(ply) then
-					richtext:InsertColorChange(team.GetColor(ply:Team()))
+					local tc = team.GetColor(ply:Team())
+					richtext:InsertColorChange(tc.r, tc.g, tc.b, tc.a)
 					richtext:AppendText(ply:Nick())
 				else
 					richtext:AppendText(seg.n or "[Offline Player]")
