@@ -29,6 +29,7 @@ if CLIENT then
 	local color_white = color_white
 
 	local EC_HISTORY = GetConVar("easychat_history")
+	local EC_HISTORY_PM = GetConVar("easychat_history_pm")
 	local EC_TICK_SOUND = GetConVar("easychat_tick_sound")
 
 	local DM_TAB = {
@@ -158,11 +159,8 @@ if CLIENT then
 				self.ActiveChat = chat
 			end
 
-			if EC_HISTORY:GetBool() and EasyChat.ChatHistory.Available then
+			if EC_HISTORY:GetBool() and EC_HISTORY_PM:GetBool() and EasyChat.ChatHistory.Available then
 				EasyChat.ChatHistory.Replay(id64, richtext)
-				if EasyChat.ChatHistory.Count(id64) == 0 then
-					EasyChat.AddText(richtext, "This is the beginning of your conversation!\n\n")
-				end
 			else
 				EasyChat.AddText(richtext, "This is the beginning of your conversation!\n\n")
 			end

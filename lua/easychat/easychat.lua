@@ -477,6 +477,7 @@ if CLIENT then
 	local EC_FONT_SIZE = CreateConVar("easychat_font_size", "17", FCVAR_ARCHIVE, "Set the font size for chatbox")
 	local EC_DERMASKIN = CreateConVar("easychat_use_dermaskin", "0", FCVAR_ARCHIVE, "Use dermaskin look or not")
 	local EC_HISTORY = CreateConVar("easychat_history", "1", FCVAR_ARCHIVE, "Should the history be shown")
+	local EC_HISTORY_PM = CreateConVar("easychat_history_pm", "1", FCVAR_ARCHIVE, "Should PM history be shown")
 	local EC_PRESERVE_MESSAGE_IN_PROGRESS = CreateConVar("easychat_preserve_message_in_progress", "1", {FCVAR_ARCHIVE, FCVAR_USERINFO}, "Preserve the message in progress.")
 	local EC_IMAGES = CreateConVar("easychat_images", "1", FCVAR_ARCHIVE, "Display images in the chat window")
 	local EC_PEEK_COMPLETION = CreateConVar("easychat_peek_completion", "1", FCVAR_ARCHIVE, "Display a preview of the possible text completion")
@@ -516,6 +517,7 @@ if CLIENT then
 
 	cvars.AddChangeCallback(EC_NO_MODULES:GetName(), function() EasyChat.Reload() end)
 	cvars.AddChangeCallback(EC_HISTORY:GetName(), function() EasyChat.Reload() end)
+	cvars.AddChangeCallback(EC_HISTORY_PM:GetName(), function() EasyChat.Reload() end)
 
 	cvars.AddChangeCallback(EC_DERMASKIN:GetName(), function()
 		EasyChat.UseDermaSkin = EC_DERMASKIN:GetBool()
