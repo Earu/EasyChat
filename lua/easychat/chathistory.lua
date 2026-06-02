@@ -1,5 +1,5 @@
-local EasyChat = _G.EasyChat
-if not EasyChat then return end
+local EasyChat = _G.EasyChat or {}
+_G.EasyChat = EasyChat
 
 local ChatHistory = {}
 EasyChat.ChatHistory = ChatHistory
