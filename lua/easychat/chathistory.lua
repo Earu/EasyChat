@@ -1,3 +1,5 @@
+if SERVER then AddCSLuaFile() return end
+
 local EasyChat = _G.EasyChat or {}
 _G.EasyChat = EasyChat
 
@@ -10,9 +12,21 @@ local function max_messages() return math.max(1, EC_HISTORY_MAX:GetInt()) end
 local function query(sql_str)
 	local res = sql.Query(sql_str)
 	if res == false then
-		ErrorNoHalt("[EasyChat] SQL error: " .. tostring(sql.LastError()) .. "\n  Query: " .. tostring(sql_str) .. "\n")
-		return false, sql.LastError()
+		local msg = tostring(sql.LastError())
+		-- track sqlite error count and fall back to simple clientside prints
+		ChatHistory._sqlite_error_count = (ChatHistory._sqlite_error_count or 0) + 1
+		local use_print = ChatHistory._sqlite_error_count > 5
+		if hook.Run("ECSQLiteErrored", msg) ~= true then
+			if use_print then
+				print("[EasyChat] SQL error: " .. msg .. "  Query: " .. tostring(sql_str))
+			else
+				ErrorNoHalt("[EasyChat] SQL error: " .. msg .. "\n  Query: " .. tostring(sql_str) .. "\n")
+			end
+		end
+		return false, msg
 	end
+	-- reset error counter on success
+	ChatHistory._sqlite_error_count = 0
 	return true, res
 end
 
