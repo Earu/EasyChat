@@ -1,6 +1,49 @@
 local color_white = color_white
 local AVERAGE_AMOUNT_OF_ELEMENTS_PER_LINE = 5
 
+local function css_rgba(col)
+	col = col or color_white
+	return ("rgba(%d, %d, %d, %s)"):format(col.r, col.g, col.b, (col.a or 255) / 255)
+end
+
+local function open_image_viewer(url)
+	if IsValid(EasyChat.ImageViewer) then EasyChat.ImageViewer:Remove() end
+
+	local frame = EasyChat.CreateFrame()
+	EasyChat.ImageViewer = frame
+	frame:SetTitle("Image")
+	frame:SetSize(math.floor(ScrW() * 0.4), math.floor(ScrH() * 0.4))
+	frame:Center()
+	frame:MakePopup()
+	frame.btnClose.DoClick = function() frame:Remove() end
+
+	local html = vgui.Create("DHTML", frame)
+	html:Dock(FILL)
+	html:SetAllowLua(false)
+
+	html:AddFunction("viewer", "Resize", function(w, h)
+		if not IsValid(frame) then return end
+		w, h = tonumber(w) or 0, tonumber(h) or 0
+		if w <= 0 or h <= 0 then return end
+
+		local scale = math.min(1, ScrW() * 0.8 / w, ScrH() * 0.8 / h)
+		frame:SetSize(math.max(math.floor(w * scale), 128), math.max(math.floor(h * scale), 96) + 25)
+		frame:Center()
+	end)
+
+	html:AddFunction("viewer", "Close", function()
+		if IsValid(frame) then frame:Remove() end
+	end)
+
+	html:SetHTML([[<html><head></head>
+		<body style="margin:0;padding:0;background:rgba(0,0,0,0);height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+			<img src="]] .. url .. [[" style="max-width:100%;max-height:100%;object-fit:contain;cursor:pointer;"
+				onload="viewer.Resize(this.naturalWidth, this.naturalHeight);" onclick="viewer.Close();"/>
+		</body></html>]])
+
+	return frame
+end
+
 local PANEL = {
 	CurrentColor = Color(255, 255, 255),
 	RichTextXBackgroundColor = Color(0, 0, 0, 0), -- stupid name or it overrides other stuff (?)
@@ -98,6 +141,19 @@ function PANEL:Init()
 		copy_menu:Open()
 	end)
 
+	self:AddInternalCallback("OnImageClick", function(url)
+		open_image_viewer(url)
+	end)
+
+	self:AddInternalCallback("OnImageRightClick", function(url)
+		local image_menu = DermaMenu()
+		image_menu:AddOption("Open in browser", function() EasyChat.OpenURL(url) end)
+		image_menu:AddOption("Copy", function() SetClipboardText(url) end)
+		image_menu:AddSpacer()
+		image_menu:AddOption("Cancel", function() image_menu:Remove() end)
+		image_menu:Open()
+	end)
+
 	self:AddInternalCallback("OnTextHover", function(text_value, is_hover)
 		self:OnTextHover(text_value, is_hover)
 	end)
@@ -122,6 +178,28 @@ function PANEL:Init()
 		return url, limit, blur
 	end)
 
+	self.MarkToAppend = {}
+	self:AddInternalCallback("GetMarkToAppend", function()
+		local id = self.MarkToAppend[1] or 0
+		table.remove(self.MarkToAppend, 1)
+		return id
+	end)
+
+	self.EmbedToAppend = {}
+	self:AddInternalCallback("GetEmbedToAppend", function()
+		local limit = GetConVar("easychat_modern_text_history_limit"):GetInt() * AVERAGE_AMOUNT_OF_ELEMENTS_PER_LINE
+		local blur = GetConVar("easychat_blur_images"):GetBool()
+
+		local embed = self.EmbedToAppend[1] or {}
+		table.remove(self.EmbedToAppend, 1)
+
+		return embed.msg_id or 0, embed.kind or "link", embed.url or "",
+			embed.page_url or "", embed.title or "", embed.description or "",
+			embed.site_name or "", embed.favicon or "", blur, limit,
+			css_rgba(EasyChat.TabColor), css_rgba(EasyChat.TabOutlineColor),
+			css_rgba(EasyChat.LinkColor), css_rgba(EasyChat.TextColor)
+	end)
+
 	self:AddInternalCallback("Debug", print)
 
 	self:QueueJavascript([[
@@ -131,13 +209,14 @@ function PANEL:Init()
 		window.addEventListener("contextmenu", (ev) => {
 			ev.preventDefault();
 
-			if (ev.target.nodeName == "IMG") {
-				RichTextX.OnRightClick(ev.target.src);
+			if (ev.target.nodeName == "IMG" && ev.target.classList.contains("ec-image")) {
+				RichTextX.OnImageRightClick(ev.target.src);
 				return;
 			}
 
 			if (ev.target.nodeName == "SPAN" && ev.target.clickableText) {
-				RichTextX.OnRightClick(ev.target.textContent);
+				// copy the full value (the displayed text may be a shortened url)
+				RichTextX.OnRightClick(ev.target.clickableValue || ev.target.textContent);
 				return;
 			}
 
@@ -228,6 +307,7 @@ function PANEL:AppendText(text)
 				span.onmouseenter = () => RichTextX.OnTextHover(clickableTextValue, true);
 				span.onmouseleave = () => RichTextX.OnTextHover(clickableTextValue, false);
 				span.clickableText = true;
+				span.clickableValue = clickableTextValue; // full value (display text may be shortened)
 				span.style.cursor = "pointer";
 			}
 			span.style.color = cssColor;
@@ -256,7 +336,8 @@ function PANEL:AppendImageURL(url)
 			imgContainer.style.display = "inline-block";
 
 			const img = document.createElement("img");
-			img.onclick = () => RichTextX.OnClick(url);
+			img.classList.add("ec-image");
+			img.onclick = () => RichTextX.OnImageClick(img.src);
 			img.style.cursor = "pointer";
 			img.src = url;
 			img.style.maxWidth = `80%`;
@@ -272,6 +353,118 @@ function PANEL:AppendImageURL(url)
 			imgContainer.appendChild(img);
 			RICHTEXT.appendChild(imgContainer);
 			RICHTEXT.appendChild(document.createElement("br"));
+
+			if (limit > 0 && limit <= RICHTEXT.childElementCount && RICHTEXT.children[0]) {
+				RICHTEXT.children[0].remove();
+			}
+
+			if (isAtBottom) {
+				window.scrollTo(0, BODY.scrollHeight);
+			}
+		});
+	]])
+end
+
+function PANEL:MarkMessage(msg_id)
+	self.MarkToAppend[#self.MarkToAppend + 1] = msg_id
+	self:QueueJavascript([[
+		RichTextX.GetMarkToAppend((msgId) => {
+			const anchor = document.createElement("span");
+			anchor.id = "ecmsg-" + msgId;
+			RICHTEXT.appendChild(anchor);
+		});
+	]])
+end
+
+function PANEL:AppendEmbed(msg_id, embed)
+	embed = embed or {}
+	embed.msg_id = msg_id
+	self.EmbedToAppend[#self.EmbedToAppend + 1] = embed
+
+	self:QueueJavascript([[
+		RichTextX.GetEmbedToAppend((msgId, kind, url, pageUrl, title, description, siteName, favicon, blur, limit, bgColor, outlineColor, titleColor, textColor) => {
+			const container = document.createElement("div");
+			container.style.margin = "4px 0";
+			container.style.maxWidth = "80%";
+
+			if (kind === "image") {
+				const img = document.createElement("img");
+				img.classList.add("ec-image");
+				img.src = url;
+				img.style.cursor = "pointer";
+				img.style.maxWidth = "100%";
+				img.style.maxHeight = "300px";
+				img.style.border = "1px solid " + outlineColor;
+				img.onclick = () => RichTextX.OnImageClick(img.src);
+				if (blur) {
+					img.classList.add("blur");
+					img.onmouseover = () => img.classList.remove("blur");
+					img.onmouseout = () => img.classList.add("blur");
+				}
+				container.appendChild(img);
+			} else {
+				container.style.background = bgColor;
+				container.style.border = "1px solid " + outlineColor;
+				container.style.padding = "8px 10px";
+				container.style.cursor = "pointer";
+				container.onclick = () => RichTextX.OnClick(pageUrl || url);
+
+				if (siteName || favicon) {
+					const head = document.createElement("div");
+					head.style.display = "flex";
+					head.style.alignItems = "center";
+					head.style.marginBottom = "3px";
+
+					if (favicon) {
+						const ic = document.createElement("img");
+						ic.src = favicon;
+						ic.style.width = "16px";
+						ic.style.height = "16px";
+						ic.style.marginRight = "6px";
+						ic.style.flexShrink = "0";
+						ic.style.objectFit = "contain";
+						ic.onerror = () => ic.remove();
+						head.appendChild(ic);
+					}
+
+					if (siteName) {
+						const site = document.createElement("div");
+						site.textContent = siteName;
+						site.style.fontSize = "11px";
+						site.style.color = textColor;
+						site.style.opacity = "0.6";
+						head.appendChild(site);
+					}
+
+					container.appendChild(head);
+				}
+
+				const t = document.createElement("div");
+				t.textContent = title || (pageUrl || url);
+				t.style.fontWeight = "bold";
+				t.style.color = titleColor;
+				container.appendChild(t);
+
+				if (description) {
+					const d = document.createElement("div");
+					d.textContent = description;
+					d.style.fontSize = "13px";
+					d.style.color = textColor;
+					d.style.opacity = "0.85";
+					d.style.marginTop = "2px";
+					container.appendChild(d);
+				}
+			}
+
+			const isAtBottom = atBottom();
+
+			const anchor = document.getElementById("ecmsg-" + msgId);
+			if (anchor) {
+				anchor.after(container);
+				container.after(anchor); // keep the anchor below this embed so multiple embeds stay ordered
+			} else {
+				RICHTEXT.appendChild(container); // message scrolled off / not found: fall back to the bottom
+			}
 
 			if (limit > 0 && limit <= RICHTEXT.childElementCount && RICHTEXT.children[0]) {
 				RICHTEXT.children[0].remove();
