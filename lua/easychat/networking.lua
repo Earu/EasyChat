@@ -7,6 +7,7 @@ local NET_SEND_MSG = "EASY_CHAT_RECEIVE_MSG"
 local NET_ADD_TEXT = "EASY_CHAT_ADD_TEXT"
 local NET_SYNC_BLOCKED = "EASY_CHAT_SYNC_BLOCKED"
 local NET_MSG_EMBED = "EASY_CHAT_MSG_EMBED"
+local NET_REQUEST_EMBED = "EASY_CHAT_REQUEST_EMBED"
 
 local COLOR_PRINT_CHAT_TIME = Color(0, 161, 255)
 local COLOR_PRINT_CHAT_NICK = Color(222, 222, 255)
@@ -25,6 +26,7 @@ if SERVER then
 	util.AddNetworkString(NET_ADD_TEXT)
 	util.AddNetworkString(NET_SYNC_BLOCKED)
 	util.AddNetworkString(NET_MSG_EMBED)
+	util.AddNetworkString(NET_REQUEST_EMBED)
 
 	local EC_RESOLVE_URLS = CreateConVar("easychat_resolve_urls", "1", FCVAR_ARCHIVE, "Let the server resolve posted urls (media/website metadata) and send embeds to clients")
 	local RESOLVE_CACHE_TTL = 600
@@ -39,6 +41,7 @@ if SERVER then
 	}
 
 	local resolve_cache = {}
+	local resolve_waiting = {} -- url -> callbacks waiting on a fetch that's already in flight
 	local resolve_inflight = 0
 
 	local function html_decode(str)
@@ -314,13 +317,30 @@ if SERVER then
 			return
 		end
 
+		-- everyone who can see a message renders it on the same tick, so N players means N requests
+		-- for the same url with the cache still empty. Coalesce them: the first one fetches, the
+		-- rest just wait on it and all get handed the single result.
+		local waiting = resolve_waiting[url]
+		if waiting then
+			waiting[#waiting + 1] = cb
+			return
+		end
+
 		if resolve_inflight >= RESOLVE_MAX_INFLIGHT then return end
 		resolve_inflight = resolve_inflight + 1
+		resolve_waiting[url] = { cb }
 
 		local function finish(embed)
 			resolve_inflight = math.max(0, resolve_inflight - 1)
 			resolve_cache[url] = { embed = embed or false, time = SysTime() }
-			if embed then cb(embed) end
+
+			local waiters = resolve_waiting[url]
+			resolve_waiting[url] = nil
+			if not embed or not waiters then return end
+
+			for _, waiter in ipairs(waiters) do
+				waiter(embed)
+			end
 		end
 
 		for _, provider in ipairs(PROVIDER_RESOLVERS) do
@@ -357,6 +377,76 @@ if SERVER then
 			finish(nil)
 		end)
 	end
+
+	--[[-----------------------------------------------------------------------------
+		Embed requests
+
+		Clients ask us to resolve every url they render, so this is the trust boundary:
+		anyone can make us fetch an arbitrary url. On top of the cache / SSRF guard /
+		in-flight cap inside ResolveURLEmbed, each player gets a token bucket.
+	]]-------------------------------------------------------------------------------
+	local REQUEST_MAX_URL_LEN = 512
+	local REQUEST_BURST = 10 -- requests a player may make back to back
+	local REQUEST_REFILL_RATE = 1 -- tokens regained per second
+
+	local request_budgets = {} -- steamid -> { tokens, last }
+
+	local function take_request_token(ply)
+		local sid = ply:SteamID()
+		local now = SysTime()
+		local budget = request_budgets[sid]
+		if not budget then
+			budget = { tokens = REQUEST_BURST, last = now }
+			request_budgets[sid] = budget
+		end
+
+		budget.tokens = math.min(REQUEST_BURST, budget.tokens + (now - budget.last) * REQUEST_REFILL_RATE)
+		budget.last = now
+
+		if budget.tokens < 1 then return false end
+
+		budget.tokens = budget.tokens - 1
+		return true
+	end
+
+	gameevent.Listen("player_disconnect")
+	hook.Add("player_disconnect", TAG .. "EmbedBudgets", function(data)
+		request_budgets[data.networkid] = nil
+	end)
+
+	net.Receive(NET_REQUEST_EMBED, function(_, ply)
+		local request_id = net.ReadUInt(32)
+		local url = net.ReadString()
+
+		if not EC_RESOLVE_URLS:GetBool() then return end
+		if not IsValid(ply) then return end
+		if #url == 0 or #url > REQUEST_MAX_URL_LEN then return end
+		if not url:find("^https?://") then return end
+		if not take_request_token(ply) then return end
+
+		EasyChat.ResolveURLEmbed(ply, url, function(embed)
+			if not embed or not IsValid(ply) then return end
+
+			net.Start(NET_MSG_EMBED)
+			net.WriteUInt(request_id, 32)
+			net.WriteString(embed.kind or "link")
+			net.WriteString(embed.url or url)
+			net.WriteString(embed.page_url or url)
+			net.WriteString(embed.title or "")
+			net.WriteString(embed.description or "")
+			net.WriteString(embed.site_name or "")
+
+			local favicon = embed.favicon
+			net.WriteBool(favicon ~= nil)
+			if favicon then
+				net.WriteString(favicon.mime)
+				net.WriteUInt(#favicon.data, 32)
+				net.WriteData(favicon.data, #favicon.data)
+			end
+
+			net.Send(ply)
+		end)
+	end)
 
 	function EasyChat.PlayerAddText(ply, ...)
 		if not istable(ply) and not IsValid(ply) then return end
@@ -463,13 +553,8 @@ if SERVER then
 
 		filter = table.ClearKeys(filter)
 
-		EasyChat.MessageIdCounter = (EasyChat.MessageIdCounter or 0) + 1
-		if EasyChat.MessageIdCounter >= 0xFFFFFFFF then EasyChat.MessageIdCounter = 1 end
-		local msg_id = EasyChat.MessageIdCounter
-
 		local is_dead = not ply:Alive()
 		net.Start(NET_BROADCAST_MSG)
-		net.WriteUInt(msg_id, 32)
 		net.WriteUInt(ply:UserID(), 16)
 		net.WriteString(ply:RichNick())
 		net.WriteString(msg)
@@ -477,48 +562,6 @@ if SERVER then
 		net.WriteBool(is_team)
 		net.WriteBool(is_local)
 		net.Send(filter)
-
-		-- resolve posted urls server-side (once) and broadcast the resulting embeds to the
-		-- same recipients, keyed by msg_id so clients can attach them under the message
-		if EC_RESOLVE_URLS:GetBool() and EasyChat.ResolveURLEmbed then
-			local recipients = filter -- sequential player list (table.ClearKeys'd above)
-			local url_count = 0
-			for _, url in ipairs(EasyChat.ExtractURLs(msg)) do
-				url_count = url_count + 1
-				if url_count > 3 then break end -- cap embeds per message
-
-				EasyChat.ResolveURLEmbed(ply, url, function(embed)
-					if not embed then return end
-
-					local valid = {}
-					for _, recipient in ipairs(recipients) do
-						if IsValid(recipient) then valid[#valid + 1] = recipient end
-					end
-					if #valid == 0 then return end
-
-					net.Start(NET_MSG_EMBED)
-					net.WriteUInt(msg_id, 32)
-					-- whether the url was the whole message (so the hud omitted its raw text)
-					net.WriteBool(msg:Trim() == url)
-					net.WriteString(embed.kind or "link")
-					net.WriteString(embed.url or url)
-					net.WriteString(embed.page_url or url)
-					net.WriteString(embed.title or "")
-					net.WriteString(embed.description or "")
-					net.WriteString(embed.site_name or "")
-
-					local favicon = embed.favicon
-					net.WriteBool(favicon ~= nil)
-					if favicon then
-						net.WriteString(favicon.mime)
-						net.WriteUInt(#favicon.data, 32)
-						net.WriteData(favicon.data, #favicon.data)
-					end
-
-					net.Send(valid)
-				end)
-			end
-		end
 
 		if game.IsDedicated() and not is_local then
 			-- shows in server console
@@ -844,7 +887,6 @@ if CLIENT then
 	local RETRY_DELAY = 0.25
 	local DISCONNECTED_COLOR = Color(110, 247, 177)
 	net.Receive(NET_BROADCAST_MSG, function()
-		local msg_id = net.ReadUInt(32)
 		local user_id = net.ReadUInt(16)
 		local user_name = net.ReadString()
 		local msg = net.ReadString()
@@ -877,16 +919,7 @@ if CLIENT then
 				return
 			end
 
-			-- tag the render so networked embeds attach under this message (see GlobalAddText).
-			-- flag whether the message is *only* a url, so the hud can swap it for the embed
-			-- while keeping the raw url visible when it's part of a longer message.
-			local trimmed = msg:Trim()
-			local url_start, url_end = EasyChat.IsURL(trimmed)
-			EasyChat.RenderMessageId = msg_id
-			EasyChat.RenderStandaloneURL = url_start == 1 and url_end == #trimmed
 			EasyChat.ReceiveGlobalMessage(ply, msg, is_dead, is_team, is_local)
-			EasyChat.RenderMessageId = nil
-			EasyChat.RenderStandaloneURL = nil
 		end
 
 		receive()
@@ -897,9 +930,53 @@ if CLIENT then
 		chat.AddText(unpack(args))
 	end)
 
+	-- draws a resolved embed under the message it belongs to. `render_id` is the message anchor
+	-- (see RichText:MarkMessage), `standalone` means the url was the whole message.
+	function EasyChat.RenderURLEmbed(render_id, embed, standalone)
+		if EasyChat.GUI and IsValid(EasyChat.GUI.RichText)
+			and EasyChat.GUI.RichText.AppendEmbed and GetConVar("easychat_images"):GetBool()
+		then
+			EasyChat.GUI.RichText:AppendEmbed(render_id, embed)
+		end
+
+		if EasyChat.ChatHUD and GetConVar("easychat_hud_custom"):GetBool() then
+			if embed.kind == "image" then
+				-- when the url is part of a longer message its text stays, so put the image on
+				-- its own line below it (a standalone url was omitted, so the image takes its place)
+				if not standalone then EasyChat.ChatHUD:NewLine() end
+				EasyChat.ChatHUD:AppendImageURL(embed.url)
+			elseif embed.kind == "link" then
+				EasyChat.ChatHUD:AppendEmbed(embed, standalone)
+			end
+			EasyChat.ChatHUD:InvalidateLayout()
+		end
+	end
+
+	local embed_cache = {} -- url -> embed, so a repeated link skips the round trip
+	local pending_embeds = {} -- request id -> { render_id, standalone, url }
+	local request_counter = 0
+
+	-- Asks the server to resolve a url we are about to render. `render_id` anchors the embed under
+	-- its message (see RichText:MarkMessage), `standalone` means the url was the whole message.
+	function EasyChat.RequestURLEmbed(render_id, url, standalone)
+		local cached = embed_cache[url]
+		if cached then
+			EasyChat.RenderURLEmbed(render_id, cached, standalone)
+			return
+		end
+
+		request_counter = request_counter + 1
+		if request_counter >= 0xFFFFFFFF then request_counter = 1 end
+		pending_embeds[request_counter] = { render_id = render_id, standalone = standalone, url = url }
+
+		net.Start(NET_REQUEST_EMBED)
+		net.WriteUInt(request_counter, 32)
+		net.WriteString(url)
+		net.SendToServer()
+	end
+
 	net.Receive(NET_MSG_EMBED, function()
-		local msg_id = net.ReadUInt(32)
-		local standalone_url = net.ReadBool() -- was the url the whole message (its raw text omitted from the hud)?
+		local request_id = net.ReadUInt(32)
 		local embed = {
 			kind = net.ReadString(),
 			url = net.ReadString(),
@@ -921,25 +998,12 @@ if CLIENT then
 			end
 		end
 
-		if EasyChat.GUI and IsValid(EasyChat.GUI.RichText)
-			and EasyChat.GUI.RichText.AppendEmbed and GetConVar("easychat_images"):GetBool()
-		then
-			EasyChat.GUI.RichText:AppendEmbed(msg_id, embed)
-		end
+		local request = pending_embeds[request_id]
+		if not request then return end
+		pending_embeds[request_id] = nil
 
-		-- put the resolved media in the hud: images via the image part, websites via the (opt-in)
-		-- embed part -- which falls back to plain link text for a standalone url when disabled.
-		if EasyChat.ChatHUD and GetConVar("easychat_hud_custom"):GetBool() then
-			if embed.kind == "image" then
-				-- when the url is part of a longer message its text stays, so put the image on
-				-- its own line below it (a standalone url was omitted, so the image takes its place)
-				if not standalone_url then EasyChat.ChatHUD:NewLine() end
-				EasyChat.ChatHUD:AppendImageURL(embed.url)
-			elseif embed.kind == "link" then
-				EasyChat.ChatHUD:AppendEmbed(embed, standalone_url)
-			end
-			EasyChat.ChatHUD:InvalidateLayout()
-		end
+		embed_cache[request.url] = embed
+		EasyChat.RenderURLEmbed(request.render_id, embed, request.standalone)
 	end)
 
 	function EasyChat.SendGlobalMessage(msg, is_team, is_local, no_translate)
