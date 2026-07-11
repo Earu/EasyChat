@@ -217,6 +217,74 @@ end
 include("easychat/server_config.lua")
 include("easychat/networking.lua")
 
+EasyChat.URLPatterns = {
+	"https?://[^%s%\"%>%<]+",
+	"ftp://[^%s%\"%>%<]+",
+	"steam://[^%s%\"%>%<]+",
+	"www%.[^%s%\"]+%.[^%s%\"]+",
+	"STEAM_%d%:%d%:%d+"
+}
+
+function EasyChat.IsURL(str)
+	for _, pattern in ipairs(EasyChat.URLPatterns) do
+		local start_pos, end_pos = str:find(pattern, 1, false)
+		if start_pos then
+			return start_pos, end_pos
+		end
+	end
+
+	return false
+end
+
+function EasyChat.ExtractURLs(str)
+	local urls = {}
+	local offset = 1
+
+	while offset <= #str do
+		local best_start, best_end
+		for _, pattern in ipairs(EasyChat.URLPatterns) do
+			local s, e = str:find(pattern, offset, false)
+			if s and (not best_start or s < best_start) then
+				best_start, best_end = s, e
+			end
+		end
+
+		if not best_start then break end
+
+		urls[#urls + 1] = str:sub(best_start, best_end)
+		offset = best_end + 1
+	end
+
+	return urls
+end
+
+local IMAGE_URL_EXTS = { "png", "jpg", "jpeg", "gif", "webp" }
+local DIRECT_IMAGE_URL_PATTERNS = {
+	"^https?://steamuserimages%-a%.akamaihd%.net/ugc/[0-9]+/[A-Z0-9]+/",
+	"^https?://pbs%.twimg%.com/media/",
+	-- direct provider CDNs
+	"^https?://media[%w]*%.tenor%.com/",
+	"^https?://c%.tenor%.com/",
+	"^https?://media[%w]*%.giphy%.com/",
+	"^https?://i%.giphy%.com/",
+	"^https?://i%.imgur%.com/",
+	"^https?://i%.gyazo%.com/",
+}
+
+function EasyChat.IsDirectImageURL(url)
+	local simple_url = url:gsub("%?[^/]+", ""):lower() -- strip url args, lower for exts like JPG, PNG
+	for _, url_ext in ipairs(IMAGE_URL_EXTS) do
+		local pattern = (".%s$"):format(url_ext)
+		if simple_url:match(pattern) then return true end
+	end
+
+	for _, pattern in ipairs(DIRECT_IMAGE_URL_PATTERNS) do
+		if url:match(pattern) then return true end
+	end
+
+	return false
+end
+
 if SERVER then
 	util.AddNetworkString(NET_SET_TYPING)
 
@@ -435,6 +503,7 @@ end
 if CLIENT then
 	local NO_COLOR = Color(0, 0, 0, 0)
 	local LINK_COLOR = Color(68, 151, 206)
+	EasyChat.LinkColor = LINK_COLOR
 	local UNKNOWN_COLOR = Color(110, 247, 177)
 	local UPLOADING_TEXT = "[uploading image...]"
 
@@ -848,24 +917,6 @@ if CLIENT then
 	end
 	EasyChat.Close = close_chatbox
 
-	local url_patterns = {
-		"https?://[^%s%\"%>%<]+",
-		"ftp://[^%s%\"%>%<]+",
-		"steam://[^%s%\"%>%<]+",
-		"www%.[^%s%\"]+%.[^%s%\"]+",
-		"STEAM_%d%:%d%:%d+"
-	}
-	function EasyChat.IsURL(str)
-		for _, pattern in ipairs(url_patterns) do
-			local start_pos, end_pos = str:find(pattern, 1, false)
-			if start_pos then
-				return start_pos, end_pos
-			end
-		end
-
-		return false
-	end
-
 	function EasyChat.OpenURL(url)
 		local has_protocol = url:find("^%w-://")
 		if not has_protocol then
@@ -1239,17 +1290,29 @@ if CLIENT then
 		return Color(bad_col.r, bad_col.g, bad_col.b, bad_col.a)
 	end
 
-	local function append_text(richtext, text)
+	local function append_text(richtext, text, display_text)
+		display_text = display_text or text
+
 		if not EC_TAGS_IN_CHATBOX:GetBool() and ec_markup then
 			-- expensive but its not a behavior we want to encourage, so too bad :v
 			text = ec_markup.GetText(text)
+			display_text = ec_markup.GetText(display_text)
 		end
 
 		if richtext.HistoryName then
 			richtext.Log = richtext.Log and richtext.Log .. text or text
 		end
 
-		richtext:AppendText(text)
+		richtext:AppendText(display_text)
+	end
+
+	local function trim_url_display(url)
+		local param_start = url:find("?", 1, true)
+		if param_start then
+			return url:sub(1, param_start - 1) .. "..."
+		end
+
+		return url
 	end
 
 	local function append_text_url(richtext, text)
@@ -1267,7 +1330,7 @@ if CLIENT then
 			end
 
 			richtext:InsertClickableTextStart(url)
-			append_text(richtext, url)
+			append_text(richtext, url, trim_url_display(url))
 			richtext:InsertClickableTextEnd()
 
 			if previous_color then
@@ -1298,11 +1361,11 @@ if CLIENT then
 		EasyChat.ChatHUD:AppendText(text)
 	end
 
-	local function global_append_text(text)
+	local function global_append_text(text, display_text)
 		local data = {}
 
-		chathud_append_text(text)
-		append_text(EasyChat.GUI.RichText, text)
+		chathud_append_text(display_text or text)
+		append_text(EasyChat.GUI.RichText, text, display_text)
 
 		if not ec_markup then
 			table.insert(data, text)
@@ -1323,25 +1386,6 @@ if CLIENT then
 		return data
 	end
 
-	local image_url_patterns = {
-		"^https?://steamuserimages%-a%.akamaihd%.net/ugc/[0-9]+/[A-Z0-9]+/",
-		"^https?://pbs%.twimg%.com/media/",
-	}
-	local image_url_exts = { "png", "jpg", "jpeg", "gif", "webp" }
-	local function is_image_url(url)
-		local simple_url = url:gsub("%?[^/]+", ""):lower() -- remove url args, lower for exts like JPG, PNG
-		for _, url_ext in ipairs(image_url_exts) do
-			local pattern = (".%s$"):format(url_ext)
-			if simple_url:match(pattern) then return true end
-		end
-
-		for _, pattern in ipairs(image_url_patterns) do
-			if url:match(pattern) then return true end
-		end
-
-		return false
-	end
-
 	local function global_append_text_url(text)
 		local data = {}
 
@@ -1355,9 +1399,9 @@ if CLIENT then
 			local previous_color = EasyChat.GUI.RichText:GetLastColorChange()
 			EasyChat.GUI.RichText:InsertColorChange(LINK_COLOR)
 
-			if is_image_url(url) then
+			if not EasyChat.RenderMessageId and EasyChat.IsDirectImageURL(url) then
 				EasyChat.GUI.RichText:InsertClickableTextStart(url)
-				append_text(EasyChat.GUI.RichText, url)
+				append_text(EasyChat.GUI.RichText, url, trim_url_display(url))
 				EasyChat.GUI.RichText:InsertClickableTextEnd()
 
 				if EC_HUD_CUSTOM:GetBool() then
@@ -1367,9 +1411,15 @@ if CLIENT then
 				if EC_IMAGES:GetBool() then
 					EasyChat.GUI.RichText:AppendImageURL(url)
 				end
+			elseif EasyChat.RenderMessageId and EasyChat.RenderStandaloneURL and url:find("^https?://") then
+				EasyChat.GUI.RichText:InsertClickableTextStart(url)
+				append_text(EasyChat.GUI.RichText, url, trim_url_display(url))
+				EasyChat.GUI.RichText:InsertClickableTextEnd()
 			else
 				EasyChat.GUI.RichText:InsertClickableTextStart(url)
-				global_append_text(url)
+				chathud_insert_color_change(LINK_COLOR:Unpack())
+				global_append_text(url, trim_url_display(url))
+				chathud_insert_color_change((previous_color or color_white):Unpack())
 				EasyChat.GUI.RichText:InsertClickableTextEnd()
 			end
 
@@ -1694,6 +1744,11 @@ if CLIENT then
 		if EC_HUD_CUSTOM:GetBool() then
 			EasyChat.ChatHUD:PushPartComponent("stop")
 			EasyChat.ChatHUD:InvalidateLayout()
+		end
+
+		-- tag networked messages so late-arriving server embeds can attach under them
+		if EasyChat.RenderMessageId and IsValid(EasyChat.GUI.RichText) and EasyChat.GUI.RichText.MarkMessage then
+			EasyChat.GUI.RichText:MarkMessage(EasyChat.RenderMessageId)
 		end
 
 		save_text(EasyChat.GUI.RichText)
@@ -2742,6 +2797,12 @@ if CLIENT then
 		end)
 
 		hook.Add("OnPauseMenuShow", TAG, function()
+			if IsValid(EasyChat.ImageViewer) then
+				EasyChat.ImageViewer:Remove()
+
+				return false
+			end
+
 			if IsValid(EasyChat.Settings) and EasyChat.Settings:IsVisible() then
 				EasyChat.Settings:SetVisible(false)
 

@@ -1036,6 +1036,130 @@ end
 chathud:RegisterPart("image", image_part)
 
 --[[-----------------------------------------------------------------------------
+	Embed Component
+
+	Displays a server-resolved website embed.
+]]-------------------------------------------------------------------------------
+local MAX_EMBED_WIDTH = 300
+local MAX_EMBED_HEIGHT = 400
+
+local function embed_css_color(col)
+	col = col or color_white
+	return string_format("rgba(%d,%d,%d,%s)", col.r, col.g, col.b, (col.a or 255) / 255)
+end
+
+local function embed_html_escape(str)
+	str = str or ""
+	str = str:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;"):gsub("\"", "&quot;")
+	return str
+end
+
+local embed_part = {
+	Usable = false,
+	OkInNicks = false,
+	Width = MAX_EMBED_WIDTH,
+	Height = 0,
+	Enabled = false, -- disabled by default
+}
+
+function embed_part:Ctor(json)
+	local ok, embed = pcall(util.JSONToTable, json or "")
+	if not ok or not istable(embed) then embed = {} end
+
+	local bg = embed_css_color(EasyChat.TabColor)
+	local outline = embed_css_color(EasyChat.TabOutlineColor)
+	local title_col = embed_css_color(EasyChat.LinkColor)
+	local text_col = embed_css_color(EasyChat.TextColor)
+
+	local favicon = embed.favicon or ""
+	local site = embed.site or ""
+	local title = embed.title
+	if not title or title == "" then title = embed.url or "" end
+	local description = embed.description or ""
+
+	local head_html = ""
+	if favicon ~= "" or site ~= "" then
+		local ic = favicon ~= "" and string_format([[<img src="%s" style="width:14px;height:14px;margin-right:5px;object-fit:contain;"/>]], favicon) or ""
+		local site_html = site ~= "" and string_format([[<span style="font-size:10px;color:%s;opacity:0.6;">%s</span>]], text_col, embed_html_escape(site)) or ""
+		head_html = string_format([[<div style="display:flex;align-items:center;margin-bottom:2px;">%s%s</div>]], ic, site_html)
+	end
+
+	local desc_html = description ~= "" and string_format([[<div style="font-size:11px;color:%s;opacity:0.85;margin-top:1px;word-break:break-word;">%s</div>]], text_col, embed_html_escape(description)) or ""
+
+	local browser = vgui.Create("DHTML")
+	browser:SetAllowLua(false)
+	browser:SetSize(MAX_EMBED_WIDTH, MAX_EMBED_HEIGHT)
+	browser:SetPaintedManually(true)
+
+	browser:AddFunction("Embed", "Size", function(w, h)
+		self.Width = math_min(w, MAX_EMBED_WIDTH)
+		self.Height = math_min(h, MAX_EMBED_HEIGHT)
+		self.HUD:InvalidateLayout()
+	end)
+
+	browser:AddFunction("Embed", "Remove", function()
+		self:OnRemove()
+	end)
+
+	browser:SetHTML(string_format([[<html style="background:rgba(0,0,0,0);overflow:hidden;"><head></head>
+<body style="margin:0;background:rgba(0,0,0,0);width:%dpx;font-family:Roboto,sans-serif;">
+<div id="card" style="box-sizing:border-box;width:100%%;background:%s;border:1px solid %s;padding:6px 8px;overflow:hidden;">%s<div style="font-weight:bold;font-size:13px;color:%s;word-break:break-word;">%s</div>%s</div>
+</body></html>]], MAX_EMBED_WIDTH, bg, outline, head_html, title_col, embed_html_escape(title), desc_html))
+
+	browser:QueueJavascript([[
+		(function() {
+			function report() {
+				if (typeof Embed === "undefined") return;
+				const card = document.getElementById("card");
+				if (card) Embed.Size(card.offsetWidth, card.offsetHeight);
+			}
+			report();
+			setTimeout(report, 80);
+			setTimeout(report, 300);
+		})();
+	]])
+
+	-- last measure in case the callback never fires
+	timer.Simple(self.HUD.FadeTime + 4, function()
+		self:OnRemove()
+	end)
+
+	self.Browser = browser
+	self:ComputeSize()
+
+	return self
+end
+
+function embed_part:ComputeSize()
+	self.Size = { W = self.Width, H = self.Height }
+end
+
+embed_part.LineBreak = image_part.LineBreak
+embed_part.GetDrawPos = image_part.GetDrawPos
+embed_part.PostLinePush = image_part.PostLinePush
+embed_part.ComputePos = image_part.ComputePos
+embed_part.OnStop = image_part.OnStop
+embed_part.OnRemove = image_part.OnStop
+
+function embed_part:Draw(ctx)
+	self:ComputePos()
+
+	if not IsValid(self.Browser) then return end
+	self.Browser:SetAlpha(ctx.Alpha)
+
+	local x, y = self:GetDrawPos()
+	self.Browser:SetSize(self.Width, self.Height)
+	self.Browser:SetPos(x, y)
+
+	local wep = LocalPlayer():GetActiveWeapon()
+	if IsValid(wep) and wep:GetClass() == "gmod_camera" then return end
+
+	self.Browser:PaintManual()
+end
+
+chathud:RegisterPart("embed", embed_part)
+
+--[[-----------------------------------------------------------------------------
 	ChatHUD layouting
 ]]-------------------------------------------------------------------------------
 local base_line = {
@@ -1460,6 +1584,25 @@ function chathud:AppendImageURL(url)
 		self:PushPartComponent("image", url)
 	else
 		self:PushString(url, false)
+	end
+end
+
+function chathud:AppendEmbed(embed, standalone)
+	if standalone then
+		self:InsertColorChange((EasyChat.LinkColor or color_white):Unpack())
+		self:AppendText(embed.page_url or embed.url)
+	end
+
+	if chathud.Parts.embed.Enabled then
+		-- the card always starts on its own line, below the message text
+		self:NewLine()
+		self:PushPartComponent("embed", util.TableToJSON({
+			url = embed.page_url or embed.url,
+			title = embed.title,
+			description = embed.description,
+			site = embed.site_name,
+			favicon = embed.favicon,
+		}))
 	end
 end
 
