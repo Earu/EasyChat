@@ -1098,29 +1098,32 @@ if CLIENT then
 		return base64
 	end
 
-	local function on_catbox_failure(err)
-		EasyChat.Print(true, ("catbox upload failed: %s"):format(tostring(err)))
+	-- how long litterbox keeps the uploaded file before deleting it (1h, 12h, 24h, 72h)
+	local LITTERBOX_LIFETIME = "1h"
+
+	local function on_litterbox_failure(err)
+		EasyChat.Print(true, ("litterbox upload failed: %s"):format(tostring(err)))
 	end
 
-	local function on_catbox_success(code, body, headers)
+	local function on_litterbox_success(code, body, headers)
 		if code ~= 200 then
-			on_catbox_failure(("error code: %d"):format(code))
+			on_litterbox_failure(("error code: %d"):format(code))
 			return
 		end
 
 		local url = EasyChat.ExtendedStringTrim(tostring(body))
 		if not url:match("^https?://") then
-			on_catbox_failure(("unexpected response: %s"):format(url))
+			on_litterbox_failure(("unexpected response: %s"):format(url))
 			return
 		end
 
-		EasyChat.Print(("catbox uploaded: %s"):format(url))
+		EasyChat.Print(("litterbox uploaded: %s"):format(url))
 		return url
 	end
 
-	-- catbox needs a multipart/form-data file upload, so we decode the base64
+	-- litterbox needs a multipart/form-data file upload, so we decode the base64
 	-- to raw bytes and build the body ourselves (HTTP's `parameters` can't carry files)
-	local CATBOX_MIME_TYPES = {
+	local LITTERBOX_MIME_TYPES = {
 		png = "image/png",
 		jpg = "image/jpeg",
 		jpeg = "image/jpeg",
@@ -1131,7 +1134,7 @@ if CLIENT then
 
 	local function build_multipart_body(boundary, name, raw_data)
 		local ext = (name or ""):lower():match("%.(%w+)$") or "png"
-		local mime_type = CATBOX_MIME_TYPES[ext] or "application/octet-stream"
+		local mime_type = LITTERBOX_MIME_TYPES[ext] or "application/octet-stream"
 		local filename = ("%s.%s"):format(os.time(), ext)
 
 		local crlf = "\r\n"
@@ -1139,6 +1142,10 @@ if CLIENT then
 			"--" .. boundary, crlf,
 			'Content-Disposition: form-data; name="reqtype"', crlf, crlf,
 			"fileupload", crlf,
+
+			"--" .. boundary, crlf,
+			'Content-Disposition: form-data; name="time"', crlf, crlf,
+			LITTERBOX_LIFETIME, crlf,
 
 			"--" .. boundary, crlf,
 			('Content-Disposition: form-data; name="fileToUpload"; filename="%s"'):format(filename), crlf,
@@ -1149,10 +1156,10 @@ if CLIENT then
 		})
 	end
 
-	function EasyChat.UploadToCatbox(img_base64, callback, name)
+	function EasyChat.UploadToLitterbox(img_base64, callback, name)
 		local raw_data = EasyChat.DecodeBase64(img_base64)
 		if not raw_data or raw_data == "" then
-			on_catbox_failure("could not decode image data")
+			on_litterbox_failure("could not decode image data")
 			callback(nil)
 			return
 		end
@@ -1162,21 +1169,21 @@ if CLIENT then
 
 		local http_data = {
 			failed = function(...)
-				on_catbox_failure(...)
+				on_litterbox_failure(...)
 				callback(nil)
 			end,
 			success = function(...)
-				local url = on_catbox_success(...)
+				local url = on_litterbox_success(...)
 				callback(url)
 			end,
 			method = "post",
-			url = "https://catbox.moe/user/api.php",
+			url = "https://litterbox.catbox.moe/resources/internals/api.php",
 			body = body,
 			type = "multipart/form-data; boundary=" .. boundary,
 		}
 
 		HTTP(http_data)
-		EasyChat.Print(("sent picture (%s) to catbox"):format(string.NiceSize(#raw_data)))
+		EasyChat.Print(("sent picture (%s) to litterbox"):format(string.NiceSize(#raw_data)))
 	end
 
 	local emote_lookup_tables = {}
@@ -2356,15 +2363,13 @@ if CLIENT then
 		function EasyChat.GUI.TextEntry:OnImagePaste(name, base64)
 			if uploading then return end
 
-			print('OnImagePaste', name)
-
 			local caret_pos = self:GetCaretPos()
 			local str = self:GetText()
 			local str_start, str_end = utf8.sub(str, 1, caret_pos), utf8.sub(str, caret_pos + 1)
 			self:SetText(("%s%s%s"):format(str_start, UPLOADING_TEXT, str_end))
 			uploading = true
 
-			EasyChat.UploadToCatbox(base64, function(url)
+			EasyChat.UploadToLitterbox(base64, function(url)
 				if not url then
 					local cur_text = EasyChat.ExtendedStringTrim(self:GetText())
 					if cur_text:match(UPLOADING_TEXT) then
