@@ -547,7 +547,7 @@ if CLIENT then
 	local EC_DERMASKIN = CreateConVar("easychat_use_dermaskin", "0", FCVAR_ARCHIVE, "Use dermaskin look or not")
 	local EC_HISTORY = CreateConVar("easychat_history", "1", FCVAR_ARCHIVE, "Should the history be shown")
 	local EC_PRESERVE_MESSAGE_IN_PROGRESS = CreateConVar("easychat_preserve_message_in_progress", "1", {FCVAR_ARCHIVE, FCVAR_USERINFO}, "Preserve the message in progress.")
-	local EC_IMAGES = CreateConVar("easychat_images", "1", FCVAR_ARCHIVE, "Display images in the chat window")
+	local _ = CreateConVar("easychat_images", "1", FCVAR_ARCHIVE, "Display images in the chat window")
 	local EC_PEEK_COMPLETION = CreateConVar("easychat_peek_completion", "1", FCVAR_ARCHIVE, "Display a preview of the possible text completion")
 	local EC_LEGACY_ENTRY = CreateConVar("easychat_legacy_entry", "0", FCVAR_ARCHIVE, "Uses the legacy textbox entry")
 	local EC_LEGACY_TEXT = CreateConVar("easychat_legacy_text", "0", FCVAR_ARCHIVE, "Uses the legacy text output")
@@ -1386,7 +1386,16 @@ if CLIENT then
 		return data
 	end
 
-	local function global_append_text_url(text)
+	-- every message we render gets an id so a late-arriving embed can be attached back under it
+	local render_id_counter = 0
+	local current_render_id = nil
+	-- direct images need no resolving, but they're still drawn once the message is done so they
+	-- land under it like a server-resolved embed does (instead of inline, mid-sentence)
+	local pending_local_embeds = {}
+
+	-- is_recursion marks the calls that handle whatever followed a url, so a trailing url in a
+	-- multi-url message isn't mistaken for the whole message
+	local function global_append_text_url(text, is_recursion)
 		local data = {}
 
 		local start_pos, end_pos = EasyChat.IsURL(text)
@@ -1396,31 +1405,40 @@ if CLIENT then
 			local url = text:sub(start_pos, end_pos)
 			table.Add(data, global_append_text(text:sub(1, start_pos - 1)))
 
+			-- the url is "standalone" when it is the whole message; the leading ": " separator that
+			-- OnPlayerChat puts before a player's text doesn't count as content
+			local standalone = not is_recursion and (text:Trim():gsub("^:%s*", "") == url)
+
 			local previous_color = EasyChat.GUI.RichText:GetLastColorChange()
 			EasyChat.GUI.RichText:InsertColorChange(LINK_COLOR)
 
-			if not EasyChat.RenderMessageId and EasyChat.IsDirectImageURL(url) then
+			local is_image = EasyChat.IsDirectImageURL(url)
+			if is_image or (standalone and url:find("^https?://")) then
+				-- either we already know it's an image, or it's a standalone url whose embed will
+				-- take its place in the hud -- so keep the link in the chatbox but not the hud
 				EasyChat.GUI.RichText:InsertClickableTextStart(url)
 				append_text(EasyChat.GUI.RichText, url, trim_url_display(url))
 				EasyChat.GUI.RichText:InsertClickableTextEnd()
 
-				if EC_HUD_CUSTOM:GetBool() then
-					EasyChat.ChatHUD:AppendImageURL(url)
+				if is_image and current_render_id then
+					pending_local_embeds[#pending_local_embeds + 1] = {
+						render_id = current_render_id,
+						embed = { kind = "image", url = url, page_url = url },
+						standalone = standalone,
+					}
 				end
-
-				if EC_IMAGES:GetBool() then
-					EasyChat.GUI.RichText:AppendImageURL(url)
-				end
-			elseif EasyChat.RenderMessageId and EasyChat.RenderStandaloneURL and url:find("^https?://") then
-				EasyChat.GUI.RichText:InsertClickableTextStart(url)
-				append_text(EasyChat.GUI.RichText, url, trim_url_display(url))
-				EasyChat.GUI.RichText:InsertClickableTextEnd()
 			else
 				EasyChat.GUI.RichText:InsertClickableTextStart(url)
 				chathud_insert_color_change(LINK_COLOR:Unpack())
 				global_append_text(url, trim_url_display(url))
 				chathud_insert_color_change((previous_color or color_white):Unpack())
 				EasyChat.GUI.RichText:InsertClickableTextEnd()
+			end
+
+			-- anything we can't resolve ourselves goes to the server (which does the fetching, so
+			-- client IPs never scrape pages) and comes back as an embed keyed by our render id
+			if not is_image and current_render_id and url:find("^https?://") and EasyChat.RequestURLEmbed then
+				EasyChat.RequestURLEmbed(current_render_id, url, standalone)
 			end
 
 			-- hack that fixes broken URLs for the gmod default RichText panel unti we get a proper fix
@@ -1438,7 +1456,7 @@ if CLIENT then
 			table.insert(data, previous_color)
 
 			-- recurse for possible other urls after this one
-			table.Add(data, global_append_text_url(text:sub(end_pos + 1)))
+			table.Add(data, global_append_text_url(text:sub(end_pos + 1), true))
 		end
 
 		return data
@@ -1676,6 +1694,10 @@ if CLIENT then
 
 		local data = {}
 
+		render_id_counter = render_id_counter + 1
+		if render_id_counter >= 0xFFFFFFFF then render_id_counter = 1 end
+		current_render_id = render_id_counter
+
 		if EC_HUD_CUSTOM:GetBool() then
 			EasyChat.ChatHUD:NewLine()
 		end
@@ -1746,10 +1768,17 @@ if CLIENT then
 			EasyChat.ChatHUD:InvalidateLayout()
 		end
 
-		-- tag networked messages so late-arriving server embeds can attach under them
-		if EasyChat.RenderMessageId and IsValid(EasyChat.GUI.RichText) and EasyChat.GUI.RichText.MarkMessage then
-			EasyChat.GUI.RichText:MarkMessage(EasyChat.RenderMessageId)
+		if IsValid(EasyChat.GUI.RichText) and EasyChat.GUI.RichText.MarkMessage then
+			EasyChat.GUI.RichText:MarkMessage(current_render_id)
 		end
+
+		current_render_id = nil
+
+		-- the anchor exists now, so direct images can be drawn under the message they came with
+		for _, pending in ipairs(pending_local_embeds) do
+			EasyChat.RenderURLEmbed(pending.render_id, pending.embed, pending.standalone)
+		end
+		table.Empty(pending_local_embeds)
 
 		save_text(EasyChat.GUI.RichText)
 
