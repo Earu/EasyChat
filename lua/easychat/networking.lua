@@ -946,31 +946,45 @@ if CLIENT then
 				if not standalone then EasyChat.ChatHUD:NewLine() end
 				EasyChat.ChatHUD:AppendImageURL(embed.url)
 			elseif embed.kind == "link" then
-				EasyChat.ChatHUD:AppendEmbed(embed, standalone)
+				EasyChat.ChatHUD:AppendEmbed(embed)
 			end
 			EasyChat.ChatHUD:InvalidateLayout()
 		end
 	end
 
+	-- a request that can't be resolved gets no reply at all, so its entry would leak; give up on it
+	-- well after the render deadline, late enough that a slow answer still lands in the cache
+	local REQUEST_TIMEOUT = 15
+
 	local embed_cache = {} -- url -> embed, so a repeated link skips the round trip
-	local pending_embeds = {} -- request id -> { render_id, standalone, url }
+	local pending_embeds = {} -- request id -> { cb, url }
 	local request_counter = 0
 
-	-- Asks the server to resolve a url we are about to render. `render_id` anchors the embed under
-	-- its message (see RichText:MarkMessage), `standalone` means the url was the whole message.
-	function EasyChat.RequestURLEmbed(render_id, url, standalone)
+	-- Resolves a url through the server (which does the fetching, so client IPs never scrape pages).
+	-- cb is called exactly once, with nil if the url couldn't be resolved.
+	function EasyChat.ResolveURLEmbedAsync(url, cb)
 		local cached = embed_cache[url]
 		if cached then
-			EasyChat.RenderURLEmbed(render_id, cached, standalone)
+			cb(cached)
 			return
 		end
 
 		request_counter = request_counter + 1
 		if request_counter >= 0xFFFFFFFF then request_counter = 1 end
-		pending_embeds[request_counter] = { render_id = render_id, standalone = standalone, url = url }
+
+		local request_id = request_counter
+		pending_embeds[request_id] = { cb = cb, url = url }
+
+		timer.Simple(REQUEST_TIMEOUT, function()
+			local request = pending_embeds[request_id]
+			if not request then return end
+
+			pending_embeds[request_id] = nil
+			request.cb(nil)
+		end)
 
 		net.Start(NET_REQUEST_EMBED)
-		net.WriteUInt(request_counter, 32)
+		net.WriteUInt(request_id, 32)
 		net.WriteString(url)
 		net.SendToServer()
 	end
@@ -1003,7 +1017,7 @@ if CLIENT then
 		pending_embeds[request_id] = nil
 
 		embed_cache[request.url] = embed
-		EasyChat.RenderURLEmbed(request.render_id, embed, request.standalone)
+		request.cb(embed)
 	end)
 
 	function EasyChat.SendGlobalMessage(msg, is_team, is_local, no_translate)

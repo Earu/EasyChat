@@ -1386,11 +1386,14 @@ if CLIENT then
 		return data
 	end
 
-	-- every message we render gets an id so a late-arriving embed can be attached back under it
+	-- how long a message with urls is held back waiting on them, before we give up and show it
+	local EMBED_WAIT_TIME = 3
+
 	local render_id_counter = 0
 	local current_render_id = nil
-	-- direct images need no resolving, but they're still drawn once the message is done so they
-	-- land under it like a server-resolved embed does (instead of inline, mid-sentence)
+	-- url -> embed, resolved before the message renders so both appear at once (see chat.AddText)
+	local current_embeds = nil
+	-- embeds are drawn once the message is done so they land under it, not inline mid-sentence
 	local pending_local_embeds = {}
 
 	-- is_recursion marks the calls that handle whatever followed a url, so a trailing url in a
@@ -1412,33 +1415,35 @@ if CLIENT then
 			local previous_color = EasyChat.GUI.RichText:GetLastColorChange()
 			EasyChat.GUI.RichText:InsertColorChange(LINK_COLOR)
 
-			local is_image = EasyChat.IsDirectImageURL(url)
-			if is_image or (standalone and url:find("^https?://")) then
-				-- either we already know it's an image, or it's a standalone url whose embed will
-				-- take its place in the hud -- so keep the link in the chatbox but not the hud
-				EasyChat.GUI.RichText:InsertClickableTextStart(url)
-				append_text(EasyChat.GUI.RichText, url, trim_url_display(url))
-				EasyChat.GUI.RichText:InsertClickableTextEnd()
+			-- direct images need no resolving; anything else was already resolved before we got here
+			-- (see the chat.AddText override), so by now we know what this url turned out to be
+			local embed
+			if EasyChat.IsDirectImageURL(url) then
+				embed = { kind = "image", url = url, page_url = url }
+			elseif current_embeds then
+				embed = current_embeds[url]
+			end
 
-				if is_image and current_render_id then
-					pending_local_embeds[#pending_local_embeds + 1] = {
-						render_id = current_render_id,
-						embed = { kind = "image", url = url, page_url = url },
-						standalone = standalone,
-					}
-				end
+			-- only drop the raw url from the hud when an image is going to take its place -- if the
+			-- url didn't resolve (or timed out) it has to stay visible
+			local image_replaces_url = standalone and embed and embed.kind == "image"
+
+			EasyChat.GUI.RichText:InsertClickableTextStart(url)
+			if image_replaces_url then
+				append_text(EasyChat.GUI.RichText, url, trim_url_display(url))
 			else
-				EasyChat.GUI.RichText:InsertClickableTextStart(url)
 				chathud_insert_color_change(LINK_COLOR:Unpack())
 				global_append_text(url, trim_url_display(url))
 				chathud_insert_color_change((previous_color or color_white):Unpack())
-				EasyChat.GUI.RichText:InsertClickableTextEnd()
 			end
+			EasyChat.GUI.RichText:InsertClickableTextEnd()
 
-			-- anything we can't resolve ourselves goes to the server (which does the fetching, so
-			-- client IPs never scrape pages) and comes back as an embed keyed by our render id
-			if not is_image and current_render_id and url:find("^https?://") and EasyChat.RequestURLEmbed then
-				EasyChat.RequestURLEmbed(current_render_id, url, standalone)
+			if embed and current_render_id then
+				pending_local_embeds[#pending_local_embeds + 1] = {
+					render_id = current_render_id,
+					embed = embed,
+					standalone = standalone,
+				}
 			end
 
 			-- hack that fixes broken URLs for the gmod default RichText panel unti we get a proper fix
@@ -2104,8 +2109,56 @@ if CLIENT then
 					if ret == "EC_SKIP_MESSAGE" then return end
 				end
 
-				local processed_args = EasyChat.GlobalAddText(...)
-				chat.old_EC_AddText(unpack(processed_args))
+				local arg_count = select("#", ...)
+				local args = { ... }
+
+				-- urls we can't figure out on our own and have to ask the server about
+				local urls, seen = {}, {}
+				for i = 1, arg_count do
+					local arg = args[i]
+					if isstring(arg) then
+						for _, url in ipairs(EasyChat.ExtractURLs(arg)) do
+							if not seen[url] and url:find("^https?://") and not EasyChat.IsDirectImageURL(url) then
+								seen[url] = true
+								urls[#urls + 1] = url
+							end
+						end
+					end
+				end
+
+				local function render(embeds)
+					current_embeds = embeds
+					local processed_args = EasyChat.GlobalAddText(unpack(args, 1, arg_count))
+					current_embeds = nil
+
+					chat.old_EC_AddText(unpack(processed_args))
+				end
+
+				if #urls == 0 or not EasyChat.ResolveURLEmbedAsync then
+					render(nil)
+					return
+				end
+
+				-- hold the message back until its urls resolve, so it shows up together with its
+				-- embeds instead of them popping in afterwards. EMBED_WAIT_TIME caps how long we
+				-- wait, and only this message waits -- we don't stall the rest of the chat for it.
+				local embeds, waiting, rendered = {}, #urls, false
+				local function render_once()
+					if rendered then return end
+					rendered = true
+					render(embeds)
+				end
+
+				for _, url in ipairs(urls) do
+					EasyChat.ResolveURLEmbedAsync(url, function(embed)
+						if embed then embeds[url] = embed end
+
+						waiting = waiting - 1
+						if waiting <= 0 then render_once() end
+					end)
+				end
+
+				timer.Simple(EMBED_WAIT_TIME, render_once)
 			end
 
 			function chat.GetChatBoxPos()
