@@ -1587,23 +1587,19 @@ function chathud:AppendImageURL(url)
 	end
 end
 
-function chathud:AppendEmbed(embed, standalone)
-	if standalone then
-		self:InsertColorChange((EasyChat.LinkColor or color_white):Unpack())
-		self:AppendText(embed.page_url or embed.url)
-	end
+-- the link itself always stays in the message now, so this only adds the card
+function chathud:AppendEmbed(embed)
+	if not chathud.Parts.embed.Enabled then return end
 
-	if chathud.Parts.embed.Enabled then
-		-- the card always starts on its own line, below the message text
-		self:NewLine()
-		self:PushPartComponent("embed", util.TableToJSON({
-			url = embed.page_url or embed.url,
-			title = embed.title,
-			description = embed.description,
-			site = embed.site_name,
-			favicon = embed.favicon,
-		}))
-	end
+	-- the card always starts on its own line, below the message text
+	self:NewLine()
+	self:PushPartComponent("embed", util.TableToJSON({
+		url = embed.page_url or embed.url,
+		title = embed.title,
+		description = embed.description,
+		site = embed.site_name,
+		favicon = embed.favicon,
+	}))
 end
 
 function chathud:InsertColorChange(r, g, b)
