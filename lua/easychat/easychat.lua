@@ -3165,34 +3165,50 @@ if CLIENT then
 		-- images), so the user knows something is happening instead of the message seeming to vanish
 		local PROC_SHOW_DELAY = 0.3 -- don't flash for messages that resolve almost instantly
 		local function draw_processing_indicator()
-			local procs = EasyChat.ProcessingMessages
-			if not procs then return end
-
 			local now = RealTime()
-			local n = 0
-			for _, started in pairs(procs) do
-				if now - started >= PROC_SHOW_DELAY then n = n + 1 end
+			local lines = {}
+
+			-- a clipboard image being uploaded
+			if uploading then
+				lines[#lines + 1] = "uploading image..."
 			end
-			if n == 0 then return end
 
-			local text = n == 1
-				and "1 message is still processing"
-				or (n .. " messages are still processing")
+			-- messages held while their urls resolve / images classify
+			local procs = EasyChat.ProcessingMessages
+			if procs then
+				local n = 0
+				for _, started in pairs(procs) do
+					if now - started >= PROC_SHOW_DELAY then n = n + 1 end
+				end
+				if n > 0 then
+					lines[#lines + 1] = n == 1
+						and "1 message is still processing"
+						or (n .. " messages are still processing")
+				end
+			end
 
-			local x = chathud.Pos.X
-			local y = math.min(chathud.Pos.Y + chathud.Size.H + 2, ScrH() - 22)
+			if #lines == 0 then return end
+
 			local a = 230 * (0.6 + 0.4 * math.abs(math.sin(now * 3))) -- gentle pulse so it reads as "working"
 			local col = EasyChat.TextColor or color_white
-
-			surface.SetFont("ECHUDShadowDefault")
-			surface.SetTextColor(0, 0, 0, a)
-			surface.SetTextPos(x, y)
-			surface.DrawText(text)
+			local x = chathud.Pos.X
 
 			surface.SetFont("ECHUDDefault")
-			surface.SetTextColor(col.r, col.g, col.b, a)
-			surface.SetTextPos(x, y)
-			surface.DrawText(text)
+			local _, line_h = surface.GetTextSize("A")
+			local base_y = math.min(chathud.Pos.Y + chathud.Size.H + 2, ScrH() - 2 - line_h * #lines)
+
+			for i, text in ipairs(lines) do
+				local y = base_y + (i - 1) * line_h
+				surface.SetFont("ECHUDShadowDefault")
+				surface.SetTextColor(0, 0, 0, a)
+				surface.SetTextPos(x, y)
+				surface.DrawText(text)
+
+				surface.SetFont("ECHUDDefault")
+				surface.SetTextColor(col.r, col.g, col.b, a)
+				surface.SetTextPos(x, y)
+				surface.DrawText(text)
+			end
 		end
 
 		local old_scrw, old_scrh = 0, 0
