@@ -2163,9 +2163,17 @@ if CLIENT then
 				-- wait, and only this message waits -- we don't stall the rest of the chat for it.
 				local embeds, waiting, rendered = {}, #urls, false
 				local classifying = 0 -- image classifications still in flight; we always wait for these
+
+				-- register this held message so the hud can show a "still processing" indicator while
+				-- its urls resolve / images classify; cleared the moment it renders
+				EasyChat.ProcessingMessages = EasyChat.ProcessingMessages or {}
+				local proc_token = {}
+				EasyChat.ProcessingMessages[proc_token] = RealTime()
+
 				local function render_once()
 					if rendered then return end
 					rendered = true
+					EasyChat.ProcessingMessages[proc_token] = nil
 					render(embeds)
 				end
 
@@ -3153,6 +3161,40 @@ if CLIENT then
 			end
 		end)
 
+		-- drawn just under the chathud while one or more messages are held (resolving urls / classifying
+		-- images), so the user knows something is happening instead of the message seeming to vanish
+		local PROC_SHOW_DELAY = 0.3 -- don't flash for messages that resolve almost instantly
+		local function draw_processing_indicator()
+			local procs = EasyChat.ProcessingMessages
+			if not procs then return end
+
+			local now = RealTime()
+			local n = 0
+			for _, started in pairs(procs) do
+				if now - started >= PROC_SHOW_DELAY then n = n + 1 end
+			end
+			if n == 0 then return end
+
+			local text = n == 1
+				and "1 message is still processing"
+				or (n .. " messages are still processing")
+
+			local x = chathud.Pos.X
+			local y = math.min(chathud.Pos.Y + chathud.Size.H + 2, ScrH() - 22)
+			local a = 230 * (0.6 + 0.4 * math.abs(math.sin(now * 3))) -- gentle pulse so it reads as "working"
+			local col = EasyChat.TextColor or color_white
+
+			surface.SetFont("ECHUDShadowDefault")
+			surface.SetTextColor(0, 0, 0, a)
+			surface.SetTextPos(x, y)
+			surface.DrawText(text)
+
+			surface.SetFont("ECHUDDefault")
+			surface.SetTextColor(col.r, col.g, col.b, a)
+			surface.SetTextPos(x, y)
+			surface.DrawText(text)
+		end
+
 		local old_scrw, old_scrh = 0, 0
 		hook.Add("HUDPaint", TAG, function()
 			local scrw, scrh = ScrW(), ScrH()
@@ -3173,6 +3215,7 @@ if CLIENT then
 
 			if EC_HUD_CUSTOM:GetBool() and should_draw then
 				chathud:Draw()
+				draw_processing_indicator()
 			end
 		end)
 
