@@ -285,6 +285,22 @@ function EasyChat.IsDirectImageURL(url)
 	return false
 end
 
+local function url_encode(str)
+	return (str:gsub("[^%w%-_%.~]", function(c)
+		return ("%%%02X"):format(c:byte())
+	end))
+end
+
+-- Routes an image through the wsrv.nl proxy so the client's <img> loads it from there instead of
+-- the origin -- the origin cdn never sees client ips. n=-1 keeps every frame of animated gifs.
+function EasyChat.ProxyImageURL(url)
+	if not isstring(url) or url == "" then return url end
+	if url:find("^data:") then return url end -- already inlined (favicons)
+	if url:find("^https?://wsrv%.nl/") then return url end -- already proxied
+
+	return "https://wsrv.nl/?url=" .. url_encode(url) .. "&n=-1"
+end
+
 if SERVER then
 	util.AddNetworkString(NET_SET_TYPING)
 

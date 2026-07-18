@@ -933,6 +933,12 @@ if CLIENT then
 	-- draws a resolved embed under the message it belongs to. `render_id` is the message anchor
 	-- (see RichText:MarkMessage), `standalone` means the url was the whole message.
 	function EasyChat.RenderURLEmbed(render_id, embed, standalone)
+		-- load images through the wsrv.nl proxy so the origin cdn never sees client ips. a fresh
+		-- table so the cached embed keeps its real url (for the click-to-open / copy actions).
+		if embed.kind == "image" then
+			embed = { kind = "image", url = EasyChat.ProxyImageURL(embed.url), page_url = embed.page_url }
+		end
+
 		if EasyChat.GUI and IsValid(EasyChat.GUI.RichText)
 			and EasyChat.GUI.RichText.AppendEmbed and GetConVar("easychat_images"):GetBool()
 		then
