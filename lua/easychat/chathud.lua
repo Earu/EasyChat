@@ -923,10 +923,13 @@ local image_part = {
 	OkInNicks = false,
 	ImgWidth = MAX_IMAGE_WIDTH,
 	ImgHeight = 0,
-	Enabled = false, -- disable embedding by default
+	Enabled = true, -- enabled by default (easychat_tag_image)
 }
 
-function image_part:Ctor(url)
+function image_part:Ctor(url, blur)
+	-- blur is passed as "1"/"0" because PushPartComponent concatenates its varargs (no booleans)
+	local blur_style = blur == "1" and " filter: blur(20px);" or ""
+
 	local browser = vgui.Create("DHTML")
 	browser:SetAllowLua(false)
 	browser:SetSize(0, 0)
@@ -955,7 +958,7 @@ function image_part:Ctor(url)
 	browser:SetHTML([[<html style="background: rgba(0,0,0,0); overflow: hidden;">
 		<head></head>
 		<body style="background: rgba(0,0,0,0);">
-			<img src="]] .. url .. [[" style="width: 100%;" onload="Img.Size(this.naturalWidth, this.naturalHeight);" onerror="Img.Remove();"/>
+			<img src="]] .. url .. [[" style="width: 100%;]] .. blur_style .. [[" onload="Img.Size(this.naturalWidth, this.naturalHeight);" onerror="Img.Remove();"/>
 		</body>
 	</html>]])
 
@@ -1059,7 +1062,7 @@ local embed_part = {
 	OkInNicks = false,
 	Width = MAX_EMBED_WIDTH,
 	Height = 0,
-	Enabled = false, -- disabled by default
+	Enabled = true, -- enabled by default (easychat_tag_embed)
 }
 
 function embed_part:Ctor(json)
@@ -1579,9 +1582,9 @@ function chathud:AppendNick(nick)
 	self:PushString(nick, true)
 end
 
-function chathud:AppendImageURL(url)
+function chathud:AppendImageURL(url, blur)
 	if chathud.Parts.image.Enabled then
-		self:PushPartComponent("image", url)
+		self:PushPartComponent("image", url, blur and "1" or "0")
 	else
 		self:PushString(url, false)
 	end
