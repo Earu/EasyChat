@@ -569,8 +569,9 @@ if CLIENT then
 	local EC_LEGACY_TEXT = CreateConVar("easychat_legacy_text", "0", FCVAR_ARCHIVE, "Uses the legacy text output")
 	local _ = CreateConVar("easychat_modern_text_history_limit", "-1", FCVAR_ARCHIVE, "Limits how many messages are shown in the modern chat output")
 	local _ = CreateConVar("easychat_non_qwerty", "0", FCVAR_ARCHIVE, "Lets you tell EasyChat that you keyboard layout is not qwerty")
-	local _ = CreateConVar("easychat_blur_images", "1", FCVAR_ARCHIVE, "Blur images in the chatbox")
 	local _ = CreateConVar("easychat_background_blur", "1", FCVAR_ARCHIVE, "Blurs the background of the chatbox and its windows")
+	-- created here (not in the nsfw_filter module) so it exists before settings.lua reads it
+	local _ = CreateConVar("easychat_nsfw_filter", "1", FCVAR_ARCHIVE, "Detect and hide nsfw/gore images in chat (classified locally in the browser)")
 
 	-- chathud
 	local _ = CreateConVar("easychat_hud_smooth", "1", FCVAR_ARCHIVE, "Enables chat smoothing")
@@ -1431,13 +1432,12 @@ if CLIENT then
 			local previous_color = EasyChat.GUI.RichText:GetLastColorChange()
 			EasyChat.GUI.RichText:InsertColorChange(LINK_COLOR)
 
-			-- direct images need no resolving; anything else was already resolved before we got here
-			-- (see the chat.AddText override), so by now we know what this url turned out to be
-			local embed
-			if EasyChat.IsDirectImageURL(url) then
+			-- the chat.AddText override already resolved (and classified) every url before we got
+			-- here, so by now we know what this url turned out to be. the direct-image fallback is
+			-- for the rare GlobalAddText call that didn't come through that override.
+			local embed = current_embeds and current_embeds[url]
+			if not embed and EasyChat.IsDirectImageURL(url) then
 				embed = { kind = "image", url = url, page_url = url }
-			elseif current_embeds then
-				embed = current_embeds[url]
 			end
 
 			-- only drop the raw url from the hud when an image is going to take its place -- if the
@@ -2128,13 +2128,14 @@ if CLIENT then
 				local arg_count = select("#", ...)
 				local args = { ... }
 
-				-- urls we can't figure out on our own and have to ask the server about
+				-- every http(s) url in the message; we resolve it (and classify image embeds)
+				-- before rendering, so the message shows up complete instead of embeds popping in
 				local urls, seen = {}, {}
 				for i = 1, arg_count do
 					local arg = args[i]
 					if isstring(arg) then
 						for _, url in ipairs(EasyChat.ExtractURLs(arg)) do
-							if not seen[url] and url:find("^https?://") and not EasyChat.IsDirectImageURL(url) then
+							if not seen[url] and url:find("^https?://") then
 								seen[url] = true
 								urls[#urls + 1] = url
 							end
@@ -2150,7 +2151,7 @@ if CLIENT then
 					chat.old_EC_AddText(unpack(processed_args))
 				end
 
-				if #urls == 0 or not EasyChat.ResolveURLEmbedAsync then
+				if #urls == 0 then
 					render(nil)
 					return
 				end
@@ -2165,13 +2166,32 @@ if CLIENT then
 					render(embeds)
 				end
 
-				for _, url in ipairs(urls) do
-					EasyChat.ResolveURLEmbedAsync(url, function(embed)
+				local function got_embed(url, embed)
+					local function done()
 						if embed then embeds[url] = embed end
-
 						waiting = waiting - 1
 						if waiting <= 0 then render_once() end
-					end)
+					end
+
+					-- classify image embeds before showing them, flagging nsfw/gore
+					if embed and embed.kind == "image" and EasyChat.ClassifyImage then
+						EasyChat.ClassifyImage(EasyChat.ProxyImageURL(embed.url), function(flagged)
+							embed.nsfw = flagged
+							done()
+						end)
+					else
+						done()
+					end
+				end
+
+				for _, url in ipairs(urls) do
+					if EasyChat.IsDirectImageURL(url) then
+						got_embed(url, { kind = "image", url = url, page_url = url })
+					elseif EasyChat.ResolveURLEmbedAsync then
+						EasyChat.ResolveURLEmbedAsync(url, function(embed) got_embed(url, embed) end)
+					else
+						got_embed(url, nil)
+					end
 				end
 
 				timer.Simple(EMBED_WAIT_TIME, render_once)

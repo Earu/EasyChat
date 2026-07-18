@@ -936,7 +936,7 @@ if CLIENT then
 		-- load images through the wsrv.nl proxy so the origin cdn never sees client ips. a fresh
 		-- table so the cached embed keeps its real url (for the click-to-open / copy actions).
 		if embed.kind == "image" then
-			embed = { kind = "image", url = EasyChat.ProxyImageURL(embed.url), page_url = embed.page_url }
+			embed = { kind = "image", url = EasyChat.ProxyImageURL(embed.url), page_url = embed.page_url, nsfw = embed.nsfw }
 		end
 
 		if EasyChat.GUI and IsValid(EasyChat.GUI.RichText)
@@ -950,7 +950,15 @@ if CLIENT then
 				-- when the url is part of a longer message its text stays, so put the image on
 				-- its own line below it (a standalone url was omitted, so the image takes its place)
 				if not standalone then EasyChat.ChatHUD:NewLine() end
-				EasyChat.ChatHUD:AppendImageURL(embed.url)
+
+				-- the hud can't click-to-reveal, so a confidently-flagged image becomes a marker;
+				-- an unsure ("blur") one is shown blurred and stays that way
+				if embed.nsfw == "hide" then
+					EasyChat.ChatHUD:InsertColorChange((EasyChat.LinkColor or color_white):Unpack())
+					EasyChat.ChatHUD:AppendText("[hidden nsfw/gore image]")
+				else
+					EasyChat.ChatHUD:AppendImageURL(embed.url, embed.nsfw == "blur")
+				end
 			elseif embed.kind == "link" then
 				EasyChat.ChatHUD:AppendEmbed(embed)
 			end

@@ -171,11 +171,10 @@ function PANEL:Init()
 	self.ImageURLToAppend = {}
 	self:AddInternalCallback("GetImageURLToAppend", function()
 		local limit = GetConVar("easychat_modern_text_history_limit"):GetInt() * AVERAGE_AMOUNT_OF_ELEMENTS_PER_LINE
-		local blur = GetConVar("easychat_blur_images"):GetBool()
 
 		local url = self.ImageURLToAppend[1] or ""
 		table.remove(self.ImageURLToAppend, 1)
-		return url, limit, blur
+		return url, limit, false
 	end)
 
 	self.MarkToAppend = {}
@@ -188,16 +187,16 @@ function PANEL:Init()
 	self.EmbedToAppend = {}
 	self:AddInternalCallback("GetEmbedToAppend", function()
 		local limit = GetConVar("easychat_modern_text_history_limit"):GetInt() * AVERAGE_AMOUNT_OF_ELEMENTS_PER_LINE
-		local blur = GetConVar("easychat_blur_images"):GetBool()
 
 		local embed = self.EmbedToAppend[1] or {}
 		table.remove(self.EmbedToAppend, 1)
 
+		-- the classifier verdict drives blurring now: "blur" = unsure (blur it), "hide" = confident
 		return embed.msg_id or 0, embed.kind or "link", embed.url or "",
 			embed.page_url or "", embed.title or "", embed.description or "",
-			embed.site_name or "", embed.favicon or "", blur, limit,
+			embed.site_name or "", embed.favicon or "", embed.nsfw == "blur", limit,
 			css_rgba(EasyChat.TabColor), css_rgba(EasyChat.TabOutlineColor),
-			css_rgba(EasyChat.LinkColor), css_rgba(EasyChat.TextColor)
+			css_rgba(EasyChat.LinkColor), css_rgba(EasyChat.TextColor), embed.nsfw == "hide"
 	end)
 
 	self:AddInternalCallback("Debug", print)
@@ -382,12 +381,12 @@ function PANEL:AppendEmbed(msg_id, embed)
 	self.EmbedToAppend[#self.EmbedToAppend + 1] = embed
 
 	self:QueueJavascript([[
-		RichTextX.GetEmbedToAppend((msgId, kind, url, pageUrl, title, description, siteName, favicon, blur, limit, bgColor, outlineColor, titleColor, textColor) => {
+		RichTextX.GetEmbedToAppend((msgId, kind, url, pageUrl, title, description, siteName, favicon, blur, limit, bgColor, outlineColor, titleColor, textColor, nsfw) => {
 			const container = document.createElement("div");
 			container.style.margin = "4px 0";
 			container.style.maxWidth = "80%";
 
-			if (kind === "image") {
+			const makeImage = () => {
 				const img = document.createElement("img");
 				img.classList.add("ec-image");
 				img.src = url;
@@ -401,7 +400,23 @@ function PANEL:AppendEmbed(msg_id, embed)
 					img.onmouseover = () => img.classList.remove("blur");
 					img.onmouseout = () => img.classList.add("blur");
 				}
-				container.appendChild(img);
+				return img;
+			};
+
+			if (kind === "image" && nsfw) {
+				// flagged nsfw/gore: show a placeholder that reveals the image only on click
+				const ph = document.createElement("div");
+				ph.textContent = "⚠ hidden nsfw/gore image — click to show";
+				ph.style.background = bgColor;
+				ph.style.border = "1px solid " + outlineColor;
+				ph.style.padding = "8px 10px";
+				ph.style.color = textColor;
+				ph.style.cursor = "pointer";
+				ph.style.fontStyle = "italic";
+				ph.onclick = () => { ph.replaceWith(makeImage()); };
+				container.appendChild(ph);
+			} else if (kind === "image") {
+				container.appendChild(makeImage());
 			} else {
 				container.style.background = bgColor;
 				container.style.border = "1px solid " + outlineColor;
