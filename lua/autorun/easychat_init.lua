@@ -15,6 +15,7 @@ AddCSLuaFile("easychat/client/translator.lua")
 AddCSLuaFile("easychat/client/expressions.lua")
 AddCSLuaFile("easychat/client/macro_processor.lua")
 AddCSLuaFile("easychat/client/settings.lua")
+AddCSLuaFile("easychat/client/nsfw_filter.lua")
 
 AddCSLuaFile("easychat/client/vgui/chatbox_panel.lua")
 AddCSLuaFile("easychat/client/vgui/richtextx.lua")

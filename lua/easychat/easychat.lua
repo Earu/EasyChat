@@ -704,6 +704,7 @@ if CLIENT then
 
 	include("easychat/client/blur_panel.lua")
 	include("easychat/client/settings.lua")
+	include("easychat/client/nsfw_filter.lua")
 	include("easychat/markup.lua")
 
 	local ec_tabs = {}
@@ -1924,6 +1925,7 @@ if CLIENT then
 		EasyChat.ModeCount = 0
 
 		include("easychat/client/settings.lua")
+		include("easychat/client/nsfw_filter.lua")
 		include("easychat/markup.lua")
 
 		ec_convars = {}
@@ -2160,6 +2162,7 @@ if CLIENT then
 				-- embeds instead of them popping in afterwards. EMBED_WAIT_TIME caps how long we
 				-- wait, and only this message waits -- we don't stall the rest of the chat for it.
 				local embeds, waiting, rendered = {}, #urls, false
+				local classifying = 0 -- image classifications still in flight; we always wait for these
 				local function render_once()
 					if rendered then return end
 					rendered = true
@@ -2175,8 +2178,10 @@ if CLIENT then
 
 					-- classify image embeds before showing them, flagging nsfw/gore
 					if embed and embed.kind == "image" and EasyChat.ClassifyImage then
+						classifying = classifying + 1
 						EasyChat.ClassifyImage(EasyChat.ProxyImageURL(embed.url), function(flagged)
 							embed.nsfw = flagged
+							classifying = classifying - 1
 							done()
 						end)
 					else
@@ -2194,7 +2199,15 @@ if CLIENT then
 					end
 				end
 
-				timer.Simple(EMBED_WAIT_TIME, render_once)
+				-- EMBED_WAIT_TIME caps how long we wait on url *resolution*, but we never cut off an
+				-- image classification that's already running -- an image always shows up checked, never
+				-- raw. classification is self-bounded, so this still resolves in a timely manner.
+				local function cap_render()
+					if rendered then return end
+					if classifying > 0 then timer.Simple(0.1, cap_render) return end
+					render_once()
+				end
+				timer.Simple(EMBED_WAIT_TIME, cap_render)
 			end
 
 			function chat.GetChatBoxPos()

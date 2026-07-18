@@ -39,7 +39,11 @@ local ORT_SCRIPT_URL = "https://cdn.jsdelivr.net/npm/onnxruntime-web@" .. ORT_VE
 local ORT_DIST_URL = "https://cdn.jsdelivr.net/npm/onnxruntime-web@" .. ORT_VERSION .. "/dist/"
 local MODEL_URL = "https://raw.githubusercontent.com/Earu/EasyChat/master/external_data/image-safety-classifier-xs.onnx"
 
-local CLASSIFY_TIMEOUT = 20 -- give up (and fail open) if the browser never answers
+-- how long the actual classification may take before we give up and blur. it's measured from when
+-- the browser *starts* working on the image, so neither the one-time model download nor time spent
+-- queued behind other images counts against it.
+local CLASSIFY_TIMEOUT = 8
+local MODEL_LOAD_TIMEOUT = 30 -- if the model never loads at all, stop waiting and blur what's pending
 
 local panel -- lazily created hidden classifier browser
 local queue = {} -- { { id, url }, ... } waiting to be picked up by the browser
@@ -47,7 +51,8 @@ local pending = {} -- url -> { cb, ... } callbacks waiting on a verdict
 local id_to_url = {} -- classify id -> url
 local verdicts = {} -- url -> verdict (false | "blur" | "hide"), cached
 local id_counter = 0
-local runtime_failed = false -- the classifier couldn't load; stop trying, just show images
+local runtime_failed = false -- the classifier couldn't load; blur everything to be safe
+local model_ready = false -- the model has finished loading (lets the timeout exclude load time)
 
 local function build_page()
 	return ([==[<html><head></head><body>
@@ -74,20 +79,12 @@ local function build_page()
 		return sessionPromise;
 	}
 
-	// classify strictly one image at a time -- concurrent wasm inferences spike memory enough to
-	// crash chromium 86 (especially when several images pile up while the model is still loading)
-	var busy = false;
+	var MAX_FRAMES = 5; // most frames we sample from an animated gif
 
-	function classify(id, url) {
+	// run the model on a single image url -> cb(nsfw, gore), or cb(-1, -1) on any failure
+	function scoreImage(url, cb) {
 		var img = new Image();
 		img.crossOrigin = "anonymous";
-
-		function finish(nsfw, gore) {
-			NSFW.Result(id, nsfw, gore);
-			busy = false;
-			pump(); // next one, if any
-		}
-
 		img.onload = function() {
 			getSession().then(function(sess) {
 				// model wants [1,3,224,224] rgb float32 in 0-255 (normalisation is baked in)
@@ -103,12 +100,124 @@ local function build_page()
 				}
 				return sess.run({ image: new ort.Tensor("float32", f, [1, 3, 224, 224]) }).then(function(out) {
 					var pr = out[sess.outputNames[0]].data; // probabilities, order [NSFL, NSFW, SFW]
-					finish(pr[1], pr[0]); // nsfw, gore
+					cb(pr[1], pr[0]); // nsfw, gore
 				});
-			}).catch(function() { finish(-1, -1); }); // any failure -> unknown
+			}).catch(function() { cb(-1, -1); }); // any failure -> unknown
 		};
-		img.onerror = function() { finish(-1, -1); };
+		img.onerror = function() { cb(-1, -1); };
 		img.src = url;
+	}
+
+	// count frames in a gif by walking its blocks (each 0x2C image descriptor is one frame)
+	function countGifFrames(b) {
+		if (b.length < 13 || b[0] !== 0x47 || b[1] !== 0x49 || b[2] !== 0x46) return 1; // not "GIF"
+		var p = 13;
+		if (b[10] & 0x80) { p += 3 * (1 << ((b[10] & 0x07) + 1)); } // skip global color table
+		var frames = 0;
+		while (p < b.length) {
+			var block = b[p++];
+			if (block === 0x3B) break; // trailer
+			if (block === 0x2C) { // image descriptor = one frame
+				frames++;
+				var lflags = b[p + 8];
+				p += 9;
+				if (lflags & 0x80) { p += 3 * (1 << ((lflags & 0x07) + 1)); } // local color table
+				p++; // lzw min code size
+				while (p < b.length) { var sz = b[p++]; if (sz === 0) break; p += sz; } // image data sub-blocks
+			} else if (block === 0x21) { // extension: label + sub-blocks
+				p++;
+				while (p < b.length) { var sz2 = b[p++]; if (sz2 === 0) break; p += sz2; }
+			} else { break; } // unexpected -> stop counting
+		}
+		return frames > 0 ? frames : 1;
+	}
+
+	// count frames in an animated webp (RIFF container with one ANMF chunk per frame)
+	function countWebpFrames(b) {
+		var p = 12, frames = 0; // skip "RIFF" + file size + "WEBP"
+		while (p + 8 <= b.length) {
+			var size = (b[p + 4] | (b[p + 5] << 8) | (b[p + 6] << 16) | (b[p + 7] << 24)) >>> 0;
+			if (b[p] === 0x41 && b[p + 1] === 0x4E && b[p + 2] === 0x4D && b[p + 3] === 0x46) frames++; // "ANMF"
+			p += 8 + size + (size & 1); // chunk payloads are padded to an even length
+		}
+		return frames > 0 ? frames : 1;
+	}
+
+	// how many frames the image has, dispatched by format magic. only gif and webp -- the formats
+	// wsrv can actually page for us -- get a real count; everything else is treated as one frame.
+	function countFrames(b) {
+		if (b.length >= 4 && b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46) return countGifFrames(b); // "GIF"
+		if (b.length >= 12 && b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 &&
+			b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) return countWebpFrames(b); // "RIFF"/"WEBP"
+		return 1;
+	}
+
+	// evenly-spaced frame indices, at most MAX_FRAMES of them
+	function pickPages(count) {
+		if (count <= 1) return [0];
+		if (count <= MAX_FRAMES) { var a = []; for (var i = 0; i < count; i++) a.push(i); return a; }
+		var pages = [], seen = {};
+		for (var j = 0; j < MAX_FRAMES; j++) {
+			var pg = Math.round(j * (count - 1) / (MAX_FRAMES - 1));
+			if (!seen[pg]) { seen[pg] = 1; pages.push(pg); }
+		}
+		return pages;
+	}
+
+	// score each frame url in turn, reporting the worst (max nsfw, max gore) across the ones that
+	// classified. done sequentially so we never run two wasm inferences at once.
+	function scoreFrames(urls, finish) {
+		var idx = 0, any = false, worstNsfw = -1, worstGore = -1;
+		function nextFrame() {
+			if (idx >= urls.length) { finish(any ? worstNsfw : -1, any ? worstGore : -1); return; }
+			scoreImage(urls[idx++], function(nsfw, gore) {
+				if (nsfw >= 0) {
+					any = true;
+					if (nsfw > worstNsfw) worstNsfw = nsfw;
+					if (gore > worstGore) worstGore = gore;
+				}
+				nextFrame();
+			});
+		}
+		nextFrame();
+	}
+
+	// classify strictly one image at a time -- concurrent wasm inferences spike memory enough to
+	// crash chromium 86 (especially when several images pile up while the model is still loading)
+	var busy = false;
+
+	function classify(id, url) {
+		var done = false;
+		function finish(nsfw, gore) {
+			if (done) return; // real result or timeout already fired
+			done = true;
+			NSFW.Result(id, nsfw, gore);
+			busy = false;
+			pump(); // next one, if any
+		}
+
+		// wait for the model before starting the give-up clock, so the one-time model download (and
+		// time queued behind other images) never counts against CLASSIFY_TIMEOUT -- it only bounds the
+		// classification itself. then fetch the bytes once so we can tell how many frames it has: a
+		// still image (or a format we can't page) is scored straight from those bytes -- no second
+		// download -- while an animated gif/webp is sampled MAX_FRAMES via wsrv's &page= (worst wins).
+		getSession().then(function() {
+			setTimeout(function() { finish(-1, -1); }, %d); // took too long -> unknown -> blur
+			return fetch(url);
+		}).then(function(r) {
+			return r.arrayBuffer();
+		}).then(function(buf) {
+			var count = countFrames(new Uint8Array(buf));
+			if (count <= 1) {
+				var blobUrl = URL.createObjectURL(new Blob([buf])); // same-origin blob -> canvas is readable
+				scoreImage(blobUrl, function(nsfw, gore) { URL.revokeObjectURL(blobUrl); finish(nsfw, gore); });
+				return;
+			}
+			var pages = pickPages(count);
+			var base = url.replace("&n=-1", ""); // drop the all-frames flag; request one frame each
+			var urls = pages.map(function(pg) { return base + "&n=1&page=" + pg + "&output=png"; });
+			scoreFrames(urls, finish);
+		}).catch(function() { scoreFrames([url], finish); }); // couldn't fetch -> load via <img> directly
 	}
 
 	// pick up the next queued image, but only if we aren't already classifying one
@@ -119,14 +228,15 @@ local function build_page()
 		});
 	}
 
-	if (typeof ort !== "undefined") {
-		NSFW.OnReady();
-		pump(); // drain anything queued before the page finished loading
-	} else {
+	// kick the model download off immediately so it's ready as early as possible, and tell lua when
+	// it's loaded (or failed) so the per-image timeout can start counting only from then.
+	if (typeof ort === "undefined") {
 		NSFW.OnError();
+	} else {
+		getSession().then(function() { NSFW.OnReady(); pump(); }).catch(function() { NSFW.OnError(); });
 	}
 </script>
-</body></html>]==]):format(ORT_SCRIPT_URL, MODEL_URL, ORT_DIST_URL)
+</body></html>]==]):format(ORT_SCRIPT_URL, MODEL_URL, ORT_DIST_URL, CLASSIFY_TIMEOUT * 1000)
 end
 
 local function ensure_panel()
@@ -156,7 +266,7 @@ local function ensure_panel()
 		pending = {}
 	end)
 
-	panel:AddFunction("NSFW", "OnReady", function() end)
+	panel:AddFunction("NSFW", "OnReady", function() model_ready = true end)
 
 	panel:AddFunction("NSFW", "Result", function(id, nsfw, gore)
 		local url = id_to_url[id]
@@ -182,6 +292,18 @@ local function ensure_panel()
 		if waiters then
 			for _, cb in ipairs(waiters) do cb(verdict) end
 		end
+	end)
+
+	-- if the model never loads at all (e.g. the download wedges), don't leave images waiting forever
+	timer.Simple(MODEL_LOAD_TIMEOUT, function()
+		if model_ready or runtime_failed then return end
+		runtime_failed = true
+		EasyChat.Print(true, "nsfw filter: classifier didn't load in time, images will be blurred")
+		for url, waiters in pairs(pending) do
+			verdicts[url] = "blur"
+			for _, cb in ipairs(waiters) do cb("blur") end
+		end
+		pending = {}
 	end)
 
 	panel:SetHTML(build_page())
@@ -210,20 +332,11 @@ function EasyChat.ClassifyImage(url, cb)
 
 	ensure_panel()
 	panel:QueueJavascript("if (typeof pump === 'function') pump();")
-
-	timer.Simple(CLASSIFY_TIMEOUT, function()
-		local waiters = pending[url]
-		if not waiters then return end -- already answered
-
-		pending[url] = nil
-		verdicts[url] = "blur" -- never answered in time -> blur to be safe
-		for _, waiter in ipairs(waiters) do waiter("blur") end
-	end)
+	-- the give-up timeout lives in the browser now (started once the model is loaded), so it doesn't
+	-- count the model download; the model-load watchdog above covers the model never loading at all.
 end
 
 -- synchronous peek at a cached verdict (nil = not classified yet)
 function EasyChat.GetImageVerdict(url)
 	return verdicts[url]
 end
-
-return "NSFW Filter"
