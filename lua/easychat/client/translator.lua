@@ -1,9 +1,34 @@
+local DEFAULT_OLLAMA_URL = "http://localhost:11434"
+local EC_TRANSLATE_OLLAMA_URL = CreateConVar("easychat_translate_ollama_url", DEFAULT_OLLAMA_URL, FCVAR_ARCHIVE, "URL and port of the Ollama server used for translation")
+
+-- returns the configured ollama endpoint, falling back to (and restoring) the default
+-- when the stored value isn't a valid "scheme://host:port" url
+local function ollama_url()
+	local url = EC_TRANSLATE_OLLAMA_URL:GetString():Trim()
+	local scheme, _, port = url:match("^(https?)://([%w%.%-]+):(%d+)$")
+	if scheme then
+		local port_num = tonumber(port)
+		if port_num and port_num >= 1 and port_num <= 65535 then
+			return url
+		end
+	end
+
+	EC_TRANSLATE_OLLAMA_URL:SetString(DEFAULT_OLLAMA_URL)
+	return DEFAULT_OLLAMA_URL
+end
+
 if util.IsBinaryModuleInstalled("ollama") and not _G.Ollama then
 	require("ollama")
-	_G.Ollama.SetConfig("http://localhost:11434", 60)
+	_G.Ollama.SetConfig(ollama_url(), 60)
 end
 
 local translator = {}
+
+-- exposed so callers (eg. the settings ui) can apply the validated endpoint
+function translator:GetOllamaUrl()
+	return ollama_url()
+end
+
 local language_lookup = {
 	["Automatic"] = "auto",
 
@@ -50,7 +75,7 @@ function translator:Translate(text, source_lang, target_lang, on_finish, retries
 	-- If Ollama is not loaded, load it
 	if util.IsBinaryModuleInstalled("ollama") and not _G.Ollama then
 		require("ollama")
-		_G.Ollama.SetConfig("http://localhost:11434", 60)
+		_G.Ollama.SetConfig(ollama_url(), 60)
 	end
 
 	if not _G.Ollama.IsRunning() then
