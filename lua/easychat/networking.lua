@@ -30,7 +30,9 @@ if SERVER then
 
 	local EC_RESOLVE_URLS = CreateConVar("easychat_resolve_urls", "1", FCVAR_ARCHIVE, "Let the server resolve posted urls (media/website metadata) and send embeds to clients")
 	local RESOLVE_CACHE_TTL = 600
-	local RESOLVE_MAX_BODY = 512 * 1024
+	-- parse cap only; the body is fully downloaded either way. youtube puts its
+	-- og: tags past the 600KB mark, so this needs to be generous
+	local RESOLVE_MAX_BODY = 2 * 1024 * 1024
 	local RESOLVE_MAX_INFLIGHT = 8
 	local FAVICON_MAX_BYTES = 48 * 1024
 	local FAVICON_MAX_DIM = 128
@@ -200,6 +202,23 @@ if SERVER then
 		try_next()
 	end
 
+	-- bot-challenge interstitials (reddit, cloudflare, akamai...) answer 200 with a page
+	-- describing the challenge, not the site; treat their meta as if there were none
+	local CHALLENGE_TITLES = {
+		"just a moment", "please wait", "attention required", "access denied",
+		"verify you are human", "verifying you are human", "are you a robot",
+		"security check", "captcha", "ddos",
+	}
+
+	local function is_challenge_title(title)
+		if not title then return false end
+		title = title:lower()
+		for _, marker in ipairs(CHALLENGE_TITLES) do
+			if title:find(marker, 1, true) then return true end
+		end
+		return false
+	end
+
 	local function build_embed(url, content_type, body)
 		-- the resource itself is an image
 		if content_type and content_type:find("^image/") then
@@ -221,6 +240,11 @@ if SERVER then
 		local image = nonempty(meta["og:image:secure_url"]) or nonempty(meta["og:image"]) or ld.image or nonempty(meta["twitter:image"])
 		local site_name = nonempty(meta["og:site_name"]) or ld.author
 		local og_type = meta["og:type"] or ""
+
+		-- a challenge page's title describes the challenge, not the page; drop the whole
+		-- scrape so the url degrades to the bare domain card instead. challenge pages
+		-- never carry a content image, so one present means the title is legitimate
+		if is_challenge_title(title) and not image then return nil end
 
 		-- tumblr-style "Title - " leftovers where the site name is empty
 		if title then title = title:gsub("%s+%-%s*$", "") end
@@ -300,6 +324,18 @@ if SERVER then
 		{ pattern = "^https?://[%w%.]-klipy%.com/gifs/", resolve = resolve_klipy },
 	}
 
+	-- bare domain card for urls we couldn't scrape anything from; the client shows
+	-- the url itself as the title when there is none
+	local function fallback_embed(url)
+		local host = (url:match("^https?://([^/]+)") or ""):gsub(":%d+$", ""):gsub("^www%.", "")
+		return {
+			kind = "link",
+			url = url,
+			page_url = url,
+			site_name = host ~= "" and host or nil,
+		}
+	end
+
 	function EasyChat.ResolveURLEmbed(ply, url, cb)
 		if EasyChat.IsDirectImageURL(url) then
 			cb({ kind = "image", url = url })
@@ -332,11 +368,13 @@ if SERVER then
 
 		local function finish(embed)
 			resolve_inflight = math.max(0, resolve_inflight - 1)
-			resolve_cache[url] = { embed = embed or false, time = SysTime() }
+			-- every url gets at least a bare domain card
+			embed = embed or fallback_embed(url)
+			resolve_cache[url] = { embed = embed, time = SysTime() }
 
 			local waiters = resolve_waiting[url]
 			resolve_waiting[url] = nil
-			if not embed or not waiters then return end
+			if not waiters then return end
 
 			for _, waiter in ipairs(waiters) do
 				waiter(embed)
@@ -349,7 +387,11 @@ if SERVER then
 			end
 		end
 
-		http.Fetch(url, function(body, _, headers, code)
+		-- browsers strip #fragments before requesting; gmod's http client does not,
+		-- and a raw '#' in the request line gets rejected (github answers 400)
+		local fetch_url = url:gsub("#.*$", "")
+
+		http.Fetch(fetch_url, function(body, _, headers, code)
 			if code and (code < 200 or code >= 300) then return finish(nil) end
 
 			local content_type
@@ -362,10 +404,10 @@ if SERVER then
 			end
 
 			local ok, embed = pcall(build_embed, url, content_type, body or "")
-			embed = ok and embed or nil
+			embed = (ok and embed) or fallback_embed(url)
 
 			-- website cards get the domain favicon (a second server-side fetch)
-			if embed and embed.kind == "link" then
+			if embed.kind == "link" then
 				fetch_favicon(url, body or "", function(favicon)
 					embed.favicon = favicon
 					finish(embed)
