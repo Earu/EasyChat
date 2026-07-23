@@ -32,7 +32,7 @@ end
 
 local function module_error(file_name, err, where)
 	ErrorNoHalt(err .. "\n")
-	
+
 	if _G.metalog then
 		_G.metalog.error("EasyChat", where, "Couldn't load " .. file_name)
 	else
@@ -117,8 +117,8 @@ local function load_modules(path)
 		end
 	end
 
-	EasyChat.Print("Loaded %d modules successfully, %d ignored, %d failed to load.\n"):format(module_loaded_count, module_ignored_count, module_failed_count)
-	EasyChat.Print("Initialized in %fs\n"):format(SysTime() - start_time)
+	EasyChat.Print(("Loaded %d modules successfully, %d ignored, %d failed to load."):format(module_loaded_count, module_ignored_count, module_failed_count))
+	EasyChat.Print(("Initialized in %fs\n"):format(SysTime() - start_time))
 	module_loaded_count, module_failed_count, module_ignored_count = 0, 0, 0
 end
 
