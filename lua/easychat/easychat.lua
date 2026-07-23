@@ -25,7 +25,14 @@ function EasyChat.RunOnNextFrame(func)
 	timer.Simple(0, func)
 end
 
+pcall(require, "metalog")
 function EasyChat.Print(is_err, ...)
+	if _G.metalog then
+		local log_fn = is_err and metalog.error or metalog.info
+		log_fn("EasyChat", nil, ...)
+		return
+	end
+	
 	local args = { ... }
 	local body_color
 

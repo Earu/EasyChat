@@ -15,7 +15,6 @@ end
 
 local modules = {}
 
-local color_good = Color(0, 160, 220)
 local color_bad = Color(255, 127, 127)
 local color_default = Color(244, 167, 66)
 local module_loaded_count, module_failed_count, module_ignored_count = 0, 0, 0
@@ -33,12 +32,23 @@ end
 
 local function module_error(file_name, err, where)
 	ErrorNoHalt(err .. "\n")
-	MsgC(color_default, "[EasyChat | " .. where .. "] ⮞ ", color_bad, "Couldn't load " .. file_name .. "\n")
+	
+	if _G.metalog then
+		_G.metalog.error("EasyChat", where, "Couldn't load " .. file_name)
+	else
+		MsgC(color_default, "[EasyChat | " .. where .. "] ⮞ ", color_bad, "Couldn't load " .. file_name .. "\n")
+	end
+
 	module_failed_count = module_failed_count + 1
 end
 
 local function module_ignore(file_name, where)
-	MsgC(color_default, "[EasyChat | " .. where .. "] ⮞ ", color_default, "Ignored " .. file_name .. "\n")
+	if _G.metalog then
+		_G.metalog.info("EasyChat", where, "Ignored " .. file_name)
+	else
+		MsgC(color_default, "[EasyChat | " .. where .. "] ⮞ ", color_default, "Ignored " .. file_name .. "\n")
+	end
+
 	module_ignored_count = module_ignored_count + 1
 end
 
@@ -107,8 +117,8 @@ local function load_modules(path)
 		end
 	end
 
-	MsgC(color_default, "[EasyChat] ⮞ ", color_good, ("Loaded %d modules successfully, %d ignored, %d failed to load.\n"):format(module_loaded_count, module_ignored_count, module_failed_count))
-	MsgC(color_default, "[EasyChat] ⮞ ", color_good, ("Initialized in %fs\n"):format(SysTime() - start_time))
+	EasyChat.Print("Loaded %d modules successfully, %d ignored, %d failed to load.\n"):format(module_loaded_count, module_ignored_count, module_failed_count)
+	EasyChat.Print("Initialized in %fs\n"):format(SysTime() - start_time)
 	module_loaded_count, module_failed_count, module_ignored_count = 0, 0, 0
 end
 
