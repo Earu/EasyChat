@@ -32,7 +32,7 @@ end
 
 function EasyChat.Print(is_err, ...)
 	if _G.metalog then
-		local log_fn = is_err and metalog.error or metalog.info
+		local log_fn = isstring(is_err) and metalog.info or (is_err and metalog.error or metalog.info)
 		log_fn("EasyChat", nil, ...)
 		return
 	end
