@@ -31,12 +31,6 @@ if file.Exists("includes/modules/metalog.lua", "LUA") then
 end
 
 function EasyChat.Print(is_err, ...)
-	if _G.metalog then
-		local log_fn = isstring(is_err) and metalog.info or (is_err and metalog.error or metalog.info)
-		log_fn("EasyChat", nil, ...)
-		return
-	end
-
 	local args = { ... }
 	local body_color
 
@@ -48,6 +42,13 @@ function EasyChat.Print(is_err, ...)
 	end
 
 	for k, v in pairs(args) do args[k] = tostring(v) end
+
+	if _G.metalog then
+		local log_fn = isstring(is_err) and metalog.info or (is_err and metalog.error or metalog.info)
+		log_fn("EasyChat", nil, unpack(args))
+		return
+	end
+
 	MsgC(COLOR_PRINT_HEAD, "[EasyChat] ⮞ ", body_color, table.concat(args), "\n")
 end
 
