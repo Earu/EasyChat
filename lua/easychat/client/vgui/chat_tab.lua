@@ -8,6 +8,7 @@ include("easychat/client/vgui/color_picker.lua")
 local NEW_LINE_PATTERN = "\n"
 local EC_LEGACY_ENTRY = GetConVar("easychat_legacy_entry")
 local EC_LEGACY_TEXT = GetConVar("easychat_legacy_text")
+local EC_ALWAYS_LOCAL = GetConVar("easychat_always_local")
 local MAIN_TAB = {
 	Init = function(self)
 		local can_use_cef = EasyChat.CanUseCEFFeatures()
@@ -50,6 +51,10 @@ local MAIN_TAB = {
 				switch_menu:AddOption(mode.Name, function()
 					EasyChat.Mode = mode_index
 				end)
+			end
+			if EC_ALWAYS_LOCAL then
+				switch_menu:AddSpacer()
+				switch_menu:AddCVar("Default to local", EC_ALWAYS_LOCAL:GetName(), "1", "0")
 			end
 			switch_menu:AddSpacer()
 			switch_menu:AddOption("Cancel", function() switch_menu:Remove() end)
