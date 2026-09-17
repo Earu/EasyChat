@@ -115,7 +115,7 @@ if CLIENT then
 
 				sam_cmds[cmd.name] = cmd_args
 				for _, alias in pairs(cmd.aliases) do
-					sam_cmds[cmd.name] = cmd_args
+					sam_cmds[alias] = cmd_args
 				end
 			end
 
