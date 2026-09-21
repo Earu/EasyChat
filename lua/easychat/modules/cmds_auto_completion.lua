@@ -4,24 +4,19 @@ if SERVER and istable(_G.aowl) then
 	util.AddNetworkString(EASYCHAT_AUTO_COMPLETION)
 
 	net.Receive(EASYCHAT_AUTO_COMPLETION, function(_, ply)
-		local cmds_str = ""
-		if istable(_G.aowl.cmds) then
-			for cmd_name in pairs(aowl.cmds) do
-				cmds_str = ("%s,%s"):format(cmds_str, cmd_name)
-			end
-		elseif istable(_G.aowl.Commands) then
-			for cmd_name in pairs(aowl.Commands) do
-				cmds_str = ("%s,%s"):format(cmds_str, cmd_name)
-			end
-		elseif istable(_G.aowl.commands) then
-			for cmd_name in pairs(aowl.commands) do
-				cmds_str = ("%s,%s"):format(cmds_str, cmd_name)
+		local networked_cmds = {}
+		local tbl = aowl and aowl.cmds or aowl.Commands or aowl.commands
+		if istable(tbl) then
+			for cmd_name, cmd in pairs(tbl) do
+				networked_cmds[cmd_name] = {
+					description = cmd.help
+				}
 			end
 		end
 
 		EasyChat.RunOnNextFrame(function()
 			net.Start(EASYCHAT_AUTO_COMPLETION)
-			net.WriteString(cmds_str)
+			net.WriteTable(networked_cmds)
 			net.Send(ply)
 		end)
 	end)
@@ -33,6 +28,7 @@ if CLIENT then
 
 	local color_white = color_white
 	local black_color = Color(0, 0, 0, 200)
+	local description_color = Color(175, 175, 175)
 	local option_font = "EasyChatFont"
 	local hook_name = "EasyChatModuleCmdsAutoComplete"
 
@@ -41,10 +37,11 @@ if CLIENT then
 		Priorities = {}
 	}
 
-	function EasyChat.CmdSuggestions:AddSuggestionHandler(identifier, prefix, lookup, priority)
+	function EasyChat.CmdSuggestions:AddSuggestionHandler(identifier, prefix, lookup, priority, descriptions)
 		priority = priority or 0
 		self.Handlers[identifier] = {
 			Lookup = lookup,
+			Descriptions = descriptions or {},
 			Prefix = prefix,
 			ActiveOptions = {},
 			ActiveOptionsCount = 0,
@@ -126,7 +123,7 @@ if CLIENT then
 	elseif istable(_G.aowl) then
 		net.Receive(EASYCHAT_AUTO_COMPLETION, function()
 			local aowl_cmds = {}
-			local cmds_str = net.ReadString()
+			local aowl_descriptions = {}
 			if aowl.cmds then
 				for cmd_name in pairs(aowl.cmds) do
 					aowl_cmds[cmd_name] = {}
@@ -141,12 +138,13 @@ if CLIENT then
 				end
 			end
 
-			local srv_cmds = cmds_str:Split(",")
-			for _, cmd_name in ipairs(srv_cmds) do
+			local srv_cmds = net.ReadTable()
+			for cmd_name, cmd_data in pairs(srv_cmds) do
 				aowl_cmds[cmd_name] = {}
+				aowl_descriptions[cmd_name] = cmd_data.description
 			end
 
-			EasyChat.CmdSuggestions:AddSuggestionHandler("aowl", aowl.Prefix or aowl.prefix or "[!/%.]", aowl_cmds)
+			EasyChat.CmdSuggestions:AddSuggestionHandler("aowl", aowl.Prefix or aowl.prefix or "[!/%.]", aowl_cmds, 0, aowl_descriptions)
 		end)
 
 		hook.Add("StartChat", hook_name, function()
@@ -182,6 +180,39 @@ if CLIENT then
 		EasyChat.CmdSuggestions:AddSuggestionHandler("DarkRP", "/", commands, -1)
 	end
 
+	local COLUMN_WIDTH = 130
+	local COLUMN_GUTTER = 4
+
+	local function next_column(offset, drawn_w)
+		local needed = math.ceil((drawn_w + COLUMN_GUTTER) / COLUMN_WIDTH) * COLUMN_WIDTH
+		return offset + math.max(COLUMN_WIDTH, needed)
+	end
+
+	local function get_option_rank(option, cmd)
+		local cmd_name = option:lower():sub(2) -- without the chat command prefix
+		if cmd_name == cmd then return 0 end
+		if cmd_name:StartsWith(cmd) then return 1 end
+
+		return 2
+	end
+
+	local function sort_options(options, cmd)
+		local sorted_options = {}
+		for option in pairs(options) do
+			table.insert(sorted_options, option)
+		end
+
+		table.sort(sorted_options, function(a, b)
+			local rank_a, rank_b = get_option_rank(a, cmd), get_option_rank(b, cmd)
+			if rank_a ~= rank_b then return rank_a < rank_b end
+			if #a ~= #b then return #a < #b end
+
+			return a < b
+		end)
+
+		return sorted_options
+	end
+
 	local active_options_index = 0
 	local pos_x = 0
 	hook.Add("ChatTextChanged", hook_name, function(text)
@@ -189,6 +220,8 @@ if CLIENT then
 
 		local all_options = {}
 		local all_options_count = 0
+		local all_descriptions = {}
+		local typed_cmd = (text:sub(2):Split(" ")[1] or ""):lower()
 
 		for identifier in SortedPairsByValue(EasyChat.CmdSuggestions.Priorities) do
 			local cmds = EasyChat.CmdSuggestions.Handlers[identifier]
@@ -211,7 +244,9 @@ if CLIENT then
 			local options = {}
 			for cmd_name, cmd_args in pairs(cmds.Lookup) do
 				if cmd_name:lower():match(cmd) then
-					options[("%s%s"):format(prefix, cmd_name)] = cmd_args
+					local option = ("%s%s"):format(prefix, cmd_name)
+					options[option] = cmd_args
+					all_descriptions[option] = cmds.Descriptions[cmd_name]
 					options_count = options_count + 1
 				end
 			end
@@ -222,7 +257,6 @@ if CLIENT then
 				continue
 			end
 
-			table.sort(options)
 			cmds.ActiveOptions = options
 			cmds.ActiveOptionsCount = options_count
 
@@ -230,12 +264,12 @@ if CLIENT then
 			all_options_count = all_options_count + options_count
 		end
 
-		table.sort(all_options)
-
 		if all_options_count == 0 then
 			stop_auto_completion()
 			return
 		end
+
+		local sorted_options = sort_options(all_options, typed_cmd)
 
 		active_options_index = 1
 
@@ -251,7 +285,7 @@ if CLIENT then
 			local above_screen_height = false
 			local option_h = draw.GetFontHeight(option_font) + 10 -- account for wordbox padding
 			local i = 1
-			for option in SortedPairs(all_options) do
+			for _, option in ipairs(sorted_options) do
 				local pos_y = chat_y + ((i + 1) * option_h)
 				if pos_y > ScrH() then
 					all_options[option] = nil
@@ -277,14 +311,26 @@ if CLIENT then
 
 			local j = 0
 			local max_w = 0
-			for option, option_args in SortedPairs(all_options) do
-				local pos_y = chat_y + (j * option_h)
-				local option_w = draw.WordBox(4, pos_x, pos_y, option, option_font, black_color, color_white)
-				if option_w and option_w > max_w then max_w = option_w end
+			for _, option in ipairs(sorted_options) do
+				local option_args = all_options[option]
+				if not option_args then continue end -- didnt fit on the screen
 
-				for arg_index, arg in ipairs(option_args) do
-					local arg_w = draw.WordBox(4, pos_x + (arg_index * 130), pos_y, arg, option_font, black_color, color_white)
-					if arg_w and (arg_index * 130) + arg_w > max_w then max_w = (arg_index * 130) + arg_w end
+				local pos_y = chat_y + (j * option_h)
+				local column = 0
+				local option_w = draw.WordBox(4, pos_x, pos_y, option, option_font, black_color, color_white) or 0
+				if option_w > max_w then max_w = option_w end
+				column = next_column(column, option_w)
+
+				for _, arg in ipairs(option_args) do
+					local arg_w = draw.WordBox(4, pos_x + column, pos_y, arg, option_font, black_color, color_white) or 0
+					if column + arg_w > max_w then max_w = column + arg_w end
+					column = next_column(column, arg_w)
+				end
+
+				local description = all_descriptions[option]
+				if description then
+					local desc_w = draw.WordBox(4, pos_x + column, pos_y, description, option_font, black_color, description_color) or 0
+					if column + desc_w > max_w then max_w = column + desc_w end
 				end
 
 				j = j + 1
@@ -307,7 +353,6 @@ if CLIENT then
 		if not EC_CMDS_SUGGESTIONS:GetBool() then return end
 
 		local all_options = {}
-		local all_options_count = 0
 
 		for identifier in SortedPairsByValue(EasyChat.CmdSuggestions.Priorities) do
 			local cmds = EasyChat.CmdSuggestions.Handlers[identifier]
@@ -316,24 +361,18 @@ if CLIENT then
 			if text:match(" ") then continue end
 
 			all_options = table.Merge(all_options, cmds.ActiveOptions)
-			all_options_count = all_options_count + cmds.ActiveOptionsCount
 		end
 
-		table.sort(all_options)
+		local sorted_options = sort_options(all_options, text:sub(2):lower())
+		local option = sorted_options[active_options_index]
+		if not option then return end
 
-		local i = 1
-		for option in SortedPairs(all_options) do
-			if i == active_options_index then
-				active_options_index = active_options_index + 1
-				if active_options_index > all_options_count then
-					active_options_index = 1
-				end
-
-				return option
-			end
-
-			i = i + 1
+		active_options_index = active_options_index + 1
+		if active_options_index > #sorted_options then
+			active_options_index = 1
 		end
+
+		return option
 	end)
 
 	hook.Add("ECPostLoadModules", hook_name, function()
