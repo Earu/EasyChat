@@ -4,11 +4,11 @@ if SERVER and istable(_G.aowl) then
 	util.AddNetworkString(EASYCHAT_AUTO_COMPLETION)
 
 	net.Receive(EASYCHAT_AUTO_COMPLETION, function(_, ply)
-		local networkedCmds = {}
+		local networked_cmds = {}
 		local tbl = aowl and aowl.cmds or aowl.Commands or aowl.commands
 		if istable(tbl) then
 			for cmd_name, cmd in pairs(tbl) do
-				networkedCmds[cmd_name] = {
+				networked_cmds[cmd_name] = {
 					description = cmd.help
 				}
 			end
@@ -16,7 +16,7 @@ if SERVER and istable(_G.aowl) then
 
 		EasyChat.RunOnNextFrame(function()
 			net.Start(EASYCHAT_AUTO_COMPLETION)
-			net.WriteTable(networkedCmds)
+			net.WriteTable(networked_cmds)
 			net.Send(ply)
 		end)
 	end)
