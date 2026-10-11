@@ -514,12 +514,13 @@ local texture_part = {
 
 function texture_part:Ctor(str)
 	local texture_components = str:Split(",")
+	self.TextureSize = math.Clamp(tonumber(texture_components[2]) or (SERVER and 16 or draw.GetFontHeight(self.HUD.DefaultFont)), 16, 64)
+	if SERVER then return self end
 
 	local path = texture_components[1]:Trim()
 	local mat = Material(path, path:EndsWith(".png") and "nocull noclamp" or nil)
 	if not mat then
 		self.Invalid = true
-		self.TextureSize = math.Clamp(tonumber(texture_components[2]) or (CLIENT and draw.GetFontHeight(self.HUD.DefaultFont) or 16), 16, 64)
 		return self
 	end
 
@@ -541,7 +542,6 @@ function texture_part:Ctor(str)
 	end
 
 	if not self.Material then self.Invalid = true end
-	self.TextureSize = math.Clamp(tonumber(texture_components[2]) or (CLIENT and draw.GetFontHeight(self.HUD.DefaultFont) or 16), 16, 64)
 
 	return self
 end
