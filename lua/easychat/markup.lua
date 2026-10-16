@@ -83,9 +83,10 @@ function ec_markup.AdvancedParse(str, data)
 	end
 
 	function obj:SetPos(x, y)
-		if self.Pos.X == x and self.Pos.Y == y then return end
+		local pos_y = y + self:GetTall()
+		if self.Pos.X == x and self.Pos.Y == pos_y then return end
 
-		self.Pos = { X = x, Y = y + self:GetTall() }
+		self.Pos = { X = x, Y = pos_y }
 		self:InvalidateLayout()
 	end
 

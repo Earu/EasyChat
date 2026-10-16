@@ -253,15 +253,23 @@ local function utf8_sub(str, i, j)
 end
 
 
-local function call_component_function(component, fn_name, default, ...)
-	local rets = { xpcall(component[fn_name], function(err)
-		ErrorNoHaltWithStack("[EC] Error in \"" .. fn_name .. "\" function: " .. err)
-	end, component, ...) }
+local current_fn_name
+local function component_error_handler(err)
+	ErrorNoHaltWithStack("[EC] Error in \"" .. current_fn_name .. "\" function: " .. err)
+end
 
-	local success = table.remove(rets, 1)
-	if success then return unpack(rets) end
+local function finish_component_call(prev_fn_name, default, success, ...)
+	current_fn_name = prev_fn_name
+	if success then return ... end
 
 	return default
+end
+
+local function call_component_function(component, fn_name, default, ...)
+	local prev_fn_name = current_fn_name
+	current_fn_name = fn_name
+
+	return finish_component_call(prev_fn_name, default, xpcall(component[fn_name], component_error_handler, component, ...))
 end
 
 local default_part = {
@@ -1466,8 +1474,9 @@ function draw_context:CallPreTextDrawFunctions(x, y, w, h)
 end
 
 function draw_context:PopDrawFunctions()
-	self.PreTextDrawFunctions = {}
-	self.PostTextDrawFunctions = {}
+	local pre, post = self.PreTextDrawFunctions, self.PostTextDrawFunctions
+	for i = #pre, 1, -1 do pre[i] = nil end
+	for i = #post, 1, -1 do post[i] = nil end
 end
 
 function draw_context:ResetColors()
@@ -1482,7 +1491,8 @@ function draw_context:ResetFont()
 end
 
 function draw_context:ResetTextOffset()
-	self.TextOffset = { X = 0, Y = 0 }
+	self.TextOffset.X = 0
+	self.TextOffset.Y = 0
 end
 
 function chathud:CreateDrawContext()
