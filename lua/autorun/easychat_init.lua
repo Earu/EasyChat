@@ -29,6 +29,7 @@ AddCSLuaFile("easychat/client/vgui/settings_menu.lua")
 AddCSLuaFile("easychat/client/vgui/chathud_font_editor_panel.lua")
 
 include("easychat/client/font_extensions.lua")
+include("easychat/client/cef_detection.lua")
 include("easychat/migrations.lua")
 include("easychat/easychat.lua")
 include("easychat/engine_chat_hack.lua")
